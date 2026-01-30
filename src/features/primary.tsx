@@ -2,17 +2,14 @@ import styled from "styled-components";
 import { MainGraph } from "../state/maingraph";
 import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
-import { useStable } from "../util/hooks/useStable";
 
-type EventContext = {
+type GraphConnectionControls = {
     start: (nodeId: string) => void;
     finish: (nodeId: string) => void;
-    cancel: () => void;
+    clear: () => void;
 };
 
-const GraphViewEventCTX = createContext<EventContext>({ start: () => {}, finish: () => {}, cancel: () => {} });
-
-const useGraphEventBus = () => useContext(GraphViewEventCTX);
+const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
 
 export const GraphView = () => {
     const nodes = MainGraph.useNodeList();
@@ -121,33 +118,43 @@ export const GraphView = () => {
         }
     }, [setPosition]);
 
-    const [pendingConnection] = MainGraph.usePendingConnection();
+    const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
 
-    const contextValue = useMemo(() => {
-        let pendingNode: string | null = null;
+    const graphMethods = MainGraph.useMethods();
 
+    const connectionContextValue = useMemo(() => {
+        let pending: null | string;
         return {
             start: (nodeId: string) => {
-                console.log("start triggered", nodeId);
-                pendingNode = nodeId;
-                viewportRef.current?.dispatchEvent(new CustomEvent<string>("nodegraph:connectStart", { detail: nodeId, bubbles: true }));
+                console.log("graph is starting a connection");
+                setPendingConnection(nodeId);
+                pending = nodeId;
             },
             finish: (nodeId: string) => {
-                if (pendingNode !== null) {
-                    viewportRef.current?.dispatchEvent(new CustomEvent<{ start: string; end: string }>("nodegraph:connectFinish", { detail: { start: pendingNode, end: nodeId }, bubbles: true }));
+                if (pending !== null) {
+                    console.log("graph should finish connection");
+                    graphMethods.connect(pending, nodeId);
                 }
-                pendingNode = null;
+                // validate and build connection here
             },
-            cancel: () => {
-                viewportRef.current?.dispatchEvent(new CustomEvent<void>("nodegraph:connectCancel"));
-                pendingNode = null;
+            clear: () => {
+                setPendingConnection(null);
+                pending = null;
             },
         };
-    }, []);
+    }, [setPendingConnection, graphMethods]);
+
+    // setting pending connection to null happens on mouse-up - this happens regardless of if the connection was successful or not, which is good.
+    useEffect(() => {
+        document.addEventListener("mouseup", connectionContextValue.clear);
+        return () => {
+            document.removeEventListener("mouseup", connectionContextValue.clear);
+        };
+    }, [connectionContextValue]);
 
     return (
         <Viewport ref={viewportRef} style={bg}>
-            <GraphViewEventCTX value={contextValue}>
+            <GraphViewConnectionCTX value={connectionContextValue}>
                 <Origin>
                     <Offset style={pos} ref={offsetRef}>
                         <NodeWrapper>
@@ -160,7 +167,7 @@ export const GraphView = () => {
                         <Bounds ref={boundsRef} nodeList={nodes} />
                     </Offset>
                 </Origin>
-            </GraphViewEventCTX>
+            </GraphViewConnectionCTX>
         </Viewport>
     );
 };
@@ -177,8 +184,100 @@ const Links = () => {
 };
 
 const PendingConnection = styled(({ value, className }: { value: string; className?: string }) => {
-    return <div className={className}>{/* svg just like the GraphLine but one end is anchored to the starting node as determined by value, the other follows the mouse */}</div>;
-})``;
+    const style = useMemo(
+        () =>
+            ({
+                "--fromNode": `--node_${value}`,
+            }) as CSSProperties,
+        [value],
+    );
+
+    const ref = useRef<HTMLDivElement>(null);
+    const fromMarkerRef = useRef<HTMLDivElement>(null);
+    const pathRef = useRef<SVGPathElement>(null);
+
+    const updatePath = useCallback(() => {
+        const container = ref.current;
+        const fromMarker = fromMarkerRef.current;
+        const path = pathRef.current;
+        const mouse = mousePos.current;
+        if (!container || !fromMarker || !path || !mouse) return;
+
+        const basis = container.getBoundingClientRect();
+        const fromPoint = fromMarker.getBoundingClientRect();
+        const zoom = container.currentCSSZoom;
+
+        const x1 = (fromPoint.left - basis.left) / zoom;
+        const y1 = (fromPoint.top - basis.top) / zoom;
+        const x2 = (mouse.x - basis.left) / zoom;
+        const y2 = (mouse.y - basis.top) / zoom;
+
+        path.setAttribute("d", `M ${x1},${y1} L ${x2},${y2}`);
+    }, []);
+
+    const mousePos = useRef<{ x: number; y: number } | null>(null);
+
+    useEffect(() => {
+        const onMouseMove = (evt: MouseEvent) => {
+            mousePos.current = { x: evt.clientX, y: evt.clientY };
+            updatePath();
+        };
+
+        document.addEventListener("mousemove", onMouseMove);
+        return () => {
+            document.removeEventListener("mousemove", onMouseMove);
+        };
+    }, [updatePath]);
+
+    useResizeObserver(ref, updatePath);
+
+    return (
+        <div className={className} style={style} ref={ref}>
+            <svg preserveAspectRatio="none">
+                <path ref={pathRef} />
+            </svg>
+            <div className="markerFrom" ref={fromMarkerRef} />
+        </div>
+    );
+})`
+    position: fixed;
+    width: auto;
+    height: auto;
+    z-index: -1;
+    pointer-events: none;
+
+    --anchorFrom: anchor(var(--fromNode) center);
+
+    inset: 0;
+
+    min-width: 1px;
+    min-height: 1px;
+
+    & > .markerFrom {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        top: var(--anchorFrom);
+        left: var(--anchorFrom);
+    }
+
+    overflow: visible;
+    & > svg {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+        & > path {
+            vector-effect: non-scaling-stroke;
+            fill: none;
+            stroke: #fff;
+            stroke-width: 1.5px;
+            stroke-dasharray: 6 4;
+            pointer-events: none;
+        }
+    }
+`;
 
 const Offset = styled.div`
     position: relative;
@@ -249,8 +348,6 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
 
     const node = MainGraph.useNode(nodeId);
 
-    const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
-
     const style = useMemo(() => {
         return {
             left: x,
@@ -296,52 +393,37 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     }, [setPosition]);
 
     const socketRef = useRef<HTMLDivElement>(null);
-
-    const graphEventBus = useGraphEventBus();
-
-    useEffect(() => {
-        const socket = socketRef.current;
-        if (socket) {
-            const onStart = (evt: CustomEvent<string>) => {
-                console.log(evt.detail, nodeId);
-            };
-
-            socket.addEventListener("nodegraph:connectStart" as any, onStart);
-            return () => {
-                socket.removeEventListener("nodegraph:connectStart" as any, onStart);
-            };
-        }
-    }, [nodeId]);
+    const connectionContext = useContext(GraphViewConnectionCTX);
 
     useEffect(() => {
         const socket = socketRef.current;
         if (socket) {
-            const connectStart = (evt: MouseEvent) => {
-                graphEventBus.start(nodeId);
+            const connectStart = () => {
+                console.log("starting connection");
+                connectionContext.start(nodeId);
             };
-
-            const connectEnd = (evt: MouseEvent) => {
-                graphEventBus.finish(nodeId);
+            const finishConnection = () => {
+                console.log("requesting the finishing of a connection");
+                connectionContext.finish(nodeId);
             };
 
             socket.addEventListener("mousedown", connectStart);
-            socket.addEventListener("mouseup", connectEnd);
+            socket.addEventListener("mouseup", finishConnection);
             return () => {
                 socket.removeEventListener("mousedown", connectStart);
-                socket.removeEventListener("mouseup", connectEnd);
+                socket.removeEventListener("mouseup", finishConnection);
             };
         }
-    }, [nodeId, graphEventBus]);
+    }, [nodeId, connectionContext]);
 
     return (
         <div className={className} style={style} title={nodeId}>
             <div data-part="handle" ref={handleRef}>
-                Handle
+                Node {node.payload}
             </div>
-            <div data-part="other" ref={socketRef}>
-                Some Other Stuff
+            <div data-part="socket" ref={socketRef}>
+                Connection
             </div>
-            <div data-part="other">{node.payload}</div>
         </div>
     );
 })`

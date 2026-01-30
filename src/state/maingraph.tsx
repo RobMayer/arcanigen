@@ -100,4 +100,23 @@ export namespace MainGraph {
         const ctx = useContext(CTX)!;
         return useFastContextState(ctx.pendingConnection);
     };
+
+    export const useMethods = () => {
+        const ctx = useContext(CTX)!;
+
+        return useMemo(() => {
+            const connect = (fromNode: string, toNode: string) => {
+                const oG = { nodes: ctx.nodes.get(), links: ctx.links.get() };
+                const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
+                if (newLink) {
+                    ctx.links.ref.current = links;
+                    ctx.linkList.ref.current = Object.keys(links);
+                    ctx.links.notify();
+                    ctx.linkList.notify();
+                }
+            };
+
+            return { connect };
+        }, [ctx]);
+    };
 }
