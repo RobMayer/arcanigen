@@ -3,6 +3,7 @@ import { MainGraph } from "../state/maingraph";
 import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
 import { useDragMove } from "../util/hooks/useDragMove";
+import { DragPane } from "../components/wrappers/DragPane";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -15,109 +16,19 @@ const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: (
 export const GraphView = () => {
     const nodes = MainGraph.useNodeList();
 
-    const [{ x, y, z }, setPosition] = useState<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 1 });
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const offsetRef = useRef<HTMLDivElement>(null);
     const boundsRef = useRef<HTMLDivElement>(null);
 
-    const [crossed, setCrossed] = useState({ top: false, bottom: false, left: false, right: false });
-    const crossedRef = useRef(crossed);
-
-    const checkBounds = useCallback(() => {
-        const boundsEl = boundsRef.current;
-        const viewportEl = viewportRef.current;
-        if (!boundsEl || !viewportEl) return;
-        const b = boundsEl.getBoundingClientRect();
-        const v = viewportEl.getBoundingClientRect();
-        const top = b.bottom < v.top;
-        const bottom = b.top > v.bottom;
-        const left = b.right < v.left;
-        const right = b.left > v.right;
-        const prev = crossedRef.current;
-        if (prev.top !== top || prev.bottom !== bottom || prev.left !== left || prev.right !== right) {
-            const next = { top, bottom, left, right };
-            crossedRef.current = next;
-            setCrossed(next);
-        }
-    }, []);
-
-    useResizeObserver(boundsRef, checkBounds);
-
-    useEffect(() => {
-        checkBounds();
-    }, [x, y, z, checkBounds]);
-
-    const { pos, bg } = useMemo<{ pos: CSSProperties; bg: CSSProperties }>(() => {
-        return {
-            pos: {
-                top: y,
-                left: x,
-                zoom: z,
-            },
-            bg: {
-                borderTopColor: crossed.top ? "red" : "transparent",
-                borderLeftColor: crossed.left ? "red" : "transparent",
-                borderRightColor: crossed.right ? "red" : "transparent",
-                borderBottomColor: crossed.bottom ? "red" : "transparent",
+    const handlePanZoom = useCallback(
+        ({ x, y, z }: { x: number; y: number; z: number }) => {
+            setBgStyle({
                 backgroundPosition: `calc(50% + ${x * z}px) calc(50% + ${y * z}px)`,
                 backgroundSize: `${83.14 * z}px ${48 * z}px`,
-            },
-        };
-    }, [x, y, z, crossed.top, crossed.bottom, crossed.left, crossed.right]);
+            });
+        },
+        [],
+    );
 
-    useEffect(() => {
-        const element = viewportRef.current;
-
-        if (element) {
-            const wheel = (evt: WheelEvent) => {
-                evt.preventDefault();
-                const rect = element.getBoundingClientRect();
-                // cursor position relative to viewport center (the Origin point)
-                const cx = evt.clientX - (rect.left + rect.width / 2);
-                const cy = evt.clientY - (rect.top + rect.height / 2);
-
-                setPosition(({ x, y, z }) => {
-                    const factor = evt.deltaY > 0 ? 1 / 1.1 : 1.1;
-                    const nz = Math.min(2, Math.max(0.1, z * factor));
-                    // adjust pan so the point under the cursor stays fixed
-                    const nx = cx / nz - (cx / z - x);
-                    const ny = cy / nz - (cy / z - y);
-                    return { x: nx, y: ny, z: nz };
-                });
-            };
-
-            const mouseMove = (evt: MouseEvent) => {
-                const zoom = offsetRef.current?.currentCSSZoom ?? 1;
-                const dX = evt.movementX / zoom;
-                const dY = evt.movementY / zoom;
-                setPosition(({ x, y, z }) => {
-                    return { x: x + dX, y: y + dY, z };
-                });
-            };
-
-            const mouseUp = () => {
-                document.removeEventListener("mousemove", mouseMove);
-                document.removeEventListener("mouseup", mouseUp);
-            };
-
-            const mouseDown = (evt: MouseEvent) => {
-                if (evt.button === 1) {
-                    evt.preventDefault();
-                    document.addEventListener("mousemove", mouseMove);
-                    document.addEventListener("mouseup", mouseUp);
-                }
-            };
-
-            element.addEventListener("mousedown", mouseDown);
-            element.addEventListener("wheel", wheel);
-            return () => {
-                element.removeEventListener("mousedown", mouseDown);
-                element.removeEventListener("wheel", wheel);
-                document.removeEventListener("mousemove", mouseMove);
-                document.removeEventListener("mouseup", mouseUp);
-            };
-        }
-    }, [setPosition]);
+    const [bgStyle, setBgStyle] = useState<CSSProperties>({});
 
     const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
 
@@ -154,24 +65,31 @@ export const GraphView = () => {
     }, [connectionContextValue]);
 
     return (
-        <Viewport ref={viewportRef} style={bg}>
+        <GraphViewPane boundsRef={boundsRef} style={bgStyle} onValue={handlePanZoom}>
             <GraphViewConnectionCTX value={connectionContextValue}>
-                <Origin>
-                    <Offset style={pos} ref={offsetRef}>
-                        <NodeWrapper>
-                            {nodes.map((nodeId) => {
-                                return <GraphNode key={nodeId} nodeId={nodeId} />;
-                            })}
-                        </NodeWrapper>
-                        <Links />
-                        {pendingConnection ? <PendingConnection value={pendingConnection} /> : null}
-                        <Bounds ref={boundsRef} nodeList={nodes} />
-                    </Offset>
-                </Origin>
+                <NodeWrapper>
+                    {nodes.map((nodeId) => {
+                        return <GraphNode key={nodeId} nodeId={nodeId} />;
+                    })}
+                </NodeWrapper>
+                <Links />
+                {pendingConnection ? <PendingConnection value={pendingConnection} /> : null}
+                <Bounds ref={boundsRef} nodeList={nodes} />
             </GraphViewConnectionCTX>
-        </Viewport>
+        </GraphViewPane>
     );
 };
+
+const GraphViewPane = styled(DragPane)`
+    background: #111;
+    background-image: url("hexgrid.svg");
+    background-blend-mode: overlay;
+    border: 3px solid transparent;
+    &[data-state~="breach-top"] { border-top-color: red; }
+    &[data-state~="breach-bottom"] { border-bottom-color: red; }
+    &[data-state~="breach-left"] { border-left-color: red; }
+    &[data-state~="breach-right"] { border-right-color: red; }
+`;
 
 const Links = () => {
     const links = MainGraph.useLinkList();
@@ -280,30 +198,6 @@ const PendingConnection = styled(({ value, className }: { value: string; classNa
     }
 `;
 
-const Offset = styled.div`
-    position: relative;
-`;
-
-const Origin = styled.div`
-    width: 0;
-    height: 0;
-    place-self: center;
-    position: absolute;
-    overflow: visible;
-    isolation: isolate;
-    display: grid;
-`;
-
-const Viewport = styled.div`
-    position: absolute;
-    inset: 0;
-    display: grid;
-    overflow: hidden;
-    background: #111;
-    background-image: url("hexgrid.svg");
-    background-blend-mode: overlay;
-    border: 3px solid transparent;
-`;
 
 const NodeWrapper = styled.div`
     inset: 0;
