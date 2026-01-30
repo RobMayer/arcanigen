@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { MainGraph } from "../state/maingraph";
 import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
+import { useDragMove } from "../util/hooks/useDragMove";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -344,9 +345,12 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 //nested SVG for new coordinate system
 
 const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
-    const [{ x, y }, setPosition] = MainGraph.usePositionOf(nodeId);
+    const [position, setPosition] = MainGraph.usePositionOf(nodeId);
 
     const node = MainGraph.useNode(nodeId);
+
+    const handleRef = useRef<HTMLDivElement>(null);
+    const { x, y } = useDragMove(handleRef, position, { onFinish: setPosition });
 
     const style = useMemo(() => {
         return {
@@ -355,42 +359,6 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
             anchorName: `--node_${nodeId}`,
         };
     }, [nodeId, x, y]);
-
-    const handleRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handle = handleRef.current;
-
-        if (handle) {
-            const mouseMove = (evt: MouseEvent) => {
-                const zoom = handle.currentCSSZoom * devicePixelRatio;
-                const dX = evt.movementX / zoom;
-                const dY = evt.movementY / zoom;
-                setPosition(({ x, y }) => {
-                    return { x: x + dX, y: y + dY };
-                });
-            };
-
-            const mouseUp = () => {
-                document.removeEventListener("mousemove", mouseMove);
-                document.removeEventListener("mouseup", mouseUp);
-            };
-
-            const mouseDown = (evt: MouseEvent) => {
-                if (evt.button === 0) {
-                    document.addEventListener("mousemove", mouseMove);
-                    document.addEventListener("mouseup", mouseUp);
-                }
-            };
-
-            handle.addEventListener("mousedown", mouseDown);
-            return () => {
-                handle.removeEventListener("mousedown", mouseDown);
-                document.removeEventListener("mousemove", mouseMove);
-                document.removeEventListener("mouseup", mouseUp);
-            };
-        }
-    }, [setPosition]);
 
     const socketRef = useRef<HTMLDivElement>(null);
     const connectionContext = useContext(GraphViewConnectionCTX);
