@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { ListOf, normalizeList } from "../misc";
 
 export namespace Graph {
     export type LinkPayloadOf<G> = G extends Of<infer _N, infer L> ? L : never;
@@ -34,12 +35,6 @@ export namespace Graph {
     type UpdateFor<T> = { [key: string]: T } | T[];
 
     //#region Local Utility
-
-    type IdList = string | string[] | Set<string>;
-
-    const makeSet = (id: IdList): Set<string> => {
-        return typeof id === "string" ? new Set([id]) : id instanceof Set ? id : new Set(id);
-    };
 
     //#endregion
 
@@ -139,8 +134,8 @@ export namespace Graph {
         ];
     };
 
-    export const removeNodes = <G extends IGraph>(graph: G, id: IdList): [graph: G, removed: { nodes: { [id: string]: NodeOf<G> }; links: { [id: string]: LinkOf<G> } }] => {
-        const ids = makeSet(id);
+    export const removeNodes = <G extends IGraph>(graph: G, id: ListOf<string>): [graph: G, removed: { nodes: { [id: string]: NodeOf<G> }; links: { [id: string]: LinkOf<G> } }] => {
+        const ids = normalizeList(id);
         if (ids.size === 0) {
             return [graph, { nodes: {}, links: {} }];
         }
@@ -198,8 +193,8 @@ export namespace Graph {
         };
     };
 
-    export const updateNodesWith = <G extends IGraph>(graph: G, setter: (previous: NodePayloadOf<G>) => NodePayloadOf<G> | undefined, ids?: IdList): G => {
-        const entries = makeSet(ids ? ids : Object.keys(graph.nodes));
+    export const updateNodesWith = <G extends IGraph>(graph: G, setter: (previous: NodePayloadOf<G>) => NodePayloadOf<G> | undefined, ids?: ListOf<string>): G => {
+        const entries = normalizeList(ids ? ids : Object.keys(graph.nodes));
         const newItems: { [key: string]: NodeOf<G> } = {};
 
         entries.forEach((id) => {
@@ -317,8 +312,8 @@ export namespace Graph {
         return removeLinks(graph, ids);
     };
 
-    export const removeLinks = <G extends IGraph>(graph: G, id: IdList): [graph: G, removedLinks: { [id: string]: LinkOf<G> }] => {
-        const idSet = makeSet(id);
+    export const removeLinks = <G extends IGraph>(graph: G, id: ListOf<string>): [graph: G, removedLinks: { [id: string]: LinkOf<G> }] => {
+        const idSet = normalizeList(id);
         if (idSet.size === 0) {
             return [graph, {}];
         }
@@ -366,8 +361,8 @@ export namespace Graph {
         };
     };
 
-    export const updateLinksWith = <G extends IGraph>(graph: G, setter: (previous: LinkPayloadOf<G>) => LinkPayloadOf<G> | undefined, ids?: IdList): G => {
-        const entries = makeSet(ids ? ids : Object.keys(graph.links));
+    export const updateLinksWith = <G extends IGraph>(graph: G, setter: (previous: LinkPayloadOf<G>) => LinkPayloadOf<G> | undefined, ids?: ListOf<string>): G => {
+        const entries = normalizeList(ids ? ids : Object.keys(graph.links));
         const newItems: { [key: string]: LinkOf<G> } = {};
 
         entries.forEach((id) => {

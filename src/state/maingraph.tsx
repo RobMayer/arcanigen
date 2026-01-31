@@ -72,6 +72,30 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.nodes.subscribe, selector);
     };
 
+    export const usePendingConnection = () => {
+        const ctx = useContext(CTX)!;
+        return useFastContextState(ctx.pendingConnection);
+    };
+
+    export const useMethods = () => {
+        const ctx = useContext(CTX)!;
+
+        return useMemo(() => {
+            const connect = (fromNode: string, toNode: string) => {
+                const oG = { nodes: ctx.nodes.get(), links: ctx.links.get() };
+                const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
+                if (newLink) {
+                    ctx.links.ref.current = links;
+                    ctx.linkList.ref.current = Object.keys(links);
+                    ctx.links.notify();
+                    ctx.linkList.notify();
+                }
+            };
+
+            return { connect };
+        }, [ctx]);
+    };
+
     export const usePositionOf = (id: string) => {
         const ctx = useContext(CTX)!;
 
@@ -96,27 +120,30 @@ export namespace MainGraph {
         return [value, set] as const;
     };
 
-    export const usePendingConnection = () => {
-        const ctx = useContext(CTX)!;
-        return useFastContextState(ctx.pendingConnection);
-    };
+    type XY = { x: number; y: number };
 
-    export const useMethods = () => {
+    export const usePositionMethods = () => {
         const ctx = useContext(CTX)!;
-
         return useMemo(() => {
-            const connect = (fromNode: string, toNode: string) => {
-                const oG = { nodes: ctx.nodes.get(), links: ctx.links.get() };
-                const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
-                if (newLink) {
-                    ctx.links.ref.current = links;
-                    ctx.linkList.ref.current = Object.keys(links);
-                    ctx.links.notify();
-                    ctx.linkList.notify();
-                }
+            const doCommit = () => ctx.positions.notify();
+            const doSetMany = (toSet: { [key: string]: XY }) => {
+                ctx.positions.ref.current = {
+                    ...ctx.positions.ref.current,
+                    ...toSet,
+                };
             };
+            const setMany = (toSet: { [key: string]: XY }) => {
+                doSetMany(toSet);
+                doCommit();
+            };
+            setMany.passive = doSetMany;
+            setMany.commit = doCommit;
 
-            return { connect };
+            return {
+                setMany,
+            };
         }, [ctx]);
     };
+
+    export const usePositionsRef = () => useContext(CTX)!.positions.ref;
 }

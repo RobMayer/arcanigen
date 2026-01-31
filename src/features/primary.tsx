@@ -1,9 +1,10 @@
 import styled from "styled-components";
 import { MainGraph } from "../state/maingraph";
-import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
 import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
+import { Session } from "../state/session";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -242,7 +243,49 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     const node = MainGraph.useNode(nodeId);
 
     const handleRef = useRef<HTMLDivElement>(null);
-    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: setPosition });
+
+    const selectionRef = Session.useSelectionRef();
+    const positionsRef = MainGraph.usePositionsRef();
+    const positionMethods = MainGraph.usePositionMethods();
+
+    const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
+
+    const handleDragDelta = useCallback(
+        ({ x, y }: { x: number; y: number }) => {
+            if (!selectionRef.current.has(`node_${nodeId}`)) {
+                return;
+            }
+            const compiled = [...selectionRef.current].reduce<{ [key: string]: { x: number; y: number } }>((acc, id) => {
+                if (id.startsWith("node_")) {
+                    const nId = id.substring(5);
+                    if (positionsRef.current[nId]) {
+                        const toSet = { x: positionsRef.current[nId].x + x, y: positionsRef.current[nId].y + y };
+                        acc[nId] = toSet;
+                        const element = document.querySelector(`div[data-selectable="${id}"]`);
+                        element?.setAttribute("data-x", `${toSet.x}`);
+                        element?.setAttribute("data-y", `${toSet.y}`);
+                    }
+                }
+                return acc;
+            }, {});
+
+            positionMethods.setMany.passive(compiled);
+        },
+        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
+    );
+
+    const handleFinish = useCallback(
+        (pos: { x: number; y: number }) => {
+            if (!selectionRef.current.has(`node_${nodeId}`)) {
+                setPosition(pos);
+                return;
+            }
+            positionMethods.setMany.commit();
+        },
+        [nodeId, positionMethods.setMany, selectionRef, setPosition],
+    );
+
+    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
 
     const socketRef = useRef<HTMLDivElement>(null);
     const connectionContext = useContext(GraphViewConnectionCTX);
@@ -269,7 +312,7 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     }, [nodeId, connectionContext]);
 
     return (
-        <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`}>
+        <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
             <div data-part="handle" ref={handleRef}>
                 Node {node.payload}
             </div>
@@ -286,6 +329,10 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     outline: 1px solid transparent;
     transform: translate(-50%, -50%);
     anchor-name: attr(data-node type(<custom-ident>));
+
+    &[data-state~="selected"] {
+        border-color: white;
+    }
 `;
 
 const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
@@ -302,10 +349,11 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     const fromMarkerRef = useRef<HTMLDivElement>(null);
     const toMarkerRef = useRef<HTMLDivElement>(null);
     const pathRef = useRef<SVGPathElement>(null);
+    const selRef = useRef<SVGPathElement>(null);
 
     useResizeObserver(ref, (entry) => {
         const basis = entry.target.getBoundingClientRect();
-        if (fromMarkerRef.current && toMarkerRef.current && pathRef.current) {
+        if (fromMarkerRef.current && toMarkerRef.current && pathRef.current && selRef.current) {
             const fromPoint = fromMarkerRef.current.getBoundingClientRect();
             const toPoint = toMarkerRef.current.getBoundingClientRect();
             const zoom = entry.target.currentCSSZoom;
@@ -317,17 +365,29 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
 
             const dx = Math.max(200, Math.abs(x2 - x1) * 0.5);
             pathRef.current.setAttribute("d", `M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
+            selRef.current.setAttribute("d", `M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
         }
     });
 
+    const [isSelected, setIsSelected] = useState<boolean>(false);
+
+    const handleFocus = useCallback(() => {
+        setIsSelected(true);
+    }, []);
+
+    const handleBlur = useCallback(() => {
+        setIsSelected(false);
+    }, []);
+
     return (
         <>
-            <div className={className} style={style} ref={ref}>
+            <div className={className} style={style} ref={ref} tabIndex={-1} onFocus={handleFocus} onBlur={handleBlur} data-state={isSelected ? "selected" : undefined}>
                 <svg preserveAspectRatio="none">
-                    <path ref={pathRef} />
+                    <path data-part={"display"} ref={pathRef} />
+                    <path data-part={"selector"} ref={selRef} />
                 </svg>
-                <div className={"markerFrom"} ref={fromMarkerRef} />
-                <div className={"markerTo"} ref={toMarkerRef} />
+                <div data-part={"markerFrom"} ref={fromMarkerRef} />
+                <div data-part={"markerTo"} ref={toMarkerRef} />
             </div>
         </>
     );
@@ -342,20 +402,20 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     --anchorB: anchor(var(--toNode) center);
     --anchorL: anchor(var(--fromNode) center);
 
-    & > .markerFrom,
-    & > .markerTo {
+    & > [data-part="markerFrom"],
+    & > [data-part="markerTo"] {
         position: fixed;
         width: 1px;
         height: 1px;
         background: red;
     }
 
-    & > .markerFrom {
+    & > [data-part="markerFrom"] {
         top: anchor(var(--fromNode) center);
         left: anchor(var(--fromNode) center);
     }
 
-    & > .markerTo {
+    & > [data-part="markerTo"] {
         top: anchor(var(--toNode) center);
         left: anchor(var(--toNode) center);
     }
@@ -373,12 +433,25 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
         height: 100%;
         overflow: visible;
         pointer-events: none;
-        & > path {
+        & > path[data-part="display"] {
             vector-effect: non-scaling-stroke;
             fill: none;
             stroke: #fc3;
             stroke-width: 1.5px;
             pointer-events: none;
         }
+        & > path[data-part="selector"] {
+            vector-effect: non-scaling-stroke;
+            fill: none;
+            stroke: transparent;
+            stroke-width: 8px;
+            pointer-events: stroke;
+            cursor: pointer;
+        }
+    }
+
+    &[data-state~="selected"] > svg > path[data-part="display"] {
+        stroke: #fff;
+        stroke-width: 3px;
     }
 `;

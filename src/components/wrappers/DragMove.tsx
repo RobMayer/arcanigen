@@ -8,6 +8,7 @@ export namespace DragMove {
     type UseHandleOptions = {
         onChange?: (coordinates: XY) => void;
         onFinish?: (coordinates: XY) => void;
+        onDelta?: (delta: XY) => void;
         button?: number | "any";
     };
 
@@ -85,7 +86,7 @@ export namespace DragMove {
         return <TheDiv {...props} style={mergedStyle} data-x={position.x} data-y={position.y} data-trhmarker={"dragmove"} onFocus={handleFocus} tabIndex={-1} />;
     };
 
-    export const useHandle = (handleRef: RefObject<HTMLElement | null>, value: XY, { onChange, onFinish, button = 0 }: UseHandleOptions) => {
+    export const useHandle = (handleRef: RefObject<HTMLElement | null>, value: XY, { onChange, onFinish, onDelta, button = 0 }: UseHandleOptions) => {
         const [local, setLocal] = useState<XY>(value);
         const internalRef = useRef<XY>(value);
 
@@ -108,6 +109,7 @@ export namespace DragMove {
 
         const onChangeRef = useStable(onChange);
         const onFinishRef = useStable(onFinish);
+        const onDeltaRef = useStable(onDelta);
 
         useEffect(() => {
             const handle = handleRef.current;
@@ -120,6 +122,7 @@ export namespace DragMove {
                     const { x, y } = { x: internalRef.current.x + dX, y: internalRef.current.y + dY };
                     handleChange({ x, y });
                     onChangeRef.current?.(internalRef.current);
+                    onDeltaRef.current?.({ x: dX, y: dY });
                 };
 
                 const mouseUp = () => {
