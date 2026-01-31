@@ -12,7 +12,7 @@ export type DragPaneControls = {
     set: (value: SetStateAction<XYZ>) => void;
     panTo: (value: SetStateAction<XY>) => void;
     panBy: (value: Partial<XY>) => void; // relative pan; zoom compensation should happen internally; if all thre are zero, or not provided, no-op.
-    panOn: (event: MouseEvent | MouseEvent<unknown>) => void; // just to make it easier to bind a pan to a mouse-move event externally.
+    panOn: ((event: MouseEvent | MouseEvent<unknown>) => void) & { committed: (event: MouseEvent | MouseEvent<unknown>) => void; commit: () => void };
     panFor: (element: HTMLElement) => void;
     center: () => void; // pan to center of bounds (if bounds is not provided, no-op)
     extents: () => void; // pan to center of bounds and zoom to contain (as best as possible) (if bounds is not provided, no-op)
@@ -137,77 +137,71 @@ const DragPaneBase = styled(
             }
         }, []);
 
+        const handleChange = useCallback(
+            (xyz: XYZ, passive: boolean = false) => {
+                const prev = member.ref.current;
+                const next = clampXYZ(xyz, constraints.current);
+                const xyChanged = next.x !== prev.x || next.y !== prev.y;
+                const zChanged = next.z !== prev.z;
+                if (!xyChanged && !zChanged) {
+                    return;
+                }
+                setPosition(next);
+                const { z, ...xy } = next;
+                if (xyChanged) {
+                    onPanRef.current?.(xy);
+                }
+                if (zChanged) {
+                    onZoomRef.current?.(z);
+                }
+                onValueRef.current?.(next);
+                if (!passive) onFinishRef.current?.(next);
+                checkBreaches();
+            },
+            [setPosition, member, checkBreaches],
+        );
+
         // control methods
-        const methods = useMemo<DragPaneControls>(
-            () => ({
+        const methods = useMemo<DragPaneControls>(() => {
+            const panOnBase = (evt: MouseEvent | MouseEvent<unknown>, passive: boolean) => {
+                const zoom = offsetRef.current?.currentCSSZoom ?? 1;
+                const { x, y, z } = member.ref.current;
+                handleChange({ x: x + evt.movementX / zoom, y: y + evt.movementY / zoom, z }, passive);
+            };
+            const panOn = Object.assign((evt: MouseEvent | MouseEvent<unknown>) => panOnBase(evt, true), {
+                committed: (evt: MouseEvent | MouseEvent<unknown>) => panOnBase(evt, false),
+                commit: () => onFinishRef.current?.(member.ref.current),
+            });
+
+            return {
                 set: (value) => {
-                    const cur = member.ref.current;
-                    const resolved = resolveSetter(value, cur);
-                    const next = clampXYZ(resolved, constraints.current);
-                    setPosition(next);
-                    onPanRef.current?.(next);
-                    onZoomRef.current?.(next.z);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange(resolveSetter(value, member.ref.current));
                 },
                 panTo: (value) => {
                     const cur = member.ref.current;
                     const resolved = resolveSetter(value, { x: cur.x, y: cur.y });
-                    const next = clampXYZ({ x: resolved.x, y: resolved.y, z: cur.z }, constraints.current);
-                    setPosition(next);
-                    onPanRef.current?.(next);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ x: resolved.x, y: resolved.y, z: cur.z });
                 },
                 panBy: (value) => {
                     const dx = value.x ?? 0;
                     const dy = value.y ?? 0;
                     if (dx === 0 && dy === 0) return;
                     const zoom = offsetRef.current?.currentCSSZoom ?? 1;
-                    setPosition(({ x, y, z }) => {
-                        const next = clampXYZ({ x: x + dx / zoom, y: y + dy / zoom, z }, constraints.current);
-                        onPanRef.current?.(next);
-                        onValueRef.current?.(next);
-                        onFinishRef.current?.(next);
-                        return next;
-                    });
-                    checkBreaches();
+                    const { x, y, z } = member.ref.current;
+                    handleChange({ x: x + dx / zoom, y: y + dy / zoom, z });
                 },
-                panOn: (evt) => {
-                    const zoom = offsetRef.current?.currentCSSZoom ?? 1;
-                    const dX = evt.movementX / zoom;
-                    const dY = evt.movementY / zoom;
-                    setPosition(({ x, y, z }) => {
-                        const next = clampXYZ({ x: x + dX, y: y + dY, z }, constraints.current);
-                        onPanRef.current?.(next);
-                        onValueRef.current?.(next);
-                        return next;
-                    });
-                    checkBreaches();
-                },
+                panOn,
                 panFor: (element) => {
                     const cs = toContentSpace(element, offsetRef.current);
                     if (!cs) return;
-                    const next = clampXYZ({ x: -cs.cx, y: -cs.cy, z: member.ref.current.z }, constraints.current);
-                    setPosition(next);
-                    onPanRef.current?.(next);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ x: -cs.cx, y: -cs.cy, z: member.ref.current.z });
                 },
                 center: () => {
                     const bounds = boundsRefStable.current?.current;
                     if (!bounds) return;
                     const cs = toContentSpace(bounds, offsetRef.current);
                     if (!cs) return;
-                    const next = clampXYZ({ x: -cs.cx, y: -cs.cy, z: member.ref.current.z }, constraints.current);
-                    setPosition(next);
-                    onPanRef.current?.(next);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ x: -cs.cx, y: -cs.cy, z: member.ref.current.z });
                 },
                 extents: () => {
                     const bounds = boundsRefStable.current?.current;
@@ -216,44 +210,20 @@ const DragPaneBase = styled(
                     const cs = toContentSpace(bounds, offsetRef.current);
                     if (!cs) return;
                     const vr = viewport.getBoundingClientRect();
-                    const z = Math.min(vr.width / cs.w, vr.height / cs.h);
-                    const next = clampXYZ({ x: -cs.cx, y: -cs.cy, z }, constraints.current);
-                    setPosition(next);
-                    onPanRef.current?.(next);
-                    onZoomRef.current?.(next.z);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ x: -cs.cx, y: -cs.cy, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
                 },
                 zoomTo: (value) => {
                     const cur = member.ref.current;
-                    const z = resolveSetter(value, cur.z);
-                    const next = clampXYZ({ ...cur, z }, constraints.current);
-                    setPosition(next);
-                    onZoomRef.current?.(next.z);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ ...cur, z: resolveSetter(value, cur.z) });
                 },
                 zoomBy: (factor) => {
-                    setPosition(({ x, y, z }) => {
-                        const next = clampXYZ({ x, y, z: z * factor }, constraints.current);
-                        onZoomRef.current?.(next.z);
-                        onValueRef.current?.(next);
-                        onFinishRef.current?.(next);
-                        return next;
-                    });
-                    checkBreaches();
+                    const { x, y, z } = member.ref.current;
+                    handleChange({ x, y, z: z * factor });
                 },
                 zoomOn: (evt) => {
                     const factor = evt.deltaY > 0 ? 1 / 1.1 : 1.1;
-                    setPosition(({ x, y, z }) => {
-                        const next = clampXYZ({ x, y, z: z * factor }, constraints.current);
-                        onZoomRef.current?.(next.z);
-                        onValueRef.current?.(next);
-                        return next;
-                    });
-                    checkBreaches();
+                    const { x, y, z } = member.ref.current;
+                    handleChange({ x, y, z: z * factor }, true);
                 },
                 zoomOnFocal: (evt) => {
                     const element = viewportRef.current;
@@ -261,18 +231,10 @@ const DragPaneBase = styled(
                     const rect = element.getBoundingClientRect();
                     const cx = evt.clientX - (rect.left + rect.width / 2);
                     const cy = evt.clientY - (rect.top + rect.height / 2);
-                    setPosition(({ x, y, z }) => {
-                        const factor = evt.deltaY > 0 ? 1 / 1.1 : 1.1;
-                        const nz = Math.min(constraints.current.maxZ, Math.max(constraints.current.minZ, z * factor));
-                        const nx = cx / nz - (cx / z - x);
-                        const ny = cy / nz - (cy / z - y);
-                        const next = clampXYZ({ x: nx, y: ny, z: nz }, constraints.current);
-                        onPanRef.current?.(next);
-                        onZoomRef.current?.(next.z);
-                        onValueRef.current?.(next);
-                        return next;
-                    });
-                    checkBreaches();
+                    const { x, y, z } = member.ref.current;
+                    const factor = evt.deltaY > 0 ? 1 / 1.1 : 1.1;
+                    const nz = Math.min(constraints.current.maxZ, Math.max(constraints.current.minZ, z * factor));
+                    handleChange({ x: cx / nz - (cx / z - x), y: cy / nz - (cy / z - y), z: nz }, true);
                 },
                 zoomFor: (element) => {
                     const viewport = viewportRef.current;
@@ -280,13 +242,7 @@ const DragPaneBase = styled(
                     const cs = toContentSpace(element, offsetRef.current);
                     if (!cs) return;
                     const vr = viewport.getBoundingClientRect();
-                    const z = Math.min(vr.width / cs.w, vr.height / cs.h);
-                    const next = clampXYZ({ ...member.ref.current, z }, constraints.current);
-                    setPosition(next);
-                    onZoomRef.current?.(next.z);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ ...member.ref.current, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
                 },
                 encompass: (element) => {
                     const viewport = viewportRef.current;
@@ -294,18 +250,10 @@ const DragPaneBase = styled(
                     const cs = toContentSpace(element, offsetRef.current);
                     if (!cs) return;
                     const vr = viewport.getBoundingClientRect();
-                    const z = Math.min(vr.width / cs.w, vr.height / cs.h);
-                    const next = clampXYZ({ x: -cs.cx, y: -cs.cy, z }, constraints.current);
-                    setPosition(next);
-                    onPanRef.current?.(next);
-                    onZoomRef.current?.(next.z);
-                    onValueRef.current?.(next);
-                    onFinishRef.current?.(next);
-                    checkBreaches();
+                    handleChange({ x: -cs.cx, y: -cs.cy, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
                 },
-            }),
-            [setPosition, member, checkBreaches],
-        );
+            };
+        }, [member, handleChange]);
 
         // wheel zoom
         useEffect(() => {
@@ -335,7 +283,7 @@ const DragPaneBase = styled(
             const mouseUp = () => {
                 document.removeEventListener("mousemove", mouseMove);
                 document.removeEventListener("mouseup", mouseUp);
-                onFinishRef.current?.(member.ref.current);
+                methods.panOn.commit();
             };
 
             const mouseDown = (evt: globalThis.MouseEvent) => {
@@ -365,15 +313,15 @@ const DragPaneBase = styled(
 
         const dataState = useMemo(() => {
             const tokens: string[] = [];
-            if (breach.top) tokens.push("breach-top");
-            if (breach.bottom) tokens.push("breach-bottom");
-            if (breach.left) tokens.push("breach-left");
-            if (breach.right) tokens.push("breach-right");
+            if (breach.top) tokens.push("top");
+            if (breach.bottom) tokens.push("bottom");
+            if (breach.left) tokens.push("left");
+            if (breach.right) tokens.push("right");
             return tokens.join(" ");
         }, [breach]);
 
         return (
-            <div className={className} ref={makeViewportRef} style={style} {...rest} data-state={dataState}>
+            <div className={className} ref={makeViewportRef} style={style} {...rest} data-breach={dataState} data-x={x} data-y={y} data-z={z}>
                 <Controller state={member} controls={controls} methods={methods}>
                     <DragPaneOrigin>
                         <DragPaneOffset style={offsetStyle} ref={offsetRef}>

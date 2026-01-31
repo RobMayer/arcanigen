@@ -1,9 +1,9 @@
 import styled from "styled-components";
 import { MainGraph } from "../state/maingraph";
-import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
-import { useDragMove } from "../util/hooks/useDragMove";
 import { DragPane } from "../components/wrappers/DragPane";
+import { DragMove } from "../components/wrappers/DragMove";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -17,18 +17,6 @@ export const GraphView = () => {
     const nodes = MainGraph.useNodeList();
 
     const boundsRef = useRef<HTMLDivElement>(null);
-
-    const handlePanZoom = useCallback(
-        ({ x, y, z }: { x: number; y: number; z: number }) => {
-            setBgStyle({
-                backgroundPosition: `calc(50% + ${x * z}px) calc(50% + ${y * z}px)`,
-                backgroundSize: `${83.14 * z}px ${48 * z}px`,
-            });
-        },
-        [],
-    );
-
-    const [bgStyle, setBgStyle] = useState<CSSProperties>({});
 
     const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
 
@@ -56,7 +44,6 @@ export const GraphView = () => {
         };
     }, [setPendingConnection, graphMethods]);
 
-    // setting pending connection to null happens on mouse-up - this happens regardless of if the connection was successful or not, which is good.
     useEffect(() => {
         document.addEventListener("mouseup", connectionContextValue.clear);
         return () => {
@@ -65,12 +52,14 @@ export const GraphView = () => {
     }, [connectionContextValue]);
 
     return (
-        <GraphViewPane boundsRef={boundsRef} style={bgStyle} onValue={handlePanZoom}>
+        <GraphViewPane boundsRef={boundsRef} minZoom={0.1} maxZoom={2}>
             <GraphViewConnectionCTX value={connectionContextValue}>
                 <NodeWrapper>
-                    {nodes.map((nodeId) => {
-                        return <GraphNode key={nodeId} nodeId={nodeId} />;
-                    })}
+                    <DragMove.Provider>
+                        {nodes.map((nodeId) => {
+                            return <GraphNode key={nodeId} nodeId={nodeId} />;
+                        })}
+                    </DragMove.Provider>
                 </NodeWrapper>
                 <Links />
                 {pendingConnection ? <PendingConnection value={pendingConnection} /> : null}
@@ -85,10 +74,20 @@ const GraphViewPane = styled(DragPane)`
     background-image: url("hexgrid.svg");
     background-blend-mode: overlay;
     border: 3px solid transparent;
-    &[data-state~="breach-top"] { border-top-color: red; }
-    &[data-state~="breach-bottom"] { border-bottom-color: red; }
-    &[data-state~="breach-left"] { border-left-color: red; }
-    &[data-state~="breach-right"] { border-right-color: red; }
+    background-position: calc(50% + attr(data-x px) * attr(data-z number)) calc(50% + attr(data-y px) * attr(data-z number));
+    background-size: calc(attr(data-z number) * 83.14px) calc(attr(data-z number) * 48px);
+    &[data-breach~="top"] {
+        border-top-color: red;
+    }
+    &[data-breach~="bottom"] {
+        border-bottom-color: red;
+    }
+    &[data-breach~="left"] {
+        border-left-color: red;
+    }
+    &[data-breach~="right"] {
+        border-right-color: red;
+    }
 `;
 
 const Links = () => {
@@ -198,7 +197,6 @@ const PendingConnection = styled(({ value, className }: { value: string; classNa
     }
 `;
 
-
 const NodeWrapper = styled.div`
     inset: 0;
     overflow: visible;
@@ -239,20 +237,12 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 //nested SVG for new coordinate system
 
 const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
-    const [position, setPosition] = MainGraph.usePositionOf(nodeId);
+    const [storedPosition, setPosition] = MainGraph.usePositionOf(nodeId);
 
     const node = MainGraph.useNode(nodeId);
 
     const handleRef = useRef<HTMLDivElement>(null);
-    const { x, y } = useDragMove(handleRef, position, { onFinish: setPosition });
-
-    const style = useMemo(() => {
-        return {
-            left: x,
-            top: y,
-            anchorName: `--node_${nodeId}`,
-        };
-    }, [nodeId, x, y]);
+    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: setPosition });
 
     const socketRef = useRef<HTMLDivElement>(null);
     const connectionContext = useContext(GraphViewConnectionCTX);
@@ -279,22 +269,23 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     }, [nodeId, connectionContext]);
 
     return (
-        <div className={className} style={style} title={nodeId}>
+        <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`}>
             <div data-part="handle" ref={handleRef}>
                 Node {node.payload}
             </div>
             <div data-part="socket" ref={socketRef}>
                 Connection
             </div>
-        </div>
+        </DragMove.Item>
     );
 })`
-    position: absolute;
     display: grid;
     background: #333;
     border: 1px solid #666;
     width: max-content;
     outline: 1px solid transparent;
+    transform: translate(-50%, -50%);
+    anchor-name: attr(data-node type(<custom-ident>));
 `;
 
 const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
