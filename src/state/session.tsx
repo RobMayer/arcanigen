@@ -40,6 +40,15 @@ export namespace Session {
                     ctx.selection.ref.current = new Set(normalizeList(list));
                     ctx.selection.notify();
                 },
+                coerce: (list: ListOf<string>) => {
+                    const n = normalizeList(list);
+                    if (n.isSubsetOf(ctx.selection.ref.current)) {
+                        ctx.selection.ref.current = ctx.selection.ref.current.difference(n);
+                    } else {
+                        ctx.selection.ref.current = ctx.selection.ref.current.union(n);
+                    }
+                    ctx.selection.notify();
+                },
                 add: (list: ListOf<string>) => {
                     ctx.selection.ref.current = ctx.selection.ref.current.union(normalizeList(list));
                     ctx.selection.notify();

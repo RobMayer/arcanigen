@@ -3,8 +3,12 @@ import { FastContextMember, useFastContextMember, useFastContextState } from "..
 import { Graph } from "../util/structs/graph";
 
 export namespace MainGraph {
+    export type BaseNode = {
+        label: string;
+    };
+
     type State = {
-        nodes: FastContextMember<{ [nodeId: string]: Graph.Node<string> }>;
+        nodes: FastContextMember<{ [nodeId: string]: Graph.Node<BaseNode> }>;
         nodeList: FastContextMember<string[]>;
         links: FastContextMember<{ [linkId: string]: Graph.Link<string> }>;
         linkList: FastContextMember<string[]>;
@@ -15,10 +19,10 @@ export namespace MainGraph {
     const CTX = createContext<State | undefined>(undefined);
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
-        const nodes = useFastContextMember<{ [nodeId: string]: Graph.Node<string> }>({
-            a: { id: "a", payload: "a" },
-            b: { id: "b", payload: "b" },
-            c: { id: "c", payload: "c" },
+        const nodes = useFastContextMember<{ [nodeId: string]: Graph.Node<BaseNode> }>({
+            a: { id: "a", payload: { label: "a" } },
+            b: { id: "b", payload: { label: "b" } },
+            c: { id: "c", payload: { label: "c" } },
         });
         const nodeList = useFastContextMember<string[]>(["a", "b", "c"]);
 

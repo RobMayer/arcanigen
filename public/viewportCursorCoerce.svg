@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+    <!-- Crosshair centered at (16,16) - hotspot should be 16,16 -->
+    <!-- Top arm --><rect fill="white" stroke="black" stroke-width="1" x="14.5" y="1.5" width="3" height="11"/>
+    <!-- Bottom arm --><rect fill="white" stroke="black" stroke-width="1" x="14.5" y="19.5" width="3" height="11"/>
+    <!-- Left arm --><rect fill="white" stroke="black" stroke-width="1" x="1.5" y="14.5" width="11" height="3"/>
+    <!-- Right arm --><rect fill="white" stroke="black" stroke-width="1" x="19.5" y="14.5" width="11" height="3"/>
+    <!-- Center dot --><rect fill="white" stroke="black" stroke-width="1" x="14.5" y="14.5" width="3" height="3"/>
+    
+    <!-- contrast "backdrop" for badge - stroke is red only for debugging, will eventually be black -->
+    <path fill="none" stroke="black" stroke-width="4" d="M24,24 h12 v6 h6 v12 h-12 v-6 h-6 z" />
+
+    <rect fill="black" stroke="#86B8DD" stroke-width="2" x="24" y="24" width="12" height="12"/>
+    <rect fill="#86B8DD" stroke="#86B8DD" stroke-width="2" x="30" y="30" width="12" height="12"/>
+
+
+</svg>

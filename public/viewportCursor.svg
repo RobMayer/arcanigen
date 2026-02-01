@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+    <!-- Crosshair centered at (16,16) - hotspot should be 16,16 -->
+    <!-- Top arm --><rect fill="white" stroke="black" stroke-width="1" x="14.5" y="1.5" width="3" height="11"/>
+    <!-- Bottom arm --><rect fill="white" stroke="black" stroke-width="1" x="14.5" y="19.5" width="3" height="11"/>
+    <!-- Left arm --><rect fill="white" stroke="black" stroke-width="1" x="1.5" y="14.5" width="11" height="3"/>
+    <!-- Right arm --><rect fill="white" stroke="black" stroke-width="1" x="19.5" y="14.5" width="11" height="3"/>
+    <!-- Center dot --><rect fill="white" stroke="black" stroke-width="1" x="14.5" y="14.5" width="3" height="3"/>
+
+    <!-- #E38C86-->
+    <!-- #F3D39A-->
+    <!-- #C9A0E6-->
+    <!-- #86DDB0-->
+    <!-- #86B8DD-->
+
+</svg>

@@ -1,10 +1,11 @@
 import styled from "styled-components";
 import { MainGraph } from "../state/maingraph";
-import { createContext, CSSProperties, Ref, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, CSSProperties, Ref, RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
 import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
+import { useStable } from "../util/hooks/useStable";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -18,6 +19,7 @@ export const GraphView = () => {
     const nodes = MainGraph.useNodeList();
 
     const boundsRef = useRef<HTMLDivElement>(null);
+    const paneRef = useRef<HTMLDivElement>(null);
 
     const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
 
@@ -45,16 +47,41 @@ export const GraphView = () => {
         };
     }, [setPendingConnection, graphMethods]);
 
+    const modKeys = useRef<{ ctrl: boolean; alt: boolean; shift: boolean }>({ ctrl: false, alt: false, shift: false });
+
     useEffect(() => {
+        const onKey = (evt: KeyboardEvent) => {
+            if (evt.type === "keydown" && (evt.key === "Alt" || evt.key === "Control" || evt.key === "Shift")) {
+                evt.preventDefault();
+            }
+            modKeys.current = { ctrl: evt.ctrlKey || evt.metaKey, alt: evt.altKey, shift: evt.shiftKey };
+            setSelectionAction(modKeysToAction(modKeys.current));
+        };
+
+        const resetMods = () => {
+            modKeys.current = { ctrl: false, alt: false, shift: false };
+            setSelectionAction(modKeysToAction(modKeys.current));
+        };
+
+        document.addEventListener("keydown", onKey);
+        document.addEventListener("keyup", onKey);
         document.addEventListener("mouseup", connectionContextValue.clear);
+        document.addEventListener("trh:pagefocus", resetMods);
+
         return () => {
+            document.removeEventListener("keydown", onKey);
+            document.removeEventListener("keyup", onKey);
             document.removeEventListener("mouseup", connectionContextValue.clear);
+            document.removeEventListener("trh:pagefocus", resetMods);
         };
     }, [connectionContextValue]);
 
+    const [selectionAction, setSelectionAction] = useState<SelectionAction>("set");
+
     return (
-        <GraphViewPane boundsRef={boundsRef} minZoom={0.1} maxZoom={2}>
+        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`}>
             <GraphViewConnectionCTX value={connectionContextValue}>
+                <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
                 <NodeWrapper>
                     <DragMove.Provider>
                         {nodes.map((nodeId) => {
@@ -77,17 +104,56 @@ const GraphViewPane = styled(DragPane)`
     border: 3px solid transparent;
     background-position: calc(50% + attr(data-x px) * attr(data-z number)) calc(50% + attr(data-y px) * attr(data-z number));
     background-size: calc(attr(data-z number) * 83.14px) calc(attr(data-z number) * 48px);
-    &[data-breach~="top"] {
+    &[data-state~="breach_top"] {
         border-top-color: red;
     }
-    &[data-breach~="bottom"] {
+    &[data-state~="breach_bottom"] {
         border-bottom-color: red;
     }
-    &[data-breach~="left"] {
+    &[data-state~="breach_left"] {
         border-left-color: red;
     }
-    &[data-breach~="right"] {
+    &[data-state~="breach_right"] {
         border-right-color: red;
+    }
+    &[data-state~="panning"] {
+        cursor:
+            url("/viewportPan.svg") 16 16,
+            crosshair;
+    }
+
+    &[data-state~="select_add"] {
+        cursor:
+            url("/viewportCursorAdd.svg") 16 16,
+            crosshair;
+    }
+    &[data-state~="select_coerce"] {
+        cursor:
+            url("/viewportCursorCoerce.svg") 16 16,
+            crosshair;
+    }
+    &[data-state~="select_intersect"] {
+        cursor:
+            url("/viewportCursorIntersect.svg") 16 16,
+            crosshair;
+    }
+    &[data-state~="select_toggle"] {
+        cursor:
+            url("/viewportCursorExclude.svg") 16 16,
+            crosshair;
+    }
+    &[data-state~="select_remove"] {
+        cursor:
+            url("/viewportCursorSubtract.svg") 16 16,
+            crosshair;
+    }
+
+    cursor:
+        url("/viewportCursor.svg") 16 16,
+        crosshair;
+
+    & > * {
+        cursor: auto;
     }
 `;
 
@@ -198,6 +264,180 @@ const PendingConnection = styled(({ value, className }: { value: string; classNa
     }
 `;
 
+const rectsOverlap = (a: DOMRect, b: DOMRect) => {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+};
+
+const rectContains = (outer: DOMRect, inner: DOMRect) => {
+    return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom;
+};
+
+type SelectionAction = "set" | "add" | "remove" | "intersect" | "toggle" | "coerce";
+
+const modKeysToAction = (mods: { ctrl: boolean; alt: boolean; shift: boolean }): SelectionAction => {
+    if (mods.ctrl && mods.shift) return "intersect";
+    if (mods.alt && mods.shift) return "toggle";
+    if (mods.alt) return "remove";
+    if (mods.shift) return "add";
+    if (mods.ctrl) return "coerce";
+    return "set";
+};
+
+const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { className?: string; scopeRef: RefObject<HTMLElement | null>; selectionAction: SelectionAction }) => {
+    const rectRef = useRef<SVGSVGElement>(null);
+    const startPos = useRef<{ x: number; y: number } | null>(null);
+
+    const selectionMethods = Session.useSelectionMethods();
+    const [marqueeMode] = Session.useMarqueeMode();
+    const [isActive, setIsActive] = useState(false);
+
+    const selectionActionRef = useStable(selectionAction);
+
+    useEffect(() => {
+        const container = scopeRef.current;
+        if (!container) return;
+
+        const onMouseMove = (moveEvt: MouseEvent) => {
+            const start = startPos.current;
+            if (!start) {
+                return;
+            }
+            const rect = rectRef.current;
+            if (!rect) {
+                setIsActive(true);
+                return;
+            }
+
+            const zoom = rect.currentCSSZoom;
+            const x = Math.min(start.x, moveEvt.clientX) / zoom;
+            const y = Math.min(start.y, moveEvt.clientY) / zoom;
+            const w = Math.abs(moveEvt.clientX - start.x) / zoom;
+            const h = Math.abs(moveEvt.clientY - start.y) / zoom;
+
+            rect.style.left = `${x}px`;
+            rect.style.top = `${y}px`;
+            rect.style.width = `${w}px`;
+            rect.style.height = `${h}px`;
+        };
+
+        const cleanup = () => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+
+            startPos.current = null;
+            setIsActive(false);
+        };
+
+        const onMouseUp = (upEvt: MouseEvent) => {
+            const start = startPos.current;
+            if (!start) {
+                cleanup();
+                return;
+            }
+
+            const mx1 = Math.min(start.x, upEvt.clientX);
+            const my1 = Math.min(start.y, upEvt.clientY);
+            const mx2 = Math.max(start.x, upEvt.clientX);
+            const my2 = Math.max(start.y, upEvt.clientY);
+
+            // Too small — treat as a click on empty space
+            if (mx2 - mx1 < 4 && my2 - my1 < 4) {
+                selectionMethods.clear();
+                cleanup();
+                return;
+            }
+
+            const marqueeRect = new DOMRect(mx1, my1, mx2 - mx1, my2 - my1);
+            const scope = scopeRef.current;
+            const matched: string[] = [];
+
+            if (scope) {
+                const selectables = scope.querySelectorAll<HTMLElement>("[data-selectable]");
+                const test = marqueeMode === "contain" ? rectContains : rectsOverlap;
+                for (const el of selectables) {
+                    const elRect = el.getBoundingClientRect();
+                    if (test(marqueeRect, elRect)) {
+                        const id = el.getAttribute("data-selectable");
+                        if (id) matched.push(id);
+                    }
+                }
+            }
+
+            selectionMethods[selectionActionRef.current](matched);
+            cleanup();
+        };
+
+        const onMouseDown = (evt: MouseEvent) => {
+            if (evt.button !== 0 || evt.handled) return;
+            evt.handled = "active";
+
+            startPos.current = { x: evt.clientX, y: evt.clientY };
+
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
+        };
+
+        container.addEventListener("mousedown", onMouseDown);
+        return () => {
+            container.removeEventListener("mousedown", onMouseDown);
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        };
+    }, [selectionMethods, marqueeMode, scopeRef]);
+
+    if (!isActive) return null;
+
+    return (
+        <svg className={className} ref={rectRef} style={{ left: startPos.current?.x, top: startPos.current?.y, width: 0, height: 0 }} data-part="marquee" data-state={`action_${selectionAction}`}>
+            <rect x="0" y="0" width="100%" height="100%" />
+        </svg>
+    );
+})`
+    position: fixed;
+    pointer-events: none;
+    z-index: 1;
+    overflow: visible;
+    zoom: calc(1 / var(--dragpane_zoom, 1));
+    outline: 1px solid #000;
+    outline-offset: 1px;
+
+    @keyframes march {
+        to {
+            stroke-dashoffset: -7;
+        }
+    }
+
+    & > rect {
+        fill: #d8d8d811;
+        stroke: #d8d8d8cc;
+        stroke-width: 1.5;
+        vector-effect: non-scaling-stroke;
+        stroke-dasharray: 4 3;
+        animation: march 0.3s linear infinite;
+    }
+
+    &[data-state="action_remove"] > rect {
+        stroke: #e38c86aa;
+        fill: #e38c8611;
+    }
+    &[data-state="action_add"] > rect {
+        stroke: #86ddb0aa;
+        fill: #86ddb011;
+    }
+    &[data-state="action_intersect"] > rect {
+        stroke: #f3d39aaa;
+        fill: #f3d39a11;
+    }
+    &[data-state="action_toggle"] > rect {
+        stroke: #c9a0e6aa;
+        fill: #c9a0e611;
+    }
+    &[data-state="action_coerce"] > rect {
+        stroke: #86b8ddaa;
+        fill: #86b8dd11;
+    }
+`;
+
 const NodeWrapper = styled.div`
     inset: 0;
     overflow: visible;
@@ -239,9 +479,7 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 
 const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
     const [storedPosition, setPosition] = MainGraph.usePositionOf(nodeId);
-
     const node = MainGraph.useNode(nodeId);
-
     const handleRef = useRef<HTMLDivElement>(null);
 
     const selectionRef = Session.useSelectionRef();
@@ -293,7 +531,8 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     useEffect(() => {
         const socket = socketRef.current;
         if (socket) {
-            const connectStart = () => {
+            const connectStart = (evt: globalThis.MouseEvent) => {
+                evt.handled = "active";
                 console.log("starting connection");
                 connectionContext.start(nodeId);
             };
@@ -314,7 +553,7 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     return (
         <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
             <div data-part="handle" ref={handleRef}>
-                Node {node.payload}
+                Node {node.payload.label}
             </div>
             <div data-part="socket" ref={socketRef}>
                 Connection

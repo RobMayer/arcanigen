@@ -38,6 +38,7 @@ type DragPaneProps = {
     minY?: number;
     maxY?: number;
     value?: XYoZ;
+    "data-state"?: string;
 } & DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
 
 const DEFAULT_XYZ: XYZ = { x: 0, y: 0, z: 1 };
@@ -90,6 +91,7 @@ const DragPaneBase = styled(
         children,
         ref,
         style,
+        "data-state": incomingDataState,
         ...rest
     }: DragPaneProps) => {
         const incoming = useMemo<XYZ>(
@@ -114,6 +116,8 @@ const DragPaneBase = styled(
         const boundsRefStable = useStable(boundsRef);
 
         const constraints = useStable({ minZ, maxZ, minX, maxX, minY, maxY });
+
+        const [panning, setPanning] = useState(false);
 
         // breach detection
         const [breach, setBreach] = useState({ top: false, bottom: false, left: false, right: false });
@@ -284,11 +288,14 @@ const DragPaneBase = styled(
                 document.removeEventListener("mousemove", mouseMove);
                 document.removeEventListener("mouseup", mouseUp);
                 methods.panOn.commit();
+                setPanning(false);
             };
 
             const mouseDown = (evt: globalThis.MouseEvent) => {
                 if (evt.button === 1) {
+                    evt.handled = "active";
                     evt.preventDefault();
+                    setPanning(true);
                     document.addEventListener("mousemove", mouseMove);
                     document.addEventListener("mouseup", mouseUp);
                 }
@@ -307,21 +314,23 @@ const DragPaneBase = styled(
                 top: y,
                 left: x,
                 zoom: z,
+                "--dragpane_zoom": z,
             }),
             [x, y, z],
         );
 
         const dataState = useMemo(() => {
-            const tokens: string[] = [];
-            if (breach.top) tokens.push("top");
-            if (breach.bottom) tokens.push("bottom");
-            if (breach.left) tokens.push("left");
-            if (breach.right) tokens.push("right");
-            return tokens.join(" ");
-        }, [breach]);
+            const tokens: string[] = incomingDataState ? [incomingDataState] : [];
+            if (panning) tokens.push("panning");
+            if (breach.top) tokens.push("breach_top");
+            if (breach.bottom) tokens.push("breach_bottom");
+            if (breach.left) tokens.push("breach_left");
+            if (breach.right) tokens.push("breach_right");
+            return tokens.length ? tokens.join(" ") : undefined;
+        }, [panning, breach, incomingDataState]);
 
         return (
-            <div className={className} ref={makeViewportRef} style={style} {...rest} data-breach={dataState} data-x={x} data-y={y} data-z={z}>
+            <div className={className} ref={makeViewportRef} style={style} {...rest} data-state={dataState} data-x={x} data-y={y} data-z={z}>
                 <Controller state={member} controls={controls} methods={methods}>
                     <DragPaneOrigin>
                         <DragPaneOffset style={offsetStyle} ref={offsetRef}>

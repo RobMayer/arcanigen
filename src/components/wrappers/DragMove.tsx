@@ -133,6 +133,7 @@ export namespace DragMove {
 
                 const mouseDown = (evt: MouseEvent) => {
                     if (button === "any" || evt.button === button) {
+                        evt.handled = "active";
                         document.addEventListener("mousemove", mouseMove);
                         document.addEventListener("mouseup", mouseUp);
                     }
