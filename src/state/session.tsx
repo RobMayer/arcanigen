@@ -13,7 +13,7 @@ export namespace Session {
     const CTX = createContext<ContextValue | undefined>(undefined);
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
-        const selection = useFastContextMember<Set<string>>(new Set<string>(["node_a", "node_b"]));
+        const selection = useFastContextMember<Set<string>>(new Set<string>());
         const marqueeMode = useFastContextMember<MarqueeMode>("contain");
 
         const value = useMemo(() => ({ selection, marqueeMode }), []);

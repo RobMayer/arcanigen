@@ -2,10 +2,22 @@ import { createContext, ReactNode, SetStateAction, useCallback, useContext, useM
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { Graph } from "../util/structs/graph";
 
+// will eventually hold a container for node-type specific logic
+
+type TestNode = {
+    type: "test";
+};
+
+type ContainerNode = {
+    type: "container";
+    w: number;
+    h: number;
+};
+
 export namespace MainGraph {
-    export type BaseNode = {
+    type BaseNode = {
         label: string;
-    };
+    } & (TestNode | ContainerNode);
 
     type State = {
         nodes: FastContextMember<{ [nodeId: string]: Graph.Node<BaseNode> }>;
@@ -20,9 +32,9 @@ export namespace MainGraph {
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
         const nodes = useFastContextMember<{ [nodeId: string]: Graph.Node<BaseNode> }>({
-            a: { id: "a", payload: { label: "a" } },
-            b: { id: "b", payload: { label: "b" } },
-            c: { id: "c", payload: { label: "c" } },
+            a: { id: "a", payload: { type: "test", label: "a" } },
+            b: { id: "b", payload: { type: "test", label: "b" } },
+            c: { id: "c", payload: { type: "container", label: "c", w: 200, h: 200 } },
         });
         const nodeList = useFastContextMember<string[]>(["a", "b", "c"]);
 
@@ -150,4 +162,5 @@ export namespace MainGraph {
     };
 
     export const usePositionsRef = () => useContext(CTX)!.positions.ref;
+    export const useNodesRef = () => useContext(CTX)!.nodes.ref;
 }

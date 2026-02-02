@@ -6,6 +6,7 @@ import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
+import { Graph } from "../util/structs/graph";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -477,6 +478,52 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 
 //nested SVG for new coordinate system
 
+const applyMoveDelta = (
+    delta: { x: number; y: number },
+    selectionRef: { current: Set<string> },
+    positionsRef: { current: { [key: string]: { x: number; y: number } } },
+    nodesRef: { current: { [key: string]: Graph.Node<{ label: string } & ({ type: "test" } | { type: "container"; w: number; h: number })> } },
+) => {
+    const compiled: { [key: string]: { x: number; y: number } } = {};
+
+    // start with selected nodes
+    for (const id of selectionRef.current) {
+        if (id.startsWith("node_")) {
+            const nId = id.substring(5);
+            if (positionsRef.current[nId]) {
+                compiled[nId] = { x: positionsRef.current[nId].x + delta.x, y: positionsRef.current[nId].y + delta.y };
+            }
+        }
+    }
+
+    // expand: for any container in the move set, add nodes within its bounds
+    for (const nId of Object.keys(compiled)) {
+        const node = nodesRef.current[nId];
+        if (node?.payload.type === "container") {
+            const containerPos = positionsRef.current[nId];
+            const { w, h } = node.payload;
+            const cx = containerPos.x;
+            const cy = containerPos.y;
+
+            for (const [candidateId, candidatePos] of Object.entries(positionsRef.current)) {
+                if (candidateId === nId || compiled[candidateId]) continue;
+                if (candidatePos.x >= cx && candidatePos.x <= cx + w && candidatePos.y >= cy && candidatePos.y <= cy + h) {
+                    compiled[candidateId] = { x: candidatePos.x + delta.x, y: candidatePos.y + delta.y };
+                }
+            }
+        }
+    }
+
+    // apply DOM updates for visual feedback
+    for (const [nId, toSet] of Object.entries(compiled)) {
+        const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+        element?.setAttribute("data-x", `${toSet.x}`);
+        element?.setAttribute("data-y", `${toSet.y}`);
+    }
+
+    return compiled;
+};
+
 const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
     const [storedPosition, setPosition] = MainGraph.usePositionOf(nodeId);
     const node = MainGraph.useNode(nodeId);
@@ -484,32 +531,20 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
 
     const selectionRef = Session.useSelectionRef();
     const positionsRef = MainGraph.usePositionsRef();
+    const nodesRef = MainGraph.useNodesRef();
     const positionMethods = MainGraph.usePositionMethods();
 
     const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
 
     const handleDragDelta = useCallback(
-        ({ x, y }: { x: number; y: number }) => {
+        (delta: { x: number; y: number }) => {
             if (!selectionRef.current.has(`node_${nodeId}`)) {
                 return;
             }
-            const compiled = [...selectionRef.current].reduce<{ [key: string]: { x: number; y: number } }>((acc, id) => {
-                if (id.startsWith("node_")) {
-                    const nId = id.substring(5);
-                    if (positionsRef.current[nId]) {
-                        const toSet = { x: positionsRef.current[nId].x + x, y: positionsRef.current[nId].y + y };
-                        acc[nId] = toSet;
-                        const element = document.querySelector(`div[data-selectable="${id}"]`);
-                        element?.setAttribute("data-x", `${toSet.x}`);
-                        element?.setAttribute("data-y", `${toSet.y}`);
-                    }
-                }
-                return acc;
-            }, {});
-
+            const compiled = applyMoveDelta(delta, selectionRef, positionsRef, nodesRef);
             positionMethods.setMany.passive(compiled);
         },
-        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
+        [selectionRef, nodeId, positionMethods.setMany, positionsRef, nodesRef],
     );
 
     const handleFinish = useCallback(
@@ -558,6 +593,7 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
             <div data-part="socket" ref={socketRef}>
                 Connection
             </div>
+            {node.payload.type === "container" ? <div style={{ border: "1px solid red", width: `${node.payload.w}px`, height: `${node.payload.h}px` }}>Container!</div> : null}
         </DragMove.Item>
     );
 })`
