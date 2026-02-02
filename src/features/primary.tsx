@@ -7,6 +7,7 @@ import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
 import { Graph } from "../util/structs/graph";
+import { ArcaneGraph } from "../util/structs/arcaneGraph";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -482,7 +483,7 @@ const applyMoveDelta = (
     delta: { x: number; y: number },
     selectionRef: { current: Set<string> },
     positionsRef: { current: { [key: string]: { x: number; y: number } } },
-    nodesRef: { current: { [key: string]: Graph.Node<{ label: string } & ({ type: "test" } | { type: "container"; w: number; h: number })> } },
+    nodesRef: { current: { [key: string]: ArcaneGraph.NodeOf<MainGraph.BaseNode> } },
 ) => {
     const compiled: { [key: string]: { x: number; y: number } } = {};
 
@@ -498,6 +499,7 @@ const applyMoveDelta = (
 
     // expand: for any container in the move set, add nodes within its bounds
     for (const nId of Object.keys(compiled)) {
+        /*
         const node = nodesRef.current[nId];
         if (node?.payload.type === "container") {
             const containerPos = positionsRef.current[nId];
@@ -512,6 +514,7 @@ const applyMoveDelta = (
                 }
             }
         }
+        */
     }
 
     // apply DOM updates for visual feedback
@@ -593,7 +596,6 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
             <div data-part="socket" ref={socketRef}>
                 Connection
             </div>
-            {node.payload.type === "container" ? <div style={{ border: "1px solid red", width: `${node.payload.w}px`, height: `${node.payload.h}px` }}>Container!</div> : null}
         </DragMove.Item>
     );
 })`
@@ -615,10 +617,10 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
 
     const style = useMemo(() => {
         return {
-            "--fromNode": `--node_${link.from}`,
-            "--toNode": `--node_${link.to}`,
+            "--fromNode": `--node_${link.fromNode}`,
+            "--toNode": `--node_${link.toNode}`,
         } as CSSProperties;
-    }, [link.from, link.to]);
+    }, [link.fromNode, link.toNode]);
 
     const ref = useRef<HTMLDivElement>(null);
     const fromMarkerRef = useRef<HTMLDivElement>(null);

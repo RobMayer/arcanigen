@@ -1,28 +1,18 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
-import { Graph } from "../util/structs/graph";
+import { NODETYPE_REGISTRY } from "../definitions";
+import { PayloadOf } from "../definitions/nodes/types";
+import { ArcaneGraph } from "../util/structs/arcaneGraph";
 
 // will eventually hold a container for node-type specific logic
 
-type TestNode = {
-    type: "test";
-};
-
-type ContainerNode = {
-    type: "container";
-    w: number;
-    h: number;
-};
-
 export namespace MainGraph {
-    type BaseNode = {
-        label: string;
-    } & (TestNode | ContainerNode);
+    export type BaseNode = PayloadOf<(typeof NODETYPE_REGISTRY)[keyof typeof NODETYPE_REGISTRY]>;
 
     type State = {
-        nodes: FastContextMember<{ [nodeId: string]: Graph.Node<BaseNode> }>;
+        nodes: FastContextMember<{ [nodeId: string]: ArcaneGraph.NodeOf<BaseNode> }>;
         nodeList: FastContextMember<string[]>;
-        links: FastContextMember<{ [linkId: string]: Graph.Link<string> }>;
+        links: FastContextMember<{ [linkId: string]: ArcaneGraph.LinkOf<string> }>;
         linkList: FastContextMember<string[]>;
         positions: FastContextMember<{ [key: string]: { x: number; y: number } }>;
         pendingConnection: FastContextMember<string | null>;
@@ -31,22 +21,29 @@ export namespace MainGraph {
     const CTX = createContext<State | undefined>(undefined);
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
-        const nodes = useFastContextMember<{ [nodeId: string]: Graph.Node<BaseNode> }>({
-            a: { id: "a", payload: { type: "test", label: "a" } },
-            b: { id: "b", payload: { type: "test", label: "b" } },
-            c: { id: "c", payload: { type: "container", label: "c", w: 200, h: 200 } },
+        const nodes = useFastContextMember<{ [nodeId: string]: ArcaneGraph.NodeOf<BaseNode> }>({
+            RESULT: {
+                type: "result",
+                in: {
+                    input: null,
+                    color: null,
+                    x: null,
+                    y: null,
+                    w: null,
+                    h: null,
+                },
+                out: {},
+                id: "RESULT",
+                payload: NODETYPE_REGISTRY.result.create({}),
+            },
         });
-        const nodeList = useFastContextMember<string[]>(["a", "b", "c"]);
+        const nodeList = useFastContextMember<string[]>(["RESULT"]);
 
-        const links = useFastContextMember<{ [linkId: string]: Graph.Link<string> }>({
-            "1": { from: "a", to: "b", id: "1", payload: "1" },
-        });
-        const linkList = useFastContextMember<string[]>(["1"]);
+        const links = useFastContextMember<{ [linkId: string]: ArcaneGraph.LinkOf<string> }>({});
+        const linkList = useFastContextMember<string[]>([]);
 
         const positions = useFastContextMember<{ [key: string]: { x: number; y: number } }>({
-            a: { x: -100, y: -100 },
-            b: { x: 300, y: 0 },
-            c: { x: 100, y: 250 },
+            RESULT: { x: 0, y: 0 },
         });
 
         const pendingConnection = useFastContextMember<string | null>(null);
@@ -99,13 +96,13 @@ export namespace MainGraph {
         return useMemo(() => {
             const connect = (fromNode: string, toNode: string) => {
                 const oG = { nodes: ctx.nodes.get(), links: ctx.links.get() };
-                const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
-                if (newLink) {
-                    ctx.links.ref.current = links;
-                    ctx.linkList.ref.current = Object.keys(links);
-                    ctx.links.notify();
-                    ctx.linkList.notify();
-                }
+                //const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
+                // if (newLink) {
+                //     ctx.links.ref.current = links;
+                //     ctx.linkList.ref.current = Object.keys(links);
+                //     ctx.links.notify();
+                //     ctx.linkList.notify();
+                // }
             };
 
             return { connect };

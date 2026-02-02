@@ -1,3 +1,5 @@
+import { NODETYPE_REGISTRY } from "../../definitions";
+
 export namespace ArcaneGraph {
     // aliases just for clarity of purpose when used
     export type NodeId = string;
@@ -6,7 +8,7 @@ export namespace ArcaneGraph {
     export type SubgraphId = string;
 
     // allows nodes / links to fetch their node type from a registry.
-    export type NodeTypeId = string;
+    export type NodeTypeId = keyof typeof NODETYPE_REGISTRY;
     export type LinkTypeId = string;
 
     export type NodeOf<P> = {
