@@ -13,12 +13,12 @@ type SlotTypes<P extends { [key: string]: unknown }> = {
         type: "float";
         property: keyof P;
         defaultValue: number;
-    } & Widget<"numberinput" | "slider">;
+    } & Widget<"none" | "numberinput" | "slider">;
     color: BaseSlot & {
         socketIn?: string;
         type: "color";
         property: keyof P;
-    } & Widget<"color">;
+    } & Widget<"none" | "color">;
     shape: BaseSlot &
         EitherSocket & {
             type: "shape";
@@ -28,3 +28,5 @@ type SlotTypes<P extends { [key: string]: unknown }> = {
 export type SlotOf<P extends { [key: string]: unknown }> = SlotTypes<P>[keyof SlotTypes<P>];
 
 export type Slot<K extends keyof SlotTypes<{ [key: string]: unknown }>> = SlotTypes<{ [key: string]: unknown }>[K];
+
+export type SlotFor<P extends { [key: string]: unknown }, K extends keyof SlotTypes<P>> = SlotTypes<P>[K];

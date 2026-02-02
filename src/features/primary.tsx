@@ -8,6 +8,7 @@ import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
 import { Graph } from "../util/structs/graph";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
+import { GraphSlots } from "./nodeview/node";
 
 type GraphConnectionControls = {
     start: (nodeId: string) => void;
@@ -593,9 +594,7 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
             <div data-part="handle" ref={handleRef}>
                 Node {node.payload.label}
             </div>
-            <div data-part="socket" ref={socketRef}>
-                Connection
-            </div>
+            <GraphSlots nodeId={nodeId} />
         </DragMove.Item>
     );
 })`
