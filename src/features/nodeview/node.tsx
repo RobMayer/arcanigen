@@ -5,6 +5,7 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { SlotFor, SlotOf } from "../../definitions/slots";
 import { Widget } from "../../definitions/widgets";
 import styled from "styled-components";
+import { Socket } from "./socket";
 
 export const GraphSlots = ({ nodeId }: { nodeId: string }) => {
     const node = MainGraph.useNode(nodeId);
@@ -23,10 +24,10 @@ export const GraphSlots = ({ nodeId }: { nodeId: string }) => {
     );
 };
 
-const GraphSlot = styled(({ slot, node, nodeType, className }: { slot: SlotOf<any>; node: ArcaneGraph.NodeOf<any>; nodeType: NodeType; className?: string }) => {
+const GraphSlot = styled(({ slot, node, className }: { slot: SlotOf<any>; node: ArcaneGraph.NodeOf<any>; nodeType: NodeType; className?: string }) => {
     return (
         <div className={className}>
-            {slot.socketIn ? <Socket /> : null}
+            {slot.socketIn ? <Socket nodeId={node.id} socketId={slot.socketIn} side={"in"} type={slot.type} /> : null}
             <GraphWidget slot={slot} node={node} />
         </div>
     );
@@ -66,15 +67,3 @@ const WidgetFloat = ({ slot, node, connected }: { slot: SlotFor<any, "float"> & 
 const WidgetSlider = ({ slot, node, connected }: { slot: SlotFor<any, "float"> & Widget<"slider">; node: ArcaneGraph.NodeOf<any>; connected: boolean }) => {
     return <input type="number" min={slot.min} max={slot.max} step={slot.step} value={node.payload[slot.property]} disabled={connected} />;
 };
-
-// TODO: make a socket...
-const Socket = styled(({ className }: { className?: string }) => {
-    return <div className={className} />;
-})`
-    height: 1lh;
-    aspect-ratio: 1;
-    flex: 0 0 auto;
-    background: red;
-    border-radius: 100%;
-    margin-left: -0.5lh;
-`;

@@ -9,13 +9,16 @@ import { ArcaneGraph } from "../util/structs/arcaneGraph";
 export namespace MainGraph {
     export type BaseNode = PayloadOf<(typeof NODETYPE_REGISTRY)[keyof typeof NODETYPE_REGISTRY]>;
 
+    export type PendingConnection = { node: string; socket: string; side: "in" | "out"; type: string };
+
     type State = {
         nodes: FastContextMember<{ [nodeId: string]: ArcaneGraph.NodeOf<BaseNode> }>;
         nodeList: FastContextMember<string[]>;
         links: FastContextMember<{ [linkId: string]: ArcaneGraph.LinkOf<string> }>;
         linkList: FastContextMember<string[]>;
         positions: FastContextMember<{ [key: string]: { x: number; y: number } }>;
-        pendingConnection: FastContextMember<string | null>;
+        // Todo: need more info: nodeId, socketId, side, socketType
+        pendingConnection: FastContextMember<PendingConnection | null>;
     };
 
     const CTX = createContext<State | undefined>(undefined);
@@ -46,7 +49,7 @@ export namespace MainGraph {
             RESULT: { x: 0, y: 0 },
         });
 
-        const pendingConnection = useFastContextMember<string | null>(null);
+        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: string } | null>(null);
 
         const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, pendingConnection }), []);
 
@@ -94,7 +97,7 @@ export namespace MainGraph {
         const ctx = useContext(CTX)!;
 
         return useMemo(() => {
-            const connect = (fromNode: string, toNode: string) => {
+            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string) => {
                 const oG = { nodes: ctx.nodes.get(), links: ctx.links.get() };
                 //const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
                 // if (newLink) {

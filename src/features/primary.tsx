@@ -1,54 +1,20 @@
 import styled from "styled-components";
 import { MainGraph } from "../state/maingraph";
-import { createContext, CSSProperties, Ref, RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
 import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
-import { Graph } from "../util/structs/graph";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { GraphSlots } from "./nodeview/node";
-
-type GraphConnectionControls = {
-    start: (nodeId: string) => void;
-    finish: (nodeId: string) => void;
-    clear: () => void;
-};
-
-const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
+import { GraphConnectionProvider } from "./nodeview/socket";
 
 export const GraphView = () => {
     const nodes = MainGraph.useNodeList();
 
     const boundsRef = useRef<HTMLDivElement>(null);
     const paneRef = useRef<HTMLDivElement>(null);
-
-    const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
-
-    const graphMethods = MainGraph.useMethods();
-
-    const connectionContextValue = useMemo(() => {
-        let pending: null | string;
-        return {
-            start: (nodeId: string) => {
-                console.log("graph is starting a connection");
-                setPendingConnection(nodeId);
-                pending = nodeId;
-            },
-            finish: (nodeId: string) => {
-                if (pending !== null) {
-                    console.log("graph should finish connection");
-                    graphMethods.connect(pending, nodeId);
-                }
-                // validate and build connection here
-            },
-            clear: () => {
-                setPendingConnection(null);
-                pending = null;
-            },
-        };
-    }, [setPendingConnection, graphMethods]);
 
     const modKeys = useRef<{ ctrl: boolean; alt: boolean; shift: boolean }>({ ctrl: false, alt: false, shift: false });
 
@@ -68,22 +34,20 @@ export const GraphView = () => {
 
         document.addEventListener("keydown", onKey);
         document.addEventListener("keyup", onKey);
-        document.addEventListener("mouseup", connectionContextValue.clear);
         document.addEventListener("trh:pagefocus", resetMods);
 
         return () => {
             document.removeEventListener("keydown", onKey);
             document.removeEventListener("keyup", onKey);
-            document.removeEventListener("mouseup", connectionContextValue.clear);
             document.removeEventListener("trh:pagefocus", resetMods);
         };
-    }, [connectionContextValue]);
+    }, []);
 
     const [selectionAction, setSelectionAction] = useState<SelectionAction>("set");
 
     return (
         <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`}>
-            <GraphViewConnectionCTX value={connectionContextValue}>
+            <GraphConnectionProvider>
                 <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
                 <NodeWrapper>
                     <DragMove.Provider>
@@ -93,9 +57,8 @@ export const GraphView = () => {
                     </DragMove.Provider>
                 </NodeWrapper>
                 <Links />
-                {pendingConnection ? <PendingConnection value={pendingConnection} /> : null}
-                <Bounds ref={boundsRef} nodeList={nodes} />
-            </GraphViewConnectionCTX>
+            </GraphConnectionProvider>
+            <Bounds ref={boundsRef} nodeList={nodes} />
         </GraphViewPane>
     );
 };
@@ -170,102 +133,6 @@ const Links = () => {
         </>
     );
 };
-
-const PendingConnection = styled(({ value, className }: { value: string; className?: string }) => {
-    const style = useMemo(
-        () =>
-            ({
-                "--fromNode": `--node_${value}`,
-            }) as CSSProperties,
-        [value],
-    );
-
-    const ref = useRef<HTMLDivElement>(null);
-    const fromMarkerRef = useRef<HTMLDivElement>(null);
-    const pathRef = useRef<SVGPathElement>(null);
-
-    const updatePath = useCallback(() => {
-        const container = ref.current;
-        const fromMarker = fromMarkerRef.current;
-        const path = pathRef.current;
-        const mouse = mousePos.current;
-        if (!container || !fromMarker || !path || !mouse) return;
-
-        const basis = container.getBoundingClientRect();
-        const fromPoint = fromMarker.getBoundingClientRect();
-        const zoom = container.currentCSSZoom;
-
-        const x1 = (fromPoint.left - basis.left) / zoom;
-        const y1 = (fromPoint.top - basis.top) / zoom;
-        const x2 = (mouse.x - basis.left) / zoom;
-        const y2 = (mouse.y - basis.top) / zoom;
-
-        path.setAttribute("d", `M ${x1},${y1} L ${x2},${y2}`);
-    }, []);
-
-    const mousePos = useRef<{ x: number; y: number } | null>(null);
-
-    useEffect(() => {
-        const onMouseMove = (evt: MouseEvent) => {
-            mousePos.current = { x: evt.clientX, y: evt.clientY };
-            updatePath();
-        };
-
-        document.addEventListener("mousemove", onMouseMove);
-        return () => {
-            document.removeEventListener("mousemove", onMouseMove);
-        };
-    }, [updatePath]);
-
-    useResizeObserver(ref, updatePath);
-
-    return (
-        <div className={className} style={style} ref={ref}>
-            <svg preserveAspectRatio="none">
-                <path ref={pathRef} />
-            </svg>
-            <div className="markerFrom" ref={fromMarkerRef} />
-        </div>
-    );
-})`
-    position: fixed;
-    width: auto;
-    height: auto;
-    z-index: -1;
-    pointer-events: none;
-
-    --anchorFrom: anchor(var(--fromNode) center);
-
-    inset: 0;
-
-    min-width: 1px;
-    min-height: 1px;
-
-    & > .markerFrom {
-        position: fixed;
-        width: 1px;
-        height: 1px;
-        top: var(--anchorFrom);
-        left: var(--anchorFrom);
-    }
-
-    overflow: visible;
-    & > svg {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
-        pointer-events: none;
-        & > path {
-            vector-effect: non-scaling-stroke;
-            fill: none;
-            stroke: #fff;
-            stroke-width: 1.5px;
-            stroke-dasharray: 6 4;
-            pointer-events: none;
-        }
-    }
-`;
 
 const rectsOverlap = (a: DOMRect, b: DOMRect) => {
     return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
@@ -563,31 +430,6 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
     );
 
     const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
-
-    const socketRef = useRef<HTMLDivElement>(null);
-    const connectionContext = useContext(GraphViewConnectionCTX);
-
-    useEffect(() => {
-        const socket = socketRef.current;
-        if (socket) {
-            const connectStart = (evt: globalThis.MouseEvent) => {
-                evt.handled = "active";
-                console.log("starting connection");
-                connectionContext.start(nodeId);
-            };
-            const finishConnection = () => {
-                console.log("requesting the finishing of a connection");
-                connectionContext.finish(nodeId);
-            };
-
-            socket.addEventListener("mousedown", connectStart);
-            socket.addEventListener("mouseup", finishConnection);
-            return () => {
-                socket.removeEventListener("mousedown", connectStart);
-                socket.removeEventListener("mouseup", finishConnection);
-            };
-        }
-    }, [nodeId, connectionContext]);
 
     return (
         <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
