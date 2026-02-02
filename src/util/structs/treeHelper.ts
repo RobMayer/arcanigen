@@ -72,8 +72,8 @@ export namespace TreeHelper {
         return result;
     };
 
-    export const wideDescendants = (data: TreeOf<unknown>, id: string) => {
-        const node = data[id];
+    export const wideDescendants = (tree: TreeOf<unknown>, target: string) => {
+        const node = tree[target];
         if (!node) {
             return undefined;
         }
@@ -83,7 +83,7 @@ export namespace TreeHelper {
         while (queue.length > 0) {
             const current = queue.shift()!;
             result.push(current);
-            const currentNode = data[current];
+            const currentNode = tree[current];
             if (currentNode) {
                 queue.push(...currentNode.children);
             }
