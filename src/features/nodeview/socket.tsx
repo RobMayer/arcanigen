@@ -27,6 +27,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
             },
             finish: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
                 if (pending !== null) {
+                    // todo: make sure you connect the right end to the right end.
                     // todo: maybe some validation?
                     graphMethods.connect(pending.node, nodeId, pending.socket, socketId);
                 }
