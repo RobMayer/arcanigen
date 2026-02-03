@@ -23,6 +23,7 @@ type SlotTypes<P extends { [key: string]: unknown }> = {
         EitherSocket & {
             type: "shape";
         };
+    length: BaseSlot & EitherSocket & { type: "length"; property: keyof P } & Widget<"none" | "length">;
 };
 
 export type SlotOf<P extends { [key: string]: unknown }> = SlotTypes<P>[keyof SlotTypes<P>];

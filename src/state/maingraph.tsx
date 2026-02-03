@@ -1,13 +1,13 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
-import { NODETYPE_REGISTRY } from "../definitions";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
-import { PayloadOf } from "../definitions/nodes/abstractNode";
+import { BaseDefinition } from "../definitions/nodes/abstractNode";
+import { NodeTypeRegistry } from "../definitions";
 
 // will eventually hold a container for node-type specific logic
 
 export namespace MainGraph {
-    export type BaseNode = PayloadOf<(typeof NODETYPE_REGISTRY)[keyof typeof NODETYPE_REGISTRY]>;
+    export type BaseNode = BaseDefinition["payload"];
 
     export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string };
     type GraphId = string;
@@ -34,7 +34,7 @@ export namespace MainGraph {
         const nodes = useFastContextMember<TheType["nodes"]>({
             root: {
                 RESULT: {
-                    ...NODETYPE_REGISTRY.result.create({}, "RESULT"),
+                    ...NodeTypeRegistry.get("result").create({}, "RESULT"),
                 },
             },
         });

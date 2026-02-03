@@ -1,15 +1,16 @@
 import { useMemo } from "react";
-import { NodeType, NODETYPE_REGISTRY } from "../../definitions";
+import { NodeTypeRegistry } from "../../definitions";
 import { MainGraph } from "../../state/maingraph";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { SlotFor, SlotOf } from "../../definitions/slots";
 import { Widget } from "../../definitions/widgets";
 import styled from "styled-components";
 import { Socket } from "./socket";
+import { NodeType } from "../../definitions/nodes/abstractNode";
 
 export const GraphSlots = styled(({ nodeId, className }: { nodeId: string; className?: string }) => {
     const node = MainGraph.useNode(nodeId);
-    const nodeType = NODETYPE_REGISTRY[node.type];
+    const nodeType = NodeTypeRegistry.get(node.type);
 
     const slots = useMemo(() => {
         return nodeType.getSlots(node);

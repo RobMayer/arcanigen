@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODETYPE_REGISTRY } from "../../definitions";
+import { NodeTypeRegistry } from "../../definitions";
 
 export namespace ArcaneGraph {
     // aliases just for clarity of purpose when used
@@ -12,7 +12,7 @@ export namespace ArcaneGraph {
 
     export type NodeOf<P> = {
         id: NodeId;
-        type: keyof typeof NODETYPE_REGISTRY;
+        type: NodeTypeRegistry.Types;
         // parent: NodeId | null; // for use with containers - which container, if any, do I belong to? - unsure if this is a good idea, or if I should just use spacial stuff
         // children: NodeId[]; // for user with containers - which nodes are contained by this container? - unsure if this is a good idea, or if I should just use spacial stuff
         in: {

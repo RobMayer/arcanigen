@@ -1,28 +1,33 @@
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { AbstractNodetype, BasePayload } from "./abstractNode";
-import { EvaluationPayload } from "../evaluation";
+import { AbstractNodeType, BaseDefinition } from "./abstractNode";
 import { SlotOf } from "../slots";
 import { nanoid } from "nanoid";
-import { MainGraph } from "../../state/maingraph";
+import { Length } from "../dtatypes";
 
-type ResultPayload = {
-    label: string;
-    w: number;
-    h: number;
-    x: number;
-    y: number;
-    color: string;
+type ResultDefinition = {
+    outputs: never;
+    inputs: {
+        w: Length;
+        h: Length;
+        x: Length;
+        y: Length;
+        color: string;
+    };
+    payload: {
+        label: string;
+        w: number;
+        h: number;
+        x: number;
+        y: number;
+        color: string;
+    };
 };
 
-type ResultOutput = {
-    output: EvaluationPayload<"svg">;
-};
-
-export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload, ResultOutput> {
-    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<BasePayload>, outSocket: K): ArcaneGraph.SocketId[] {
+export const ResultNodeType = new (class extends AbstractNodeType<ResultDefinition> {
+    dependsOn<K extends ResultDefinition["outputs"]>(node: ArcaneGraph.NodeOf<BaseDefinition["payload"]>, outSocket: K): (keyof ResultDefinition["inputs"])[] {
         return [];
     }
-    create(input: Partial<ResultPayload>, id: ArcaneGraph.NodeId = nanoid()): ArcaneGraph.NodeOf<ResultPayload> | ArcaneGraph.NodeOf<ResultPayload> {
+    create(input: Partial<ResultDefinition["payload"]>, id: ArcaneGraph.NodeId = nanoid()): ArcaneGraph.NodeOf<ResultDefinition["payload"]> {
         return {
             in: {
                 w: null,
@@ -45,7 +50,7 @@ export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload,
             id,
         };
     }
-    getSlots(node: ArcaneGraph.NodeOf<BasePayload>): SlotOf<ResultPayload>[] {
+    getSlots(node: ArcaneGraph.NodeOf<BaseDefinition["payload"]>): SlotOf<ResultDefinition["payload"]>[] {
         return [
             {
                 type: "shape",
@@ -98,24 +103,5 @@ export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload,
                 alpha: true,
             },
         ];
-    }
-
-    evaluate<const K extends keyof ResultOutput>(node: ArcaneGraph.NodeOf<BasePayload>, socket: K, context: unknown): ResultOutput[K] | null {
-        if (socket === "output") {
-            const x = 0;
-            const y = 0;
-            const w = 0;
-            const h = 0;
-            return {
-                type: "svg",
-                tag: "svg",
-                children: [],
-                attributes: {
-                    viewBox: `${x} ${y} ${w} ${h}`,
-                },
-            };
-        }
-        // null fallback
-        return super.evaluate(node, socket, context);
     }
 })();
