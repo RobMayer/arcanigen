@@ -85,7 +85,7 @@ export namespace ArcaneGraph {
 
     //#region Query/Nodes
 
-    export const nodesWhere = <N, L>(graph: GraphOf<N, L>, filter: (node: NodeOf<N>) => boolean): NodeId[] => {};
+    export const nodesWhere = <N, L>(graph: GraphOf<N, L>, filter: (node: NodeOf<N>) => boolean): NodeId[] => Object.keys(graph.nodes).filter((id) => filter(graph.nodes[id]));
 
     // todo: Traversal
     // export const wideDownstreamOf = <N, L>(graph: GraphOf<N, L>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
@@ -95,34 +95,346 @@ export namespace ArcaneGraph {
 
     //#endregion
     //#region Query/Links
-    export const linksBetween = <N, L>(graph: GraphOf<N, L>, nodeA: NodeId, nodeB: NodeId): LinkId[] => {};
-    export const directedLinksBetween = <N, L>(graph: GraphOf<N, L>, from: NodeId, to: NodeId): LinkId[] => {};
-    export const linksOf = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {};
-    export const linksTo = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {};
-    export const linksFrom = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {};
-    export const linksWhere = <N, L>(graph: GraphOf<N, L>, filter: (node: LinkOf<L>) => boolean): LinkId[] => {};
+    export const linksTo = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
+        if (!(node in graph.nodes)) return [];
+        const n = graph.nodes[node];
+        if (socket !== null) {
+            const linkId = n.in[socket];
+            return linkId !== null && linkId !== undefined ? [linkId] : [];
+        }
+        const results: LinkId[] = [];
+        for (const linkId of Object.values(n.in)) {
+            if (linkId !== null) results.push(linkId);
+        }
+        return results;
+    };
+    export const linksFrom = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
+        if (!(node in graph.nodes)) return [];
+        const n = graph.nodes[node];
+        if (socket !== null) {
+            return n.out[socket] ?? [];
+        }
+        const results: LinkId[] = [];
+        for (const linkIds of Object.values(n.out)) {
+            for (const linkId of linkIds) results.push(linkId);
+        }
+        return results;
+    };
+    export const linksOf = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
+        if (!(node in graph.nodes)) return [];
+        const n = graph.nodes[node];
+        const results: LinkId[] = [];
+        if (socket !== null) {
+            const inLink = n.in[socket];
+            if (inLink !== null && inLink !== undefined) results.push(inLink);
+            if (socket in n.out) {
+                for (const linkId of n.out[socket]) results.push(linkId);
+            }
+            return results;
+        }
+        for (const linkId of Object.values(n.in)) {
+            if (linkId !== null) results.push(linkId);
+        }
+        for (const linkIds of Object.values(n.out)) {
+            for (const linkId of linkIds) results.push(linkId);
+        }
+        return results;
+    };
+    export const directedLinksBetween = <N, L>(graph: GraphOf<N, L>, from: NodeId, to: NodeId): LinkId[] => {
+        if (!(from in graph.nodes)) return [];
+        const results: LinkId[] = [];
+        for (const linkIds of Object.values(graph.nodes[from].out)) {
+            for (const linkId of linkIds) {
+                if (graph.links[linkId].toNode === to) results.push(linkId);
+            }
+        }
+        return results;
+    };
+    export const linksBetween = <N, L>(graph: GraphOf<N, L>, nodeA: NodeId, nodeB: NodeId): LinkId[] => {
+        if (!(nodeA in graph.nodes) || !(nodeB in graph.nodes)) return [];
+        const results: LinkId[] = [];
+        for (const linkIds of Object.values(graph.nodes[nodeA].out)) {
+            for (const linkId of linkIds) {
+                if (graph.links[linkId].toNode === nodeB) results.push(linkId);
+            }
+        }
+        for (const linkIds of Object.values(graph.nodes[nodeB].out)) {
+            for (const linkId of linkIds) {
+                if (graph.links[linkId].toNode === nodeA) results.push(linkId);
+            }
+        }
+        return results;
+    };
+    export const linksWhere = <N, L>(graph: GraphOf<N, L>, filter: (link: LinkOf<L>) => boolean): LinkId[] => Object.keys(graph.links).filter((id) => filter(graph.links[id]));
 
     //#endregion
     //#endregion
 
     //#region Modification
     //#region Modification/Nodes
-    export const addNode = <N, L>(graph: GraphOf<N, L>, payload: Omit<NodeOf<N>, "id">, id: NodeId = generateId()): [graph: GraphOf<N, L>, newId: NodeId | null] => {};
-    export const addNodes = <N, L>(graph: GraphOf<N, L>, payload: BulkAdd<Omit<NodeOf<N>, "id">>): [graph: GraphOf<N, L>, newIds: NodeId[]] => {};
-    export const removeNodes = <N, L>(graph: GraphOf<N, L>, ids: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
+    export const addNodes = <N, L>(graph: GraphOf<N, L>, payload: BulkAdd<Omit<NodeOf<N>, "id">>): [graph: GraphOf<N, L>, newIds: NodeId[]] => {
+        const normalized = normalizeBulk(payload);
+        const newIds: NodeId[] = [];
+        const newNodes = { ...graph.nodes };
+        for (const [id, data] of Object.entries(normalized)) {
+            if (id in newNodes) continue;
+            newNodes[id] = { ...data, id } as NodeOf<N>;
+            newIds.push(id);
+        }
+        if (newIds.length === 0) return [graph, []];
+        return [{ ...graph, nodes: newNodes }, newIds];
+    };
+    export const addNode = <N, L>(graph: GraphOf<N, L>, payload: Omit<NodeOf<N>, "id">, id: NodeId = generateId()): [graph: GraphOf<N, L>, newId: NodeId | null] => {
+        const [newGraph, newIds] = addNodes(graph, { [id]: payload });
+        return [newGraph, newIds.length > 0 ? newIds[0] : null];
+    };
+    export const removeNodes = <N, L>(graph: GraphOf<N, L>, ids: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const idSet = normalizeList(ids);
+        const removedNodes: NodeOf<N>[] = [];
+        const removedLinks: LinkOf<L>[] = [];
+        const removedLinkIds = new Set<LinkId>();
 
-    export const updateNode = <N, L>(graph: GraphOf<N, L>, id: NodeId, payload: N): [graph: GraphOf<N, L>, affected: NodeId | null] => {};
-    export const updateNodeWith = <N, L>(graph: GraphOf<N, L>, id: NodeId, setter: Setter<NodeOf<N>, N | undefined>): [graph: GraphOf<N, L>, affected: NodeId | null] => {};
-    export const updateNodes = <N, L>(graph: GraphOf<N, L>, payloads: { [key: NodeId]: N }): [graph: GraphOf<N, L>, affected: NodeId[]] => {};
-    export const updateNodesWith = <N, L>(graph: GraphOf<N, L>, setter: Setter<NodeOf<N>, N | undefined>, ids?: ListOf<NodeId>): [graph: GraphOf<N, L>, affected: NodeId[]] => {};
+        // collect nodes to remove and their connected links
+        for (const id of idSet) {
+            if (!(id in graph.nodes)) continue;
+            const node = graph.nodes[id];
+            removedNodes.push(node);
+            for (const linkId of Object.values(node.in)) {
+                if (linkId !== null) removedLinkIds.add(linkId);
+            }
+            for (const linkIds of Object.values(node.out)) {
+                for (const linkId of linkIds) removedLinkIds.add(linkId);
+            }
+        }
 
-    export const isolate = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const unplug = <N, L>(graph: GraphOf<N, L>, id: NodeId, socket: ListOf<SocketId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const unplugMany = <N, L>(graph: GraphOf<N, L>, data: { [key: NodeId]: ListOf<SocketId> }): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const isolateUpstream = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const isolateDownstream = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
+        if (removedNodes.length === 0) return [graph, { nodes: [], links: [] }];
+
+        // collect removed link objects
+        for (const linkId of removedLinkIds) {
+            removedLinks.push(graph.links[linkId]);
+        }
+
+        // build new nodes dict, excluding removed nodes
+        const newNodes: typeof graph.nodes = {};
+        for (const [id, node] of Object.entries(graph.nodes)) {
+            if (idSet.has(id)) continue;
+            // check if this node has any references to removed links
+            let needsPatch = false;
+            for (const linkId of Object.values(node.in)) {
+                if (linkId !== null && removedLinkIds.has(linkId)) {
+                    needsPatch = true;
+                    break;
+                }
+            }
+            if (!needsPatch) {
+                for (const linkIds of Object.values(node.out)) {
+                    for (const linkId of linkIds) {
+                        if (removedLinkIds.has(linkId)) {
+                            needsPatch = true;
+                            break;
+                        }
+                    }
+                    if (needsPatch) break;
+                }
+            }
+            if (!needsPatch) {
+                newNodes[id] = node;
+                continue;
+            }
+            // patch socket references
+            const newIn: typeof node.in = {};
+            for (const [socketId, linkId] of Object.entries(node.in)) {
+                newIn[socketId] = linkId !== null && removedLinkIds.has(linkId) ? null : linkId;
+            }
+            const newOut: typeof node.out = {};
+            for (const [socketId, linkIds] of Object.entries(node.out)) {
+                newOut[socketId] = linkIds.filter((linkId) => !removedLinkIds.has(linkId));
+            }
+            newNodes[id] = { ...node, in: newIn, out: newOut };
+        }
+
+        // build new links dict, excluding removed links
+        const newLinks: typeof graph.links = {};
+        for (const [id, link] of Object.entries(graph.links)) {
+            if (!removedLinkIds.has(id)) newLinks[id] = link;
+        }
+
+        return [
+            { ...graph, nodes: newNodes, links: newLinks },
+            { nodes: removedNodes, links: removedLinks },
+        ];
+    };
+
+    export const updateNodesWith = <N, L>(graph: GraphOf<N, L>, setter: Setter<NodeOf<N>, N | undefined>, ids?: ListOf<NodeId>): [graph: GraphOf<N, L>, affected: NodeId[]] => {
+        const targets = ids !== undefined ? normalizeList(ids) : null;
+        const affected: NodeId[] = [];
+        let newNodes: typeof graph.nodes | null = null;
+        for (const [id, node] of Object.entries(graph.nodes)) {
+            if (targets !== null && !targets.has(id)) continue;
+            const newPayload = setter(node);
+            if (newPayload === undefined) continue;
+            if (newNodes === null) newNodes = { ...graph.nodes };
+            newNodes[id] = { ...node, payload: newPayload };
+            affected.push(id);
+        }
+        if (newNodes === null) return [graph, []];
+        return [{ ...graph, nodes: newNodes }, affected];
+    };
+    export const updateNodes = <N, L>(graph: GraphOf<N, L>, payloads: { [key: NodeId]: N }): [graph: GraphOf<N, L>, affected: NodeId[]] => {
+        return updateNodesWith(graph, (node) => (node.id in payloads ? payloads[node.id] : undefined), Object.keys(payloads) as NodeId[]);
+    };
+    export const updateNodeWith = <N, L>(graph: GraphOf<N, L>, id: NodeId, setter: Setter<NodeOf<N>, N | undefined>): [graph: GraphOf<N, L>, affected: NodeId | null] => {
+        const [newGraph, affected] = updateNodesWith(graph, setter, id);
+        return [newGraph, affected.length > 0 ? affected[0] : null];
+    };
+    export const updateNode = <N, L>(graph: GraphOf<N, L>, id: NodeId, payload: N): [graph: GraphOf<N, L>, affected: NodeId | null] => {
+        const [newGraph, affected] = updateNodesWith(graph, () => payload, id);
+        return [newGraph, affected.length > 0 ? affected[0] : null];
+    };
+
+    export const isolate = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const nodeIds = normalizeList(id);
+        const linkIds: LinkId[] = [];
+        for (const nodeId of nodeIds) {
+            if (!(nodeId in graph.nodes)) continue;
+            const node = graph.nodes[nodeId];
+            for (const linkId of Object.values(node.in)) {
+                if (linkId !== null) linkIds.push(linkId);
+            }
+            for (const arr of Object.values(node.out)) {
+                for (const linkId of arr) linkIds.push(linkId);
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const isolateUpstream = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const nodeIds = normalizeList(id);
+        const linkIds: LinkId[] = [];
+        for (const nodeId of nodeIds) {
+            if (!(nodeId in graph.nodes)) continue;
+            for (const linkId of Object.values(graph.nodes[nodeId].in)) {
+                if (linkId !== null) linkIds.push(linkId);
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const isolateDownstream = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const nodeIds = normalizeList(id);
+        const linkIds: LinkId[] = [];
+        for (const nodeId of nodeIds) {
+            if (!(nodeId in graph.nodes)) continue;
+            for (const arr of Object.values(graph.nodes[nodeId].out)) {
+                for (const linkId of arr) linkIds.push(linkId);
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const unplug = <N, L>(graph: GraphOf<N, L>, id: NodeId, socket: ListOf<SocketId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        if (!(id in graph.nodes)) return [graph, { nodes: [], links: [] }];
+        const sockets = normalizeList(socket);
+        const node = graph.nodes[id];
+        const linkIds: LinkId[] = [];
+        for (const socketId of sockets) {
+            if (socketId in node.in) {
+                const linkId = node.in[socketId];
+                if (linkId !== null) linkIds.push(linkId);
+            }
+            if (socketId in node.out) {
+                for (const linkId of node.out[socketId]) linkIds.push(linkId);
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const unplugMany = <N, L>(graph: GraphOf<N, L>, data: { [key: NodeId]: ListOf<SocketId> }): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const linkIds: LinkId[] = [];
+        for (const [nodeId, sockets] of Object.entries(data)) {
+            if (!(nodeId in graph.nodes)) continue;
+            const socketSet = normalizeList(sockets);
+            const node = graph.nodes[nodeId];
+            for (const socketId of socketSet) {
+                if (socketId in node.in) {
+                    const linkId = node.in[socketId];
+                    if (linkId !== null) linkIds.push(linkId);
+                }
+                if (socketId in node.out) {
+                    for (const linkId of node.out[socketId]) linkIds.push(linkId);
+                }
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
     //#endregion
     //#region Modification/Links
+    const doConnect = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>, displace: boolean): [graph: GraphOf<N, L>, newIds: LinkId[], removed: RemovedOf<N, L>] => {
+        const normalized = normalizeBulk(data);
+        const newIds: LinkId[] = [];
+        const displacedLinks: LinkOf<L>[] = [];
+        let newNodes: typeof graph.nodes | null = null;
+        let newLinks: typeof graph.links | null = null;
+
+        for (const [id, entry] of Object.entries(normalized)) {
+            // validate nodes exist
+            if (!(entry.fromNode in graph.nodes) || !(entry.toNode in graph.nodes)) continue;
+            // skip duplicate ids
+            if (id in graph.links || (newLinks !== null && id in newLinks)) continue;
+
+            // resolve the current toNode (may have been patched by a previous iteration)
+            const toNode = newNodes !== null && entry.toNode in newNodes ? newNodes[entry.toNode] : graph.nodes[entry.toNode];
+            const existing = toNode.in[entry.toSocket];
+
+            if (existing !== null && existing !== undefined) {
+                if (!displace) continue; // strict mode: skip if occupied
+                // displace the existing link
+                const displacedLink = newLinks !== null && existing in newLinks ? newLinks[existing] : graph.links[existing];
+                if (displacedLink) {
+                    displacedLinks.push(displacedLink);
+                    if (newLinks === null) newLinks = { ...graph.links };
+                    delete newLinks[existing];
+                    // also patch the displaced link's fromNode out socket
+                    const displacedFrom = newNodes !== null && displacedLink.fromNode in newNodes ? newNodes[displacedLink.fromNode] : graph.nodes[displacedLink.fromNode];
+                    if (displacedFrom) {
+                        if (newNodes === null) newNodes = { ...graph.nodes };
+                        const outArr = displacedFrom.out[displacedLink.fromSocket];
+                        newNodes[displacedLink.fromNode] = {
+                            ...displacedFrom,
+                            out: { ...displacedFrom.out, [displacedLink.fromSocket]: outArr ? outArr.filter((lid) => lid !== existing) : [] },
+                        };
+                    }
+                }
+            }
+
+            // create the new link
+            const link: LinkOf<L> = { ...entry, id } as LinkOf<L>;
+            if (newLinks === null) newLinks = { ...graph.links };
+            newLinks[id] = link;
+
+            // wire toNode.in
+            if (newNodes === null) newNodes = { ...graph.nodes };
+            const currentToNode = newNodes[entry.toNode] ?? graph.nodes[entry.toNode];
+            newNodes[entry.toNode] = { ...currentToNode, in: { ...currentToNode.in, [entry.toSocket]: id } };
+
+            // wire fromNode.out
+            const currentFromNode = newNodes[entry.fromNode] ?? graph.nodes[entry.fromNode];
+            const outArr = currentFromNode.out[entry.fromSocket];
+            newNodes[entry.fromNode] = {
+                ...currentFromNode,
+                out: { ...currentFromNode.out, [entry.fromSocket]: outArr ? [...outArr, id] : [id] },
+            };
+
+            newIds.push(id);
+        }
+
+        if (newIds.length === 0 && displacedLinks.length === 0) return [graph, [], { nodes: [], links: [] }];
+        return [{ ...graph, nodes: newNodes ?? graph.nodes, links: newLinks ?? graph.links }, newIds, { nodes: [], links: displacedLinks }];
+    };
+
+    export const connectMany = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>): [graph: GraphOf<N, L>, newIds: LinkId[]] => {
+        const [g, n] = doConnect(graph, data, false);
+        return [g, n];
+    };
+    export const reconnectMany = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>): [graph: GraphOf<N, L>, newIds: LinkId[], removed: RemovedOf<N, L>] => {
+        return doConnect(graph, data, true);
+    };
     export const connect = <N, L>(
         graph: GraphOf<N, L>,
         fromNode: NodeId,
@@ -131,31 +443,264 @@ export namespace ArcaneGraph {
         toSocket: SocketId,
         payload: L,
         id: LinkId = generateId(),
-    ): [graph: GraphOf<N, L>, newId: LinkId | null, removed: RemovedOf<N, L>] => {};
-    export const connectMany = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>): [graph: GraphOf<N, L>, newIds: LinkId[], removed: RemovedOf<N, L>] => {};
-    export const disconnectBetween = <N, L>(
+    ): [graph: GraphOf<N, L>, newId: LinkId | null] => {
+        const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, payload } });
+        return [newGraph, newIds.length > 0 ? newIds[0] : null];
+    };
+    export const reconnect = <N, L>(
         graph: GraphOf<N, L>,
         fromNode: NodeId,
         toNode: NodeId,
-        fromSocket: SocketId | null = null,
-        toSocket: SocketId | null = null,
-    ): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const disconnectUpstream = <N, L>(graph: GraphOf<N, L>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const disconnectDownstream = <N, L>(graph: GraphOf<N, L>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
-    export const removeLinks = <N, L>(graph: GraphOf<N, L>, id: ListOf<LinkId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {};
+        fromSocket: SocketId,
+        toSocket: SocketId,
+        payload: L,
+        id: LinkId = generateId(),
+    ): [graph: GraphOf<N, L>, newId: LinkId | null, removed: RemovedOf<N, L>] => {
+        const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, payload } });
+        return [newGraph, newIds.length > 0 ? newIds[0] : null, removed];
+    };
+    export const disconnectBetween = <N, L>(
+        graph: GraphOf<N, L>,
+        nodeA: NodeId,
+        nodeB: NodeId,
+        nodeASocket: SocketId | null = null,
+        nodeBSocket: SocketId | null = null,
+    ): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const linkIds: LinkId[] = [];
+        // A → B
+        if (nodeA in graph.nodes) {
+            const a = graph.nodes[nodeA];
+            const sources = nodeASocket !== null ? (nodeASocket in a.out ? [nodeASocket] : []) : Object.keys(a.out);
+            for (const sid of sources) {
+                for (const linkId of a.out[sid]) {
+                    const link = graph.links[linkId];
+                    if (link.toNode !== nodeB) continue;
+                    if (nodeBSocket !== null && link.toSocket !== nodeBSocket) continue;
+                    linkIds.push(linkId);
+                }
+            }
+        }
+        // B → A
+        if (nodeB in graph.nodes) {
+            const b = graph.nodes[nodeB];
+            const sources = nodeBSocket !== null ? (nodeBSocket in b.out ? [nodeBSocket] : []) : Object.keys(b.out);
+            for (const sid of sources) {
+                for (const linkId of b.out[sid]) {
+                    const link = graph.links[linkId];
+                    if (link.toNode !== nodeA) continue;
+                    if (nodeASocket !== null && link.toSocket !== nodeASocket) continue;
+                    linkIds.push(linkId);
+                }
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const disconnectUpstream = <N, L>(graph: GraphOf<N, L>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        if (!(node in graph.nodes)) return [graph, { nodes: [], links: [] }];
+        const n = graph.nodes[node];
+        const linkIds: LinkId[] = [];
+        const sockets = socket !== null ? (socket in n.in ? [socket] : []) : Object.keys(n.in);
+        for (const sid of sockets) {
+            const linkId = n.in[sid];
+            if (linkId === null) continue;
+            if (other !== null && graph.links[linkId].fromNode !== other) continue;
+            linkIds.push(linkId);
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const disconnectDownstream = <N, L>(graph: GraphOf<N, L>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        if (!(node in graph.nodes)) return [graph, { nodes: [], links: [] }];
+        const n = graph.nodes[node];
+        const linkIds: LinkId[] = [];
+        const sockets = socket !== null ? (socket in n.out ? [socket] : []) : Object.keys(n.out);
+        for (const sid of sockets) {
+            for (const linkId of n.out[sid]) {
+                if (other !== null && graph.links[linkId].toNode !== other) continue;
+                linkIds.push(linkId);
+            }
+        }
+        return removeLinks(graph, linkIds);
+    };
+    export const removeLinks = <N, L>(graph: GraphOf<N, L>, id: ListOf<LinkId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+        const idSet = normalizeList(id);
+        const removedLinks: LinkOf<L>[] = [];
 
-    export const updateLink = <N, L>(graph: GraphOf<N, L>, id: LinkId, payload: L): [graph: GraphOf<N, L>, affected: LinkId | null] => {};
-    export const updateLinkWith = <N, L>(graph: GraphOf<N, L>, id: LinkId, setter: Setter<LinkOf<L>, L | undefined>): [graph: GraphOf<N, L>, affected: LinkId | null] => {};
-    export const updateLinks = <N, L>(graph: GraphOf<N, L>, payloads: { [key: LinkId]: L }): [graph: GraphOf<N, L>, affected: LinkId[]] => {};
-    export const updateLinksWith = <N, L>(graph: GraphOf<N, L>, setter: Setter<LinkOf<L>, L | undefined>, id?: ListOf<LinkId>): [graph: GraphOf<N, L>, affected: LinkId[]] => {};
+        // collect links that actually exist
+        for (const linkId of idSet) {
+            if (linkId in graph.links) removedLinks.push(graph.links[linkId]);
+        }
+        if (removedLinks.length === 0) return [graph, { nodes: [], links: [] }];
+
+        // build new links dict
+        const newLinks: typeof graph.links = {};
+        for (const [lid, link] of Object.entries(graph.links)) {
+            if (!idSet.has(lid)) newLinks[lid] = link;
+        }
+
+        // patch affected nodes
+        let newNodes: typeof graph.nodes | null = null;
+        for (const link of removedLinks) {
+            // patch the toNode's in socket
+            if (link.toNode in graph.nodes) {
+                if (newNodes === null) newNodes = { ...graph.nodes };
+                const toNode = newNodes[link.toNode];
+                newNodes[link.toNode] = {
+                    ...toNode,
+                    in: { ...toNode.in, [link.toSocket]: null },
+                };
+            }
+            // patch the fromNode's out socket
+            if (link.fromNode in graph.nodes) {
+                if (newNodes === null) newNodes = { ...graph.nodes };
+                const fromNode = newNodes[link.fromNode];
+                const existing = fromNode.out[link.fromSocket];
+                newNodes[link.fromNode] = {
+                    ...fromNode,
+                    out: { ...fromNode.out, [link.fromSocket]: existing ? existing.filter((lid) => !idSet.has(lid)) : [] },
+                };
+            }
+        }
+
+        return [
+            { ...graph, nodes: newNodes ?? graph.nodes, links: newLinks },
+            { nodes: [], links: removedLinks },
+        ];
+    };
+
+    export const updateLinksWith = <N, L>(graph: GraphOf<N, L>, setter: Setter<LinkOf<L>, L | undefined>, ids?: ListOf<LinkId>): [graph: GraphOf<N, L>, affected: LinkId[]] => {
+        const targets = ids !== undefined ? normalizeList(ids) : null;
+        const affected: LinkId[] = [];
+        let newLinks: typeof graph.links | null = null;
+        for (const [id, link] of Object.entries(graph.links)) {
+            if (targets !== null && !targets.has(id)) continue;
+            const newPayload = setter(link);
+            if (newPayload === undefined) continue;
+            if (newLinks === null) newLinks = { ...graph.links };
+            newLinks[id] = { ...link, payload: newPayload };
+            affected.push(id);
+        }
+        if (newLinks === null) return [graph, []];
+        return [{ ...graph, links: newLinks }, affected];
+    };
+    export const updateLinks = <N, L>(graph: GraphOf<N, L>, payloads: { [key: LinkId]: L }): [graph: GraphOf<N, L>, affected: LinkId[]] => {
+        return updateLinksWith(graph, (link) => (link.id in payloads ? payloads[link.id] : undefined), Object.keys(payloads) as LinkId[]);
+    };
+    export const updateLinkWith = <N, L>(graph: GraphOf<N, L>, id: LinkId, setter: Setter<LinkOf<L>, L | undefined>): [graph: GraphOf<N, L>, affected: LinkId | null] => {
+        const [newGraph, affected] = updateLinksWith(graph, setter, id);
+        return [newGraph, affected.length > 0 ? affected[0] : null];
+    };
+    export const updateLink = <N, L>(graph: GraphOf<N, L>, id: LinkId, payload: L): [graph: GraphOf<N, L>, affected: LinkId | null] => {
+        const [newGraph, affected] = updateLinksWith(graph, () => payload, id);
+        return [newGraph, affected.length > 0 ? affected[0] : null];
+    };
     //#endregion
     //#region Modification/Sockets
     type SocketData = { in: ListOf<SocketId>; out: ListOf<SocketId> } | { in: ListOf<SocketId> } | { out: ListOf<SocketId> };
-    export const addSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null] => {};
-    export const removeSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null, removed: RemovedOf<N, L>] => {};
+    export const addSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null] => {
+        if (!(id in graph.nodes)) return [graph, null];
+        const node = graph.nodes[id];
+        let newIn: typeof node.in | null = null;
+        let newOut: typeof node.out | null = null;
+        if ("in" in sockets) {
+            const inSet = normalizeList(sockets.in);
+            for (const sid of inSet) {
+                if (sid in node.in) continue;
+                if (newIn === null) newIn = { ...node.in };
+                newIn[sid] = null;
+            }
+        }
+        if ("out" in sockets) {
+            const outSet = normalizeList(sockets.out);
+            for (const sid of outSet) {
+                if (sid in node.out) continue;
+                if (newOut === null) newOut = { ...node.out };
+                newOut[sid] = [];
+            }
+        }
+        if (newIn === null && newOut === null) return [graph, null];
+        const newNode = { ...node, in: newIn ?? node.in, out: newOut ?? node.out };
+        return [{ ...graph, nodes: { ...graph.nodes, [id]: newNode } }, id];
+    };
+    export const removeSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null, removed: RemovedOf<N, L>] => {
+        if (!(id in graph.nodes)) return [graph, null, { nodes: [], links: [] }];
+        const node = graph.nodes[id];
+        // collect links to remove from the targeted sockets
+        const linkIds: LinkId[] = [];
+        const inToRemove = "in" in sockets ? normalizeList(sockets.in) : null;
+        const outToRemove = "out" in sockets ? normalizeList(sockets.out) : null;
+        if (inToRemove) {
+            for (const sid of inToRemove) {
+                if (sid in node.in && node.in[sid] !== null) linkIds.push(node.in[sid]!);
+            }
+        }
+        if (outToRemove) {
+            for (const sid of outToRemove) {
+                if (sid in node.out) {
+                    for (const linkId of node.out[sid]) linkIds.push(linkId);
+                }
+            }
+        }
+        // remove links first
+        let g = graph;
+        let removed: RemovedOf<N, L> = { nodes: [], links: [] };
+        if (linkIds.length > 0) {
+            [g, removed] = removeLinks(g, linkIds);
+        }
+        // now remove the socket slots themselves
+        const current = g.nodes[id];
+        let changed = false;
+        let newIn = current.in;
+        let newOut = current.out;
+        if (inToRemove) {
+            newIn = {};
+            for (const [sid, val] of Object.entries(current.in)) {
+                if (inToRemove.has(sid)) {
+                    changed = true;
+                    continue;
+                }
+                newIn[sid] = val;
+            }
+        }
+        if (outToRemove) {
+            newOut = {};
+            for (const [sid, val] of Object.entries(current.out)) {
+                if (outToRemove.has(sid)) {
+                    changed = true;
+                    continue;
+                }
+                newOut[sid] = val;
+            }
+        }
+        if (!changed && linkIds.length === 0) return [graph, null, removed];
+        const newNode = { ...current, in: newIn, out: newOut };
+        return [{ ...g, nodes: { ...g.nodes, [id]: newNode } }, id, removed];
+    };
     // if sockets.in is provided, keep the in sockets listed in sockets.in, remove the rest
     // if sockets.out is provided, keep the out sockets listed in sockets.out, remove the rest
-    export const alterSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null, removed: RemovedOf<N, L>] => {};
+    export const alterSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null, removed: RemovedOf<N, L>] => {
+        if (!(id in graph.nodes)) return [graph, null, { nodes: [], links: [] }];
+        const node = graph.nodes[id];
+        // invert the keep-list into a remove-list
+        const toRemove: Partial<{ in: SocketId[]; out: SocketId[] }> = {};
+        if ("in" in sockets) {
+            const keepIn = normalizeList(sockets.in);
+            const removeIn: SocketId[] = [];
+            for (const sid of Object.keys(node.in)) {
+                if (!keepIn.has(sid)) removeIn.push(sid);
+            }
+            if (removeIn.length > 0) toRemove.in = removeIn;
+        }
+        if ("out" in sockets) {
+            const keepOut = normalizeList(sockets.out);
+            const removeOut: SocketId[] = [];
+            for (const sid of Object.keys(node.out)) {
+                if (!keepOut.has(sid)) removeOut.push(sid);
+            }
+            if (removeOut.length > 0) toRemove.out = removeOut;
+        }
+        if (!toRemove.in && !toRemove.out) return [graph, null, { nodes: [], links: [] }];
+        return removeSockets(graph, id, toRemove as SocketData);
+    };
 
     //#endregion
     //#endregion
