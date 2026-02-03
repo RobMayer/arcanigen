@@ -5,7 +5,7 @@ import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { NodeType, NODETYPE_REGISTRY } from "../../definitions";
-import { OutputOf, PayloadOf } from "../../definitions/nodes/types";
+import { PayloadOf, OutputOf } from "../../definitions/nodes/abstractNode";
 
 type GraphConnectionControls = {
     start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => void;
@@ -70,7 +70,7 @@ export const Socket = styled(({ side, socketId, nodeId, className, type }: { sid
             return false;
         }
         // todo: don't assume that pending.type === type is valid. a type of "number" is compatible with "float" and "integer", but they are not compatible with each other.
-        if (pendingConnection.type === type) {
+        if (pendingConnection.type !== type) {
             // but for now, it's okay.
             return false;
         }

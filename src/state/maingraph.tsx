@@ -1,8 +1,8 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { NODETYPE_REGISTRY } from "../definitions";
-import { PayloadOf } from "../definitions/nodes/types";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
+import { PayloadOf } from "../definitions/nodes/abstractNode";
 
 // will eventually hold a container for node-type specific logic
 
@@ -101,7 +101,7 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.links.subscribe, selector);
     };
 
-    export const useNode = (id: string, graphId: string = "root") => {
+    export const useNode = (id: string, graphId: string = "root"): ArcaneGraph.NodeOf<BaseNode> => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {

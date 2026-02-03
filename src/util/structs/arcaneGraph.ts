@@ -8,6 +8,8 @@ export namespace ArcaneGraph {
     export type SocketId = string;
     export type SubgraphId = string;
 
+    export type NodePayloadOf<N> = N extends NodeOf<infer P> ? P : never;
+
     export type NodeOf<P> = {
         id: NodeId;
         type: keyof typeof NODETYPE_REGISTRY;

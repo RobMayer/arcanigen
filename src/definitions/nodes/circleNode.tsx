@@ -1,15 +1,12 @@
+import { nanoid } from "nanoid";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { EvaluationPayload } from "../evaluation";
 import { SlotOf } from "../slots";
-import { AbstractNodetype } from "./abstractNode";
+import { AbstractNodetype, BasePayload } from "./abstractNode";
+import { MainGraph } from "../../state/maingraph";
 
 type CirclePayload = {
-    label?: string;
-    w: number;
-    h: number;
-    x: number;
-    y: number;
-    color: string;
+    label: string;
 };
 
 type CircleOutput = {
@@ -17,13 +14,23 @@ type CircleOutput = {
 };
 
 export const CircleNodeType = new (class extends AbstractNodetype<CirclePayload, CircleOutput> {
-    create(input: Partial<CirclePayload>, id?: string): ArcaneGraph.NodeOf<CirclePayload> {
-        throw new Error("Method not implemented.");
+    create(input: Partial<CirclePayload>, id: string = nanoid()): ArcaneGraph.NodeOf<CirclePayload> {
+        return {
+            id,
+            in: {},
+            out: {
+                output: [],
+            },
+            payload: {
+                label: "",
+            },
+            type: "circle",
+        };
     }
-    getSlots(node: ArcaneGraph.NodeOf<CirclePayload>): SlotOf<CirclePayload>[] {
-        throw new Error("Method not implemented.");
+    getSlots(node: ArcaneGraph.NodeOf<BasePayload>): SlotOf<CirclePayload>[] {
+        return [];
     }
-    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<CirclePayload>, outSocket: K): ArcaneGraph.SocketId[] {
-        throw new Error("Method not implemented.");
+    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<BasePayload>, outSocket: K): ArcaneGraph.SocketId[] {
+        return [];
     }
 })();

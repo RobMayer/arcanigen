@@ -1,11 +1,12 @@
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { AbstractNodetype } from "./abstractNode";
+import { AbstractNodetype, BasePayload } from "./abstractNode";
 import { EvaluationPayload } from "../evaluation";
 import { SlotOf } from "../slots";
 import { nanoid } from "nanoid";
+import { MainGraph } from "../../state/maingraph";
 
 type ResultPayload = {
-    label?: string;
+    label: string;
     w: number;
     h: number;
     x: number;
@@ -18,7 +19,7 @@ type ResultOutput = {
 };
 
 export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload, ResultOutput> {
-    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<ResultPayload>, outSocket: K): ArcaneGraph.SocketId[] {
+    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<BasePayload>, outSocket: K): ArcaneGraph.SocketId[] {
         return [];
     }
     create(input: Partial<ResultPayload>, id: ArcaneGraph.NodeId = nanoid()): ArcaneGraph.NodeOf<ResultPayload> | ArcaneGraph.NodeOf<ResultPayload> {
@@ -37,13 +38,14 @@ export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload,
                 x: 0,
                 y: 0,
                 color: "#fff",
+                label: "",
                 ...input,
             },
             type: "result",
             id,
         };
     }
-    getSlots(node: ArcaneGraph.NodeOf<ResultPayload>): SlotOf<ResultPayload>[] {
+    getSlots(node: ArcaneGraph.NodeOf<BasePayload>): SlotOf<ResultPayload>[] {
         return [
             {
                 type: "shape",
@@ -98,7 +100,7 @@ export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload,
         ];
     }
 
-    evaluate<const K extends keyof ResultOutput>(node: ArcaneGraph.NodeOf<ResultPayload>, socket: K, context: unknown): ResultOutput[K] | null {
+    evaluate<const K extends keyof ResultOutput>(node: ArcaneGraph.NodeOf<BasePayload>, socket: K, context: unknown): ResultOutput[K] | null {
         if (socket === "output") {
             const x = 0;
             const y = 0;
