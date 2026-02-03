@@ -26,18 +26,7 @@ export namespace MainGraph {
     export const Provider = ({ children }: { children?: ReactNode }) => {
         const nodes = useFastContextMember<{ [nodeId: string]: ArcaneGraph.NodeOf<BaseNode> }>({
             RESULT: {
-                type: "result",
-                in: {
-                    input: null,
-                    color: null,
-                    x: null,
-                    y: null,
-                    w: null,
-                    h: null,
-                },
-                out: {},
-                id: "RESULT",
-                payload: NODETYPE_REGISTRY.result.create({}),
+                ...NODETYPE_REGISTRY.result.create({}, "RESULT"),
             },
         });
         const nodeList = useFastContextMember<string[]>(["RESULT"]);
@@ -98,7 +87,7 @@ export namespace MainGraph {
 
         return useMemo(() => {
             const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string) => {
-                const oG = { nodes: ctx.nodes.get(), links: ctx.links.get() };
+                const oldGraph = { nodes: ctx.nodes.get(), links: ctx.links.get() };
                 //const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
                 // if (newLink) {
                 //     ctx.links.ref.current = links;

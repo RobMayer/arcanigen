@@ -2,6 +2,7 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { AbstractNodetype } from "./abstractNode";
 import { EvaluationPayload } from "../evaluation";
 import { SlotOf } from "../slots";
+import { nanoid } from "nanoid";
 
 type ResultPayload = {
     label?: string;
@@ -17,17 +18,31 @@ type ResultOutput = {
 };
 
 export const ResultNodeType = new (class extends AbstractNodetype<ResultPayload, ResultOutput> {
-    create(input: Partial<ResultPayload>): ResultPayload {
+    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<ResultPayload>, outSocket: K): ArcaneGraph.SocketId[] {
+        return [];
+    }
+    create(input: Partial<ResultPayload>, id: ArcaneGraph.NodeId = nanoid()): ArcaneGraph.NodeOf<ResultPayload> | ArcaneGraph.NodeOf<ResultPayload> {
         return {
-            w: 800,
-            h: 800,
-            x: 0,
-            y: 0,
-            color: "#fff",
-            ...input,
+            in: {
+                w: null,
+                h: null,
+                x: null,
+                y: null,
+                color: null,
+            },
+            out: {},
+            payload: {
+                w: 800,
+                h: 800,
+                x: 0,
+                y: 0,
+                color: "#fff",
+                ...input,
+            },
+            type: "result",
+            id,
         };
     }
-
     getSlots(node: ArcaneGraph.NodeOf<ResultPayload>): SlotOf<ResultPayload>[] {
         return [
             {

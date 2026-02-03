@@ -3,6 +3,9 @@ import { MainGraph } from "../../state/maingraph";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
+import { ArcaneGraph } from "../../util/structs/arcaneGraph";
+import { NodeType, NODETYPE_REGISTRY } from "../../definitions";
+import { OutputOf, PayloadOf } from "../../definitions/nodes/types";
 
 type GraphConnectionControls = {
     start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => void;
@@ -194,3 +197,10 @@ const PendingConnection = styled(({ nodeId, socketId, className }: { nodeId: str
         }
     }
 `;
+
+// todo: use this to check for possible cylicals...
+const canConnect = <N extends PayloadOf<NodeType>, L>(graph: ArcaneGraph.GraphOf<N, L>, node: ArcaneGraph.NodeOf<N>, outSocket: keyof OutputOf<NodeType>): boolean => {
+    const nt = NODETYPE_REGISTRY[node.type];
+    const affected = nt.dependsOn(node, outSocket);
+    return true;
+};
