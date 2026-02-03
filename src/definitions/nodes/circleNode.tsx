@@ -3,10 +3,10 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { EvaluationPayload } from "../evaluation";
 import { SlotOf } from "../slots";
 import { AbstractNodetype, BasePayload } from "./abstractNode";
-import { MainGraph } from "../../state/maingraph";
 
 type CirclePayload = {
     label: string;
+    // radius: Length;
 };
 
 type CircleOutput = {
@@ -17,7 +17,9 @@ export const CircleNodeType = new (class extends AbstractNodetype<CirclePayload,
     create(input: Partial<CirclePayload>, id: string = nanoid()): ArcaneGraph.NodeOf<CirclePayload> {
         return {
             id,
-            in: {},
+            in: {
+                radius: null,
+            },
             out: {
                 output: [],
             },
@@ -28,7 +30,13 @@ export const CircleNodeType = new (class extends AbstractNodetype<CirclePayload,
         };
     }
     getSlots(node: ArcaneGraph.NodeOf<BasePayload>): SlotOf<CirclePayload>[] {
-        return [];
+        return [
+            {
+                type: "shape",
+                socketOut: "output",
+                label: "Output",
+            },
+        ];
     }
     dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<BasePayload>, outSocket: K): ArcaneGraph.SocketId[] {
         return [];
