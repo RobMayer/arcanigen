@@ -348,10 +348,10 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 //nested SVG for new coordinate system
 
 const applyMoveDelta = (
+    graph: string,
     delta: { x: number; y: number },
     selectionRef: { current: Set<string> },
-    positionsRef: { current: { [key: string]: { x: number; y: number } } },
-    nodesRef: { current: { [key: string]: ArcaneGraph.NodeOf<MainGraph.BaseNode> } },
+    positionsRef: { current: { [graph: string]: { [node: string]: { x: number; y: number } } } },
 ) => {
     const compiled: { [key: string]: { x: number; y: number } } = {};
 
@@ -360,14 +360,14 @@ const applyMoveDelta = (
         if (id.startsWith("node_")) {
             const nId = id.substring(5);
             if (positionsRef.current[nId]) {
-                compiled[nId] = { x: positionsRef.current[nId].x + delta.x, y: positionsRef.current[nId].y + delta.y };
+                compiled[nId] = { x: positionsRef.current[graph][nId].x + delta.x, y: positionsRef.current[graph][nId].y + delta.y };
             }
         }
     }
 
     // expand: for any container in the move set, add nodes within its bounds
-    for (const nId of Object.keys(compiled)) {
-        /*
+    // for (const nId of Object.keys(compiled)) {
+    /*
         const node = nodesRef.current[nId];
         if (node?.payload.type === "container") {
             const containerPos = positionsRef.current[nId];
@@ -383,7 +383,7 @@ const applyMoveDelta = (
             }
         }
         */
-    }
+    // }
 
     // apply DOM updates for visual feedback
     for (const [nId, toSet] of Object.entries(compiled)) {
@@ -402,7 +402,6 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
 
     const selectionRef = Session.useSelectionRef();
     const positionsRef = MainGraph.usePositionsRef();
-    const nodesRef = MainGraph.useNodesRef();
     const positionMethods = MainGraph.usePositionMethods();
 
     const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
@@ -412,10 +411,10 @@ const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: s
             if (!selectionRef.current.has(`node_${nodeId}`)) {
                 return;
             }
-            const compiled = applyMoveDelta(delta, selectionRef, positionsRef, nodesRef);
+            const compiled = applyMoveDelta("root", delta, selectionRef, positionsRef);
             positionMethods.setMany.passive(compiled);
         },
-        [selectionRef, nodeId, positionMethods.setMany, positionsRef, nodesRef],
+        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
     );
 
     const handleFinish = useCallback(

@@ -7,7 +7,7 @@ import { Widget } from "../../definitions/widgets";
 import styled from "styled-components";
 import { Socket } from "./socket";
 
-export const GraphSlots = ({ nodeId }: { nodeId: string }) => {
+export const GraphSlots = styled(({ nodeId, className }: { nodeId: string; className?: string }) => {
     const node = MainGraph.useNode(nodeId);
     const nodeType = NODETYPE_REGISTRY[node.type];
 
@@ -16,13 +16,16 @@ export const GraphSlots = ({ nodeId }: { nodeId: string }) => {
     }, [nodeType, node]);
 
     return (
-        <>
+        <div className={className}>
             {slots.map((slot, i) => {
                 return <GraphSlot node={node} nodeType={nodeType} slot={slot} key={i} />;
             })}
-        </>
+        </div>
     );
-};
+})`
+    display: grid;
+    gap: 4px;
+`;
 
 const GraphSlot = styled(({ slot, node, className }: { slot: SlotOf<any>; node: ArcaneGraph.NodeOf<any>; nodeType: NodeType; className?: string }) => {
     return (
@@ -33,6 +36,7 @@ const GraphSlot = styled(({ slot, node, className }: { slot: SlotOf<any>; node: 
     );
 })`
     display: flex;
+    gap: 6px;
 `;
 
 const GraphWidget = ({ slot, node }: { slot: SlotOf<any>; node: ArcaneGraph.NodeOf<any> }) => {

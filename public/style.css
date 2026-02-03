@@ -7,3 +7,13 @@ input {
     background: #333;
     color: #eee;
 }
+
+:root {
+    --style-base-slate: hsl(210, 12%, 44%); /* Default/Neutral blue-gray (rebased: s×1.2, l×0.8) */
+    --style-base-red: hsl(4, 45%, 50%); /* Red (rebased: s×1.2, l×0.8) */
+    --style-base-orange: hsl(17, 50%, 55%); /* Yellow/Orange (rebased: s×1.2, l×0.8) */
+    --style-base-yellow: hsl(40, 60%, 60%); /* Yellow/Orange (rebased: s×1.2, l×0.8) */
+    --style-base-green: hsl(140, 45%, 50%); /* Green (rebased: s×1.2, l×0.8) */
+    --style-base-blue: hsl(215, 65%, 50%); /* Blue (rebased: s×1.2, l×0.8) */
+    --style-base-purple: hsl(280, 45%, 55%); /* Purple (rebased: s×1.2, l×0.8) */
+}

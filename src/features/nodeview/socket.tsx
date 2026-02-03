@@ -23,18 +23,17 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
         let pending: null | MainGraph.PendingConnection;
         return {
             start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
-                console.log("graph is starting a connection");
-                const p = { node: nodeId, socket: socketId, side, type };
+                // todo: parametize scope properly...
+                const p = { node: nodeId, socket: socketId, side, type, scope: "root" };
                 setPendingConnection(p);
                 pending = p;
             },
             finish: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
-                if (pending !== null) {
-                    // todo: make sure you connect the right end to the right end.
-                    // todo: maybe some validation?
-                    graphMethods.connect(pending.node, nodeId, pending.socket, socketId);
+                if (pending !== null && pending.side !== side) {
+                    // normalize: out -> in
+                    const [fromNode, toNode, fromSocket, toSocket] = pending.side === "out" ? [pending.node, nodeId, pending.socket, socketId] : [nodeId, pending.node, socketId, pending.socket];
+                    graphMethods.connect(fromNode, toNode, fromSocket, toSocket, type);
                 }
-                // validate and build connection here
             },
             clear: () => {
                 setPendingConnection(null);
@@ -53,7 +52,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
     return (
         <GraphViewConnectionCTX value={connectionContextValue}>
             {children}
-            {pendingConnection ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} /> : null}
+            {pendingConnection ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={pendingConnection.type} /> : null}
         </GraphViewConnectionCTX>
     );
 };
@@ -64,8 +63,20 @@ export const Socket = styled(({ side, socketId, nodeId, className, type }: { sid
     const [pendingConnection] = MainGraph.usePendingConnection();
 
     const canConnect = useMemo(() => {
-        return pendingConnection !== null;
-    }, [pendingConnection]);
+        if (pendingConnection === null) {
+            return false;
+        }
+        if (pendingConnection.side === side) {
+            return false;
+        }
+        // todo: don't assume that pending.type === type is valid. a type of "number" is compatible with "float" and "integer", but they are not compatible with each other.
+        if (pendingConnection.type === type) {
+            // but for now, it's okay.
+            return false;
+        }
+        // todo: use the validateConnection() utility method below;
+        return true;
+    }, [pendingConnection, side, type]);
 
     const canConnectRef = useStable(canConnect);
 
@@ -75,8 +86,10 @@ export const Socket = styled(({ side, socketId, nodeId, className, type }: { sid
         const socket = socketRef.current;
         if (socket) {
             const connectStart = (evt: globalThis.MouseEvent) => {
-                evt.handled = "active";
-                connectionContext.start(nodeId, socketId, side, type);
+                if (evt.button === 0) {
+                    evt.handled = "active";
+                    connectionContext.start(nodeId, socketId, side, type);
+                }
             };
             const finishConnection = () => {
                 if (canConnectRef.current) {
@@ -93,16 +106,54 @@ export const Socket = styled(({ side, socketId, nodeId, className, type }: { sid
         }
     }, [nodeId, socketId, connectionContext, side, type]);
 
-    return <div ref={socketRef} className={className} data-socketid={`socket_${nodeId}_${socketId}`} data-socketside={side} />;
+    const state = useMemo(() => {
+        if (pendingConnection) {
+            if (pendingConnection.node === nodeId && pendingConnection.socket === socketId) {
+                return "active";
+            }
+            if (!canConnect) {
+                return "invalid";
+            }
+        }
+        return undefined;
+    }, [pendingConnection, canConnect, nodeId, socketId]);
+
+    return <div ref={socketRef} className={className} data-socketid={`--socket_${nodeId}_${socketId}`} data-socketside={side} data-sockettype={type} data-state={state} />;
 })`
-    height: 1lh;
+    height: calc(1lh - (1lh - 1em) / 2);
+    align-self: center;
     aspect-ratio: 1;
-    background: red;
+    background: var(--style-base-slate);
     border-radius: 100%;
-    anchor-name: attr(data-socket type(<custom-ident>));
+    anchor-name: attr(data-socketid type(<custom-ident>));
+    transition:
+        background-color 0.3s,
+        outline-color 0.3s;
+    outline: 1px solid #fff6;
+    outline-offset: -2px;
+    border: 1px solid black;
+    &[data-socketside="in"] {
+        margin-left: -0.5lh;
+    }
+    &[data-socketside="out"] {
+        margin-right: -0.5lh;
+    }
+    &[data-sockettype="float"] {
+        background: var(--style-base-purple);
+    }
+    &[data-sockettype="shape"] {
+        background: var(--style-base-green);
+    }
+    &[data-state~="invalid"] {
+        background: #222;
+        outline-color: #fff1;
+    }
+    &[data-state~="active"] {
+        outline-color: #fff;
+    }
 `;
 
-const PendingConnection = styled(({ nodeId, socketId, className }: { nodeId: string; socketId: string; className?: string }) => {
+const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: string }) => {
     const style = useMemo(
         () =>
             ({
@@ -153,7 +204,7 @@ const PendingConnection = styled(({ nodeId, socketId, className }: { nodeId: str
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} />
+                <path ref={pathRef} data-type={type} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>
@@ -196,10 +247,17 @@ const PendingConnection = styled(({ nodeId, socketId, className }: { nodeId: str
             pointer-events: none;
         }
     }
+
+    & > svg > path[data-type="float"] {
+        stroke: var(--style-base-purple);
+    }
+    & > svg > path[data-type="shape"] {
+        stroke: var(--style-base-green);
+    }
 `;
 
 // todo: use this to check for possible cylicals...
-const canConnect = <N extends PayloadOf<NodeType>, L>(graph: ArcaneGraph.GraphOf<N, L>, node: ArcaneGraph.NodeOf<N>, outSocket: keyof OutputOf<NodeType>): boolean => {
+const validateConnection = <N extends PayloadOf<NodeType>>(graph: ArcaneGraph.GraphOf<N>, node: ArcaneGraph.NodeOf<N>, outSocket: keyof OutputOf<NodeType>): boolean => {
     const nt = NODETYPE_REGISTRY[node.type];
     const affected = nt.dependsOn(node, outSocket);
     return true;

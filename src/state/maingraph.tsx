@@ -9,70 +9,104 @@ import { ArcaneGraph } from "../util/structs/arcaneGraph";
 export namespace MainGraph {
     export type BaseNode = PayloadOf<(typeof NODETYPE_REGISTRY)[keyof typeof NODETYPE_REGISTRY]>;
 
-    export type PendingConnection = { node: string; socket: string; side: "in" | "out"; type: string };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string };
+    type GraphId = string;
+    type XY = { x: number; y: number };
 
-    type State = {
-        nodes: FastContextMember<{ [nodeId: string]: ArcaneGraph.NodeOf<BaseNode> }>;
-        nodeList: FastContextMember<string[]>;
-        links: FastContextMember<{ [linkId: string]: ArcaneGraph.LinkOf<string> }>;
-        linkList: FastContextMember<string[]>;
-        positions: FastContextMember<{ [key: string]: { x: number; y: number } }>;
-        // Todo: need more info: nodeId, socketId, side, socketType
+    type TheType = {
+        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<BaseNode> } };
+        nodeList: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+        links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
+        linkList: { [graphId: GraphId]: ArcaneGraph.LinkId[] };
+        positions: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: XY } };
+        users: { [graphId: GraphId]: { node: ArcaneGraph.NodeId; scope: GraphId }[] };
+        inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+        outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+    };
+
+    type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
         pendingConnection: FastContextMember<PendingConnection | null>;
     };
 
     const CTX = createContext<State | undefined>(undefined);
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
-        const nodes = useFastContextMember<{ [nodeId: string]: ArcaneGraph.NodeOf<BaseNode> }>({
-            RESULT: {
-                ...NODETYPE_REGISTRY.result.create({}, "RESULT"),
+        const nodes = useFastContextMember<TheType["nodes"]>({
+            root: {
+                RESULT: {
+                    ...NODETYPE_REGISTRY.result.create({}, "RESULT"),
+                },
             },
         });
-        const nodeList = useFastContextMember<string[]>(["RESULT"]);
-
-        const links = useFastContextMember<{ [linkId: string]: ArcaneGraph.LinkOf<string> }>({});
-        const linkList = useFastContextMember<string[]>([]);
-
-        const positions = useFastContextMember<{ [key: string]: { x: number; y: number } }>({
-            RESULT: { x: 0, y: 0 },
+        const nodeList = useFastContextMember<TheType["nodeList"]>({
+            root: ["RESULT"],
         });
 
-        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: string } | null>(null);
+        const links = useFastContextMember<TheType["links"]>({
+            root: {},
+        });
 
-        const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, pendingConnection }), []);
+        const linkList = useFastContextMember<TheType["linkList"]>({
+            root: [],
+        });
+
+        const positions = useFastContextMember<TheType["positions"]>({
+            root: {
+                RESULT: { x: 0, y: 0 },
+            },
+        });
+
+        const users = useFastContextMember<TheType["users"]>({
+            root: [],
+        });
+
+        const inputs = useFastContextMember<TheType["inputs"]>({
+            root: [],
+        });
+
+        const outputs = useFastContextMember<TheType["outputs"]>({
+            root: ["RESULT"],
+        });
+
+        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: string; scope: string } | null>(null);
+
+        const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };
 
-    export const useNodeList = () => {
+    export const useNodeList = (graphId: string = "root") => {
         const ctx = useContext(CTX)!;
-
-        return useSyncExternalStore(ctx.nodeList.subscribe, ctx.nodeList.get);
+        const selector = useCallback(() => {
+            return ctx.nodeList.get()[graphId];
+        }, [graphId, ctx]);
+        return useSyncExternalStore(ctx.nodeList.subscribe, selector);
     };
 
-    export const useLinkList = () => {
+    export const useLinkList = (graphId: string = "root") => {
         const ctx = useContext(CTX)!;
-
-        return useSyncExternalStore(ctx.linkList.subscribe, ctx.linkList.get);
+        const selector = useCallback(() => {
+            return ctx.linkList.get()[graphId];
+        }, [graphId, ctx]);
+        return useSyncExternalStore(ctx.linkList.subscribe, selector);
     };
 
-    export const useLink = (id: string) => {
+    export const useLink = (id: string, graphId: string = "root") => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
-            return ctx.links.get()[id];
-        }, [ctx, id]);
+            return ctx.links.get()[graphId][id];
+        }, [ctx, id, graphId]);
 
         return useSyncExternalStore(ctx.links.subscribe, selector);
     };
 
-    export const useNode = (id: string) => {
+    export const useNode = (id: string, graphId: string = "root") => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
-            return ctx.nodes.get()[id];
-        }, [ctx, id]);
+            return ctx.nodes.get()[graphId][id];
+        }, [ctx, id, graphId]);
 
         return useSyncExternalStore(ctx.nodes.subscribe, selector);
     };
@@ -82,59 +116,88 @@ export namespace MainGraph {
         return useFastContextState(ctx.pendingConnection);
     };
 
-    export const useMethods = () => {
+    // todo: handle the case where graphId doesn't yet exist!
+    export const useMethods = (graphId: GraphId = "root") => {
         const ctx = useContext(CTX)!;
 
         return useMemo(() => {
-            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string) => {
-                const oldGraph = { nodes: ctx.nodes.get(), links: ctx.links.get() };
-                //const [{ links }, newLink] = Graph.connect(oG, fromNode, toNode, "test");
-                // if (newLink) {
-                //     ctx.links.ref.current = links;
-                //     ctx.linkList.ref.current = Object.keys(links);
-                //     ctx.links.notify();
-                //     ctx.linkList.notify();
-                // }
+            // ! Important: this assumes that 'from' and 'to' have already been normalized
+            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string) => {
+                const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
+                const [{ nodes, links }, newLink] = ArcaneGraph.connect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
+                if (newLink) {
+                    if (nodes !== oldGraph.nodes) {
+                        ctx.nodes.ref.current = {
+                            ...ctx.nodes.ref.current,
+                            [graphId]: nodes,
+                        };
+                        ctx.nodeList.ref.current = {
+                            ...ctx.nodeList.ref.current,
+                            [graphId]: Object.keys(nodes),
+                        };
+                        ctx.nodes.notify();
+                        ctx.nodeList.notify();
+                    }
+                    if (links !== oldGraph.links) {
+                        ctx.links.ref.current = {
+                            ...ctx.links.ref.current,
+                            [graphId]: links,
+                        };
+                        ctx.linkList.ref.current = {
+                            ...ctx.linkList.ref.current,
+                            [graphId]: Object.keys(links),
+                        };
+                        ctx.links.notify();
+                        ctx.linkList.notify();
+                    }
+                }
             };
 
             return { connect };
-        }, [ctx]);
+        }, [ctx, graphId]);
     };
 
-    export const usePositionOf = (id: string) => {
+    export const usePositionOf = (id: string, graphId: GraphId = "root") => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
-            return ctx.positions.get()[id];
-        }, [ctx, id]);
+            return ctx.positions.get()[graphId][id];
+        }, [ctx, id, graphId]);
 
         const value = useSyncExternalStore(ctx.positions.subscribe, selector);
 
         const set = useCallback(
             (v: SetStateAction<{ x: number; y: number }>) => {
-                const prev = ctx.positions.ref.current[id];
+                const prev = ctx.positions.ref.current[graphId][id];
                 const { x, y } = typeof v === "function" ? v(prev) : v;
                 if (x !== prev.x || y !== prev.y) {
-                    ctx.positions.ref.current[id] = { x, y };
+                    ctx.positions.ref.current = {
+                        ...ctx.positions.ref.current,
+                        [graphId]: {
+                            ...ctx.positions.ref.current[graphId],
+                            [id]: { x, y },
+                        },
+                    };
                     ctx.positions.notify();
                 }
             },
-            [ctx, id],
+            [ctx, id, graphId],
         );
 
         return [value, set] as const;
     };
 
-    type XY = { x: number; y: number };
-
-    export const usePositionMethods = () => {
+    export const usePositionMethods = (graphId: GraphId = "root") => {
         const ctx = useContext(CTX)!;
         return useMemo(() => {
             const doCommit = () => ctx.positions.notify();
             const doSetMany = (toSet: { [key: string]: XY }) => {
                 ctx.positions.ref.current = {
                     ...ctx.positions.ref.current,
-                    ...toSet,
+                    [graphId]: {
+                        ...ctx.positions.ref.current[graphId],
+                        ...toSet,
+                    },
                 };
             };
             const setMany = (toSet: { [key: string]: XY }) => {
@@ -147,7 +210,7 @@ export namespace MainGraph {
             return {
                 setMany,
             };
-        }, [ctx]);
+        }, [ctx, graphId]);
     };
 
     export const usePositionsRef = () => useContext(CTX)!.positions.ref;

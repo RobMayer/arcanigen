@@ -22,34 +22,34 @@ export namespace ArcaneGraph {
         payload: P; // could contain anything - for layers, it might be a list of layers (with socketIds used in "in", blend modes, etc), for circles it might be parameters such as radius, for example.
     };
 
-    export type LinkOf<P> = {
+    export type Link = {
         id: LinkId;
+        type: string;
         fromNode: NodeId;
         toNode: NodeId;
         fromSocket: SocketId;
         toSocket: SocketId;
-        payload: P;
     };
 
-    type RemovedOf<N, L> = {
+    type RemovedOf<N> = {
         nodes: NodeOf<N>[];
-        links: LinkOf<L>[];
+        links: Link[];
     };
 
     /*
-    // kicking this can down the road 
-    export type SubgraphOf<N, L> = {
+    // kicking this can down the road
+    export type SubgraphOf<N> = {
         nodes: { [key: NodeId]: NodeOf<N> };
-        links: { [key: LinkId]: LinkOf<L> };
+        links: { [key: LinkId]: Link };
         users: { node: NodeId; graph: SubgraphId | null }[];
         inputs: NodeId[];
         outputs: NodeId[];
     };
     */
 
-    export type GraphOf<N, L> = {
+    export type GraphOf<N> = {
         nodes: { [key: NodeId]: NodeOf<N> };
-        links: { [key: LinkId]: LinkOf<L> };
+        links: { [key: LinkId]: Link };
         // subgraphs: { [key: SubgraphId]: SubgraphOf<N> }; // kicking this can down the road a little
     };
 
@@ -74,28 +74,28 @@ export namespace ArcaneGraph {
     //#endregion
 
     //#region validation
-    export const hasNode = <N, L>(graph: GraphOf<N, L>, id: NodeId) => id in graph.nodes;
-    export const hasLink = <N, L>(graph: GraphOf<N, L>, id: LinkId) => id in graph.links;
-    export const hasSocket = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId) => node in graph.nodes && (socket in graph.nodes[node].in || socket in graph.nodes[node].out);
+    export const hasNode = <N>(graph: GraphOf<N>, id: NodeId) => id in graph.nodes;
+    export const hasLink = <N>(graph: GraphOf<N>, id: LinkId) => id in graph.links;
+    export const hasSocket = <N>(graph: GraphOf<N>, node: NodeId, socket: SocketId) => node in graph.nodes && (socket in graph.nodes[node].in || socket in graph.nodes[node].out);
     //#endregion
 
     //#region Query
-    export const nodeCount = <N, L>(graph: GraphOf<N, L>) => Object.keys(graph.nodes).length;
-    export const linkCount = <N, L>(graph: GraphOf<N, L>) => Object.keys(graph.links).length;
+    export const nodeCount = <N>(graph: GraphOf<N>) => Object.keys(graph.nodes).length;
+    export const linkCount = <N>(graph: GraphOf<N>) => Object.keys(graph.links).length;
 
     //#region Query/Nodes
 
-    export const nodesWhere = <N, L>(graph: GraphOf<N, L>, filter: (node: NodeOf<N>) => boolean): NodeId[] => Object.keys(graph.nodes).filter((id) => filter(graph.nodes[id]));
+    export const nodesWhere = <N>(graph: GraphOf<N>, filter: (node: NodeOf<N>) => boolean): NodeId[] => Object.keys(graph.nodes).filter((id) => filter(graph.nodes[id]));
 
     // todo: Traversal
-    // export const wideDownstreamOf = <N, L>(graph: GraphOf<N, L>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
-    // export const deepDownstreamOf = <N, L>(graph: GraphOf<N, L>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
-    // export const wideUpstreamOf = <N, L>(graph: GraphOf<N, L>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
-    // export const deepUpstreamOf = <N, L>(graph: GraphOf<N, L>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
+    // export const wideDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
+    // export const deepDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
+    // export const wideUpstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
+    // export const deepUpstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
 
     //#endregion
     //#region Query/Links
-    export const linksTo = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
+    export const linksTo = <N>(graph: GraphOf<N>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
         if (!(node in graph.nodes)) return [];
         const n = graph.nodes[node];
         if (socket !== null) {
@@ -108,7 +108,7 @@ export namespace ArcaneGraph {
         }
         return results;
     };
-    export const linksFrom = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
+    export const linksFrom = <N>(graph: GraphOf<N>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
         if (!(node in graph.nodes)) return [];
         const n = graph.nodes[node];
         if (socket !== null) {
@@ -120,7 +120,7 @@ export namespace ArcaneGraph {
         }
         return results;
     };
-    export const linksOf = <N, L>(graph: GraphOf<N, L>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
+    export const linksOf = <N>(graph: GraphOf<N>, node: NodeId, socket: SocketId | null = null): LinkId[] => {
         if (!(node in graph.nodes)) return [];
         const n = graph.nodes[node];
         const results: LinkId[] = [];
@@ -140,7 +140,7 @@ export namespace ArcaneGraph {
         }
         return results;
     };
-    export const directedLinksBetween = <N, L>(graph: GraphOf<N, L>, from: NodeId, to: NodeId): LinkId[] => {
+    export const directedLinksBetween = <N>(graph: GraphOf<N>, from: NodeId, to: NodeId): LinkId[] => {
         if (!(from in graph.nodes)) return [];
         const results: LinkId[] = [];
         for (const linkIds of Object.values(graph.nodes[from].out)) {
@@ -150,7 +150,7 @@ export namespace ArcaneGraph {
         }
         return results;
     };
-    export const linksBetween = <N, L>(graph: GraphOf<N, L>, nodeA: NodeId, nodeB: NodeId): LinkId[] => {
+    export const linksBetween = <N>(graph: GraphOf<N>, nodeA: NodeId, nodeB: NodeId): LinkId[] => {
         if (!(nodeA in graph.nodes) || !(nodeB in graph.nodes)) return [];
         const results: LinkId[] = [];
         for (const linkIds of Object.values(graph.nodes[nodeA].out)) {
@@ -165,14 +165,14 @@ export namespace ArcaneGraph {
         }
         return results;
     };
-    export const linksWhere = <N, L>(graph: GraphOf<N, L>, filter: (link: LinkOf<L>) => boolean): LinkId[] => Object.keys(graph.links).filter((id) => filter(graph.links[id]));
+    export const linksWhere = <N>(graph: GraphOf<N>, filter: (link: Link) => boolean): LinkId[] => Object.keys(graph.links).filter((id) => filter(graph.links[id]));
 
     //#endregion
     //#endregion
 
     //#region Modification
     //#region Modification/Nodes
-    export const addNodes = <N, L>(graph: GraphOf<N, L>, payload: BulkAdd<Omit<NodeOf<N>, "id">>): [graph: GraphOf<N, L>, newIds: NodeId[]] => {
+    export const addNodes = <N>(graph: GraphOf<N>, payload: BulkAdd<Omit<NodeOf<N>, "id">>): [graph: GraphOf<N>, newIds: NodeId[]] => {
         const normalized = normalizeBulk(payload);
         const newIds: NodeId[] = [];
         const newNodes = { ...graph.nodes };
@@ -184,14 +184,14 @@ export namespace ArcaneGraph {
         if (newIds.length === 0) return [graph, []];
         return [{ ...graph, nodes: newNodes }, newIds];
     };
-    export const addNode = <N, L>(graph: GraphOf<N, L>, payload: Omit<NodeOf<N>, "id">, id: NodeId = generateId()): [graph: GraphOf<N, L>, newId: NodeId | null] => {
+    export const addNode = <N>(graph: GraphOf<N>, payload: Omit<NodeOf<N>, "id">, id: NodeId = generateId()): [graph: GraphOf<N>, newId: NodeId | null] => {
         const [newGraph, newIds] = addNodes(graph, { [id]: payload });
         return [newGraph, newIds.length > 0 ? newIds[0] : null];
     };
-    export const removeNodes = <N, L>(graph: GraphOf<N, L>, ids: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const removeNodes = <N>(graph: GraphOf<N>, ids: ListOf<NodeId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const idSet = normalizeList(ids);
         const removedNodes: NodeOf<N>[] = [];
-        const removedLinks: LinkOf<L>[] = [];
+        const removedLinks: Link[] = [];
         const removedLinkIds = new Set<LinkId>();
 
         // collect nodes to remove and their connected links
@@ -265,7 +265,7 @@ export namespace ArcaneGraph {
         ];
     };
 
-    export const updateNodesWith = <N, L>(graph: GraphOf<N, L>, setter: Setter<NodeOf<N>, N | undefined>, ids?: ListOf<NodeId>): [graph: GraphOf<N, L>, affected: NodeId[]] => {
+    export const updateNodesWith = <N>(graph: GraphOf<N>, setter: Setter<NodeOf<N>, N | undefined>, ids?: ListOf<NodeId>): [graph: GraphOf<N>, affected: NodeId[]] => {
         const targets = ids !== undefined ? normalizeList(ids) : null;
         const affected: NodeId[] = [];
         let newNodes: typeof graph.nodes | null = null;
@@ -280,19 +280,19 @@ export namespace ArcaneGraph {
         if (newNodes === null) return [graph, []];
         return [{ ...graph, nodes: newNodes }, affected];
     };
-    export const updateNodes = <N, L>(graph: GraphOf<N, L>, payloads: { [key: NodeId]: N }): [graph: GraphOf<N, L>, affected: NodeId[]] => {
+    export const updateNodes = <N>(graph: GraphOf<N>, payloads: { [key: NodeId]: N }): [graph: GraphOf<N>, affected: NodeId[]] => {
         return updateNodesWith(graph, (node) => (node.id in payloads ? payloads[node.id] : undefined), Object.keys(payloads) as NodeId[]);
     };
-    export const updateNodeWith = <N, L>(graph: GraphOf<N, L>, id: NodeId, setter: Setter<NodeOf<N>, N | undefined>): [graph: GraphOf<N, L>, affected: NodeId | null] => {
+    export const updateNodeWith = <N>(graph: GraphOf<N>, id: NodeId, setter: Setter<NodeOf<N>, N | undefined>): [graph: GraphOf<N>, affected: NodeId | null] => {
         const [newGraph, affected] = updateNodesWith(graph, setter, id);
         return [newGraph, affected.length > 0 ? affected[0] : null];
     };
-    export const updateNode = <N, L>(graph: GraphOf<N, L>, id: NodeId, payload: N): [graph: GraphOf<N, L>, affected: NodeId | null] => {
+    export const updateNode = <N>(graph: GraphOf<N>, id: NodeId, payload: N): [graph: GraphOf<N>, affected: NodeId | null] => {
         const [newGraph, affected] = updateNodesWith(graph, () => payload, id);
         return [newGraph, affected.length > 0 ? affected[0] : null];
     };
 
-    export const isolate = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const isolate = <N>(graph: GraphOf<N>, id: ListOf<NodeId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const nodeIds = normalizeList(id);
         const linkIds: LinkId[] = [];
         for (const nodeId of nodeIds) {
@@ -307,7 +307,7 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const isolateUpstream = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const isolateUpstream = <N>(graph: GraphOf<N>, id: ListOf<NodeId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const nodeIds = normalizeList(id);
         const linkIds: LinkId[] = [];
         for (const nodeId of nodeIds) {
@@ -318,7 +318,7 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const isolateDownstream = <N, L>(graph: GraphOf<N, L>, id: ListOf<NodeId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const isolateDownstream = <N>(graph: GraphOf<N>, id: ListOf<NodeId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const nodeIds = normalizeList(id);
         const linkIds: LinkId[] = [];
         for (const nodeId of nodeIds) {
@@ -329,7 +329,7 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const unplug = <N, L>(graph: GraphOf<N, L>, id: NodeId, socket: ListOf<SocketId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const unplug = <N>(graph: GraphOf<N>, id: NodeId, socket: ListOf<SocketId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         if (!(id in graph.nodes)) return [graph, { nodes: [], links: [] }];
         const sockets = normalizeList(socket);
         const node = graph.nodes[id];
@@ -345,7 +345,7 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const unplugMany = <N, L>(graph: GraphOf<N, L>, data: { [key: NodeId]: ListOf<SocketId> }): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const unplugMany = <N>(graph: GraphOf<N>, data: { [key: NodeId]: ListOf<SocketId> }): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const linkIds: LinkId[] = [];
         for (const [nodeId, sockets] of Object.entries(data)) {
             if (!(nodeId in graph.nodes)) continue;
@@ -365,10 +365,10 @@ export namespace ArcaneGraph {
     };
     //#endregion
     //#region Modification/Links
-    const doConnect = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>, displace: boolean): [graph: GraphOf<N, L>, newIds: LinkId[], removed: RemovedOf<N, L>] => {
+    const doConnect = <N>(graph: GraphOf<N>, data: BulkAdd<Omit<Link, "id">>, displace: boolean): [graph: GraphOf<N>, newIds: LinkId[], removed: RemovedOf<N>] => {
         const normalized = normalizeBulk(data);
         const newIds: LinkId[] = [];
-        const displacedLinks: LinkOf<L>[] = [];
+        const displacedLinks: Link[] = [];
         let newNodes: typeof graph.nodes | null = null;
         let newLinks: typeof graph.links | null = null;
 
@@ -404,7 +404,7 @@ export namespace ArcaneGraph {
             }
 
             // create the new link
-            const link: LinkOf<L> = { ...entry, id } as LinkOf<L>;
+            const link: Link = { ...entry, id };
             if (newLinks === null) newLinks = { ...graph.links };
             newLinks[id] = link;
 
@@ -428,44 +428,44 @@ export namespace ArcaneGraph {
         return [{ ...graph, nodes: newNodes ?? graph.nodes, links: newLinks ?? graph.links }, newIds, { nodes: [], links: displacedLinks }];
     };
 
-    export const connectMany = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>): [graph: GraphOf<N, L>, newIds: LinkId[]] => {
+    export const connectMany = <N>(graph: GraphOf<N>, data: BulkAdd<Omit<Link, "id">>): [graph: GraphOf<N>, newIds: LinkId[]] => {
         const [g, n] = doConnect(graph, data, false);
         return [g, n];
     };
-    export const reconnectMany = <N, L>(graph: GraphOf<N, L>, data: BulkAdd<Omit<LinkOf<L>, "id">>): [graph: GraphOf<N, L>, newIds: LinkId[], removed: RemovedOf<N, L>] => {
+    export const reconnectMany = <N>(graph: GraphOf<N>, data: BulkAdd<Omit<Link, "id">>): [graph: GraphOf<N>, newIds: LinkId[], removed: RemovedOf<N>] => {
         return doConnect(graph, data, true);
     };
-    export const connect = <N, L>(
-        graph: GraphOf<N, L>,
+    export const connect = <N>(
+        graph: GraphOf<N>,
         fromNode: NodeId,
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        payload: L,
+        type: string,
         id: LinkId = generateId(),
-    ): [graph: GraphOf<N, L>, newId: LinkId | null] => {
-        const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, payload } });
+    ): [graph: GraphOf<N>, newId: LinkId | null] => {
+        const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
         return [newGraph, newIds.length > 0 ? newIds[0] : null];
     };
-    export const reconnect = <N, L>(
-        graph: GraphOf<N, L>,
+    export const reconnect = <N>(
+        graph: GraphOf<N>,
         fromNode: NodeId,
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        payload: L,
+        type: string,
         id: LinkId = generateId(),
-    ): [graph: GraphOf<N, L>, newId: LinkId | null, removed: RemovedOf<N, L>] => {
-        const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, payload } });
+    ): [graph: GraphOf<N>, newId: LinkId | null, removed: RemovedOf<N>] => {
+        const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
         return [newGraph, newIds.length > 0 ? newIds[0] : null, removed];
     };
-    export const disconnectBetween = <N, L>(
-        graph: GraphOf<N, L>,
+    export const disconnectBetween = <N>(
+        graph: GraphOf<N>,
         nodeA: NodeId,
         nodeB: NodeId,
         nodeASocket: SocketId | null = null,
         nodeBSocket: SocketId | null = null,
-    ): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    ): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const linkIds: LinkId[] = [];
         // A → B
         if (nodeA in graph.nodes) {
@@ -495,7 +495,7 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const disconnectUpstream = <N, L>(graph: GraphOf<N, L>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const disconnectUpstream = <N>(graph: GraphOf<N>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         if (!(node in graph.nodes)) return [graph, { nodes: [], links: [] }];
         const n = graph.nodes[node];
         const linkIds: LinkId[] = [];
@@ -508,7 +508,7 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const disconnectDownstream = <N, L>(graph: GraphOf<N, L>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const disconnectDownstream = <N>(graph: GraphOf<N>, node: NodeId, other: NodeId | null = null, socket: SocketId | null = null): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         if (!(node in graph.nodes)) return [graph, { nodes: [], links: [] }];
         const n = graph.nodes[node];
         const linkIds: LinkId[] = [];
@@ -521,9 +521,9 @@ export namespace ArcaneGraph {
         }
         return removeLinks(graph, linkIds);
     };
-    export const removeLinks = <N, L>(graph: GraphOf<N, L>, id: ListOf<LinkId>): [graph: GraphOf<N, L>, removed: RemovedOf<N, L>] => {
+    export const removeLinks = <N>(graph: GraphOf<N>, id: ListOf<LinkId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const idSet = normalizeList(id);
-        const removedLinks: LinkOf<L>[] = [];
+        const removedLinks: Link[] = [];
 
         // collect links that actually exist
         for (const linkId of idSet) {
@@ -567,36 +567,10 @@ export namespace ArcaneGraph {
         ];
     };
 
-    export const updateLinksWith = <N, L>(graph: GraphOf<N, L>, setter: Setter<LinkOf<L>, L | undefined>, ids?: ListOf<LinkId>): [graph: GraphOf<N, L>, affected: LinkId[]] => {
-        const targets = ids !== undefined ? normalizeList(ids) : null;
-        const affected: LinkId[] = [];
-        let newLinks: typeof graph.links | null = null;
-        for (const [id, link] of Object.entries(graph.links)) {
-            if (targets !== null && !targets.has(id)) continue;
-            const newPayload = setter(link);
-            if (newPayload === undefined) continue;
-            if (newLinks === null) newLinks = { ...graph.links };
-            newLinks[id] = { ...link, payload: newPayload };
-            affected.push(id);
-        }
-        if (newLinks === null) return [graph, []];
-        return [{ ...graph, links: newLinks }, affected];
-    };
-    export const updateLinks = <N, L>(graph: GraphOf<N, L>, payloads: { [key: LinkId]: L }): [graph: GraphOf<N, L>, affected: LinkId[]] => {
-        return updateLinksWith(graph, (link) => (link.id in payloads ? payloads[link.id] : undefined), Object.keys(payloads) as LinkId[]);
-    };
-    export const updateLinkWith = <N, L>(graph: GraphOf<N, L>, id: LinkId, setter: Setter<LinkOf<L>, L | undefined>): [graph: GraphOf<N, L>, affected: LinkId | null] => {
-        const [newGraph, affected] = updateLinksWith(graph, setter, id);
-        return [newGraph, affected.length > 0 ? affected[0] : null];
-    };
-    export const updateLink = <N, L>(graph: GraphOf<N, L>, id: LinkId, payload: L): [graph: GraphOf<N, L>, affected: LinkId | null] => {
-        const [newGraph, affected] = updateLinksWith(graph, () => payload, id);
-        return [newGraph, affected.length > 0 ? affected[0] : null];
-    };
     //#endregion
     //#region Modification/Sockets
     type SocketData = { in: ListOf<SocketId>; out: ListOf<SocketId> } | { in: ListOf<SocketId> } | { out: ListOf<SocketId> };
-    export const addSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null] => {
+    export const addSockets = <N>(graph: GraphOf<N>, id: NodeId, sockets: SocketData): [graph: GraphOf<N>, affected: NodeId | null] => {
         if (!(id in graph.nodes)) return [graph, null];
         const node = graph.nodes[id];
         let newIn: typeof node.in | null = null;
@@ -621,7 +595,7 @@ export namespace ArcaneGraph {
         const newNode = { ...node, in: newIn ?? node.in, out: newOut ?? node.out };
         return [{ ...graph, nodes: { ...graph.nodes, [id]: newNode } }, id];
     };
-    export const removeSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null, removed: RemovedOf<N, L>] => {
+    export const removeSockets = <N>(graph: GraphOf<N>, id: NodeId, sockets: SocketData): [graph: GraphOf<N>, affected: NodeId | null, removed: RemovedOf<N>] => {
         if (!(id in graph.nodes)) return [graph, null, { nodes: [], links: [] }];
         const node = graph.nodes[id];
         // collect links to remove from the targeted sockets
@@ -642,7 +616,7 @@ export namespace ArcaneGraph {
         }
         // remove links first
         let g = graph;
-        let removed: RemovedOf<N, L> = { nodes: [], links: [] };
+        let removed: RemovedOf<N> = { nodes: [], links: [] };
         if (linkIds.length > 0) {
             [g, removed] = removeLinks(g, linkIds);
         }
@@ -677,7 +651,7 @@ export namespace ArcaneGraph {
     };
     // if sockets.in is provided, keep the in sockets listed in sockets.in, remove the rest
     // if sockets.out is provided, keep the out sockets listed in sockets.out, remove the rest
-    export const alterSockets = <N, L>(graph: GraphOf<N, L>, id: NodeId, sockets: SocketData): [graph: GraphOf<N, L>, affected: NodeId | null, removed: RemovedOf<N, L>] => {
+    export const alterSockets = <N>(graph: GraphOf<N>, id: NodeId, sockets: SocketData): [graph: GraphOf<N>, affected: NodeId | null, removed: RemovedOf<N>] => {
         if (!(id in graph.nodes)) return [graph, null, { nodes: [], links: [] }];
         const node = graph.nodes[id];
         // invert the keep-list into a remove-list
