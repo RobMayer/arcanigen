@@ -11,13 +11,16 @@ type ParsedBounds = {
     max?: { value: number; inclusive: boolean };
 };
 
+const REGEX_MIN = /^(>=?)([+-]?[\d.]+(?:[eE][+-]?\d+)?)/;
+const REGEX_MAX = /(<=?)([+-]?[\d.]+(?:[eE][+-]?\d+)?)/;
+
 function parseBounds(bounds?: string): ParsedBounds {
     if (!bounds) return {};
 
     const result: ParsedBounds = {};
 
     // Match min bound: > or >= followed by a number
-    const minMatch = bounds.match(/^(>=?)([+-]?[\d.]+(?:[eE][+-]?\d+)?)/);
+    const minMatch = bounds.match(REGEX_MIN);
     if (minMatch) {
         result.min = {
             value: Number(minMatch[2]),
@@ -26,7 +29,7 @@ function parseBounds(bounds?: string): ParsedBounds {
     }
 
     // Match max bound: < or <= followed by a number
-    const maxMatch = bounds.match(/(<=?)([+-]?[\d.]+(?:[eE][+-]?\d+)?)/);
+    const maxMatch = bounds.match(REGEX_MAX);
     if (maxMatch) {
         result.max = {
             value: Number(maxMatch[2]),
@@ -114,7 +117,7 @@ const NumberInput = ({ value, onValue, onCommit, ref, tooltip, disabled, step, b
             setCache(v);
 
             if (v === "" || isNaN(asNumber)) {
-                evt.target.setCustomValidity("");
+                evt.target.setCustomValidity("Value is required");
                 return;
             }
 
@@ -138,7 +141,7 @@ const NumberInput = ({ value, onValue, onCommit, ref, tooltip, disabled, step, b
                 const asNumber = Number(v);
 
                 if (v === "" || isNaN(asNumber)) {
-                    el.setCustomValidity("");
+                    el.setCustomValidity("Value is required");
                     setCache(`${valueRef.current}`);
                     return;
                 }
@@ -161,7 +164,47 @@ const NumberInput = ({ value, onValue, onCommit, ref, tooltip, disabled, step, b
             };
         }
     }, [parsedBounds, step]);
-    return <input type="number" value={cache} onChange={handleChange} ref={makeRef} title={tooltip} disabled={disabled} step={step ?? "any"} />;
+
+    // Custom arrow key handling for proper step increments and bounds enforcement
+    const handleKeyDown = useCallback(
+        (evt: React.KeyboardEvent<HTMLInputElement>) => {
+            if (evt.key !== "ArrowUp" && evt.key !== "ArrowDown") return;
+
+            evt.preventDefault();
+
+            const currentValue = Number(evt.currentTarget.value);
+            if (isNaN(currentValue)) return;
+
+            const stepAmount = step ?? 1;
+            const delta = evt.key === "ArrowUp" ? stepAmount : -stepAmount;
+            const newValue = currentValue + delta;
+
+            // Enforce bounds
+            if (parsedBounds.min) {
+                const { value: minVal, inclusive } = parsedBounds.min;
+                const limit = inclusive ? minVal : minVal + Number.EPSILON;
+                if (newValue < limit) return; // Don't go below min
+            }
+            if (parsedBounds.max) {
+                const { value: maxVal, inclusive } = parsedBounds.max;
+                const limit = inclusive ? maxVal : maxVal - Number.EPSILON;
+                if (newValue > limit) return; // Don't go above max
+            }
+
+            // Update the input value and trigger change
+            setCache(String(newValue));
+            const error = validateNumber(newValue, parsedBounds, step);
+            evt.currentTarget.setCustomValidity(error);
+
+            if (error === "") {
+                onValueRef.current?.(newValue);
+            }
+        },
+        [step, parsedBounds],
+    );
+
+    // Always use step="any" to disable HTML5 step validation (we handle it with proper floating point tolerance)
+    return <input type="number" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} title={tooltip} disabled={disabled} step="any" />;
 };
 
 export default NumberInput;
