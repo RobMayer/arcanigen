@@ -1,33 +1,30 @@
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { AbstractNodeType, BaseDefinition } from "./abstractNode";
-import { SlotOf } from "../slots";
+import { AbstractNodeType } from "./abstractNode";
 import { nanoid } from "nanoid";
-import { Length } from "../dtatypes";
+import { DataType, DataTypes } from "../datatypes";
 
 type ResultDefinition = {
     outputs: never;
     inputs: {
-        w: Length;
-        h: Length;
-        x: Length;
-        y: Length;
-        color: string;
+        input: DataType<"shape">;
+        w: DataType<"length">;
+        h: DataType<"length">;
+        x: DataType<"length">;
+        y: DataType<"length">;
+        color: DataType<"color">;
     };
     payload: {
-        label: string;
-        w: number;
-        h: number;
-        x: number;
-        y: number;
-        color: string;
+        label: DataType<"string">;
+        w: DataType<"length">;
+        h: DataType<"length">;
+        x: DataType<"length">;
+        y: DataType<"length">;
+        color: DataType<"color">;
     };
 };
 
 export const ResultNodeType = new (class extends AbstractNodeType<ResultDefinition> {
-    dependsOn<K extends ResultDefinition["outputs"]>(node: ArcaneGraph.NodeOf<BaseDefinition["payload"]>, outSocket: K): (keyof ResultDefinition["inputs"])[] {
-        return [];
-    }
-    create(input: Partial<ResultDefinition["payload"]>, id: ArcaneGraph.NodeId = nanoid()): ArcaneGraph.NodeOf<ResultDefinition["payload"]> {
+    create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>> {
         return {
             in: {
                 w: null,
@@ -38,10 +35,10 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
             },
             out: {},
             payload: {
-                w: 800,
-                h: 800,
-                x: 0,
-                y: 0,
+                w: { value: 800, unit: "px" },
+                h: { value: 800, unit: "px" },
+                x: { value: 0, unit: "px" },
+                y: { value: 0, unit: "px" },
                 color: "#fff",
                 label: "",
                 ...input,
@@ -50,58 +47,54 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
             id,
         };
     }
-    getSlots(node: ArcaneGraph.NodeOf<BaseDefinition["payload"]>): SlotOf<ResultDefinition["payload"]>[] {
+    getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>): DataTypes.SlotFor<ResultDefinition>[] {
         return [
             {
                 type: "shape",
-                label: "Input",
+                label: "Output",
                 socketIn: "input",
+                widget: "none",
             },
             {
                 label: "Canvas Width",
-                type: "float",
+                type: "length",
                 socketIn: "w",
-                min: 0,
-                step: 1,
-                widget: "numberinput",
-                defaultValue: 800,
+                widget: "input",
                 property: "w",
             },
             {
                 label: "Canvas Height",
-                type: "float",
+                type: "length",
                 socketIn: "h",
-                min: 0,
-                step: 1,
-                widget: "numberinput",
-                defaultValue: 800,
+                widget: "input",
                 property: "h",
             },
             {
                 label: "Origin X",
-                type: "float",
+                type: "length",
                 socketIn: "x",
-                widget: "numberinput",
-                defaultValue: 0,
+                widget: "input",
                 property: "x",
             },
             {
                 label: "Origin Y",
-                type: "float",
+                type: "length",
                 socketIn: "y",
-                widget: "numberinput",
-                defaultValue: 0,
+                widget: "input",
                 property: "y",
             },
             {
                 label: "Canvas Color",
                 type: "color",
                 socketIn: "color",
-                widget: "color",
+                widget: "hex",
                 property: "color",
                 nullable: true,
                 alpha: true,
             },
         ];
+    }
+    dependsOn<K extends string | number | symbol>(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] {
+        return [];
     }
 })();

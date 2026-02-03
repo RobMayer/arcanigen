@@ -3,18 +3,17 @@ import { FastContextMember, useFastContextMember, useFastContextState } from "..
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { BaseDefinition } from "../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../definitions";
+import { DataTypes } from "../definitions/datatypes";
 
 // will eventually hold a container for node-type specific logic
 
 export namespace MainGraph {
-    export type BaseNode = BaseDefinition["payload"];
-
     export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string };
     type GraphId = string;
     type XY = { x: number; y: number };
 
     type TheType = {
-        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<BaseNode> } };
+        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>> } };
         nodeList: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
         linkList: { [graphId: GraphId]: ArcaneGraph.LinkId[] };
@@ -101,7 +100,7 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.links.subscribe, selector);
     };
 
-    export const useNode = (id: string, graphId: string = "root"): ArcaneGraph.NodeOf<BaseNode> => {
+    export const useNode = (id: string, graphId: string = "root"): ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>> => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {

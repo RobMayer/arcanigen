@@ -6,7 +6,6 @@ import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
-import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { GraphSlots } from "./nodeview/node";
 import { GraphConnectionProvider } from "./nodeview/socket";
 

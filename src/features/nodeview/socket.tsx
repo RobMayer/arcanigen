@@ -138,7 +138,8 @@ export const Socket = styled(({ side, socketId, nodeId, className, type }: { sid
     &[data-socketside="out"] {
         margin-right: -0.5lh;
     }
-    &[data-sockettype="float"] {
+    &[data-sockettype="float"],
+    &[data-sockettype="length"] {
         background: var(--style-base-purple);
     }
     &[data-sockettype="shape"] {
