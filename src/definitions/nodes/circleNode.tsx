@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { AbstractNodeType } from "./abstractNode";
+import { AbstractNodeType, BuiltNodeOf } from "./abstractNode";
 import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
 import { NodeCategory } from "../../types";
@@ -13,6 +13,7 @@ type CircleDefinition = {
         strokeWidth: DataType<"length">;
         strokeColor: DataType<"color">;
         strokeDashOffset: DataType<"length">;
+        // fill
         fillColor: DataType<"color">;
     };
     outputs: {
@@ -26,6 +27,7 @@ type CircleDefinition = {
         strokeWidth: DataType<"length">;
         strokeColor: DataType<"color">;
         strokeDashOffset: DataType<"length">;
+        // fill
         fillColor: DataType<"color">;
     };
 };
@@ -35,11 +37,15 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
     icon = ICONS.Bolt;
     category: NodeCategory = "shape";
 
-    create(input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: string = nanoid()): ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>> {
+    create(input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: string = nanoid()): BuiltNodeOf<CircleDefinition> {
         return {
             id,
             in: {
                 radius: null,
+                strokeWidth: null,
+                strokeColor: null,
+                strokeDashOffset: null,
+                fillColor: null,
             },
             out: {
                 output: [],

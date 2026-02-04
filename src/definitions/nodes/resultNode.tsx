@@ -1,5 +1,5 @@
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { AbstractNodeType } from "./abstractNode";
+import { AbstractNodeType, BuiltNodeOf } from "./abstractNode";
 import { nanoid } from "nanoid";
 import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
@@ -30,9 +30,10 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
     icon = ICONS.Bolt;
     category: NodeCategory = "interface";
 
-    create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>> {
+    create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): BuiltNodeOf<ResultDefinition> {
         return {
             in: {
+                input: null,
                 w: null,
                 h: null,
                 x: null,
