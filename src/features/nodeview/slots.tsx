@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useMemo } from "react";
 import { NodeTypeRegistry } from "../../definitions";
-import { MainGraph } from "../../state/maingraph";
+import { Project } from "../../state/project";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import styled from "styled-components";
 import { Socket } from "./socket";
@@ -14,7 +14,7 @@ import TextInput from "../../components/inputs/TextInput";
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
 export const GraphSlots = styled(({ nodeId, className }: { nodeId: string; className?: string }) => {
-    const [node, methods] = MainGraph.useNode(nodeId);
+    const [node, methods] = Project.useNode(nodeId);
     const nodeType = NodeTypeRegistry.get(node.type);
 
     const slots = useMemo(() => {

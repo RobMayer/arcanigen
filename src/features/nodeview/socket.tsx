@@ -1,5 +1,5 @@
 import { createContext, CSSProperties, ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from "react";
-import { MainGraph } from "../../state/maingraph";
+import { Project } from "../../state/project";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
@@ -16,11 +16,11 @@ type GraphConnectionControls = {
 const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
 
 export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) => {
-    const [pendingConnection, setPendingConnection] = MainGraph.usePendingConnection();
-    const graphMethods = MainGraph.useMethods();
+    const [pendingConnection, setPendingConnection] = Project.usePendingConnection();
+    const graphMethods = Project.useMethods();
 
     const connectionContextValue = useMemo(() => {
-        let pending: null | MainGraph.PendingConnection;
+        let pending: null | Project.PendingConnection;
         return {
             start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
                 // todo: parametize scope properly...
@@ -61,7 +61,7 @@ export const Socket = styled(
     ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: string; connected?: boolean }) => {
         const socketRef = useRef<HTMLDivElement>(null);
 
-        const [pendingConnection] = MainGraph.usePendingConnection();
+        const [pendingConnection] = Project.usePendingConnection();
 
         const canConnect = useMemo(() => {
             if (pendingConnection === null) {

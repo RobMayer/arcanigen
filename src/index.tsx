@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { MainGraph } from "./state/maingraph";
+import { Project } from "./state/project";
 import { GraphView } from "./features/primary";
 import { Session } from "./state/session";
 
@@ -10,10 +10,10 @@ window.onfocus = () => {
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <MainGraph.Provider>
+        <Project.Provider>
             <Session.Provider>
-                <GraphView />
+                <GraphView graphId={"root"} />
             </Session.Provider>
-        </MainGraph.Provider>
+        </Project.Provider>
     </StrictMode>,
 );

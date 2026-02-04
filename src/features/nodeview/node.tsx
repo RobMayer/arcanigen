@@ -1,7 +1,7 @@
 import { useRef, useCallback, Ref, useState, Dispatch, SetStateAction, KeyboardEvent, KeyboardEventHandler, FocusEvent, useMemo } from "react";
 import styled from "styled-components";
 import { DragMove } from "../../components/wrappers/DragMove";
-import { MainGraph } from "../../state/maingraph";
+import { Project } from "../../state/project";
 import { Session } from "../../state/session";
 import { GraphSlots } from "./slots";
 import { DataTypes } from "../../definitions/datatypes";
@@ -12,13 +12,13 @@ import TextInput from "../../components/inputs/TextInput";
 import { NodeTypeRegistry } from "../../definitions";
 
 export const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
-    const [storedPosition, setPosition] = MainGraph.usePositionOf(nodeId);
-    const [node, { update: updateNode }] = MainGraph.useNode(nodeId);
+    const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
+    const [node, { update: updateNode }] = Project.useNode(nodeId);
     const handleRef = useRef<HTMLDivElement>(null);
 
     const selectionRef = Session.useSelectionRef();
-    const positionsRef = MainGraph.usePositionsRef();
-    const positionMethods = MainGraph.usePositionMethods();
+    const positionsRef = Project.usePositionsRef();
+    const positionMethods = Project.usePositionMethods();
 
     const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
 

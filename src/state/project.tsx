@@ -4,10 +4,11 @@ import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { AnyDefinition, BaseDefinition } from "../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../definitions";
 import { DataTypes } from "../definitions/datatypes";
+import { useGraphId } from "../features/primary";
 
 // will eventually hold a container for node-type specific logic
 
-export namespace MainGraph {
+export namespace Project {
     export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string };
     type GraphId = string;
     type XY = { x: number; y: number };
@@ -21,6 +22,7 @@ export namespace MainGraph {
         users: { [graphId: GraphId]: { node: ArcaneGraph.NodeId; scope: GraphId }[] };
         inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+        // we need graph-level properties, and possibly a stable list of subgraphs
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -78,7 +80,8 @@ export namespace MainGraph {
         return <CTX value={value}>{children}</CTX>;
     };
 
-    export const useNodeList = (graphId: string = "root") => {
+    export const useNodeList = () => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
         const selector = useCallback(() => {
             return ctx.nodeList.get()[graphId];
@@ -86,7 +89,8 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.nodeList.subscribe, selector);
     };
 
-    export const useLinkList = (graphId: string = "root") => {
+    export const useLinkList = () => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
         const selector = useCallback(() => {
             return ctx.linkList.get()[graphId];
@@ -94,7 +98,8 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.linkList.subscribe, selector);
     };
 
-    export const useLink = (id: string, graphId: string = "root") => {
+    export const useLink = (id: string) => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
@@ -104,7 +109,8 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.links.subscribe, selector);
     };
 
-    export const useNode = (id: string, graphId: string = "root") => {
+    export const useNode = (id: string) => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
@@ -141,7 +147,8 @@ export namespace MainGraph {
     };
 
     // todo: handle the case where graphId doesn't yet exist!
-    export const useMethods = (graphId: GraphId = "root") => {
+    export const useMethods = () => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
 
         return useMemo(() => {
@@ -181,7 +188,8 @@ export namespace MainGraph {
         }, [ctx, graphId]);
     };
 
-    export const usePositionOf = (id: string, graphId: GraphId = "root") => {
+    export const usePositionOf = (id: string) => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
@@ -211,7 +219,8 @@ export namespace MainGraph {
         return [value, set] as const;
     };
 
-    export const usePositionMethods = (graphId: GraphId = "root") => {
+    export const usePositionMethods = () => {
+        const graphId = useGraphId();
         const ctx = useContext(CTX)!;
         return useMemo(() => {
             const doCommit = () => ctx.positions.notify();

@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { MainGraph } from "../state/maingraph";
-import { CSSProperties, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Project } from "../state/project";
+import { createContext, CSSProperties, Ref, RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
 import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
@@ -9,8 +9,20 @@ import { useStable } from "../util/hooks/useStable";
 import { GraphConnectionProvider } from "./nodeview/socket";
 import { GraphNode } from "./nodeview/node";
 
-export const GraphView = () => {
-    const nodes = MainGraph.useNodeList();
+const CTX = createContext<string>("root");
+
+export const GraphView = ({ graphId }: { graphId: string }) => {
+    return (
+        <CTX value={graphId}>
+            <GraphMain />
+        </CTX>
+    );
+};
+
+export const useGraphId = () => useContext(CTX);
+
+const GraphMain = () => {
+    const nodes = Project.useNodeList();
 
     const boundsRef = useRef<HTMLDivElement>(null);
     const paneRef = useRef<HTMLDivElement>(null);
@@ -123,7 +135,7 @@ const GraphViewPane = styled(DragPane)`
 `;
 
 const Links = () => {
-    const links = MainGraph.useLinkList();
+    const links = Project.useLinkList();
     return (
         <>
             {links.map((linkId) => {
@@ -347,7 +359,7 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 //nested SVG for new coordinate system
 
 const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
-    const link = MainGraph.useLink(linkId);
+    const link = Project.useLink(linkId);
 
     const style = useMemo(() => {
         return {

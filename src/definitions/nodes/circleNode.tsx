@@ -8,6 +8,12 @@ import { NodeCategory } from "../../types";
 type CircleDefinition = {
     inputs: {
         radius: DataType<"length">;
+
+        // stroke
+        strokeWidth: DataType<"length">;
+        strokeColor: DataType<"color">;
+        strokeDashOffset: DataType<"length">;
+        fillColor: DataType<"color">;
     };
     outputs: {
         output: DataType<"shape">;
@@ -15,6 +21,12 @@ type CircleDefinition = {
     payload: {
         label: DataType<"string">;
         radius: DataType<"length">;
+
+        // stroke
+        strokeWidth: DataType<"length">;
+        strokeColor: DataType<"color">;
+        strokeDashOffset: DataType<"length">;
+        fillColor: DataType<"color">;
     };
 };
 
@@ -34,7 +46,13 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             },
             payload: {
                 label: "",
-                radius: `100px`,
+                radius: "100px",
+                // stroke
+                strokeWidth: "1px",
+                strokeColor: "#000000ff",
+                strokeDashOffset: "0px",
+                // fill
+                fillColor: "none",
             },
             type: "circle",
         };
@@ -42,17 +60,55 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
     getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>): DataTypes.SlotFor<CircleDefinition>[] {
         return [
             {
+                label: "Output",
                 type: "shape",
                 socketOut: "output",
-                label: "Output",
                 widget: "none",
             },
             {
+                label: "Radius",
                 type: "length",
                 socketIn: "radius",
                 widget: "input",
-                label: "Radius",
                 property: "radius",
+            },
+            {
+                type: "ui",
+                widget: "hr",
+            },
+            // stroke
+            {
+                label: "Stroke Color",
+                type: "color",
+                widget: "hex",
+                socketIn: "strokeColor",
+                property: "strokeColor",
+                alpha: true,
+                nullable: true,
+            },
+            {
+                label: "Stroke Width",
+                type: "length",
+                widget: "input",
+                socketIn: "strokeWidth",
+                property: "strokeWidth",
+            },
+            {
+                label: "Stroke Dash Offset",
+                type: "length",
+                widget: "input",
+                socketIn: "strokeDashOffset",
+                property: "strokeDashOffset",
+            },
+            // fill
+            {
+                label: "Fill Color",
+                type: "color",
+                widget: "hex",
+                socketIn: "fillColor",
+                property: "fillColor",
+                alpha: true,
+                nullable: true,
             },
         ];
     }
