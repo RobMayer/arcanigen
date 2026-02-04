@@ -142,7 +142,8 @@ export const Socket = styled(
 
     &[data-sockettype="color"],
     &[data-sockettype="float"],
-    &[data-sockettype="length"] {
+    &[data-sockettype="length"],
+    &[data-sockettype="enum"] {
         --flavour: var(--flavour-help);
     }
     &[data-sockettype="shape"] {

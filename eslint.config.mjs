@@ -5,7 +5,14 @@ import react from "eslint-plugin-react";
 import reactHooksConfigurable from "eslint-plugin-react-hooks-configurable";
 
 export default defineConfig([
-    ...tseslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+            },
+        },
+    },
     react.configs.flat.recommended,
     react.configs.flat["jsx-runtime"],
     {
@@ -36,6 +43,7 @@ export default defineConfig([
                 },
             ],
             "react/prop-types": "off",
+            "@typescript-eslint/switch-exhaustiveness-check": "warn",
             "react-hooks-configurable/exhaustive-deps": [
                 "warn",
                 {

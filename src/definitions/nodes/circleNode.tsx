@@ -12,6 +12,8 @@ type CircleDefinition = {
         // stroke
         strokeWidth: DataType<"length">;
         strokeColor: DataType<"color">;
+        strokeCap: DataType<"enum">;
+        strokeDash: DataType<"tokens<length>">;
         strokeDashOffset: DataType<"length">;
         // fill
         fillColor: DataType<"color">;
@@ -26,6 +28,8 @@ type CircleDefinition = {
         // stroke
         strokeWidth: DataType<"length">;
         strokeColor: DataType<"color">;
+        strokeCap: DataType<"enum">;
+        strokeDash: DataType<"tokens<length>">;
         strokeDashOffset: DataType<"length">;
         // fill
         fillColor: DataType<"color">;
@@ -44,7 +48,9 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 radius: null,
                 strokeWidth: null,
                 strokeColor: null,
+                strokeDash: null,
                 strokeDashOffset: null,
+                strokeCap: null,
                 fillColor: null,
             },
             out: {
@@ -55,8 +61,10 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 radius: "100px",
                 // stroke
                 strokeWidth: "1px",
+                strokeDash: "",
                 strokeColor: "#000000ff",
                 strokeDashOffset: "0px",
+                strokeCap: 0,
                 // fill
                 fillColor: "none",
             },
@@ -98,6 +106,23 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 widget: "input",
                 socketIn: "strokeWidth",
                 property: "strokeWidth",
+            },
+            {
+                label: "Stroke Cap",
+                type: "enum",
+                widget: "radiobutton",
+                orientation: "horizontal",
+                socketIn: "strokeCap",
+                property: "strokeCap",
+                options: ["Butt", "Square", "Round"],
+            },
+            {
+                label: "Stroke Dash",
+                type: "tokens<length>",
+                widget: "input",
+                socketIn: "strokeDash",
+                property: "strokeDash",
+                nullable: true,
             },
             {
                 label: "Stroke Dash Offset",

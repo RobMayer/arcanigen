@@ -1,13 +1,8 @@
 html {
     background: #111;
-    color: #eee;
+    color: #ccc;
     font-size: 12pt;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
-
-input {
-    background: #333;
-    color: #eee;
 }
 
 :root {
@@ -19,7 +14,7 @@ input {
     --style-base-blue: hsl(215, 65%, 50%); /* Blue (rebased: s×1.2, l×0.8) */
     --style-base-purple: hsl(280, 45%, 55%); /* Purple (rebased: s×1.2, l×0.8) */
 
-    --flavour-bare: hsl(210, 0%, 35%);
+    --flavour-default: hsl(210, 13%, 33%);
     --flavour-accent: hsl(210, 13%, 33%);
     --flavour-danger: hsl(4, 40%, 40%);
     --flavour-emphasis: hsl(35, 40%, 40%);
@@ -28,4 +23,21 @@ input {
     --flavour-info: hsl(215, 44%, 40%);
 
     --icon: currentColor;
+    --flavour: var(--flavour-default);
+}
+
+[data-flavour="danger"] {
+    --flavour: var(--flavour-danger);
+}
+[data-flavour="emphasis"] {
+    --flavour: var(--flavour-emphasis);
+}
+[data-flavour="confirm"] {
+    --flavour: var(--flavour-confirm);
+}
+[data-flavour="help"] {
+    --flavour: var(--flavour-help);
+}
+[data-flavour="info"] {
+    --flavour: var(--flavour-info);
 }

@@ -2,6 +2,7 @@ import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } f
 import { useStable } from "../../util/hooks/useStable";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { BoundsOf } from "../../types";
+import { Emptyable, NumericString } from "../../util/misc";
 import styled from "styled-components";
 import { AbstractNumberInput, AbstractInputProps } from "../abstract/Inputs";
 
@@ -71,192 +72,207 @@ function validateNumber(value: number, bounds: ParsedBounds, step?: number): str
 }
 
 type NumberInputProps = {
-    value: number;
-    onValue?: (n: number) => void;
-    onCommit?: (n: number) => void;
-    onSubmit?: (v: number) => void; // fires when you hit enter, even if no change was made
+    value: Emptyable<NumericString>;
+    onValue?: (n: Emptyable<NumericString>) => void;
+    onCommit?: (n: Emptyable<NumericString>) => void;
+    onSubmit?: (v: Emptyable<NumericString>) => void; // fires when you hit enter, even if no change was made
     bounds?: BoundsOf<number>;
     step?: number;
-    tooltip?: string;
     disabled?: boolean;
     ref?: Ref<HTMLInputElement>;
-    className?: string;
 };
 
-const NumberInput = styled(
-    ({ className, value, onValue, onCommit, onSubmit, ref, tooltip, disabled, step, bounds, onChange, onKeyDown, ...rest }: AbstractInputProps<NumberInputProps, "title" | "min" | "max">) => {
-        const onKeyDownRef = useStable(onKeyDown);
-        const onChangeRef = useStable(onChange);
+const NumberInput = styled(({ value, onValue, onCommit, onSubmit, ref, step, bounds, onChange, onKeyDown, required, ...rest }: Omit<AbstractInputProps, "value" | "min" | "max" | "step"> & NumberInputProps) => {
+    const onKeyDownRef = useStable(onKeyDown);
+    const onChangeRef = useStable(onChange);
 
-        const [innerRef, makeRef] = useCombinedRef(ref);
-        const valueRef = useRef<number>(value);
-        const [cache, setCache] = useState<string>(`${value}`);
+    const [innerRef, makeRef] = useCombinedRef(ref);
+    const valueRef = useRef<string>(value);
+    const [cache, setCache] = useState<string>(value);
 
-        const parsedBounds = useMemo(() => {
-            return parseBounds(bounds);
-        }, [bounds]);
+    const parsedBounds = useMemo(() => {
+        return parseBounds(bounds);
+    }, [bounds]);
 
-        useEffect(() => {
-            if (valueRef.current !== value) {
-                valueRef.current = value;
-                setCache(`${value}`);
+    useEffect(() => {
+        if (valueRef.current !== value) {
+            valueRef.current = value;
+            setCache(value);
+        }
+    }, [value]);
+
+    const onValueRef = useStable(onValue);
+    const onCommitRef = useStable(onCommit);
+    const onSubmitRef = useStable(onSubmit);
+
+    // Update custom validity whenever value, bounds, or step changes
+    useEffect(() => {
+        const el = innerRef.current;
+        if (el) {
+            if (value === "") {
+                el.setCustomValidity(required ? "Value is required" : "");
+            } else {
+                const asNumber = Number(value);
+                if (!isNaN(asNumber)) {
+                    const error = validateNumber(asNumber, parsedBounds, step);
+                    el.setCustomValidity(error);
+                }
             }
-        }, [value]);
+        }
+    }, [value, bounds, step, parsedBounds, required]);
 
-        const onValueRef = useStable(onValue);
-        const onCommitRef = useStable(onCommit);
-        const onSubmitRef = useStable(onSubmit);
-
-        // Update custom validity whenever value, bounds, or step changes
-        useEffect(() => {
-            const el = innerRef.current;
-            if (el && !isNaN(value)) {
-                const error = validateNumber(value, parsedBounds, step);
-                el.setCustomValidity(error);
+    const handleChange = useCallback(
+        (evt: ChangeEvent<HTMLInputElement>) => {
+            onChangeRef.current?.(evt);
+            if (evt.nativeEvent.handled) {
+                return;
             }
-        }, [value, bounds, step, parsedBounds]);
+            evt.nativeEvent.handled = "implied";
+            const v = evt.target.value;
+            setCache(v);
 
-        const handleChange = useCallback(
-            (evt: ChangeEvent<HTMLInputElement>) => {
-                onChangeRef.current?.(evt);
-                if (evt.nativeEvent.handled) {
+            // Empty is valid when not required
+            if (!required && v === "") {
+                evt.target.setCustomValidity("");
+                onValueRef.current?.("");
+                return;
+            }
+
+            const asNumber = Number(v);
+            if (v === "" || isNaN(asNumber)) {
+                evt.target.setCustomValidity("Value is required");
+                return;
+            }
+
+            // Validate and set custom validity
+            const error = validateNumber(asNumber, parsedBounds, step);
+            evt.target.setCustomValidity(error);
+
+            // Only call onValue if valid
+            if (evt.target.validity.valid) {
+                onValueRef.current?.(v as NumericString);
+            }
+        },
+        [parsedBounds, step, required],
+    );
+
+    useEffect(() => {
+        const el = innerRef.current;
+        if (el) {
+            const handler = (evt: Event) => {
+                if (evt.handled) {
                     return;
                 }
-                evt.nativeEvent.handled = "implied";
-                const v = evt.target.value;
-                const asNumber = Number(evt.target.value);
-                setCache(v);
+                evt.handled = "implied";
+
+                const v = el.value;
+
+                // Empty is valid when not required
+                if (!required && v === "") {
+                    setCache(v);
+                    el.setCustomValidity("");
+                    onCommitRef.current?.("");
+                    return;
+                }
+
+                const asNumber = Number(v);
 
                 if (v === "" || isNaN(asNumber)) {
-                    evt.target.setCustomValidity("Value is required");
+                    setCache(valueRef.current);
+                    el.setCustomValidity("");
                     return;
                 }
 
                 // Validate and set custom validity
                 const error = validateNumber(asNumber, parsedBounds, step);
-                evt.target.setCustomValidity(error);
 
-                // Only call onValue if valid
-                if (evt.target.validity.valid) {
-                    onValueRef.current?.(asNumber);
+                // Revert to previous value if invalid, otherwise commit
+                if (error) {
+                    setCache(valueRef.current);
+                    el.setCustomValidity("");
+                } else {
+                    setCache(v);
+                    el.setCustomValidity("");
+                    onValueRef.current?.(v as NumericString);
+                    onCommitRef.current?.(v as NumericString);
                 }
-            },
-            [parsedBounds, step],
-        );
+            };
+            el.addEventListener("change", handler);
+            return () => {
+                el.removeEventListener("change", handler);
+            };
+        }
+    }, [parsedBounds, step, required]);
 
-        useEffect(() => {
-            const el = innerRef.current;
-            if (el) {
-                const handler = (evt: Event) => {
-                    if (evt.handled) {
-                        return;
-                    }
-                    evt.handled = "implied";
-
-                    const v = el.value;
-                    const asNumber = Number(v);
-
-                    if (v === "" || isNaN(asNumber)) {
-                        setCache(`${valueRef.current}`);
-                        el.setCustomValidity("");
-                        return;
-                    }
-
-                    // Validate and set custom validity
-                    const error = validateNumber(asNumber, parsedBounds, step);
-
-                    // Revert to previous value if invalid, otherwise commit
-                    if (error) {
-                        setCache(`${valueRef.current}`);
-                        el.setCustomValidity("");
-                    } else {
-                        setCache(v);
-                        el.setCustomValidity("");
-                        onValueRef.current?.(asNumber);
-                        onCommitRef.current?.(asNumber);
-                    }
-                };
-                el.addEventListener("change", handler);
-                return () => {
-                    el.removeEventListener("change", handler);
-                };
+    // Custom arrow key handling for proper step increments and bounds enforcement
+    const handleKeyDown = useCallback(
+        (evt: React.KeyboardEvent<HTMLInputElement>) => {
+            onKeyDownRef.current?.(evt);
+            if (evt.nativeEvent.handled) {
+                return;
             }
-        }, [parsedBounds, step]);
 
-        // Custom arrow key handling for proper step increments and bounds enforcement
-        const handleKeyDown = useCallback(
-            (evt: React.KeyboardEvent<HTMLInputElement>) => {
-                onKeyDownRef.current?.(evt);
-                if (evt.nativeEvent.handled) {
-                    return;
-                }
-
-                // Handle Enter key for onSubmit
-                if (evt.key === "Enter") {
-                    evt.nativeEvent.handled = "implied";
-                    const currentValue = Number(evt.currentTarget.value);
-                    if (!isNaN(currentValue)) {
-                        const error = validateNumber(currentValue, parsedBounds, step);
-                        if (error === "") {
-                            onSubmitRef.current?.(currentValue);
-                        }
-                    }
-                    return;
-                }
-
-                if (evt.key !== "ArrowUp" && evt.key !== "ArrowDown") return;
+            // Handle Enter key for onSubmit
+            if (evt.key === "Enter") {
                 evt.nativeEvent.handled = "implied";
+                const v = evt.currentTarget.value;
 
-                evt.preventDefault();
-
-                const currentValue = Number(evt.currentTarget.value);
-                if (isNaN(currentValue)) return;
-
-                const stepAmount = step ?? 1;
-                const delta = evt.key === "ArrowUp" ? stepAmount : -stepAmount;
-                const newValue = currentValue + delta;
-
-                // Enforce bounds
-                if (parsedBounds.min) {
-                    const { value: minVal, inclusive } = parsedBounds.min;
-                    const limit = inclusive ? minVal : minVal + Number.EPSILON;
-                    if (newValue < limit) return; // Don't go below min
-                }
-                if (parsedBounds.max) {
-                    const { value: maxVal, inclusive } = parsedBounds.max;
-                    const limit = inclusive ? maxVal : maxVal - Number.EPSILON;
-                    if (newValue > limit) return; // Don't go above max
+                // Empty is valid when not required
+                if (!required && v === "") {
+                    onSubmitRef.current?.("");
+                    return;
                 }
 
-                // Update the input value and trigger change
-                setCache(String(newValue));
-                const error = validateNumber(newValue, parsedBounds, step);
-                evt.currentTarget.setCustomValidity(error);
-
-                if (error === "") {
-                    onValueRef.current?.(newValue);
-                    onCommitRef.current?.(newValue);
+                const currentValue = Number(v);
+                if (!isNaN(currentValue)) {
+                    const error = validateNumber(currentValue, parsedBounds, step);
+                    if (error === "") {
+                        onSubmitRef.current?.(v as NumericString);
+                    }
                 }
-            },
-            [step, parsedBounds],
-        );
+                return;
+            }
 
-        // Always use step="any" to disable HTML5 step validation (we handle it with proper floating point tolerance)
-        return (
-            <AbstractNumberInput
-                {...rest}
-                className={className}
-                type="number"
-                value={cache}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                ref={makeRef}
-                title={tooltip}
-                disabled={disabled}
-                step="any"
-            />
-        );
-    },
-)``;
+            if (evt.key !== "ArrowUp" && evt.key !== "ArrowDown") return;
+            evt.nativeEvent.handled = "implied";
+
+            evt.preventDefault();
+
+            const currentValue = Number(evt.currentTarget.value);
+            if (isNaN(currentValue)) return;
+
+            const stepAmount = step ?? 1;
+            const delta = evt.key === "ArrowUp" ? stepAmount : -stepAmount;
+            const newValue = currentValue + delta;
+
+            // Enforce bounds
+            if (parsedBounds.min) {
+                const { value: minVal, inclusive } = parsedBounds.min;
+                const limit = inclusive ? minVal : minVal + Number.EPSILON;
+                if (newValue < limit) return; // Don't go below min
+            }
+            if (parsedBounds.max) {
+                const { value: maxVal, inclusive } = parsedBounds.max;
+                const limit = inclusive ? maxVal : maxVal - Number.EPSILON;
+                if (newValue > limit) return; // Don't go above max
+            }
+
+            // Update the input value and trigger change
+            const newValueStr = String(newValue) as NumericString;
+            setCache(newValueStr);
+            const error = validateNumber(newValue, parsedBounds, step);
+            evt.currentTarget.setCustomValidity(error);
+
+            if (error === "") {
+                onValueRef.current?.(newValueStr);
+                onCommitRef.current?.(newValueStr);
+            }
+        },
+        [step, parsedBounds, required],
+    );
+
+    // Always use step="any" to disable HTML5 step validation (we handle it with proper floating point tolerance)
+    return <AbstractNumberInput {...rest} type="number" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} step="any" />;
+})``;
 
 export default NumberInput;

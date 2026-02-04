@@ -10,6 +10,9 @@ import LengthInput from "../../components/inputs/LengthInput";
 import { Color, Length } from "../../types";
 import ColorHexInput from "../../components/inputs/ColorHexInput";
 import TextInput from "../../components/inputs/TextInput";
+import { Dropdown } from "../../components/inputs/Dropdown";
+import { RadioBox } from "../../components/buttons/RadioBox";
+import { RadioButton } from "../../components/buttons/RadioButton";
 
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
@@ -102,10 +105,15 @@ const GraphSlotChoice = ({
             return <WidgetLength slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "color":
             return <WidgetColor slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
-        case "float":
+        case "enum":
+            return <WidgetEnum slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
+        case "tokens<length>":
+            return <WidgetTokensLength slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "integer":
+        case "float":
             return null;
     }
+    return null;
 };
 
 const WidgetString = ({ slot, node, disabled, update }: SlotProps<"string">) => {
@@ -115,8 +123,6 @@ const WidgetString = ({ slot, node, disabled, update }: SlotProps<"string">) => 
         },
         [slot.property, update],
     );
-
-    // todo: handleChange
     switch (slot.widget) {
         case "input":
             return <TextInput value={node.payload[slot.property] as string} disabled={disabled} onCommit={handleChange} />;
@@ -130,8 +136,6 @@ const WidgetLength = ({ slot, node, disabled, update }: SlotProps<"length">) => 
         },
         [slot.property, update],
     );
-
-    // todo: handleChange
     switch (slot.widget) {
         case "input":
             return <LengthInput value={node.payload[slot.property] as Length} disabled={disabled} onCommit={handleChange} />;
@@ -145,17 +149,109 @@ const WidgetColor = ({ slot, node, disabled, update }: SlotProps<"color">) => {
         },
         [slot.property, update],
     );
-
-    // todo: handleChange
     switch (slot.widget) {
         case "hex":
             return <ColorHexInput value={node.payload[slot.property] as Color} disabled={disabled} nullable={slot.nullable} alpha={slot.alpha} onCommit={handleChange} />;
     }
 };
 
+const WidgetEnum = ({ slot, node, disabled, update }: SlotProps<"enum">) => {
+    const handleChange = useCallback(
+        (v: string) => {
+            const p = Number.parseInt(v);
+            if (!isNaN(p)) {
+                update?.({ [slot.property]: p });
+            }
+        },
+        [slot.property, update],
+    );
+    switch (slot.widget) {
+        case "dropdown":
+            return (
+                <Dropdown value={`${node.payload[slot.property] as number}`} disabled={disabled} onValue={handleChange}>
+                    {slot.options.map((opt, i) => {
+                        return (
+                            <option value={`${i}`} key={opt}>
+                                {opt}
+                            </option>
+                        );
+                    })}
+                </Dropdown>
+            );
+        case "radiobox":
+            return (
+                <Group orientation={slot.orientation}>
+                    {slot.options.map((opt, i) => {
+                        return (
+                            <RadioBox value={`${node.payload[slot.property] as number}`} key={opt} target={`${i}`} onValue={handleChange} disabled={disabled}>
+                                {opt}
+                            </RadioBox>
+                        );
+                    })}
+                </Group>
+            );
+        case "radiobutton":
+            return (
+                <Group orientation={slot.orientation}>
+                    {slot.options.map((opt, i) => {
+                        return (
+                            <RadioButton value={`${node.payload[slot.property] as number}`} key={opt} target={`${i}`} onValue={handleChange} disabled={disabled}>
+                                {opt}
+                            </RadioButton>
+                        );
+                    })}
+                </Group>
+            );
+    }
+    return <></>;
+};
+
+const WidgetTokensLength = ({ slot, node, disabled, update }: SlotProps<"tokens<length>">) => {
+    const handleChange = useCallback(
+        (v: string) => {
+            update?.({ [slot.property]: v });
+        },
+        [slot.property, update],
+    );
+
+    const tokenPattern = useMemo(() => {
+        const sep = slot.sep ?? " ";
+        const escapedSep = sep.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const num = slot.negative ? "-?\\d+(\\.\\d+)?" : "\\d+(\\.\\d+)?";
+        const unit = "(px|in|mm|cm|pt)";
+        return `(${num}${unit}${escapedSep})*(${num}${unit})`;
+    }, [slot.sep, slot.negative]);
+
+    switch (slot.widget) {
+        case "input":
+            return <TextInput value={node.payload[slot.property] as string} onCommit={handleChange} disabled={disabled} pattern={tokenPattern} required={!slot.nullable} />;
+    }
+};
+
 //#endregion
 
 //#region UI based Elemnts
+
+const Group = styled(({ children, orientation = "vertical", className }: { children?: ReactNode; orientation?: "horizontal" | "vertical"; className?: string }) => {
+    return (
+        <div data-orientation={orientation} className={className}>
+            {children}
+        </div>
+    );
+})`
+    flex: 1 1;
+    gap: 1px;
+    background: #000;
+    padding: 1px;
+    border: 1px solid #666;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-rows: 1fr;
+    grid-auto-flow: row;
+    &[data-orientation="horizontal"] {
+        grid-auto-flow: column;
+    }
+`;
 
 const Hr = styled.hr`
     margin: 0.25em 0.5em;

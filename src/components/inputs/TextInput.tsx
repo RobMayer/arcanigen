@@ -1,4 +1,4 @@
-import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import styled from "styled-components";
@@ -9,14 +9,9 @@ type TextInputProps = {
     onValue?: (v: string) => void;
     onCommit?: (v: string) => void;
     onSubmit?: (v: string) => void; // fires when you hit enter, even if no change was made
-    pattern?: string;
-    tooltip?: string;
-    disabled?: boolean;
-    ref?: Ref<HTMLInputElement>;
-    className?: string;
 };
 
-const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, tooltip, disabled, pattern, onChange, onKeyDown, ...rest }: AbstractInputProps<TextInputProps, "title">) => {
+const TextInput = styled(({ value, onValue, onCommit, onSubmit, ref, pattern, onChange, onKeyDown, required = false, ...rest }: Omit<AbstractInputProps, "value"> & TextInputProps) => {
     const onKeyDownRef = useStable(onKeyDown);
     const onChangeRef = useStable(onChange);
 
@@ -38,6 +33,11 @@ const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, 
     // Validate and set custom validity
     const validate = useCallback(
         (el: HTMLInputElement, v: string): boolean => {
+            // Empty is valid when not required
+            if (!required && v === "") {
+                el.setCustomValidity("");
+                return true;
+            }
             if (pattern) {
                 const regex = new RegExp(`^${pattern}$`);
                 if (!regex.test(v)) {
@@ -48,7 +48,7 @@ const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, 
             el.setCustomValidity("");
             return true;
         },
-        [pattern],
+        [pattern, required],
     );
 
     const handleChange = useCallback(
@@ -76,6 +76,15 @@ const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, 
                 evt.handled = "implied";
                 const v = el.value;
 
+                // Empty is valid when not required
+                if (!required && v === "") {
+                    setCache(v);
+                    el.setCustomValidity("");
+                    onCommitRef.current?.(v);
+                    onValueRef.current?.(v);
+                    return;
+                }
+
                 if (pattern) {
                     const regex = new RegExp(`^${pattern}$`);
                     if (!regex.test(v)) {
@@ -96,7 +105,7 @@ const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, 
                 el.removeEventListener("change", handler);
             };
         }
-    }, [pattern]);
+    }, [pattern, required]);
 
     // Handle Enter key for onSubmit
     const handleKeyDown = useCallback(
@@ -110,6 +119,13 @@ const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, 
             evt.nativeEvent.handled = "implied";
 
             const v = evt.currentTarget.value;
+
+            // Empty is valid when not required
+            if (!required && v === "") {
+                onSubmitRef.current?.(v);
+                return;
+            }
+
             if (pattern) {
                 const regex = new RegExp(`^${pattern}$`);
                 if (!regex.test(v)) {
@@ -118,10 +134,10 @@ const TextInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, 
             }
             onSubmitRef.current?.(v);
         },
-        [pattern],
+        [pattern, required],
     );
 
-    return <AbstractTextInput {...rest} className={className} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} title={tooltip} disabled={disabled} />;
+    return <AbstractTextInput {...rest} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} />;
 })``;
 
 export default TextInput;

@@ -1,12 +1,15 @@
 import { BoundsOf, Length, SVGObject } from "../types";
+import { Emptyable, NumericString } from "../util/misc";
 
 type TypeRegistry = {
-    length: [Length, { widget: "input"; bounds?: BoundsOf<Length> }];
+    length: [Emptyable<Length>, { widget: "input"; bounds?: BoundsOf<Length>; nullable?: boolean }];
     shape: [SVGObject];
-    float: [number, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
-    integer: [number, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
+    float: [Emptyable<NumericString>, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
+    integer: [Emptyable<NumericString>, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
     string: [string, { widget: "input"; pattern?: string }];
     color: [string, { widget: "hex"; nullable?: boolean; alpha?: boolean }];
+    enum: [number, { options: string[] } & ({ widget: "dropdown" } | { widget: "radiobox" | "radiobutton"; orientation?: "horizontal" | "vertical" })];
+    "tokens<length>": [string, { widget: "input"; sep?: string; negative?: boolean; nullable?: boolean }];
 };
 
 type TypeDef<K extends string, T, W extends { widget: string } = { widget: "none" }> = {

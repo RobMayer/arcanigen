@@ -3,7 +3,7 @@ import { useStable } from "../../util/hooks/useStable";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import styled from "styled-components";
 import { BoundsOf, Length, LengthUnit } from "../../types";
-import { lengthToUnitless } from "../../util/misc";
+import { Emptyable, lengthToUnitless } from "../../util/misc";
 import { AbstractTextInput, AbstractInputProps } from "../abstract/Inputs";
 
 const LENGTH_REGEX = /^([+-]?\d*\.?\d+)(px|pt|in|cm|mm)$/;
@@ -76,18 +76,15 @@ function validateLength(parsed: { num: number; unit: LengthUnit }, bounds: Parse
 }
 
 type LengthInputProps = {
-    value: Length;
-    onValue?: (v: Length) => void;
-    onCommit?: (v: Length) => void;
-    onSubmit?: (v: Length) => void; // fires when you hit enter, even if no change was made
-    tooltip?: string;
-    disabled?: boolean;
+    value: Emptyable<Length>;
+    onValue?: (v: Emptyable<Length>) => void;
+    onCommit?: (v: Emptyable<Length>) => void;
+    onSubmit?: (v: Emptyable<Length>) => void; // fires when you hit enter, even if no change was made
     bounds?: BoundsOf<Length>;
     ref?: Ref<HTMLInputElement>;
-    className?: string;
 };
 
-const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref, tooltip, disabled, bounds, onChange, onKeyDown, ...rest }: AbstractInputProps<LengthInputProps, "title">) => {
+const LengthInput = styled(({ value, onValue, onCommit, onSubmit, ref, bounds, onChange, onKeyDown, required, ...rest }: Omit<AbstractInputProps, "value"> & LengthInputProps) => {
     const onKeyDownRef = useStable(onKeyDown);
     const onChangeRef = useStable(onChange);
 
@@ -111,7 +108,13 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
 
     // Validate and set custom validity
     const validate = useCallback(
-        (el: HTMLInputElement, v: string): v is Length => {
+        (el: HTMLInputElement, v: string): boolean => {
+            // Empty is valid when not required
+            if (!required && v === "") {
+                el.setCustomValidity("");
+                return true;
+            }
+
             // Allow unitless numbers without showing error (unit will be added on commit)
             if (NUMBER_ONLY_REGEX.test(v)) {
                 const num = Number(v);
@@ -129,7 +132,7 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
             el.setCustomValidity(error);
             return error === "";
         },
-        [parsedBounds],
+        [parsedBounds, required],
     );
 
     const handleChange = useCallback(
@@ -143,7 +146,7 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
             setCache(v);
 
             if (validate(evt.target, v)) {
-                onValueRef.current?.(v);
+                onValueRef.current?.(v as Length | "");
             }
         },
         [validate],
@@ -159,6 +162,14 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
                 }
                 evt.handled = "implied";
                 const v = el.value;
+
+                // Empty is valid when not required
+                if (!required && v === "") {
+                    setCache(v);
+                    el.setCustomValidity("");
+                    onCommitRef.current?.("");
+                    return;
+                }
 
                 // If just a number, append the last known unit
                 if (NUMBER_ONLY_REGEX.test(v)) {
@@ -205,7 +216,7 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
                 el.removeEventListener("change", handler);
             };
         }
-    }, [validate, parsedBounds]);
+    }, [validate, parsedBounds, required]);
 
     // Arrow key handling - increment/decrement the numeric portion
     const handleKeyDown = useCallback(
@@ -219,6 +230,12 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
             if (evt.key === "Enter") {
                 evt.nativeEvent.handled = "implied";
                 const v = evt.currentTarget.value;
+
+                // Empty is valid when not required
+                if (!required && v === "") {
+                    onSubmitRef.current?.("");
+                    return;
+                }
 
                 // Handle unitless number
                 if (NUMBER_ONLY_REGEX.test(v)) {
@@ -262,10 +279,10 @@ const LengthInput = styled(({ className, value, onValue, onCommit, onSubmit, ref
             onValueRef.current?.(newValue);
             onCommitRef.current?.(newValue);
         },
-        [parsedBounds],
+        [parsedBounds, required],
     );
 
-    return <AbstractTextInput {...rest} className={className} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} title={tooltip} disabled={disabled} />;
+    return <AbstractTextInput {...rest} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} />;
 })``;
 
 export default LengthInput;
