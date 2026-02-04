@@ -1,10 +1,9 @@
 import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
-
-type MaxBound = `<${number}` | `<=${number}`;
-type MinBound = `>${number}` | `>=${number}`;
-type RangeBound = `${MinBound}${MaxBound}`;
+import { BoundsOf } from "../../types";
+import styled from "styled-components";
+import { AbstractNumberInput } from "../abstract/Inputs";
 
 type ParsedBounds = {
     min?: { value: number; inclusive: boolean };
@@ -75,14 +74,15 @@ type NumberInputProps = {
     value: number;
     onValue?: (n: number) => void;
     onCommit?: (n: number) => void;
-    bounds?: RangeBound | MaxBound | MinBound;
+    bounds?: BoundsOf<number>;
     step?: number;
     tooltip?: string;
     disabled?: boolean;
     ref?: Ref<HTMLInputElement>;
+    className?: string;
 };
 
-const NumberInput = ({ value, onValue, onCommit, ref, tooltip, disabled, step, bounds }: NumberInputProps) => {
+const NumberInput = styled(({ className, value, onValue, onCommit, ref, tooltip, disabled, step, bounds }: NumberInputProps) => {
     const [innerRef, makeRef] = useCombinedRef(ref);
     const valueRef = useRef<number>(value);
     const [cache, setCache] = useState<string>(`${value}`);
@@ -141,20 +141,22 @@ const NumberInput = ({ value, onValue, onCommit, ref, tooltip, disabled, step, b
                 const asNumber = Number(v);
 
                 if (v === "" || isNaN(asNumber)) {
-                    el.setCustomValidity("Value is required");
                     setCache(`${valueRef.current}`);
+                    el.setCustomValidity("");
                     return;
                 }
 
                 // Validate and set custom validity
                 const error = validateNumber(asNumber, parsedBounds, step);
-                el.setCustomValidity(error);
 
                 // Revert to previous value if invalid, otherwise commit
-                if (!el.validity.valid) {
+                if (error) {
                     setCache(`${valueRef.current}`);
+                    el.setCustomValidity("");
                 } else {
                     setCache(v);
+                    el.setCustomValidity("");
+                    onValueRef.current?.(asNumber);
                     onCommitRef.current?.(asNumber);
                 }
             };
@@ -198,13 +200,14 @@ const NumberInput = ({ value, onValue, onCommit, ref, tooltip, disabled, step, b
 
             if (error === "") {
                 onValueRef.current?.(newValue);
+                onCommitRef.current?.(newValue);
             }
         },
         [step, parsedBounds],
     );
 
     // Always use step="any" to disable HTML5 step validation (we handle it with proper floating point tolerance)
-    return <input type="number" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} title={tooltip} disabled={disabled} step="any" />;
-};
+    return <AbstractNumberInput className={className} type="number" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} title={tooltip} disabled={disabled} step="any" />;
+})``;
 
 export default NumberInput;

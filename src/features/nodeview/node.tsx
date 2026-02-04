@@ -6,6 +6,10 @@ import styled from "styled-components";
 import { Socket } from "./socket";
 import { AnyDefinition, NodeType } from "../../definitions/nodes/abstractNode";
 import { DataTypes } from "../../definitions/datatypes";
+import LengthInput from "../../components/inputs/LengthInput";
+import { Length } from "../../types";
+
+type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
 export const GraphSlots = styled(({ nodeId, className }: { nodeId: string; className?: string }) => {
     const node = MainGraph.useNode(nodeId);
@@ -29,7 +33,11 @@ export const GraphSlots = styled(({ nodeId, className }: { nodeId: string; class
 
 const GraphSlot = styled(({ slot, node, className }: { slot: DataTypes.AnySlot; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>; nodeType: NodeType; className?: string }) => {
     if (slot.type === "ui") {
-        // Todo: handle UI type slots
+        switch (slot.widget) {
+            case "hr":
+                return <Hr />;
+            case "accordion": // Todo: handle UI type slots
+        }
         return null;
     }
     return (
@@ -50,6 +58,52 @@ const GraphSlot = styled(({ slot, node, className }: { slot: DataTypes.AnySlot; 
     gap: 6px;
 `;
 
+//#region Datatype-based Elements
+
+const GraphSlotChoice = ({ slot, node }: { slot: DataTypes.SlotWidgetable; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> }) => {
+    const connectedIn = slot.socketIn ? node.in[slot.socketIn] !== null : false;
+    const connectedOut = slot.socketOut ? (node.out[slot.socketOut]?.length ?? 0) !== 0 : false;
+
+    switch (slot.type) {
+        case "string":
+            return <WidgetString slot={slot} node={node} disabled={connectedIn || connectedOut} />;
+        case "length":
+            return <WidgetLength slot={slot} node={node} disabled={connectedIn || connectedOut} />;
+        case "float":
+        case "integer":
+        case "color":
+            return null;
+    }
+};
+
+const WidgetString = ({ slot, node, disabled }: { slot: DataTypes.SlotWidgetable & DataTypes.SlotWithProperty<"string">; node: BaseNode; disabled?: boolean }) => {
+    // todo: handleChange
+    switch (slot.widget) {
+        case "input":
+            return <input value={node.payload[slot.property] as string} disabled={disabled} />;
+    }
+};
+
+const WidgetLength = ({ slot, node, disabled }: { slot: DataTypes.SlotWidgetable & DataTypes.SlotWithProperty<"length">; node: BaseNode; disabled?: boolean }) => {
+    // todo: handleChange
+    switch (slot.widget) {
+        case "input":
+            return <LengthInput value={node.payload[slot.property] as Length} disabled={disabled} />;
+    }
+};
+//#endregion
+
+//#region UI based Elemnts
+
+const Hr = styled.hr`
+    margin: 0.25em 0.5em;
+    border: none;
+    border-top: 1px dashed #666;
+`;
+
+//#endregion
+
+//#region Misc
 const LabelBig = styled.div``;
 
 const LabelSmall = styled(({ children, className, label }: { children: ReactNode; label: ReactNode; className?: string }) => {
@@ -66,43 +120,4 @@ const LabelSmall = styled(({ children, className, label }: { children: ReactNode
         font-size: 62.5%;
     }
 `;
-
-const GraphSlotChoice = ({ slot, node }: { slot: DataTypes.SlotWidgetable; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> }) => {
-    switch (slot.type) {
-        case "string":
-            return <WidgetString slot={slot} node={node} />;
-        case "length":
-        case "float":
-        case "integer":
-        case "color":
-            return null;
-    }
-};
-
-const WidgetString = ({ slot, node }: { slot: DataTypes.SlotWithProperty<"string">; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> }) => {
-    const connectedIn = slot.socketIn ? node.in[slot.socketIn] !== null : false;
-    const connectedOut = slot.socketOut ? (node.out[slot.socketOut]?.length ?? 0) !== 0 : false;
-
-    // todo: handleChange
-    switch (slot.widget) {
-        case "input":
-            return <input value={node.payload[slot.property] as string} disabled={connectedOut || connectedIn} />;
-    }
-    return <></>;
-};
-
-// const WidgetColor = ({ slot, node, connected }: { slot: SlotFor<any, "color"> & Widget<"color">; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>; connected: boolean }) => {
-//     const pattern = useMemo(() => {
-//         return `${slot.nullable ? "none|" : ""}#(?:[0-9a-fA-F]{${slot.alpha ? "4" : "3"}}|[0-9a-fA-F]{${slot.alpha ? "8" : "6"}})`;
-//     }, [slot.alpha, slot.nullable]);
-
-//     return <input type="text" pattern={pattern} value={node.payload[slot.property] as string} disabled={connected} />;
-// };
-
-// const WidgetFloat = ({ slot, node, connected }: { slot: SlotFor<any, "float"> & Widget<"numberinput">; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>; connected: boolean }) => {
-//     return <input type="number" min={slot.min} max={slot.max} step={slot.step} value={node.payload[slot.property]} disabled={connected} />;
-// };
-
-// const WidgetSlider = ({ slot, node, connected }: { slot: SlotFor<any, "float"> & Widget<"slider">; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>; connected: boolean }) => {
-//     return <input type="number" min={slot.min} max={slot.max} step={slot.step} value={node.payload[slot.property]} disabled={connected} />;
-// };
+//#endregion

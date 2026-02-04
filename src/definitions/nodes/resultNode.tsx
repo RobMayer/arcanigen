@@ -35,10 +35,10 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
             },
             out: {},
             payload: {
-                w: { value: 800, unit: "px" },
-                h: { value: 800, unit: "px" },
-                x: { value: 0, unit: "px" },
-                y: { value: 0, unit: "px" },
+                w: `800px`,
+                h: `800px`,
+                x: `0px`,
+                y: `0px`,
                 color: "#fff",
                 label: "",
                 ...input,
@@ -51,9 +51,13 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
         return [
             {
                 type: "shape",
-                label: "Output",
+                label: "Input",
                 socketIn: "input",
                 widget: "none",
+            },
+            {
+                type: "ui",
+                widget: "hr",
             },
             {
                 label: "Canvas Width",

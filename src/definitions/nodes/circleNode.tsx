@@ -28,10 +28,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             },
             payload: {
                 label: "",
-                radius: {
-                    value: 100,
-                    unit: "px",
-                },
+                radius: `100px`,
             },
             type: "circle",
         };

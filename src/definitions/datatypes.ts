@@ -1,19 +1,10 @@
-type Length = {
-    value: number;
-    unit: "px" | "pt" | "in" | "cm" | "mm";
-};
-
-type TheSVG = {
-    tag: "g" | "path" | "svg";
-    children: TheSVG[];
-    attributes: { [key: string]: string };
-};
+import { BoundsOf, Length, SVGObject } from "../types";
 
 type TypeRegistry = {
-    length: [Length, { widget: "input"; negative?: boolean }];
-    shape: [TheSVG];
-    float: [number, { widget: "input"; min?: number; max?: number; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
-    integer: [number, { widget: "input"; min?: number; max?: number; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
+    length: [Length, { widget: "input"; bounds?: BoundsOf<Length> }];
+    shape: [SVGObject];
+    float: [number, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
+    integer: [number, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
     string: [string, { widget: "input"; pattern?: string }];
     color: [string, { widget: "hex"; nullable?: boolean; alpha?: boolean }];
 };
