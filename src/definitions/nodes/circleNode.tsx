@@ -2,6 +2,8 @@ import { nanoid } from "nanoid";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { AbstractNodeType } from "./abstractNode";
 import { DataType, DataTypes } from "../datatypes";
+import { ICONS } from "../../components/Icon";
+import { NodeCategory } from "../../types";
 
 type CircleDefinition = {
     inputs: {
@@ -17,6 +19,10 @@ type CircleDefinition = {
 };
 
 export const CircleNodeType = new (class extends AbstractNodeType<CircleDefinition> {
+    defaultLabel = "Circle";
+    icon = ICONS.Bolt;
+    category: NodeCategory = "shape";
+
     create(input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: string = nanoid()): ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>> {
         return {
             id,

@@ -57,97 +57,104 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
     );
 };
 
-export const Socket = styled(({ side, socketId, nodeId, className, type }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: string }) => {
-    const socketRef = useRef<HTMLDivElement>(null);
+export const Socket = styled(
+    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: string; connected?: boolean }) => {
+        const socketRef = useRef<HTMLDivElement>(null);
 
-    const [pendingConnection] = MainGraph.usePendingConnection();
+        const [pendingConnection] = MainGraph.usePendingConnection();
 
-    const canConnect = useMemo(() => {
-        if (pendingConnection === null) {
-            return false;
-        }
-        if (pendingConnection.side === side) {
-            return false;
-        }
-        // todo: don't assume that pending.type === type is valid. a type of "number" is compatible with "float" and "integer", but they are not compatible with each other.
-        if (pendingConnection.type !== type) {
-            // but for now, it's okay.
-            return false;
-        }
-        // todo: use the validateConnection() utility method below;
-        return true;
-    }, [pendingConnection, side, type]);
-
-    const canConnectRef = useStable(canConnect);
-
-    const connectionContext = useContext(GraphViewConnectionCTX);
-
-    useEffect(() => {
-        const socket = socketRef.current;
-        if (socket) {
-            const connectStart = (evt: globalThis.MouseEvent) => {
-                if (evt.button === 0) {
-                    evt.handled = "active";
-                    connectionContext.start(nodeId, socketId, side, type);
-                }
-            };
-            const finishConnection = () => {
-                if (canConnectRef.current) {
-                    connectionContext.finish(nodeId, socketId, side, type);
-                }
-            };
-
-            socket.addEventListener("mousedown", connectStart);
-            socket.addEventListener("mouseup", finishConnection);
-            return () => {
-                socket.removeEventListener("mousedown", connectStart);
-                socket.removeEventListener("mouseup", finishConnection);
-            };
-        }
-    }, [nodeId, socketId, connectionContext, side, type]);
-
-    const state = useMemo(() => {
-        if (pendingConnection) {
-            if (pendingConnection.node === nodeId && pendingConnection.socket === socketId) {
-                return "active";
+        const canConnect = useMemo(() => {
+            if (pendingConnection === null) {
+                return false;
             }
-            if (!canConnect) {
-                return "invalid";
+            if (pendingConnection.side === side) {
+                return false;
             }
-        }
-        return undefined;
-    }, [pendingConnection, canConnect, nodeId, socketId]);
+            // todo: don't assume that pending.type === type is valid. a type of "number" is compatible with "float" and "integer", but they are not compatible with each other.
+            if (pendingConnection.type !== type) {
+                // but for now, it's okay.
+                return false;
+            }
+            // todo: use the validateConnection() utility method below;
+            return true;
+        }, [pendingConnection, side, type]);
 
-    return <div ref={socketRef} className={className} data-socketid={`--socket_${nodeId}_${socketId}`} data-socketside={side} data-sockettype={type} data-state={state} />;
-})`
+        const canConnectRef = useStable(canConnect);
+
+        const connectionContext = useContext(GraphViewConnectionCTX);
+
+        useEffect(() => {
+            const socket = socketRef.current;
+            if (socket) {
+                const connectStart = (evt: globalThis.MouseEvent) => {
+                    if (evt.button === 0) {
+                        evt.handled = "active";
+                        connectionContext.start(nodeId, socketId, side, type);
+                    }
+                };
+                const finishConnection = () => {
+                    if (canConnectRef.current) {
+                        connectionContext.finish(nodeId, socketId, side, type);
+                    }
+                };
+
+                socket.addEventListener("mousedown", connectStart);
+                socket.addEventListener("mouseup", finishConnection);
+                return () => {
+                    socket.removeEventListener("mousedown", connectStart);
+                    socket.removeEventListener("mouseup", finishConnection);
+                };
+            }
+        }, [nodeId, socketId, connectionContext, side, type]);
+
+        const state = useMemo(() => {
+            const r: string[] = [
+                connected ? "connected" : "",
+                pendingConnection?.node === nodeId && pendingConnection?.socket === socketId ? "active" : "",
+                pendingConnection && !canConnect ? "invalid" : "",
+            ].filter(Boolean);
+            return r.length > 0 ? r.join(" ") : undefined;
+        }, [pendingConnection, canConnect, nodeId, socketId, connected]);
+
+        return <div ref={socketRef} className={className} data-socketid={`--socket_${nodeId}_${socketId}`} data-socketside={side} data-sockettype={type} data-state={state} />;
+    },
+)`
     height: calc(1lh - (1lh - 1em) / 2);
     align-self: center;
     aspect-ratio: 1;
-    background: var(--style-base-slate);
+    --flavour: var(--style-base-slate);
+    background: oklch(from var(--flavour) l c h);
     border-radius: 100%;
     anchor-name: attr(data-socketid type(<custom-ident>));
     transition:
-        background-color 0.3s,
-        outline-color 0.3s;
-    outline: 1px solid #fff6;
+        background-color 0.25s,
+        outline-color 0.25s;
+    outline: 1px solid #fff4;
     outline-offset: -2px;
     border: 1px solid black;
+
     &[data-socketside="in"] {
         margin-left: -0.5lh;
     }
     &[data-socketside="out"] {
         margin-right: -0.5lh;
     }
+
+    &[data-sockettype="color"],
     &[data-sockettype="float"],
     &[data-sockettype="length"] {
-        background: var(--style-base-purple);
+        --flavour: var(--flavour-help);
     }
     &[data-sockettype="shape"] {
-        background: var(--style-base-green);
+        --flavour: var(--flavour-confirm);
     }
     &[data-state~="invalid"] {
         background: #222;
         outline-color: #fff1;
+    }
+    &:hover:not([data-state~="invalid"]),
+    &[data-state~="active"] {
+        background: oklch(from var(--flavour) calc(l * 1.2) c h);
     }
     &[data-state~="active"] {
         outline-color: #fff;

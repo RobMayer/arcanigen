@@ -39,6 +39,8 @@ type TypedSlot<D extends GenericDefinition, K extends keyof TheTypes> = {
     ({ property: KeysOfType<D["payload"], TheTypes[K]> } | { property?: never });
 
 export namespace DataTypes {
+    export type Keys = keyof TheTypes;
+
     export type Any = TheTypes[keyof TheTypes];
     export type AnySlot = { [K in keyof TheTypes]: SlotOf<K> }[keyof TheTypes] | UniversalWidgets<any>;
 

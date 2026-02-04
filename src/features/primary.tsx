@@ -6,8 +6,8 @@ import { DragPane } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
-import { GraphSlots } from "./nodeview/node";
 import { GraphConnectionProvider } from "./nodeview/socket";
+import { GraphNode } from "./nodeview/node";
 
 export const GraphView = () => {
     const nodes = MainGraph.useNodeList();
@@ -346,120 +346,17 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 
 //nested SVG for new coordinate system
 
-const applyMoveDelta = (
-    graph: string,
-    delta: { x: number; y: number },
-    selectionRef: { current: Set<string> },
-    positionsRef: { current: { [graph: string]: { [node: string]: { x: number; y: number } } } },
-) => {
-    const compiled: { [key: string]: { x: number; y: number } } = {};
-
-    // start with selected nodes
-    for (const id of selectionRef.current) {
-        if (id.startsWith("node_")) {
-            const nId = id.substring(5);
-            if (positionsRef.current[nId]) {
-                compiled[nId] = { x: positionsRef.current[graph][nId].x + delta.x, y: positionsRef.current[graph][nId].y + delta.y };
-            }
-        }
-    }
-
-    // expand: for any container in the move set, add nodes within its bounds
-    // for (const nId of Object.keys(compiled)) {
-    /*
-        const node = nodesRef.current[nId];
-        if (node?.payload.type === "container") {
-            const containerPos = positionsRef.current[nId];
-            const { w, h } = node.payload;
-            const cx = containerPos.x;
-            const cy = containerPos.y;
-
-            for (const [candidateId, candidatePos] of Object.entries(positionsRef.current)) {
-                if (candidateId === nId || compiled[candidateId]) continue;
-                if (candidatePos.x >= cx && candidatePos.x <= cx + w && candidatePos.y >= cy && candidatePos.y <= cy + h) {
-                    compiled[candidateId] = { x: candidatePos.x + delta.x, y: candidatePos.y + delta.y };
-                }
-            }
-        }
-        */
-    // }
-
-    // apply DOM updates for visual feedback
-    for (const [nId, toSet] of Object.entries(compiled)) {
-        const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
-        element?.setAttribute("data-x", `${toSet.x}`);
-        element?.setAttribute("data-y", `${toSet.y}`);
-    }
-
-    return compiled;
-};
-
-const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
-    const [storedPosition, setPosition] = MainGraph.usePositionOf(nodeId);
-    const node = MainGraph.useNode(nodeId);
-    const handleRef = useRef<HTMLDivElement>(null);
-
-    const selectionRef = Session.useSelectionRef();
-    const positionsRef = MainGraph.usePositionsRef();
-    const positionMethods = MainGraph.usePositionMethods();
-
-    const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
-
-    const handleDragDelta = useCallback(
-        (delta: { x: number; y: number }) => {
-            if (!selectionRef.current.has(`node_${nodeId}`)) {
-                return;
-            }
-            const compiled = applyMoveDelta("root", delta, selectionRef, positionsRef);
-            positionMethods.setMany.passive(compiled);
-        },
-        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
-    );
-
-    const handleFinish = useCallback(
-        (pos: { x: number; y: number }) => {
-            if (!selectionRef.current.has(`node_${nodeId}`)) {
-                setPosition(pos);
-                return;
-            }
-            positionMethods.setMany.commit();
-        },
-        [nodeId, positionMethods.setMany, selectionRef, setPosition],
-    );
-
-    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
-
-    return (
-        <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <div data-part="handle" ref={handleRef}>
-                Node {node.payload.label}
-            </div>
-            <GraphSlots nodeId={nodeId} />
-        </DragMove.Item>
-    );
-})`
-    display: grid;
-    background: #333;
-    border: 1px solid #666;
-    width: max-content;
-    outline: 1px solid transparent;
-    transform: translate(-50%, -50%);
-    anchor-name: attr(data-node type(<custom-ident>));
-
-    &[data-state~="selected"] {
-        border-color: white;
-    }
-`;
-
 const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
     const link = MainGraph.useLink(linkId);
 
     const style = useMemo(() => {
         return {
+            "--fromTarget": `anchor(--socket_${link.fromNode}_${link.fromSocket} center, anchor(--socketFB_${link.fromNode}_${link.fromSocket} center, anchor(--nodeFB_${link.fromNode}_out center, 0)))`,
+            "--toTarget": `anchor(--socket_${link.toNode}_${link.toSocket} center, anchor(--socketFB_${link.toNode}_${link.toSocket} center, anchor(--nodeFB_${link.toNode}_in center, 0)))`,
             "--fromNode": `--node_${link.fromNode}`,
             "--toNode": `--node_${link.toNode}`,
         } as CSSProperties;
-    }, [link.fromNode, link.toNode]);
+    }, [link.fromNode, link.toNode, link.fromSocket, link.toSocket]);
 
     const ref = useRef<HTMLDivElement>(null);
     const fromMarkerRef = useRef<HTMLDivElement>(null);
@@ -518,6 +415,11 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     --anchorB: anchor(var(--toNode) center);
     --anchorL: anchor(var(--fromNode) center);
 
+    --anchorT: var(--fromTarget);
+    --anchorR: var(--toTarget);
+    --anchorB: var(--toTarget);
+    --anchorL: var(--fromTarget);
+
     & > [data-part="markerFrom"],
     & > [data-part="markerTo"] {
         position: fixed;
@@ -527,13 +429,13 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     }
 
     & > [data-part="markerFrom"] {
-        top: anchor(var(--fromNode) center);
-        left: anchor(var(--fromNode) center);
+        top: var(--fromTarget);
+        left: var(--fromTarget);
     }
 
     & > [data-part="markerTo"] {
-        top: anchor(var(--toNode) center);
-        left: anchor(var(--toNode) center);
+        top: var(--toTarget);
+        left: var(--toTarget);
     }
 
     inset: min(var(--anchorT), var(--anchorB)) min(var(--anchorR), var(--anchorL)) min(var(--anchorB), var(--anchorT)) min(var(--anchorL), var(--anchorR));

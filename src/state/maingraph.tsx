@@ -1,7 +1,7 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
-import { BaseDefinition } from "../definitions/nodes/abstractNode";
+import { AnyDefinition, BaseDefinition } from "../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../definitions";
 import { DataTypes } from "../definitions/datatypes";
 
@@ -13,7 +13,7 @@ export namespace MainGraph {
     type XY = { x: number; y: number };
 
     type TheType = {
-        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>> } };
+        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> } };
         nodeList: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
         linkList: { [graphId: GraphId]: ArcaneGraph.LinkId[] };
@@ -35,10 +35,13 @@ export namespace MainGraph {
                 RESULT: {
                     ...NodeTypeRegistry.get("result").create({}, "RESULT"),
                 },
+                test: {
+                    ...NodeTypeRegistry.get("circle").create({}, "test"),
+                },
             },
         });
         const nodeList = useFastContextMember<TheType["nodeList"]>({
-            root: ["RESULT"],
+            root: ["RESULT", "test"],
         });
 
         const links = useFastContextMember<TheType["links"]>({
@@ -52,6 +55,7 @@ export namespace MainGraph {
         const positions = useFastContextMember<TheType["positions"]>({
             root: {
                 RESULT: { x: 0, y: 0 },
+                test: { x: -400, y: 100 },
             },
         });
 
@@ -100,14 +104,35 @@ export namespace MainGraph {
         return useSyncExternalStore(ctx.links.subscribe, selector);
     };
 
-    export const useNode = (id: string, graphId: string = "root"): ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>> => {
+    export const useNode = (id: string, graphId: string = "root") => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
             return ctx.nodes.get()[graphId][id];
         }, [ctx, id, graphId]);
 
-        return useSyncExternalStore(ctx.nodes.subscribe, selector);
+        const methods = useMemo(() => {
+            const update = <P extends DataTypes.PayloadFor<BaseDefinition>>(data: Partial<P>) => {
+                const prev = ctx.nodes.ref.current[graphId][id].payload as P;
+                ctx.nodes.ref.current = {
+                    ...ctx.nodes.ref.current,
+                    [graphId]: {
+                        ...ctx.nodes.ref.current[graphId],
+                        [id]: {
+                            ...ctx.nodes.ref.current[graphId][id],
+                            payload: {
+                                ...prev,
+                                ...data,
+                            },
+                        },
+                    },
+                };
+                ctx.nodes.notify();
+            };
+            return { update };
+        }, [id, graphId, ctx]);
+
+        return [useSyncExternalStore(ctx.nodes.subscribe, selector), methods] as const;
     };
 
     export const usePendingConnection = () => {

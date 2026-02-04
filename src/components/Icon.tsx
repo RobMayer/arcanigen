@@ -38,7 +38,7 @@ type IconProps = {
     layerPlacement?: LayerPlacement;
 };
 
-const Base = styled(({ color = "var(--icon)", cutout, layer, layerColor = color, shape, layerPlacement = "bottom-left", ...props }: SVGProps<SVGSVGElement> & IconProps) => {
+const Base = styled(({ color = "var(--icon)", cutout, layer, layerColor = color, shape, layerPlacement = "bottom-left", className, ...props }: SVGProps<SVGSVGElement> & IconProps) => {
     const colors = useMemo(() => {
         return color.split(" ");
     }, [color]);
@@ -52,7 +52,7 @@ const Base = styled(({ color = "var(--icon)", cutout, layer, layerColor = color,
     }, [cutout, layerPlacement]);
 
     return (
-        <svg {...props} viewBox={"0 0 640 640"}>
+        <svg {...props} viewBox={"0 0 640 640"} className={`${className ?? ""} meta-icon`}>
             <g style={cssStyle}>
                 {theShape.map((each, i) => {
                     return (

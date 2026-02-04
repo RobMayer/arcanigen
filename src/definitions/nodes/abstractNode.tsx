@@ -1,3 +1,5 @@
+import { IconDefinition } from "../../components/Icon";
+import { NodeCategory } from "../../types";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { DataType, DataTypes } from "../datatypes";
 
@@ -17,7 +19,10 @@ export type AnyDefinition = {
 
 const DEF = Symbol.for("definition");
 
-export interface NodeType<D extends BaseDefinition = BaseDefinition> {
+export interface NodeType<D extends AnyDefinition = AnyDefinition> {
+    defaultLabel: string;
+    icon: IconDefinition;
+    category: NodeCategory;
     create(input: Partial<DataTypes.PayloadFor<D>>, id?: string): ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>;
     getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>): DataTypes.SlotFor<D>[];
     evaluate<K extends keyof DataTypes.EvaluationOf<D>>(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: K, context: unknown): DataTypes.EvaluationOf<D>[K] | null;
@@ -27,6 +32,9 @@ export interface NodeType<D extends BaseDefinition = BaseDefinition> {
 export abstract class AbstractNodeType<D extends BaseDefinition> implements NodeType<D> {
     declare readonly [DEF]: D;
 
+    abstract get defaultLabel(): string;
+    abstract get icon(): IconDefinition;
+    abstract get category(): NodeCategory;
     abstract create(input: Partial<DataTypes.PayloadFor<D>>, id?: string): ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>;
     abstract getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>): DataTypes.SlotFor<D>[];
     evaluate<K extends keyof DataTypes.EvaluationOf<D>>(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: K, context: unknown): DataTypes.EvaluationOf<D>[K] | null {

@@ -2,6 +2,8 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { AbstractNodeType } from "./abstractNode";
 import { nanoid } from "nanoid";
 import { DataType, DataTypes } from "../datatypes";
+import { ICONS } from "../../components/Icon";
+import { NodeCategory } from "../../types";
 
 type ResultDefinition = {
     outputs: never;
@@ -24,6 +26,10 @@ type ResultDefinition = {
 };
 
 export const ResultNodeType = new (class extends AbstractNodeType<ResultDefinition> {
+    defaultLabel = "Result";
+    icon = ICONS.Bolt;
+    category: NodeCategory = "interface";
+
     create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>> {
         return {
             in: {
@@ -39,7 +45,7 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
                 h: `800px`,
                 x: `0px`,
                 y: `0px`,
-                color: "#fff",
+                color: "#ffffffff",
                 label: "",
                 ...input,
             },

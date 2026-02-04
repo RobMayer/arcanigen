@@ -3,7 +3,7 @@ import styled from "styled-components";
 
 const AbstractInput = styled.input`
     background: #111;
-    padding: 0.25em 0.5em;
+    padding: 0.25em 0.4em;
     font-family: monospace;
     border: 1px solid #666;
     outline: 1px solid transparent;
@@ -21,6 +21,8 @@ const AbstractInput = styled.input`
     &:disabled {
         opacity: 0.7;
     }
+    min-width: 0;
+    flex: 1 1;
 `;
 
 export const AbstractTextInput = styled((props: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>) => {
@@ -34,3 +36,9 @@ export const AbstractNumberInput = styled((props: DetailedHTMLProps<InputHTMLAtt
 export const AbstractSliderInput = styled((props: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>) => {
     return <input {...props} type={"range"} />;
 })``;
+
+export type AbstractInputProps<T extends Record<string, unknown>, M extends string | undefined = undefined> = Omit<
+    DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>,
+    M extends undefined ? keyof T : keyof T | M
+> &
+    T;

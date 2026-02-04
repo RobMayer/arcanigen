@@ -18,4 +18,14 @@ input {
     --style-base-green: hsl(140, 45%, 50%); /* Green (rebased: s×1.2, l×0.8) */
     --style-base-blue: hsl(215, 65%, 50%); /* Blue (rebased: s×1.2, l×0.8) */
     --style-base-purple: hsl(280, 45%, 55%); /* Purple (rebased: s×1.2, l×0.8) */
+
+    --flavour-bare: hsl(210, 0%, 35%);
+    --flavour-accent: hsl(210, 13%, 33%);
+    --flavour-danger: hsl(4, 40%, 40%);
+    --flavour-emphasis: hsl(35, 40%, 40%);
+    --flavour-confirm: hsl(160, 22%, 40%);
+    --flavour-help: hsl(280, 35%, 40%);
+    --flavour-info: hsl(215, 44%, 40%);
+
+    --icon: currentColor;
 }
