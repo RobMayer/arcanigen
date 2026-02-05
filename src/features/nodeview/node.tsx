@@ -10,6 +10,9 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { Icon, ICONS } from "../../components/Icon";
 import TextInput from "../../components/inputs/TextInput";
 import { NodeTypeRegistry } from "../../definitions";
+import { useGraphId } from "../primary";
+import { ActionButton } from "../../components/buttons/ActionButton";
+import { NODETITLE_FLAVOURS } from "../../util/misc";
 
 export const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
     const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
@@ -46,10 +49,11 @@ export const GraphNode = styled(({ className, nodeId }: { nodeId: string; classN
 
     const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
 
-    const [isOpen, setIsOpen] = useState<boolean>(true);
-    const toggleOpen = useCallback(() => {
-        setIsOpen((p) => !p);
-    }, []);
+    const graphId = useGraphId();
+    const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
+    const toggle = useCallback(() => {
+        setIsClosed((p) => (p ? undefined : true));
+    }, [setIsClosed]);
 
     const setLabel = useCallback(
         (newLabel: string) => {
@@ -59,9 +63,9 @@ export const GraphNode = styled(({ className, nodeId }: { nodeId: string; classN
     );
 
     return (
-        <DragMove.Item position={localPosition} className={className} title={nodeId} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <NodeTitle handleRef={handleRef} node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>} isOpen={isOpen} toggleOpen={toggleOpen} setLabel={setLabel} />
-            {isOpen ? <GraphSlots nodeId={nodeId} /> : null}
+        <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+            <NodeTitle handleRef={handleRef} node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} />
+            {isClosed ? null : <GraphSlots nodeId={nodeId} />}
         </DragMove.Item>
     );
 })`
@@ -78,35 +82,12 @@ export const GraphNode = styled(({ className, nodeId }: { nodeId: string; classN
     corner-shape: bevel;
     padding: 2px;
     transition: outline-color 0.25s;
+    box-shadow: 0px 4px 8px black;
 
     &[data-state~="selected"] {
         outline-color: white;
     }
 `;
-
-/*
-
-    // we'll need this for layter
-    const [inSockets, outSockets] = useMemo(() => {
-    const slots = nodeType.getSlots(node);
-
-    const doRecursion = (acc: [string[], string[]], slot: DataTypes.AnySlot) => {
-        if ("socketIn" in slot && slot.socketIn !== undefined) {
-            acc[0].push(`--socketFB2_${node.id}_${slot.socketIn}`);
-        }
-        if ("socketOut" in slot && slot.socketOut !== undefined) {
-            acc[1].push(`--socketFB2_${node.id}_${slot.socketOut}`);
-        }
-        if ("children" in slot) {
-            acc = slot.children.reduce(doRecursion, acc);
-        }
-        return acc;
-    };
-
-    return slots.reduce<[string[], string[]]>(doRecursion, [[], []]);
-}, [node, nodeType]);
-
-*/
 
 const NodeTitle = styled(
     ({
@@ -158,11 +139,11 @@ const NodeTitle = styled(
         }, []);
 
         return (
-            <div className={className} data-nodecategory={nodeType.category}>
+            <div className={className} data-nodecategory={nodeType.category} data-flavour={NODETITLE_FLAVOURS[nodeType.category]}>
                 <NodeFallback nodeId={node.id} side={"in"} />
-                <button onClick={toggleOpen}>
+                <ActionButton.Lite onClick={toggleOpen} flavour={NODETITLE_FLAVOURS[nodeType.category]}>
                     <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
-                </button>
+                </ActionButton.Lite>
 
                 <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
                     <Icon shape={nodeType.icon} />
@@ -223,18 +204,8 @@ const NodeTitle = styled(
         }
     }
 
-    --flavour: var(--flavour-accent);
-
     background-color: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
     border-color: oklch(from var(--flavour) calc(l - 0.05) c h);
-
-    &[data-nodecategory="shape"] {
-        --flavour: var(--flavour-emphasis);
-    }
-
-    &[data-nodecategory="interface"] {
-        --flavour: var(--flavour-confirm);
-    }
 `;
 
 const NodeFallback = styled(({ nodeId, className, side }: { nodeId: string; className?: string; side: "in" | "out" }) => {

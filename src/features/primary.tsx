@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { Project } from "../state/project";
 import { createContext, CSSProperties, Ref, RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
@@ -8,6 +8,7 @@ import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
 import { GraphConnectionProvider } from "./nodeview/socket";
 import { GraphNode } from "./nodeview/node";
+import { DATATYPE_FLAVOURS } from "../util/misc";
 
 const CTX = createContext<string>("root");
 
@@ -250,7 +251,9 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
 
         const onMouseDown = (evt: MouseEvent) => {
             if (evt.button !== 0 || evt.handled) return;
-            evt.handled = "active";
+            if (evt.target !== evt.currentTarget) {
+                return;
+            }
 
             startPos.current = { x: evt.clientX, y: evt.clientY };
 
@@ -358,6 +361,12 @@ const Bounds = styled(({ className, nodeList, ref }: { className?: string; nodeL
 
 //nested SVG for new coordinate system
 
+const keyframesMarch = keyframes`
+to {
+    stroke-dashoffset: var(--animMarch);
+}
+`;
+
 const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
     const link = Project.useLink(linkId);
 
@@ -373,12 +382,11 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     const ref = useRef<HTMLDivElement>(null);
     const fromMarkerRef = useRef<HTMLDivElement>(null);
     const toMarkerRef = useRef<HTMLDivElement>(null);
-    const pathRef = useRef<SVGPathElement>(null);
-    const selRef = useRef<SVGPathElement>(null);
+    const pathContainer = useRef<SVGPathElement>(null);
 
     useResizeObserver(ref, (entry) => {
         const basis = entry.target.getBoundingClientRect();
-        if (fromMarkerRef.current && toMarkerRef.current && pathRef.current && selRef.current) {
+        if (fromMarkerRef.current && toMarkerRef.current && pathContainer.current) {
             const fromPoint = fromMarkerRef.current.getBoundingClientRect();
             const toPoint = toMarkerRef.current.getBoundingClientRect();
             const zoom = entry.target.currentCSSZoom;
@@ -389,8 +397,7 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
             const y2 = (toPoint.top - basis.top) / zoom;
 
             const dx = Math.max(200, Math.abs(x2 - x1) * 0.5);
-            pathRef.current.setAttribute("d", `M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
-            selRef.current.setAttribute("d", `M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
+            pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
         }
     });
 
@@ -406,10 +413,24 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
 
     return (
         <>
-            <div className={className} style={style} ref={ref} tabIndex={-1} onFocus={handleFocus} onBlur={handleBlur} data-state={isSelected ? "selected" : undefined}>
+            <div
+                className={className}
+                style={style}
+                ref={ref}
+                tabIndex={-1}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                data-state={isSelected ? "selected" : undefined}
+                data-flavour={DATATYPE_FLAVOURS[link.type]}
+                data-linktype={link.type}
+            >
                 <svg preserveAspectRatio="none">
-                    <path data-part={"display"} ref={pathRef} />
-                    <path data-part={"selector"} ref={selRef} />
+                    <g ref={pathContainer}>
+                        <path data-part={"target"} d="" />
+                        <path data-part={"display"} d="" />
+                        <path data-part={"effect"} d="" />
+                        <path data-part={"select"} d="" />
+                    </g>
                 </svg>
                 <div data-part={"markerFrom"} ref={fromMarkerRef} />
                 <div data-part={"markerTo"} ref={toMarkerRef} />
@@ -463,25 +484,53 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
         height: 100%;
         overflow: visible;
         pointer-events: none;
-        & > path[data-part="display"] {
+        & > g > path {
+            d: var(--theD);
             vector-effect: non-scaling-stroke;
             fill: none;
-            stroke: #fc3;
-            stroke-width: 1.5px;
             pointer-events: none;
-        }
-        & > path[data-part="selector"] {
-            vector-effect: non-scaling-stroke;
-            fill: none;
-            stroke: transparent;
-            stroke-width: 8px;
-            pointer-events: stroke;
-            cursor: pointer;
+
+            &[data-part="display"] {
+                stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
+                stroke-width: 1.5px;
+            }
+            &[data-part="effect"] {
+                stroke: none;
+                stroke-width: 0;
+            }
+            &[data-part="target"] {
+                stroke: transparent;
+                stroke-width: 9px;
+                pointer-events: stroke;
+                cursor: pointer;
+            }
+            &[data-part="select"] {
+                stroke: transparent;
+                stroke-width: 2.5px;
+            }
         }
     }
 
-    &[data-state~="selected"] > svg > path[data-part="display"] {
-        stroke: #fff;
-        stroke-width: 3px;
+    &[data-linktype="shape"] > svg > g > path {
+        &[data-part="display"] {
+            stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
+            stroke-width: 6px;
+        }
+        &[data-part="effect"] {
+            --animMarch: 12px;
+            animation: ${keyframesMarch} 0.2s linear infinite reverse;
+            stroke: black;
+            stroke-linecap: round;
+            stroke-dasharray: 4px 8px;
+            stroke-dashoffset: 0px;
+            stroke-width: 4px;
+        }
+        &[data-part="select"] {
+            stroke-width: 7px;
+        }
+    }
+
+    &[data-state~="selected"] > svg > g > path[data-part="select"] {
+        stroke: #fff6;
     }
 `;

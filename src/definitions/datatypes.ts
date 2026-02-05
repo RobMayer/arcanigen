@@ -45,7 +45,7 @@ export namespace DataTypes {
     export type Keys = keyof TheTypes;
 
     export type Any = TheTypes[keyof TheTypes];
-    export type AnySlot = { [K in keyof TheTypes]: SlotOf<K> }[keyof TheTypes] | UniversalWidgets<any>;
+    export type AnySlot = { [K in keyof TheTypes]: SlotOf<K> }[keyof TheTypes] | UniversalWidgets<GenericDefinition>;
 
     export type SlotOf<K extends keyof TheTypes> = {
         type: K;
@@ -62,7 +62,16 @@ export namespace DataTypes {
 
     export type PayloadFor<D extends GenericDefinition> = { [K in keyof D["payload"]]: TypeOf<D["payload"][K]> };
 
-    type UniversalWidgets<D extends GenericDefinition> = { type: "ui"; widget: "hr" } | { type: "ui"; widget: "accordion"; children: SlotFor<D>[] /* todo: this should be an array of SlotFor<D> */ };
+    type UniversalWidgets<D extends GenericDefinition> =
+        | { type: "ui"; widget: "hr" }
+        | { type: "ui"; widget: "heading"; label: string }
+        | {
+              type: "ui";
+              widget: "accordion";
+              label: string;
+              start?: "open" | "closed";
+              children: Exclude<SlotFor<D>, { type: "ui"; widget: "accordion" }>[]; /* todo: this should be an array of SlotFor<D> */
+          };
 
     // SlotFor is the union of all typed slots plus universals
     export type SlotFor<D extends GenericDefinition> = UniversalWidgets<D> | { [K in Any["key"]]: TypedSlot<D, K> }[Any["key"]];

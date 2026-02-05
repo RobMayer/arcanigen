@@ -1,4 +1,4 @@
-export type Flavour = "default" | "info" | "danger" | "emphasis" | "help" | "confirm";
+export type Flavour = "base" | "accent" | "info" | "danger" | "emphasis" | "help" | "confirm";
 
 export type PopoverPosition =
     | "top"

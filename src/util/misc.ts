@@ -1,4 +1,6 @@
-import { LengthUnit } from "../types";
+import { Flavour } from "../components/types";
+import { DataTypes } from "../definitions/datatypes";
+import { LengthUnit, NodeCategory } from "../types";
 
 export type ListOf<T> = T | T[] | Set<T>;
 
@@ -33,4 +35,23 @@ export const merge = <M, S extends Record<string, unknown>>(item: M, extra: S): 
         },
         item as M & S,
     );
+};
+
+export const NODETITLE_FLAVOURS: { [key in NodeCategory]: Flavour } = {
+    result: "confirm",
+    interface: "confirm",
+    primitive: "accent",
+    collection: "danger",
+    shape: "emphasis",
+};
+
+export const DATATYPE_FLAVOURS: { [key in DataTypes.Keys]: Flavour } = {
+    string: "accent",
+    length: "accent",
+    shape: "confirm",
+    float: "accent",
+    integer: "accent",
+    color: "accent",
+    enum: "accent",
+    "tokens<length>": "accent",
 };

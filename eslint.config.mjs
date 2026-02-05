@@ -26,7 +26,7 @@ export default defineConfig([
                 "warn",
                 {
                     vars: "all",
-                    args: "after-used",
+                    args: "none",
                     varsIgnorePattern: "^_",
                     argsIgnorePattern: "^_",
                     caughtErrors: "none",

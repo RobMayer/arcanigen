@@ -9,7 +9,7 @@ import { useGraphId } from "../features/primary";
 // will eventually hold a container for node-type specific logic
 
 export namespace Project {
-    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: DataTypes.Keys };
     type GraphId = string;
     type XY = { x: number; y: number };
 
@@ -73,7 +73,7 @@ export namespace Project {
             root: ["RESULT"],
         });
 
-        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: string; scope: string } | null>(null);
+        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: DataTypes.Keys; scope: string } | null>(null);
 
         const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
 
@@ -120,17 +120,12 @@ export namespace Project {
         const methods = useMemo(() => {
             const update = <P extends DataTypes.PayloadFor<BaseDefinition>>(data: Partial<P>) => {
                 const prev = ctx.nodes.ref.current[graphId][id].payload as P;
-                ctx.nodes.ref.current = {
-                    ...ctx.nodes.ref.current,
-                    [graphId]: {
-                        ...ctx.nodes.ref.current[graphId],
-                        [id]: {
-                            ...ctx.nodes.ref.current[graphId][id],
-                            payload: {
-                                ...prev,
-                                ...data,
-                            },
-                        },
+
+                ctx.nodes.ref.current[graphId][id] = {
+                    ...ctx.nodes.ref.current[graphId][id],
+                    payload: {
+                        ...prev,
+                        ...data,
                     },
                 };
                 ctx.nodes.notify();
@@ -153,7 +148,7 @@ export namespace Project {
 
         return useMemo(() => {
             // ! Important: this assumes that 'from' and 'to' have already been normalized
-            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string) => {
+            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Keys) => {
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
                 const [{ nodes, links }, newLink] = ArcaneGraph.connect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
                 if (newLink) {

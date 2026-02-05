@@ -15,4 +15,4 @@ export type SVGObject = {
     attributes: { [key: string]: string };
 };
 
-export type NodeCategory = "interface" | "primitive" | "collection" | "shape";
+export type NodeCategory = "result" | "interface" | "primitive" | "collection" | "shape";

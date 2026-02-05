@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { NodeTypeRegistry } from "../../definitions";
+import { DataTypes } from "../../definitions/datatypes";
 
 export namespace ArcaneGraph {
     // aliases just for clarity of purpose when used
@@ -26,7 +27,7 @@ export namespace ArcaneGraph {
 
     export type Link = {
         id: LinkId;
-        type: string;
+        type: DataTypes.Keys;
         fromNode: NodeId;
         toNode: NodeId;
         fromSocket: SocketId;
@@ -283,7 +284,7 @@ export namespace ArcaneGraph {
         return [{ ...graph, nodes: newNodes }, affected];
     };
     export const updateNodes = <N>(graph: GraphOf<N>, payloads: { [key: NodeId]: N }): [graph: GraphOf<N>, affected: NodeId[]] => {
-        return updateNodesWith(graph, (node) => (node.id in payloads ? payloads[node.id] : undefined), Object.keys(payloads) as NodeId[]);
+        return updateNodesWith(graph, (node) => (node.id in payloads ? payloads[node.id] : undefined), Object.keys(payloads));
     };
     export const updateNodeWith = <N>(graph: GraphOf<N>, id: NodeId, setter: Setter<NodeOf<N>, N | undefined>): [graph: GraphOf<N>, affected: NodeId | null] => {
         const [newGraph, affected] = updateNodesWith(graph, setter, id);
@@ -443,7 +444,7 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: string,
+        type: DataTypes.Keys,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null] => {
         const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
@@ -455,7 +456,7 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: string,
+        type: DataTypes.Keys,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null, removed: RemovedOf<N>] => {
         const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
@@ -606,7 +607,7 @@ export namespace ArcaneGraph {
         const outToRemove = "out" in sockets ? normalizeList(sockets.out) : null;
         if (inToRemove) {
             for (const sid of inToRemove) {
-                if (sid in node.in && node.in[sid] !== null) linkIds.push(node.in[sid]!);
+                if (sid in node.in && node.in[sid] !== null) linkIds.push(node.in[sid]);
             }
         }
         if (outToRemove) {

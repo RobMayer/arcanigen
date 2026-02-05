@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useMemo } from "react";
+import { CSSProperties, ReactNode, useCallback, useMemo } from "react";
 import { NodeTypeRegistry } from "../../definitions";
 import { Project } from "../../state/project";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
@@ -13,6 +13,12 @@ import TextInput from "../../components/inputs/TextInput";
 import { Dropdown } from "../../components/inputs/Dropdown";
 import { RadioBox } from "../../components/buttons/RadioBox";
 import { RadioButton } from "../../components/buttons/RadioButton";
+import { Icon, ICONS } from "../../components/Icon";
+import { Session } from "../../state/session";
+import { useGraphId } from "../primary";
+import { ActionButton } from "../../components/buttons/ActionButton";
+import { Emptyable, NumericString } from "../../util/misc";
+import NumberInput from "../../components/inputs/NumberInput";
 
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
@@ -42,6 +48,7 @@ const GraphSlot = styled(
         slot,
         node,
         className,
+        nodeType,
         update,
     }: {
         slot: DataTypes.AnySlot;
@@ -54,9 +61,11 @@ const GraphSlot = styled(
             switch (slot.widget) {
                 case "hr":
                     return <Hr />;
-                case "accordion": // Todo: handle UI type slots
+                case "accordion":
+                    return <SlotAccordion slot={slot} node={node} nodeType={nodeType} className={className} update={update} />;
+                case "heading":
+                    return <Heading>{slot.label}</Heading>;
             }
-            return null;
         }
         return (
             <div className={className}>
@@ -99,6 +108,10 @@ const GraphSlotChoice = ({
     const connectedOut = slot.socketOut ? (node.out[slot.socketOut]?.length ?? 0) !== 0 : false;
 
     switch (slot.type) {
+        case "integer":
+            return <WidgetInteger slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
+        case "float":
+            return <WidgetFloat slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "string":
             return <WidgetString slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "length":
@@ -109,11 +122,38 @@ const GraphSlotChoice = ({
             return <WidgetEnum slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "tokens<length>":
             return <WidgetTokensLength slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
-        case "integer":
-        case "float":
-            return null;
     }
     return null;
+};
+
+const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) => {
+    const handleChange = useCallback(
+        (v: Emptyable<NumericString>) => {
+            update?.({ [slot.property]: v });
+        },
+        [slot.property, update],
+    );
+    switch (slot.widget) {
+        case "input":
+            return <NumberInput value={node.payload[slot.property] as Emptyable<NumericString>} disabled={disabled} onCommit={handleChange} bounds={slot.bounds} step={slot.step} />;
+        case "slider":
+            return null;
+    }
+};
+
+const WidgetFloat = ({ slot, node, disabled, update }: SlotProps<"float">) => {
+    const handleChange = useCallback(
+        (v: Emptyable<NumericString>) => {
+            update?.({ [slot.property]: v });
+        },
+        [slot.property, update],
+    );
+    switch (slot.widget) {
+        case "input":
+            return <NumberInput value={node.payload[slot.property] as Emptyable<NumericString>} disabled={disabled} onCommit={handleChange} bounds={slot.bounds} step={slot.step ?? 1} />;
+        case "slider":
+            return null;
+    }
 };
 
 const WidgetString = ({ slot, node, disabled, update }: SlotProps<"string">) => {
@@ -138,7 +178,7 @@ const WidgetLength = ({ slot, node, disabled, update }: SlotProps<"length">) => 
     );
     switch (slot.widget) {
         case "input":
-            return <LengthInput value={node.payload[slot.property] as Length} disabled={disabled} onCommit={handleChange} />;
+            return <LengthInput value={node.payload[slot.property] as Length} disabled={disabled} onCommit={handleChange} required={!slot.nullable} />;
     }
 };
 
@@ -258,6 +298,90 @@ const Hr = styled.hr`
     border: none;
     border-top: 1px dashed #666;
     flex: 1 1;
+`;
+
+const Heading = styled.div`
+    font-size: 16pt;
+    margin-top: 0.125em;
+    font-variant: small-caps;
+    text-align: center;
+    border-bottom: 1px solid #666;
+`;
+
+const SlotAccordion = styled(
+    ({
+        className,
+        slot,
+        node,
+        nodeType,
+        update,
+    }: {
+        className?: string;
+        slot: { label: string; children: DataTypes.AnySlot[]; start?: "open" | "closed" };
+        node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
+        nodeType: NodeType;
+        update: (data: Partial<DataTypes.PayloadFor<AnyDefinition>>) => void;
+    }) => {
+        const graphId = useGraphId();
+        const [isToggled, setIsToggled] = Session.useUiState<boolean>(`nodeSlot_accordion[${graphId}][${node.id}][${slot.label}]`);
+        const isOpen = slot.start === "open" ? !isToggled : isToggled;
+        const toggle = useCallback(() => {
+            setIsToggled((p) => (p ? undefined : true));
+        }, [setIsToggled]);
+        const [inSockets, outSockets] = useMemo<[CSSProperties, CSSProperties]>(() => {
+            const descSlots = slot.children;
+
+            const doRecursion = (acc: [string[], string[]], slot: DataTypes.AnySlot) => {
+                if ("socketIn" in slot && slot.socketIn !== undefined) {
+                    acc[0].push(`--socketFB_${node.id}_${slot.socketIn}`);
+                }
+                if ("socketOut" in slot && slot.socketOut !== undefined) {
+                    acc[1].push(`--socketFB_${node.id}_${slot.socketOut}`);
+                }
+                if ("children" in slot) {
+                    acc = slot.children.reduce(doRecursion, acc);
+                }
+                // there will be other edge-cases we'll need to add, in the fullness of time.
+                return acc;
+            };
+
+            const [theIn, theOut] = descSlots.reduce<[string[], string[]]>(doRecursion, [[], []]);
+
+            return [{ anchorName: theIn.join(", ") }, { anchorName: theOut.join(", ") }];
+        }, [node.id, slot.children]);
+
+        return (
+            <>
+                <ActionButton.Lite className={className} onClick={toggle} type={"button"}>
+                    <div style={inSockets} />
+                    <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
+                    <span>{slot.label}</span>
+                    <div style={outSockets} />
+                </ActionButton.Lite>
+                {!isOpen ? null : (
+                    <>
+                        {slot.children.map((childSlot, i) => {
+                            return <GraphSlot key={i} slot={childSlot} node={node} nodeType={nodeType} update={update} />;
+                        })}
+                    </>
+                )}
+            </>
+        );
+    },
+)`
+    background: #555;
+    font-size: 13pt;
+    cursor: pointer;
+    font-variant: small-caps;
+    gap: 0px;
+    display: flex;
+    align-items: center;
+    margin-inline: -8px;
+    & > span {
+        margin-inline: 4px;
+        flex: 1 1 auto;
+        text-align: start;
+    }
 `;
 
 //#endregion

@@ -11,9 +11,11 @@ const AbstractInput = styled.input`
     font-family: monospace;
     border: 1px solid #666;
     outline: 1px solid transparent;
-    outline-offset: 1px;
+    outline-offset: 0px;
+    transition: outline-offset 0.1s ease;
     &:focus-visible {
-        outline-color: #fff;
+        outline-color: #fffa;
+        outline-offset: -2px;
     }
     &:invalid {
         outline-color: #f00;
@@ -49,9 +51,11 @@ export const AbstractSelect = styled(({ tooltip, flavour, ...props }: AbstractSe
     font-family: monospace;
     border: 1px solid #666;
     outline: 1px solid transparent;
-    outline-offset: 1px;
+    outline-offset: 0px;
+    transition: outline-offset 0.1s ease;
     &:focus-visible {
-        outline-color: #fff;
+        outline-color: #fffa;
+        outline-offset: -2px;
     }
     &:disabled {
         opacity: 0.6;

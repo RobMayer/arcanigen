@@ -4,7 +4,7 @@ import { Flavour } from "../types";
 
 export type AbstractButtonProps = Omit<DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>, "title"> & { tooltip?: string; flavour?: Flavour; state?: string };
 
-export const AbstractButton = styled(({ tooltip, flavour, state, ...rest }: AbstractButtonProps) => {
+export const AbstractButton = styled(({ tooltip, flavour = "accent", state, ...rest }: AbstractButtonProps) => {
     return <button {...rest} type={"button"} title={tooltip} data-flavour={flavour} data-state={state} />;
 })`
     display: inline-flex;
@@ -25,8 +25,8 @@ export const AbstractButton = styled(({ tooltip, flavour, state, ...rest }: Abst
 
     &:focus-visible,
     &:not(:disabled)[data-state~="active"] {
-        outline-color: #fff;
-        outline-offset: 2px;
+        outline-color: #fffa;
+        outline-offset: -2px;
     }
 
     [data-state~="chosen"],
@@ -46,7 +46,7 @@ export const AbstractButton = styled(({ tooltip, flavour, state, ...rest }: Abst
     }
 `;
 
-export const AbstractLiteButton = styled(({ tooltip, flavour, state, ...rest }: AbstractButtonProps) => {
+export const AbstractLiteButton = styled(({ tooltip, flavour = "accent", state, ...rest }: AbstractButtonProps) => {
     return <button {...rest} type={"button"} title={tooltip} data-flavour={flavour} data-state={state} />;
 })`
     display: inline-flex;
@@ -55,6 +55,7 @@ export const AbstractLiteButton = styled(({ tooltip, flavour, state, ...rest }: 
     cursor: pointer;
     transition: outline-offset 0.1s ease;
     outline: 1px solid transparent;
+    outline-offset: 1px;
     color: oklch(from var(--flavour) 0.9 calc(c * 0.9) h);
     --icon: oklch(from var(--flavour) 0.8 calc(c * 0.9) h);
 
@@ -65,8 +66,8 @@ export const AbstractLiteButton = styled(({ tooltip, flavour, state, ...rest }: 
 
     &:focus-visible,
     &:not(:disabled)[data-state~="active"] {
-        outline-color: #fff;
-        outline-offset: 2px;
+        outline-color: #fffc;
+        outline-offset: -1px;
     }
 
     [data-state~="chosen"],

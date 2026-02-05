@@ -28,7 +28,7 @@ type ResultDefinition = {
 export const ResultNodeType = new (class extends AbstractNodeType<ResultDefinition> {
     defaultLabel = "Result";
     icon = ICONS.Bolt;
-    category: NodeCategory = "interface";
+    category: NodeCategory = "result";
 
     create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): BuiltNodeOf<ResultDefinition> {
         return {
@@ -63,45 +63,48 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
                 widget: "none",
             },
             {
+                label: "Canvas",
                 type: "ui",
-                widget: "hr",
-            },
-            {
-                label: "Canvas Width",
-                type: "length",
-                socketIn: "w",
-                widget: "input",
-                property: "w",
-            },
-            {
-                label: "Canvas Height",
-                type: "length",
-                socketIn: "h",
-                widget: "input",
-                property: "h",
-            },
-            {
-                label: "Origin X",
-                type: "length",
-                socketIn: "x",
-                widget: "input",
-                property: "x",
-            },
-            {
-                label: "Origin Y",
-                type: "length",
-                socketIn: "y",
-                widget: "input",
-                property: "y",
-            },
-            {
-                label: "Canvas Color",
-                type: "color",
-                socketIn: "color",
-                widget: "hex",
-                property: "color",
-                nullable: true,
-                alpha: true,
+                widget: "accordion",
+                children: [
+                    {
+                        label: "Canvas Width",
+                        type: "length",
+                        socketIn: "w",
+                        widget: "input",
+                        property: "w",
+                    },
+                    {
+                        label: "Canvas Height",
+                        type: "length",
+                        socketIn: "h",
+                        widget: "input",
+                        property: "h",
+                    },
+                    {
+                        label: "Origin X",
+                        type: "length",
+                        socketIn: "x",
+                        widget: "input",
+                        property: "x",
+                    },
+                    {
+                        label: "Origin Y",
+                        type: "length",
+                        socketIn: "y",
+                        widget: "input",
+                        property: "y",
+                    },
+                    {
+                        label: "Canvas Color",
+                        type: "color",
+                        socketIn: "color",
+                        widget: "hex",
+                        property: "color",
+                        nullable: true,
+                        alpha: true,
+                    },
+                ],
             },
         ];
     }

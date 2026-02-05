@@ -6,10 +6,12 @@ import { useStable } from "../../util/hooks/useStable";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { BaseDefinition, DefinitionOf } from "../../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../../definitions";
+import { DATATYPE_FLAVOURS } from "../../util/misc";
+import { DataTypes } from "../../definitions/datatypes";
 
 type GraphConnectionControls = {
-    start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => void;
-    finish: (nodeId: string, socketId: string, side: "in" | "out", type: string) => void;
+    start: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => void;
+    finish: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => void;
     clear: () => void;
 };
 
@@ -22,13 +24,13 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
     const connectionContextValue = useMemo(() => {
         let pending: null | Project.PendingConnection;
         return {
-            start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
+            start: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => {
                 // todo: parametize scope properly...
                 const p = { node: nodeId, socket: socketId, side, type, scope: "root" };
                 setPendingConnection(p);
                 pending = p;
             },
-            finish: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
+            finish: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => {
                 if (pending !== null && pending.side !== side) {
                     // normalize: out -> in
                     const [fromNode, toNode, fromSocket, toSocket] = pending.side === "out" ? [pending.node, nodeId, pending.socket, socketId] : [nodeId, pending.node, socketId, pending.socket];
@@ -58,7 +60,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
 };
 
 export const Socket = styled(
-    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: string; connected?: boolean }) => {
+    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: DataTypes.Keys; connected?: boolean }) => {
         const socketRef = useRef<HTMLDivElement>(null);
 
         const [pendingConnection] = Project.usePendingConnection();
@@ -116,13 +118,22 @@ export const Socket = styled(
             return r.length > 0 ? r.join(" ") : undefined;
         }, [pendingConnection, canConnect, nodeId, socketId, connected]);
 
-        return <div ref={socketRef} className={className} data-socketid={`--socket_${nodeId}_${socketId}`} data-socketside={side} data-sockettype={type} data-state={state} />;
+        return (
+            <div
+                ref={socketRef}
+                className={className}
+                data-socketid={`--socket_${nodeId}_${socketId}`}
+                data-socketside={side}
+                data-sockettype={type}
+                data-state={state}
+                data-flavour={DATATYPE_FLAVOURS[type]}
+            />
+        );
     },
 )`
     height: calc(1lh - (1lh - 1em) / 2);
     align-self: center;
     aspect-ratio: 1;
-    --flavour: var(--style-base-slate);
     background: oklch(from var(--flavour) l c h);
     border-radius: 100%;
     anchor-name: attr(data-socketid type(<custom-ident>));
@@ -132,23 +143,15 @@ export const Socket = styled(
     outline: 1px solid #fff4;
     outline-offset: -2px;
     border: 1px solid black;
+    z-index: 1;
 
     &[data-socketside="in"] {
-        margin-left: -0.5lh;
+        margin-left: calc(-1lh + 6px);
     }
     &[data-socketside="out"] {
-        margin-right: -0.5lh;
+        margin-right: calc(-1lh + 6px);
     }
 
-    &[data-sockettype="color"],
-    &[data-sockettype="float"],
-    &[data-sockettype="length"],
-    &[data-sockettype="enum"] {
-        --flavour: var(--flavour-help);
-    }
-    &[data-sockettype="shape"] {
-        --flavour: var(--flavour-confirm);
-    }
     &[data-state~="invalid"] {
         background: #222;
         outline-color: #fff1;
@@ -162,7 +165,7 @@ export const Socket = styled(
     }
 `;
 
-const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: string }) => {
+const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: DataTypes.Keys }) => {
     const style = useMemo(
         () =>
             ({
@@ -213,7 +216,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} data-type={type} />
+                <path ref={pathRef} data-flavour={DATATYPE_FLAVOURS[type]} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>
@@ -254,20 +257,14 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             stroke-width: 1.5px;
             stroke-dasharray: 6 4;
             pointer-events: none;
+            stroke: oklch(from var(--flavour) calc(l + 0.3) c h);
         }
-    }
-
-    & > svg > path[data-type="float"] {
-        stroke: var(--style-base-purple);
-    }
-    & > svg > path[data-type="shape"] {
-        stroke: var(--style-base-green);
     }
 `;
 
 // todo: use this to check for possible cylicals...
-const validateConnection = <N extends DefinitionOf<BaseDefinition>["payload"]>(graph: ArcaneGraph.GraphOf<N>, node: ArcaneGraph.NodeOf<N>, outSocket: string): boolean => {
+const _validateConnection = <N extends DefinitionOf<BaseDefinition>["payload"]>(graph: ArcaneGraph.GraphOf<N>, node: ArcaneGraph.NodeOf<N>, outSocket: string): boolean => {
     const nt = NodeTypeRegistry.get(node.type);
-    const affected = nt.dependsOn(node, outSocket);
+    const _affected = nt.dependsOn(node, outSocket);
     return true;
 };

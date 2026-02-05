@@ -8,6 +8,7 @@ export namespace Session {
     type ContextValue = {
         selection: FastContextMember<Set<string>>;
         marqueeMode: FastContextMember<MarqueeMode>;
+        uiState: FastContextMember<{ [key: string]: unknown }>;
     };
 
     const CTX = createContext<ContextValue | undefined>(undefined);
@@ -15,8 +16,9 @@ export namespace Session {
     export const Provider = ({ children }: { children?: ReactNode }) => {
         const selection = useFastContextMember<Set<string>>(new Set<string>());
         const marqueeMode = useFastContextMember<MarqueeMode>("contain");
+        const uiState = useFastContextMember<{ [key: string]: unknown }>({});
 
-        const value = useMemo(() => ({ selection, marqueeMode }), []);
+        const value = useMemo(() => ({ uiState, selection, marqueeMode }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -25,6 +27,27 @@ export namespace Session {
         const ctx = useContext(CTX)!;
         const selector = useCallback(() => ctx.selection.get().has(id), [id, ctx]);
         return [useSyncExternalStore(ctx.selection.subscribe, selector)] as const;
+    };
+
+    export const useUiState = <T,>(key: string) => {
+        const ctx = useContext(CTX)!;
+
+        const selector = useCallback(() => ctx.uiState.get()[key], [key, ctx]);
+        const set = useCallback(
+            (v: T | ((p: T | undefined) => T | undefined)) => {
+                const p = ctx.uiState.ref.current[key] as T | undefined;
+                const n = typeof v === "function" ? (v as (p: T | undefined) => T)(p) : v;
+                if (n === undefined) {
+                    delete ctx.uiState.ref.current[key];
+                } else {
+                    ctx.uiState.ref.current[key] = n;
+                }
+                ctx.uiState.notify();
+            },
+            [ctx, key],
+        );
+
+        return [useSyncExternalStore(ctx.uiState.subscribe, selector), set] as [T | undefined, typeof set];
     };
 
     export const useSelectionRef = () => useContext(CTX)!.selection.ref;
