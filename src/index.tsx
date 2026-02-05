@@ -7,6 +7,7 @@ import styled from "styled-components";
 import { useStable } from "./util/hooks/useStable";
 import { NodeDrawer } from "./features/nodedrawer";
 import { useDragPane } from "./components/wrappers/DragPane";
+import { SvgCanvas } from "./features/svgcanvas";
 
 window.onfocus = () => {
     document.dispatchEvent(new CustomEvent("trh:pagefocus"));
@@ -38,7 +39,9 @@ const Primary = () => {
             <div data-gridarea={"drawer"}>
                 <NodeDrawer graphId={"root"} paneControls={graphPaneControls} />
             </div>
-            <div data-gridarea={"canvas"}></div>
+            <div data-gridarea={"canvas"}>
+                <SvgCanvas />
+            </div>
         </Layout>
     );
 };

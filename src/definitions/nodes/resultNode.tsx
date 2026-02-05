@@ -5,7 +5,7 @@ import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
 import { NodeCategory } from "../../types";
 
-type ResultDefinition = {
+export type ResultDefinition = {
     outputs: never;
     inputs: {
         input: DataType<"shape">;

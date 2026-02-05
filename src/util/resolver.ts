@@ -1,7 +1,9 @@
 import { NodeTypeRegistry } from "../definitions";
 import { DataTypes } from "../definitions/datatypes";
-import { AnyDefinition } from "../definitions/nodes/abstractNode";
+import { AnyDefinition, DefinitionOf } from "../definitions/nodes/abstractNode";
+import { Length, SVGObject } from "../types";
 import { ArcaneGraph } from "./structs/arcaneGraph";
+import { lengthToPx } from "./misc";
 
 export namespace Resolver {
     type GraphId = string;
@@ -20,19 +22,29 @@ export namespace Resolver {
         subgraph: (graphId: string, inputs: { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null }) => { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null };
     };
 
-    export const evaluateRootResult = (state: State) => {
-        const definitions: DataTypes.EvaluationBy<"shape">[] = [];
+    export type RootResult = {
+        canvas: {
+            width: number;
+            height: number;
+            originX: number;
+            originY: number;
+            background: string;
+        };
+        definitions: SVGObject[];
+        contents: SVGObject | null;
+    };
+
+    export const evaluateRootResult = (state: State): RootResult => {
+        const definitions: SVGObject[] = [];
 
         const define = (def: DataTypes.EvaluationBy<"shape">) => {
-            definitions.push(def);
+            definitions.push(def.data);
         };
 
         const context: Context = {
             graphId: "root",
             define,
             resolve: <K extends DataTypes.Keys>(nodeId: string, inSocket: string): DataTypes.EvaluationBy<K> | null => {
-                // todo: do the thing
-
                 const links = ArcaneGraph.linksTo({ nodes: state.nodes["root"], links: state.links["root"] }, nodeId, inSocket);
                 if (links.length === 0) {
                     return null;
@@ -42,22 +54,39 @@ export namespace Resolver {
                     return null;
                 }
 
-                // do I have the right cardnality here?
                 return evaluateNodeOutput<K>(state, "root", theLink.fromNode, theLink.fromSocket, context);
             },
             // todo: work in progress.
             // resolves a subgraph by providing the already-resolved inputs to that subgraph...
             subgraph: (graphId: string, inputs: { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null }): { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null } => {
-                //
                 return {};
             },
         };
 
-        const contents = evaluateNodeOutput<"shape">(state, "root", "RESULT", "output", context);
+        // Get the RESULT node directly and resolve its inputs
+        const resultNode = state.nodes["root"]?.["RESULT"] as ArcaneGraph.NodeOf<DataTypes.PayloadFor<DefinitionOf<NodeTypeRegistry.NodeTypeBy<"result">>>>;
+        if (!resultNode) {
+            return {
+                canvas: { width: 800, height: 800, originX: 0, originY: 0, background: "#ffffffff" },
+                definitions: [],
+                contents: null,
+            };
+        }
 
-        // not sure of this return yet...
+        // Resolve canvas settings from result node (use connected values or fall back to payload)
+        // Cast payload values since we know this is a result node with specific types
+        const width = lengthToPx(context.resolve<"length">("RESULT", "w")?.data ?? resultNode.payload.w) ?? 800;
+        const height = lengthToPx(context.resolve<"length">("RESULT", "h")?.data ?? resultNode.payload.h) ?? 800;
+        const originX = lengthToPx(context.resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x) ?? 0;
+        const originY = lengthToPx(context.resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y) ?? 0;
+        const background = context.resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
+
+        // Resolve the shape input
+        const shapeEval = context.resolve<"shape">("RESULT", "input");
+        const contents = shapeEval?.data ?? null;
+
         return {
-            type: "root",
+            canvas: { width, height, originX: width / 2 + originX, originY: height / 2 + originY, background },
             definitions,
             contents,
         };

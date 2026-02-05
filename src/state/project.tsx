@@ -121,11 +121,17 @@ export namespace Project {
             const update = <P extends DataTypes.PayloadFor<BaseDefinition>>(data: Partial<P>) => {
                 const prev = ctx.nodes.ref.current[graphId][id].payload as P;
 
-                ctx.nodes.ref.current[graphId][id] = {
-                    ...ctx.nodes.ref.current[graphId][id],
-                    payload: {
-                        ...prev,
-                        ...data,
+                ctx.nodes.ref.current = {
+                    ...ctx.nodes.ref.current,
+                    [graphId]: {
+                        ...ctx.nodes.ref.current[graphId],
+                        [id]: {
+                            ...ctx.nodes.ref.current[graphId][id],
+                            payload: {
+                                ...prev,
+                                ...data,
+                            },
+                        },
                     },
                 };
                 ctx.nodes.notify();
