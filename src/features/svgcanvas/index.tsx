@@ -28,11 +28,6 @@ const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode => {
 
 export const SvgCanvas = styled(({ className }: { className?: string }) => {
     const resolverState = Project.useResolverState();
-
-    useEffect(() => {
-        console.log("resolverState changed");
-    }, [resolverState]);
-
     const { canvas, contents } = useMemo(() => {
         return Resolver.evaluateRootResult(resolverState);
     }, [resolverState]);
