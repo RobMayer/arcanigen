@@ -1,6 +1,6 @@
 import { Flavour } from "../components/types";
 import { DataTypes } from "../definitions/datatypes";
-import { LengthUnit, NodeCategory } from "../types";
+import { Length, LengthUnit, NodeCategory } from "../types";
 
 export type ListOf<T> = T | T[] | Set<T>;
 
@@ -11,6 +11,14 @@ export type Emptyable<T extends string> = T | "";
 export type NumericString = `${number}`;
 
 export const normalizeList = <T>(list: ListOf<NotIterable<T>>): Set<T> => (list instanceof Set ? list : new Set<T>(Array.isArray(list) ? list : [list]));
+
+const LENGTH_REGEX = /^([+-]?\d*\.?\d+)(px|pt|in|cm|mm)$/;
+
+function parseLength(value: string): { num: number; unit: LengthUnit } | null {
+    const match = value.match(LENGTH_REGEX);
+    if (!match) return null;
+    return { num: Number(match[1]), unit: match[2] as LengthUnit };
+}
 
 export const lengthToUnitless = (num: number, unit: LengthUnit): number => {
     switch (unit) {
@@ -27,6 +35,14 @@ export const lengthToUnitless = (num: number, unit: LengthUnit): number => {
     }
 };
 
+export const lengthToPx = (length: Emptyable<Length>): number | null => {
+    const parsed = parseLength(length);
+    if (parsed) {
+        return lengthToUnitless(parsed.num, parsed.unit);
+    }
+    return null;
+};
+
 export const merge = <M, S extends Record<string, unknown>>(item: M, extra: S): M & S => {
     return Object.keys(extra).reduce<M & S>(
         (acc, k: keyof S) => {
@@ -38,11 +54,11 @@ export const merge = <M, S extends Record<string, unknown>>(item: M, extra: S): 
 };
 
 export const NODETITLE_FLAVOURS: { [key in NodeCategory]: Flavour } = {
-    result: "confirm",
-    interface: "confirm",
+    result: "emphasis",
+    interface: "emphasis",
     primitive: "accent",
     collection: "danger",
-    shape: "emphasis",
+    shape: "confirm",
 };
 
 export const DATATYPE_FLAVOURS: { [key in DataTypes.Keys]: Flavour } = {

@@ -13,4 +13,8 @@ export namespace NodeTypeRegistry {
     };
 
     export type Types = keyof typeof NODETYPE_REGISTRY;
+
+    export const list = () => Object.entries(NODETYPE_REGISTRY);
+    export const keys = () => Object.keys(NODETYPE_REGISTRY);
+    export const entries = () => Object.entries(NODETYPE_REGISTRY);
 }

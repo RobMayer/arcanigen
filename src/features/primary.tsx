@@ -1,28 +1,25 @@
 import styled, { keyframes } from "styled-components";
 import { Project } from "../state/project";
-import { createContext, CSSProperties, Ref, RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "../util/hooks/useResizeObserver";
-import { DragPane } from "../components/wrappers/DragPane";
+import { DragPane, DragPaneControls } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
 import { GraphConnectionProvider } from "./nodeview/socket";
 import { GraphNode } from "./nodeview/node";
 import { DATATYPE_FLAVOURS } from "../util/misc";
+import { GraphIdContext } from "../state/graphId";
 
-const CTX = createContext<string>("root");
-
-export const GraphView = ({ graphId }: { graphId: string }) => {
+export const GraphView = ({ graphId, paneControls }: { graphId: string; paneControls?: DragPaneControls }) => {
     return (
-        <CTX value={graphId}>
-            <GraphMain />
-        </CTX>
+        <GraphIdContext value={graphId}>
+            <GraphMain paneControls={paneControls} />
+        </GraphIdContext>
     );
 };
 
-export const useGraphId = () => useContext(CTX);
-
-const GraphMain = () => {
+const GraphMain = ({ paneControls }: { paneControls?: DragPaneControls }) => {
     const nodes = Project.useNodeList();
 
     const boundsRef = useRef<HTMLDivElement>(null);
@@ -58,7 +55,7 @@ const GraphMain = () => {
     const [selectionAction, setSelectionAction] = useState<SelectionAction>("set");
 
     return (
-        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`}>
+        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`} controls={paneControls}>
             <GraphConnectionProvider>
                 <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
                 <NodeWrapper>
@@ -190,9 +187,11 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
                 return;
             }
 
+            const paneRect = container.getBoundingClientRect();
             const zoom = rect.currentCSSZoom;
-            const x = Math.min(start.x, moveEvt.clientX) / zoom;
-            const y = Math.min(start.y, moveEvt.clientY) / zoom;
+
+            const x = (Math.min(start.x, moveEvt.clientX) - paneRect.left) / zoom;
+            const y = (Math.min(start.y, moveEvt.clientY) - paneRect.top) / zoom;
             const w = Math.abs(moveEvt.clientX - start.x) / zoom;
             const h = Math.abs(moveEvt.clientY - start.y) / zoom;
 

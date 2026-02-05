@@ -3,7 +3,9 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { AbstractNodeType, BuiltNodeOf } from "./abstractNode";
 import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
-import { NodeCategory } from "../../types";
+import { NodeCategory, SVGObject } from "../../types";
+import { Resolver } from "../../util/resolver";
+import { lengthToPx, lengthToUnitless } from "../../util/misc";
 
 type CircleDefinition = {
     inputs: {
@@ -37,9 +39,15 @@ type CircleDefinition = {
 };
 
 export const CircleNodeType = new (class extends AbstractNodeType<CircleDefinition> {
+    displayName = "Circle";
     defaultLabel = "Circle";
-    icon = ICONS.Bolt;
+    iconNode = ICONS.Bolt;
+    iconCard = ICONS.Bolt;
     category: NodeCategory = "shape";
+
+    constructor() {
+        super("circle");
+    }
 
     create(input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: string = nanoid()): BuiltNodeOf<CircleDefinition> {
         return {
@@ -154,7 +162,30 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             },
         ];
     }
-    dependsOn<K extends "output">(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, outSocket: K): "radius"[] {
+    dependsOn(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] {
         return [];
+    }
+
+    evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null {
+        if (socket === "output") {
+            const r = lengthToPx(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius);
+
+            if (!r) {
+                return null;
+            }
+
+            return {
+                kind: "shape",
+                data: {
+                    tag: "path",
+                    attributes: {
+                        d: `M 0,${-1 * r} A ${r},${r} 0 0 1 0,${r} A ${r},${r} 0 0 1 0,${r * -1}`,
+                    },
+                    children: [],
+                },
+            };
+        }
+
+        return null;
     }
 })();

@@ -15,10 +15,10 @@ import { RadioBox } from "../../components/buttons/RadioBox";
 import { RadioButton } from "../../components/buttons/RadioButton";
 import { Icon, ICONS } from "../../components/Icon";
 import { Session } from "../../state/session";
-import { useGraphId } from "../primary";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { Emptyable, NumericString } from "../../util/misc";
 import NumberInput from "../../components/inputs/NumberInput";
+import { useGraphId } from "../../state/graphId";
 
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 

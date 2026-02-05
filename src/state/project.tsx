@@ -1,10 +1,10 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
-import { AnyDefinition, BaseDefinition } from "../definitions/nodes/abstractNode";
+import { AnyDefinition, BaseDefinition, NodeType } from "../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../definitions";
 import { DataTypes } from "../definitions/datatypes";
-import { useGraphId } from "../features/primary";
+import { useGraphId } from "./graphId";
 
 // will eventually hold a container for node-type specific logic
 
@@ -130,7 +130,28 @@ export namespace Project {
                 };
                 ctx.nodes.notify();
             };
-            return { update };
+
+            const remove = () => {
+                const oldGraph = { nodes: ctx.nodes.ref.current[graphId], links: ctx.links.ref.current[graphId] };
+                const [{ nodes, links }] = ArcaneGraph.removeNodes(oldGraph, id);
+
+                const positions = { ...ctx.positions.ref.current[graphId] };
+                delete positions[id];
+
+                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: nodes };
+                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(nodes) };
+                ctx.positions.ref.current = { ...ctx.positions.ref.current, [graphId]: positions };
+                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
+                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
+
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.positions.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+            };
+
+            return { update, remove };
         }, [id, graphId, ctx]);
 
         return [useSyncExternalStore(ctx.nodes.subscribe, selector), methods] as const;
@@ -179,7 +200,51 @@ export namespace Project {
                 }
             };
 
-            return { connect };
+            const addNodeByType = (nodeType: NodeType, params: Partial<DataTypes.PayloadFor<AnyDefinition>>, position?: { x: number; y: number }) => {
+                const newNode = nodeType.create(params);
+                const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
+                const { nodes } = ArcaneGraph.importNodes(oldGraph, [newNode]);
+                ctx.nodes.ref.current = {
+                    ...ctx.nodes.ref.current,
+                    [graphId]: nodes,
+                };
+                ctx.nodeList.ref.current = {
+                    ...ctx.nodeList.ref.current,
+                    [graphId]: Object.keys(nodes),
+                };
+                ctx.positions.ref.current = {
+                    ...ctx.positions.ref.current,
+                    [graphId]: {
+                        ...ctx.positions.ref.current[graphId],
+                        [newNode.id]: position ?? { x: 0, y: 0 },
+                    },
+                };
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.positions.notify();
+            };
+
+            const removeNode = (nodeId: string) => {
+                const oldGraph = { nodes: ctx.nodes.ref.current[graphId], links: ctx.links.ref.current[graphId] };
+                const [{ nodes, links }] = ArcaneGraph.removeNodes(oldGraph, nodeId);
+
+                const positions = { ...ctx.positions.ref.current[graphId] };
+                delete positions[nodeId];
+
+                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: nodes };
+                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(nodes) };
+                ctx.positions.ref.current = { ...ctx.positions.ref.current, [graphId]: positions };
+                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
+                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
+
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.positions.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+            };
+
+            return { connect, removeNode, addNodeByType };
         }, [ctx, graphId]);
     };
 
@@ -243,4 +308,20 @@ export namespace Project {
 
     export const usePositionsRef = () => useContext(CTX)!.positions.ref;
     export const useNodesRef = () => useContext(CTX)!.nodes.ref;
+
+    export const useResolverState = () => {
+        const ctx = useContext(CTX)!;
+
+        const nodes = useSyncExternalStore(ctx.nodes.subscribe, ctx.nodes.get);
+        const links = useSyncExternalStore(ctx.links.subscribe, ctx.links.get);
+        const inputs = useSyncExternalStore(ctx.inputs.subscribe, ctx.inputs.get);
+        const outputs = useSyncExternalStore(ctx.outputs.subscribe, ctx.outputs.get);
+        const users = useSyncExternalStore(ctx.users.subscribe, ctx.users.get);
+
+        const value = useMemo(() => {
+            return { links, nodes, inputs, outputs, users };
+        }, [links, nodes, inputs, outputs, users]);
+
+        return value;
+    };
 }

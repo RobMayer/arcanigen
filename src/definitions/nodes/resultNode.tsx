@@ -26,9 +26,15 @@ type ResultDefinition = {
 };
 
 export const ResultNodeType = new (class extends AbstractNodeType<ResultDefinition> {
+    displayName = "Result";
     defaultLabel = "Result";
-    icon = ICONS.Bolt;
+    iconNode = ICONS.Bolt;
+    iconCard = ICONS.Bolt;
     category: NodeCategory = "result";
+
+    constructor() {
+        super("result");
+    }
 
     create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): BuiltNodeOf<ResultDefinition> {
         return {

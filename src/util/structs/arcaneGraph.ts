@@ -295,6 +295,21 @@ export namespace ArcaneGraph {
         return [newGraph, affected.length > 0 ? affected[0] : null];
     };
 
+    export const importNodes = <N>(graph: GraphOf<N>, node: NodeOf<N>[]): GraphOf<N> => {
+        const parsedNodes = node.reduce<{ [nodeId: string]: NodeOf<N> }>((acc, each) => {
+            acc[each.id] = each;
+            return acc;
+        }, {});
+
+        return {
+            ...graph,
+            nodes: {
+                ...graph.nodes,
+                ...parsedNodes,
+            },
+        };
+    };
+
     export const isolate = <N>(graph: GraphOf<N>, id: ListOf<NodeId>): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const nodeIds = normalizeList(id);
         const linkIds: LinkId[] = [];

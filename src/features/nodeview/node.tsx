@@ -10,13 +10,13 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { Icon, ICONS } from "../../components/Icon";
 import TextInput from "../../components/inputs/TextInput";
 import { NodeTypeRegistry } from "../../definitions";
-import { useGraphId } from "../primary";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { NODETITLE_FLAVOURS } from "../../util/misc";
+import { useGraphId } from "../../state/graphId";
 
 export const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
     const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
-    const [node, { update: updateNode }] = Project.useNode(nodeId);
+    const [node, { update: updateNode, remove: removeNode }] = Project.useNode(nodeId);
     const handleRef = useRef<HTMLDivElement>(null);
 
     const selectionRef = Session.useSelectionRef();
@@ -64,7 +64,7 @@ export const GraphNode = styled(({ className, nodeId }: { nodeId: string; classN
 
     return (
         <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <NodeTitle handleRef={handleRef} node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} />
+            <NodeTitle handleRef={handleRef} node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} onDelete={removeNode} />
             {isClosed ? null : <GraphSlots nodeId={nodeId} />}
         </DragMove.Item>
     );
@@ -97,6 +97,7 @@ const NodeTitle = styled(
         isOpen,
         toggleOpen,
         setLabel,
+        onDelete,
     }: {
         className?: string;
         handleRef: Ref<HTMLDivElement>;
@@ -104,6 +105,7 @@ const NodeTitle = styled(
         isOpen: boolean;
         toggleOpen: () => void;
         setLabel: (v: string) => void;
+        onDelete: () => void;
     }) => {
         const [isEditing, setIsEditing] = useState<boolean>(false);
 
@@ -146,7 +148,7 @@ const NodeTitle = styled(
                 </ActionButton.Lite>
 
                 <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
-                    <Icon shape={nodeType.icon} />
+                    <Icon shape={nodeType.iconNode} />
                     {isEditing ? (
                         <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={nodeType.defaultLabel} />
                     ) : (
@@ -157,9 +159,9 @@ const NodeTitle = styled(
                 {node.type === "result" ? (
                     <Icon shape={ICONS.Blank} />
                 ) : (
-                    <button>
-                        <Icon shape={ICONS.Trash} />
-                    </button>
+                    <ActionButton.Lite onClick={onDelete} flavour={NODETITLE_FLAVOURS[nodeType.category]}>
+                        <Icon shape={ICONS.Close} />
+                    </ActionButton.Lite>
                 )}
                 <NodeFallback nodeId={node.id} side={"out"} />
             </div>
@@ -230,15 +232,15 @@ const applyMoveDelta = (
     for (const id of selectionRef.current) {
         if (id.startsWith("node_")) {
             const nId = id.substring(5);
-            if (positionsRef.current[nId]) {
+            if (positionsRef.current[graph]?.[nId]) {
                 compiled[nId] = { x: positionsRef.current[graph][nId].x + delta.x, y: positionsRef.current[graph][nId].y + delta.y };
             }
         }
     }
 
     // expand: for any container in the move set, add nodes within its bounds
-    // for (const nId of Object.keys(compiled)) {
     /*
+    for (const nId of Object.keys(compiled)) {
         const node = nodesRef.current[nId];
         if (node?.payload.type === "container") {
             const containerPos = positionsRef.current[nId];
@@ -253,8 +255,8 @@ const applyMoveDelta = (
                 }
             }
         }
+    }
         */
-    // }
 
     // apply DOM updates for visual feedback
     for (const [nId, toSet] of Object.entries(compiled)) {

@@ -2,7 +2,7 @@ import { DetailedHTMLProps, ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
 import { Flavour } from "../types";
 
-export type AbstractButtonProps = Omit<DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>, "title"> & { tooltip?: string; flavour?: Flavour; state?: string };
+export type AbstractButtonProps = Omit<DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit"; state?: string };
 
 export const AbstractButton = styled(({ tooltip, flavour = "accent", state, ...rest }: AbstractButtonProps) => {
     return <button {...rest} type={"button"} title={tooltip} data-flavour={flavour} data-state={state} />;

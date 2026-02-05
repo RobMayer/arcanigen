@@ -1,0 +1,133 @@
+import styled from "styled-components";
+import { Accordion } from "../components/containers/Accordion";
+import { GraphIdContext } from "../state/graphId";
+import { Icon, ICONS } from "../components/Icon";
+import { AnyDefinition, NodeType } from "../definitions/nodes/abstractNode";
+import { useCallback, useMemo } from "react";
+import { NodeTypeRegistry } from "../definitions";
+import { NODETITLE_FLAVOURS } from "../util/misc";
+import { Project } from "../state/project";
+import { DataTypes } from "../definitions/datatypes";
+import { DragPaneControls } from "../components/wrappers/DragPane";
+
+const LocalAccordion = styled(Accordion)`
+    padding: 0.25em;
+    justify-content: center;
+    font-variant: small-caps;
+`;
+
+export const NodeDrawer = ({ graphId, paneControls }: { graphId: string; paneControls: DragPaneControls }) => {
+    const nodeTypes = useMemo(() => {
+        return NodeTypeRegistry.entries().reduce<NodeType[]>((acc, [key, theType]) => {
+            if (key === "result" || key === "custom") {
+                return acc;
+            }
+            if (graphId === "root" && theType.category === "interface") {
+                return acc;
+            }
+            acc.push(theType as NodeType);
+            return acc;
+        }, []);
+    }, [graphId]);
+
+    return (
+        <GraphIdContext value={graphId}>
+            <LocalAccordion title={"Add Nodes"} isOpen iconClosed={ICONS.Caret.Up}>
+                <Pane>
+                    <CardGrid nodeTypes={nodeTypes} paneControls={paneControls} />
+                </Pane>
+            </LocalAccordion>
+        </GraphIdContext>
+    );
+};
+
+const Pane = styled.div`
+    height: 300px;
+    max-height: 20vh;
+    min-height: 0;
+    overflow-y: scroll;
+`;
+
+const CardGrid = styled(({ className, nodeTypes, paneControls }: { className?: string; nodeTypes: NodeType[]; paneControls: DragPaneControls }) => {
+    const { addNodeByType } = Project.useMethods();
+
+    const addNode = useCallback(
+        (nodeType: NodeType) => {
+            const { x, y } = paneControls.get();
+            addNodeByType(nodeType, {}, { x: -x, y: -y });
+        },
+        [addNodeByType, paneControls],
+    );
+
+    return (
+        <div className={className}>
+            {nodeTypes.map((each) => {
+                return <NodeCard nodeType={each} key={each.defaultLabel} handleAdd={addNode} />;
+            })}
+        </div>
+    );
+})`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 128px);
+    gap: 4px;
+    padding: 4px;
+    justify-content: center;
+`;
+
+const NodeCard = styled(
+    ({
+        nodeType,
+        className,
+        disabled,
+        handleAdd,
+    }: {
+        nodeType: NodeType;
+        className?: string;
+        disabled?: boolean;
+        handleAdd: (nodeType: NodeType, params: Partial<DataTypes.PayloadFor<AnyDefinition>>) => void;
+    }) => {
+        const doAdd = useCallback(() => {
+            handleAdd(nodeType, {});
+        }, [nodeType, handleAdd]);
+        return (
+            <button className={className} data-flavour={NODETITLE_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd}>
+                <div data-part={"title"}>{nodeType.displayName}</div>
+                <div data-part={"icon"}>
+                    <Icon shape={nodeType.iconCard} />
+                </div>
+            </button>
+        );
+    },
+)`
+    background: #222;
+    border: 1px solid #444;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    aspect-ratio: 1;
+    cursor: pointer;
+    &:disabled {
+        opacity: 0.6;
+        cursor: auto;
+    }
+
+    &:not(:disabled):hover,
+    &:focus-visible {
+        border-color: #888;
+    }
+
+    & > div[data-part="title"] {
+        text-align: center;
+        font-variant: small-caps;
+        background: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
+        border: 1px solid oklch(from var(--flavour) calc(l - 0.05) c h);
+    }
+    & > div[data-part="icon"] {
+        flex: 1 1 auto;
+        display: flex;
+        font-size: 36pt;
+        align-self: center;
+        align-items: center;
+    }
+`;

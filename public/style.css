@@ -6,6 +6,7 @@ html {
 }
 
 :root {
+    --scrollbar-flavour: var(--flavour-accent);
     --style-base-slate: hsl(210, 12%, 44%); /* Default/Neutral blue-gray (rebased: s×1.2, l×0.8) */
     --style-base-red: hsl(4, 45%, 50%); /* Red (rebased: s×1.2, l×0.8) */
     --style-base-orange: hsl(17, 50%, 55%); /* Yellow/Orange (rebased: s×1.2, l×0.8) */
@@ -28,23 +29,67 @@ html {
 
 [data-flavour="base"] {
     --flavour: var(--flavour-base);
+    --scrollbar-flavour: var(--flavour-accemt);
 }
+
+[data-flavour="inherit"] {
+    --flavour: inherit;
+    --scrollbar-flavour: inherit;
+}
+
 [data-flavour="accent"] {
     --flavour: var(--flavour-accent);
+    --scrollbar-flavour: var(--flavour);
 }
 
 [data-flavour="danger"] {
     --flavour: var(--flavour-danger);
+    --scrollbar-flavour: var(--flavour);
 }
 [data-flavour="emphasis"] {
     --flavour: var(--flavour-emphasis);
+    --scrollbar-flavour: var(--flavour);
 }
 [data-flavour="confirm"] {
     --flavour: var(--flavour-confirm);
+    --scrollbar-flavour: var(--flavour);
 }
 [data-flavour="help"] {
     --flavour: var(--flavour-help);
+    --scrollbar-flavour: var(--flavour);
 }
 [data-flavour="info"] {
     --flavour: var(--flavour-info);
+    --scrollbar-flavour: var(--flavour);
+}
+
+/* Scrollbar Styles */
+
+*::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+*::-webkit-scrollbar-track {
+    corner-shape: bevel;
+    background: oklch(from var(--scrollbar-flavour) 0.23 calc(c * 0.1) h);
+    overflow: hidden;
+    corner-shape: bevel;
+    border-radius: 100vw;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-flavour);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    corner-shape: bevel;
+    border-radius: 100vw;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: oklch(from var(--scrollbar-flavour) calc(l + 0.1) c h);
+}
+
+*::-webkit-scrollbar-corner {
+    background: transparent;
 }

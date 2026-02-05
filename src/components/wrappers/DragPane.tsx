@@ -22,6 +22,7 @@ export type DragPaneControls = {
     zoomOnFocal: (event: WheelEvent | WheelEvent<unknown>) => void; // just to make it easier to bind a zoom to a wheel event externally.
     zoomFor: (element: HTMLElement) => void;
     encompass: (element: HTMLElement) => void;
+    get: () => XYZ;
 };
 
 type DragPaneProps = {
@@ -180,6 +181,9 @@ const DragPaneBase = styled(
             return {
                 set: (value) => {
                     handleChange(resolveSetter(value, member.ref.current));
+                },
+                get: () => {
+                    return member.ref.current;
                 },
                 panTo: (value) => {
                     const cur = member.ref.current;

@@ -60,7 +60,12 @@ export namespace DataTypes {
 
     export type EvaluationOf<O> = O extends TypeDef<infer K, infer T, infer _W> ? { kind: K; data: T } : never;
 
+    export type EvaluationBy<K extends keyof TypeRegistry> = { kind: K; data: TypeRegistry[K][0] };
+
+    export type AnyEvaluation = { [K in Keys]: EvaluationBy<K> }[Keys];
+
     export type PayloadFor<D extends GenericDefinition> = { [K in keyof D["payload"]]: TypeOf<D["payload"][K]> };
+    export type OutputFor<D extends GenericDefinition> = { [K in keyof D["outputs"]]: TypeOf<D["outputs"][K]> };
 
     type UniversalWidgets<D extends GenericDefinition> =
         | { type: "ui"; widget: "hr" }
