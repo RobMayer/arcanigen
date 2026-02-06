@@ -1,12 +1,12 @@
-import { BoundsOf, SVGObject } from "../types";
+import { SVGObject } from "../types";
 import { EmptyOr, NumericString } from "../util/misc";
 import { Length } from "./datatypes/length";
 
 type TypeRegistry = {
-    length: [EmptyOr<Length.Type>, { widget: "input"; bounds?: BoundsOf<Length.Type>; nullable?: boolean }];
+    length: [EmptyOr<Length.Type>, { widget: "input"; min?: Length.Type; max?: Length.Type; nullable?: boolean }];
     shape: [SVGObject];
-    float: [EmptyOr<NumericString>, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
-    integer: [EmptyOr<NumericString>, { widget: "input"; bounds?: BoundsOf<number>; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
+    float: [EmptyOr<NumericString>, { widget: "input"; min?: number; max?: number; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
+    integer: [EmptyOr<NumericString>, { widget: "input"; min?: number; max?: number; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
     string: [string, { widget: "input"; pattern?: string }];
     color: [string, { widget: "hex"; nullable?: boolean; alpha?: boolean }];
     enum: [number, { options: string[] } & ({ widget: "dropdown" } | { widget: "radiobox" | "radiobutton"; orientation?: "horizontal" | "vertical" })];

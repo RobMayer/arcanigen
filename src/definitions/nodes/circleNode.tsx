@@ -6,6 +6,7 @@ import { ICONS } from "../../components/Icon";
 import { NodeCategory } from "../../types";
 import { Resolver } from "../../util/resolver";
 import { Length } from "../datatypes/length";
+import { Enum } from "../datatypes/enum";
 
 type CircleDefinition = {
     inputs: {
@@ -72,7 +73,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 strokeDash: "",
                 strokeColor: "#000000ff",
                 strokeDashOffset: "0px",
-                strokeCap: 0,
+                strokeCap: Enum.Common.strokeCap.Butt,
                 // fill
                 fillColor: "none",
             },
@@ -93,6 +94,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 socketIn: "radius",
                 widget: "input",
                 property: "radius",
+                min: "0px",
             },
             {
                 label: "Styling",
@@ -127,7 +129,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                         orientation: "horizontal",
                         socketIn: "strokeCap",
                         property: "strokeCap",
-                        options: ["Butt", "Square", "Round"],
+                        options: Enum.options(Enum.Common.strokeCap),
                     },
                     {
                         label: "Stroke Dash",
@@ -168,17 +170,56 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
 
     evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null {
         if (socket === "output") {
-            const r = Length.Emptyable.asNumber(Length.Emptyable.constrain(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, ">0px"));
-            if (!r) {
+            const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
+            if (!radius) {
                 return null;
             }
+
+            // Resolve stroke attributes
+            const strokeColor = context.resolve<"color">(node.id, "strokeColor")?.data ?? node.payload.strokeColor;
+            const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
+            const strokeCap = context.resolve<"enum">(node.id, "strokeCap")?.data ?? node.payload.strokeCap;
+            const strokeDash = context.resolve<"tokens<length>">(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
+            const strokeDashOffset = context.resolve<"length">(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
+
+            // Resolve fill attributes
+            const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
+
+            // Map strokeCap enum to SVG linecap value
+            const strokeLinecap = (["butt", "square", "round"] as const)[strokeCap] ?? "butt";
+
+            // Convert stroke dash to pixel values
+            const strokeDasharray = strokeDash
+                ? strokeDash
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .map((token) => Length.Emptyable.asNumber(token as Length.Type) ?? 0)
+                      .join(" ")
+                : undefined;
+
+            const attributes: Record<string, string> = {
+                d: `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1}`,
+            };
+
+            // Add stroke attributes
+            if (strokeColor !== "none") {
+                attributes.stroke = strokeColor;
+                attributes["stroke-width"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
+                attributes["stroke-linecap"] = strokeLinecap;
+                if (strokeDasharray) {
+                    attributes["stroke-dasharray"] = strokeDasharray;
+                    attributes["stroke-dashoffset"] = String(Length.Emptyable.asNumber(strokeDashOffset) ?? 0);
+                }
+            }
+
+            // Add fill attribute
+            attributes.fill = fillColor;
+
             return {
                 kind: "shape",
                 data: {
                     tag: "path",
-                    attributes: {
-                        d: `M 0,${-1 * r} A ${r},${r} 0 0 1 0,${r} A ${r},${r} 0 0 1 0,${r * -1}`,
-                    },
+                    attributes,
                     children: [],
                 },
             };
