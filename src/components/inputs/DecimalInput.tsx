@@ -256,7 +256,16 @@ const DecimalInput = styled(
                     const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(asNumber, precision), precision) : normalized;
                     setCache(displayValue);
                     evt.currentTarget.setCustomValidity("");
+                    // Fire onValue if normalization/precision changed the value
+                    if (finalValue !== normalized) {
+                        onValueRef.current?.(finalValue as NumericString);
+                    }
                     lastValidRef.current = finalValue;
+                    // Fire onCommit if value differs from prop
+                    const normalizedProp = normalize(valueRef.current);
+                    if (finalValue !== normalizedProp) {
+                        onCommitRef.current?.(finalValue as NumericString);
+                    }
                     onConfirmRef.current?.(finalValue as NumericString);
                     return;
                 }

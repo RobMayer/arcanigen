@@ -217,6 +217,11 @@ const IntegerInput = styled(
                     setCache(normalized);
                     evt.currentTarget.setCustomValidity("");
                     lastValidRef.current = normalized;
+                    // Fire onCommit if value differs from prop
+                    const normalizedProp = normalize(valueRef.current);
+                    if (normalized !== normalizedProp) {
+                        onCommitRef.current?.(normalized as NumericString);
+                    }
                     onConfirmRef.current?.(normalized as NumericString);
                     return;
                 }

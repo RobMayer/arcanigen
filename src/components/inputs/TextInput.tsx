@@ -142,6 +142,10 @@ const TextInput = styled(({ value, onValue, onCommit, onConfirm, onBlur, pattern
             setCache(v);
             evt.currentTarget.setCustomValidity("");
             lastValidRef.current = v;
+            // Fire onCommit if value differs from prop
+            if (v !== valueRef.current) {
+                onCommitRef.current?.(v);
+            }
             onConfirmRef.current?.(v);
         },
         [pattern, required],

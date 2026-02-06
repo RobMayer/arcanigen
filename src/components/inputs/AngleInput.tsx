@@ -290,7 +290,16 @@ const AngleInput = styled(
 
                     setCache(finalValueStr);
                     evt.currentTarget.setCustomValidity("");
+                    // Fire onValue if normalization changed the value
+                    if (finalValueStr !== normalized) {
+                        onValueRef.current?.(finalValueStr as NumericString);
+                    }
                     lastValidRef.current = finalValueStr;
+                    // Fire onCommit if value differs from prop
+                    const normalizedProp = normalize(valueRef.current);
+                    if (finalValueStr !== normalizedProp) {
+                        onCommitRef.current?.(finalValueStr as NumericString);
+                    }
                     onConfirmRef.current?.(finalValueStr as NumericString);
                     return;
                 }

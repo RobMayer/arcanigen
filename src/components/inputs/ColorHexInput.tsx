@@ -195,7 +195,15 @@ const ColorHexInput = styled(
                     const normalized: Color = "none";
                     setCache(normalized);
                     evt.currentTarget.setCustomValidity("");
+                    // Fire onValue if normalization changed the value
+                    if (v !== normalized) {
+                        onValueRef.current?.(normalized);
+                    }
                     lastValidRef.current = normalized;
+                    // Fire onCommit if value differs from prop
+                    if (normalized !== valueRef.current) {
+                        onCommitRef.current?.(normalized);
+                    }
                     onConfirmRef.current?.(normalized);
                     return;
                 }
@@ -213,7 +221,15 @@ const ColorHexInput = styled(
                 const normalized = normalizeHex(v, alpha ?? false);
                 setCache(normalized);
                 evt.currentTarget.setCustomValidity("");
+                // Fire onValue if normalization changed the value
+                if (v !== normalized) {
+                    onValueRef.current?.(normalized);
+                }
                 lastValidRef.current = normalized;
+                // Fire onCommit if value differs from prop
+                if (normalized !== valueRef.current) {
+                    onCommitRef.current?.(normalized);
+                }
                 onConfirmRef.current?.(normalized);
             },
             [nullable, alpha],

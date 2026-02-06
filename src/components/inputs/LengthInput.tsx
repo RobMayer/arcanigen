@@ -181,6 +181,10 @@ const LengthInput = styled(
                         setCache(withUnit);
                         evt.currentTarget.setCustomValidity("");
                         lastValidRef.current = withUnit;
+                        // Fire onCommit if value differs from prop
+                        if (withUnit !== valueRef.current) {
+                            onCommitRef.current?.(withUnit);
+                        }
                         onConfirmRef.current?.(withUnit);
                         return;
                     }
@@ -198,6 +202,10 @@ const LengthInput = styled(
                     setCache(v);
                     evt.currentTarget.setCustomValidity("");
                     lastValidRef.current = v;
+                    // Fire onCommit if value differs from prop
+                    if (v !== valueRef.current) {
+                        onCommitRef.current?.(v);
+                    }
                     onConfirmRef.current?.(v);
                     return;
                 }
