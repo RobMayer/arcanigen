@@ -1,9 +1,9 @@
 import { NodeTypeRegistry } from "../definitions";
 import { DataTypes } from "../definitions/datatypes";
 import { AnyDefinition, DefinitionOf } from "../definitions/nodes/abstractNode";
-import { Length, SVGObject } from "../types";
+import { SVGObject } from "../types";
 import { ArcaneGraph } from "./structs/arcaneGraph";
-import { lengthToPx } from "./misc";
+import { Length } from "../definitions/datatypes/length";
 
 export namespace Resolver {
     type GraphId = string;
@@ -75,10 +75,10 @@ export namespace Resolver {
 
         // Resolve canvas settings from result node (use connected values or fall back to payload)
         // Cast payload values since we know this is a result node with specific types
-        const width = lengthToPx(context.resolve<"length">("RESULT", "w")?.data ?? resultNode.payload.w) ?? 800;
-        const height = lengthToPx(context.resolve<"length">("RESULT", "h")?.data ?? resultNode.payload.h) ?? 800;
-        const originX = lengthToPx(context.resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x) ?? 0;
-        const originY = lengthToPx(context.resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y) ?? 0;
+        const width = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "w")?.data ?? resultNode.payload.w ?? "800px") ?? 800;
+        const height = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "h")?.data ?? resultNode.payload.h ?? "800px") ?? 800;
+        const originX = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x ?? "0px") ?? 0;
+        const originY = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y ?? "0px") ?? 0;
         const background = context.resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
 
         // Resolve the shape input

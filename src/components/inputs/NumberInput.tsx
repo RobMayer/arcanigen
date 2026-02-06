@@ -2,7 +2,7 @@ import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } f
 import { useStable } from "../../util/hooks/useStable";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { BoundsOf } from "../../types";
-import { Emptyable, NumericString } from "../../util/misc";
+import { EmptyOr, NumericString } from "../../util/misc";
 import styled from "styled-components";
 import { AbstractNumberInput, AbstractInputProps } from "../abstract/Inputs";
 
@@ -72,10 +72,10 @@ function validateNumber(value: number, bounds: ParsedBounds, step?: number): str
 }
 
 type NumberInputProps = {
-    value: Emptyable<NumericString>;
-    onValue?: (n: Emptyable<NumericString>) => void;
-    onCommit?: (n: Emptyable<NumericString>) => void;
-    onSubmit?: (v: Emptyable<NumericString>) => void; // fires when you hit enter, even if no change was made
+    value: EmptyOr<NumericString>;
+    onValue?: (n: EmptyOr<NumericString>) => void;
+    onCommit?: (n: EmptyOr<NumericString>) => void;
+    onSubmit?: (v: EmptyOr<NumericString>) => void; // fires when you hit enter, even if no change was made
     bounds?: BoundsOf<number>;
     step?: number;
     disabled?: boolean;

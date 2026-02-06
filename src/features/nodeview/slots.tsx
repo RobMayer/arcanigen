@@ -7,7 +7,7 @@ import { Socket } from "./socket";
 import { AnyDefinition, NodeType } from "../../definitions/nodes/abstractNode";
 import { DataTypes } from "../../definitions/datatypes";
 import LengthInput from "../../components/inputs/LengthInput";
-import { Color, Length } from "../../types";
+import { Color } from "../../types";
 import ColorHexInput from "../../components/inputs/ColorHexInput";
 import TextInput from "../../components/inputs/TextInput";
 import { Dropdown } from "../../components/inputs/Dropdown";
@@ -16,9 +16,10 @@ import { RadioButton } from "../../components/buttons/RadioButton";
 import { Icon, ICONS } from "../../components/Icon";
 import { Session } from "../../state/session";
 import { ActionButton } from "../../components/buttons/ActionButton";
-import { Emptyable, NumericString } from "../../util/misc";
+import { EmptyOr, NumericString } from "../../util/misc";
 import NumberInput from "../../components/inputs/NumberInput";
 import { useGraphId } from "../../state/graphId";
+import { Length } from "../../definitions/datatypes/length";
 
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
@@ -128,14 +129,14 @@ const GraphSlotChoice = ({
 
 const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) => {
     const handleChange = useCallback(
-        (v: Emptyable<NumericString>) => {
+        (v: EmptyOr<NumericString>) => {
             update?.({ [slot.property]: v });
         },
         [slot.property, update],
     );
     switch (slot.widget) {
         case "input":
-            return <NumberInput value={node.payload[slot.property] as Emptyable<NumericString>} disabled={disabled} onCommit={handleChange} bounds={slot.bounds} step={slot.step} />;
+            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} bounds={slot.bounds} step={slot.step} />;
         case "slider":
             return null;
     }
@@ -143,14 +144,14 @@ const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) =
 
 const WidgetFloat = ({ slot, node, disabled, update }: SlotProps<"float">) => {
     const handleChange = useCallback(
-        (v: Emptyable<NumericString>) => {
+        (v: EmptyOr<NumericString>) => {
             update?.({ [slot.property]: v });
         },
         [slot.property, update],
     );
     switch (slot.widget) {
         case "input":
-            return <NumberInput value={node.payload[slot.property] as Emptyable<NumericString>} disabled={disabled} onCommit={handleChange} bounds={slot.bounds} step={slot.step ?? 1} />;
+            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} bounds={slot.bounds} step={slot.step ?? 1} />;
         case "slider":
             return null;
     }
@@ -178,7 +179,7 @@ const WidgetLength = ({ slot, node, disabled, update }: SlotProps<"length">) => 
     );
     switch (slot.widget) {
         case "input":
-            return <LengthInput value={node.payload[slot.property] as Length} disabled={disabled} onCommit={handleChange} required={!slot.nullable} />;
+            return <LengthInput value={node.payload[slot.property] as Length.Type} disabled={disabled} onCommit={handleChange} required={!slot.nullable} />;
     }
 };
 

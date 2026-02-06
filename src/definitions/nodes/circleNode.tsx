@@ -3,9 +3,9 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { AbstractNodeType, BuiltNodeOf } from "./abstractNode";
 import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
-import { NodeCategory, SVGObject } from "../../types";
+import { NodeCategory } from "../../types";
 import { Resolver } from "../../util/resolver";
-import { lengthToPx, lengthToUnitless } from "../../util/misc";
+import { Length } from "../datatypes/length";
 
 type CircleDefinition = {
     inputs: {
@@ -168,12 +168,10 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
 
     evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null {
         if (socket === "output") {
-            const r = lengthToPx(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius);
-
+            const r = Length.Emptyable.asNumber(Length.Emptyable.constrain(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, ">0px"));
             if (!r) {
                 return null;
             }
-
             return {
                 kind: "shape",
                 data: {
