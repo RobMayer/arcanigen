@@ -6,6 +6,11 @@ import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 
 export namespace Resolver {
+
+    export namespace EnumMappings {
+        export const strokeCap = ["butt", "square", "round"] as const;
+    }
+
     type GraphId = string;
     export type State = {
         nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> } };

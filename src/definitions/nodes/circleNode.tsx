@@ -20,12 +20,22 @@ type CircleDefinition = {
         strokeDashOffset: DataType<"length">;
         // fill
         fillColor: DataType<"color">;
+
+        // transforms
+        positionMode: DataType<"enum">,
+        positionX: DataType<"length">,
+        positionY: DataType<"length">,
+        positionRadius: DataType<"length">,
+        // positionTheta: DataType<"angle">,
+        // rotation: DataType<"angle">,
+
     };
     outputs: {
         output: DataType<"shape">;
     };
     payload: {
         label: DataType<"string">;
+        test: DataType<"float">;
         radius: DataType<"length">;
 
         // stroke
@@ -36,6 +46,14 @@ type CircleDefinition = {
         strokeDashOffset: DataType<"length">;
         // fill
         fillColor: DataType<"color">;
+
+        //transforms
+        positionMode: DataType<"enum">,
+        positionX: DataType<"length">,
+        positionY: DataType<"length">,
+        positionRadius: DataType<"length">,
+        // positionTheta: DataType<"angle">,
+        // rotation: DataType<"angle">,
     };
 };
 
@@ -61,6 +79,13 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 strokeDashOffset: null,
                 strokeCap: null,
                 fillColor: null,
+                // transforms
+                positionMode: null,
+                positionX: null,
+                positionY: null,
+                positionRadius: null,
+                // positionTheta: null,
+                // rotation: null,
             },
             out: {
                 output: [],
@@ -68,6 +93,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             payload: {
                 label: "",
                 radius: "100px",
+                test: "0",
                 // stroke
                 strokeWidth: "1px",
                 strokeDash: "",
@@ -76,6 +102,13 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 strokeCap: Enum.Common.strokeCap.Butt,
                 // fill
                 fillColor: "none",
+                // transforms
+                positionMode: Enum.Common.positionMode.Cartesian,
+                positionX: "0px",
+                positionY: "0px",
+                positionRadius: "0px",
+                // positionTheta: 0,
+                // rotation: 0,
             },
             type: "circle",
         };
@@ -87,6 +120,12 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 type: "shape",
                 socketOut: "output",
                 widget: "none",
+            },
+            {
+                label: "Test",
+                type: "float",
+                widget: "input",
+                property: "test",
             },
             {
                 label: "Radius",
@@ -162,6 +201,42 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                     },
                 ],
             },
+            {
+                label: "Transforms",
+                type: "ui",
+                widget: "accordion",
+                children: [
+                    {
+                        label: "Position Mode",
+                        type: "enum",
+                        widget: "radiobutton",
+                        options: Enum.options(Enum.Common.positionMode),
+                        socketIn: "positionMode",
+                        property: "positionMode"
+                    },
+                    {
+                        label: "Position X",
+                        type: "length",
+                        widget: "input",
+                        socketIn: "positionX",
+                        property: "positionX"
+                    },
+                    {
+                        label: "Position Y",
+                        type: "length",
+                        widget: "input",
+                        socketIn: "positionY",
+                        property: "positionY"
+                    },
+                    {
+                        label: "Position Radius",
+                        type: "length",
+                        widget: "input",
+                        socketIn: "positionRadius",
+                        property: "positionRadius"
+                    },
+                ]
+            }
         ];
     }
     dependsOn(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] {
@@ -186,7 +261,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
 
             // Map strokeCap enum to SVG linecap value
-            const strokeLinecap = (["butt", "square", "round"] as const)[strokeCap] ?? "butt";
+            const strokeLinecap = (Resolver.EnumMappings.strokeCap[strokeCap]) ?? "butt";
 
             // Convert stroke dash to pixel values
             const strokeDasharray = strokeDash

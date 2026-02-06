@@ -136,7 +136,7 @@ const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) =
     );
     switch (slot.widget) {
         case "input":
-            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step} />;
+            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step ?? 1} />;
         case "slider":
             return null;
     }
@@ -151,7 +151,7 @@ const WidgetFloat = ({ slot, node, disabled, update }: SlotProps<"float">) => {
     );
     switch (slot.widget) {
         case "input":
-            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step ?? 1} />;
+            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step} />;
         case "slider":
             return null;
     }

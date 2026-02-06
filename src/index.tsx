@@ -40,7 +40,7 @@ const Primary = () => {
                 <NodeDrawer graphId={"root"} paneControls={graphPaneControls} />
             </div>
             <div data-gridarea={"canvas"}>
-                <SvgCanvas />
+                {/* <SvgCanvas /> */}
             </div>
         </Layout>
     );

@@ -36,7 +36,7 @@ export const AbstractTextInput = styled(({ tooltip, flavour, ...props }: Abstrac
 })``;
 
 export const AbstractNumberInput = styled(({ tooltip, flavour, ...props }: AbstractInputProps) => {
-    return <AbstractInput {...props} type={"number"} title={tooltip} data-flavour={flavour} />;
+    return <AbstractInput {...props} type={"text"} title={tooltip} data-flavour={flavour} />;
 })``;
 
 export const AbstractSliderInput = styled(({ tooltip, flavour, ...props }: AbstractInputProps) => {

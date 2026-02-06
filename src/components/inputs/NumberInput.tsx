@@ -11,6 +11,8 @@ function isInBounds(value: number, min?: number, max?: number): boolean {
     return true;
 }
 
+// todo: unify the numeric parsing and reersion logic to make better use of custom validation state, much like the length input
+
 type NumberInputProps = {
     value: EmptyOr<NumericString>;
     onValue?: (n: EmptyOr<NumericString>) => void;
@@ -52,6 +54,7 @@ const NumberInput = styled(
                 evt.nativeEvent.handled = "implied";
                 const v = evt.target.value;
                 setCache(v);
+                evt.target.setCustomValidity(""); //clear if set
 
                 // Empty is valid when not required
                 if (!required && v === "") {
@@ -61,11 +64,15 @@ const NumberInput = styled(
 
                 const asNumber = Number(v);
                 if (v === "" || isNaN(asNumber)) {
+                    evt.target.setCustomValidity("not a number");
                     return;
                 }
 
                 // Only call onValue if valid
-                if (isInBounds(asNumber, min, max)) {
+                if (!isInBounds(asNumber, min, max)) {
+                    evt.target.setCustomValidity("out of bounds");
+                }
+                if (evt.target.validity.valid) {
                     onValueRef.current?.(v as NumericString);
                 }
             },
@@ -80,6 +87,8 @@ const NumberInput = styled(
                         return;
                     }
                     evt.handled = "implied";
+
+                    el.setCustomValidity(""); //it's either valid, or it's about to be reset
 
                     const v = el.value;
 
@@ -167,14 +176,10 @@ const NumberInput = styled(
         return (
             <AbstractNumberInput
                 {...rest}
-                type="number"
                 value={cache}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 ref={makeRef}
-                min={min?.toFixed(8)}
-                max={max?.toFixed(8)}
-                step={step?.toFixed(8) ?? "any"}
             />
         );
     },
