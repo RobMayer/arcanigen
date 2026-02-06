@@ -1,4 +1,3 @@
-import { NodeTypeRegistry } from "..";
 import { IconDefinition } from "../../components/Icon";
 import { NodeCategory } from "../../types";
 import { Resolver } from "../../util/resolver";
@@ -47,18 +46,17 @@ export abstract class AbstractNodeType<D extends BaseDefinition> implements Node
         this.type = type;
     }
 
-    abstract get displayName(): string;
-    abstract get defaultLabel(): string;
-    abstract get iconNode(): IconDefinition;
-    abstract get iconCard(): IconDefinition;
-    abstract get category(): NodeCategory;
+    abstract displayName: string;
+    abstract defaultLabel: string;
+    abstract iconNode: IconDefinition;
+    abstract iconCard: IconDefinition;
+    abstract category: NodeCategory;
+
     abstract create(input: Partial<DataTypes.PayloadFor<D>>, id?: string): BuiltNodeOf<D>;
     abstract getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>): DataTypes.SlotFor<D>[];
     // i haven't really thought this out yet...
 
-    evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: keyof D["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null {
-        return null;
-    }
+    abstract evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: keyof D["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null;
     // will be used in cyclical validity checks: which in sockets impacts a given out socket.
     abstract dependsOn(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, outSocket: keyof D["outputs"]): (keyof D["inputs"])[];
 }

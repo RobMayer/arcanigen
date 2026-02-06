@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
 import { NodeCategory } from "../../types";
+import { Resolver } from "../../util/resolver";
 
 export type ResultDefinition = {
     outputs: never;
@@ -31,10 +32,6 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
     iconNode = ICONS.Bolt;
     iconCard = ICONS.Bolt;
     category: NodeCategory = "result";
-
-    constructor() {
-        super("result");
-    }
 
     create(input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): BuiltNodeOf<ResultDefinition> {
         return {
@@ -117,4 +114,8 @@ export const ResultNodeType = new (class extends AbstractNodeType<ResultDefiniti
     dependsOn<K extends string | number | symbol>(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] {
         return [];
     }
-})();
+    evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>, socket: string | number | symbol, context: Resolver.Context): DataTypes.AnyEvaluation | null {
+        // this should never be reached.
+        return null;
+    }
+})("result");

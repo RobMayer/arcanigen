@@ -1,11 +1,13 @@
 import { NodeType } from "./nodes/abstractNode";
-import { CircleNodeType } from "./nodes/circleNode";
+import { CircleNodeType } from "./nodes/shapes/circleNode";
 import { ResultNodeType } from "./nodes/resultNode";
+import { FloatPrimitiveType } from "./nodes/primitives/floatNode";
 
 export namespace NodeTypeRegistry {
     const NODETYPE_REGISTRY = {
         result: ResultNodeType,
         circle: CircleNodeType,
+        float: FloatPrimitiveType,
     } as const;
 
     export const get = (key: string): NodeType => {

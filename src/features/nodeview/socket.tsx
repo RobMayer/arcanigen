@@ -15,6 +15,13 @@ type GraphConnectionControls = {
     clear: () => void;
 };
 
+// from socket type to possible datatypes
+type SocketTypeMappings = { [K in DataTypes.Keys]: DataTypes.DataTypeBy<K>["key"] } & {
+    number: "float" | "integer" | "angle";
+};
+
+type SocketType = keyof SocketTypeMappings;
+
 const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
 
 export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) => {

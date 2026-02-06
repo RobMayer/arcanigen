@@ -38,5 +38,6 @@ export const DATATYPE_FLAVOURS: { [key in DataTypes.Keys]: Flavour } = {
     integer: "accent",
     color: "accent",
     enum: "accent",
+    angle: "accent",
     "tokens<length>": "accent",
 };

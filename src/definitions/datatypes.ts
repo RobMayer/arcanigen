@@ -46,6 +46,7 @@ type TypedSlot<D extends GenericDefinition, K extends keyof TheTypes> = {
 
 export namespace DataTypes {
     export type Keys = keyof TheTypes;
+    export type DataTypeBy<K extends keyof TheTypes> = TheTypes[K];
 
     export type Any = TheTypes[keyof TheTypes];
     export type AnySlot = { [K in keyof TheTypes]: SlotOf<K> }[keyof TheTypes] | UniversalWidgets<GenericDefinition>;

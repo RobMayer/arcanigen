@@ -1,12 +1,12 @@
 import { nanoid } from "nanoid";
-import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { AbstractNodeType, BuiltNodeOf } from "./abstractNode";
-import { DataType, DataTypes } from "../datatypes";
-import { ICONS } from "../../components/Icon";
-import { NodeCategory } from "../../types";
-import { Resolver } from "../../util/resolver";
-import { Length } from "../datatypes/length";
-import { Enum } from "../datatypes/enum";
+import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
+import { AbstractNodeType, BuiltNodeOf } from "../abstractNode";
+import { DataType, DataTypes } from "../../datatypes";
+import { ICONS } from "../../../components/Icon";
+import { NodeCategory } from "../../../types";
+import { Resolver } from "../../../util/resolver";
+import { Length } from "../../datatypes/length";
+import { Enum } from "../../datatypes/enum";
 
 type CircleDefinition = {
     inputs: {
@@ -34,7 +34,6 @@ type CircleDefinition = {
     };
     payload: {
         label: DataType<"string">;
-        test: DataType<"float">;
         radius: DataType<"length">;
 
         // stroke
@@ -63,10 +62,6 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
     iconCard = ICONS.Bolt;
     category: NodeCategory = "shape";
 
-    constructor() {
-        super("circle");
-    }
-
     create(input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: string = nanoid()): BuiltNodeOf<CircleDefinition> {
         return {
             id,
@@ -92,7 +87,6 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             payload: {
                 label: "",
                 radius: "100px",
-                test: "0",
                 // stroke
                 strokeWidth: "1px",
                 strokeDash: "",
@@ -119,14 +113,6 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
                 type: "shape",
                 socketOut: "output",
                 widget: "none",
-            },
-            {
-                label: "Test",
-                type: "float",
-                widget: "input",
-                property: "test",
-                precision: -3,
-                step: 100,
             },
             {
                 label: "Radius",
@@ -276,6 +262,30 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             // Resolve fill attributes
             const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
 
+            // Resolve transform attributes
+            const positionMode = context.resolve<"enum">(node.id, "positionMode")?.data ?? node.payload.positionMode;
+            const positionX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
+            const positionY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
+            const positionRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
+            const positionTheta = Number(context.resolve<"angle">(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+            const rotation = Number(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
+
+            // Calculate translation based on position mode
+            let translateX: number;
+            let translateY: number;
+            if (positionMode === Enum.Common.positionMode.Polar) {
+                // Convert polar (radius, theta) to cartesian
+                // theta is in degrees, convert to radians
+                // 0° is at the top (12 o'clock), so we offset by -90°
+                const thetaRad = ((positionTheta - 90) * Math.PI) / 180;
+                translateX = positionRadius * Math.cos(thetaRad);
+                translateY = positionRadius * Math.sin(thetaRad);
+            } else {
+                // Cartesian mode
+                translateX = positionX;
+                translateY = positionY;
+            }
+
             // Map strokeCap enum to SVG linecap value
             const strokeLinecap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
 
@@ -306,16 +316,41 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             // Add fill attribute
             attributes.fill = fillColor;
 
+            // Build transform string
+            const transforms: string[] = [];
+            if (translateX !== 0 || translateY !== 0) {
+                transforms.push(`translate(${translateX}, ${translateY})`);
+            }
+            if (rotation !== 0) {
+                transforms.push(`rotate(${rotation})`);
+            }
+
+            const pathElement = {
+                tag: "path" as const,
+                attributes,
+                children: [],
+            };
+
+            // If we have transforms, wrap in a <g> element
+            if (transforms.length > 0) {
+                return {
+                    kind: "shape",
+                    data: {
+                        tag: "g",
+                        attributes: {
+                            transform: transforms.join(" "),
+                        },
+                        children: [pathElement],
+                    },
+                };
+            }
+
             return {
                 kind: "shape",
-                data: {
-                    tag: "path",
-                    attributes,
-                    children: [],
-                },
+                data: pathElement,
             };
         }
 
         return null;
     }
-})();
+})("circle");
