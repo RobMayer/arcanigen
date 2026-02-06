@@ -17,9 +17,10 @@ import { Icon, ICONS } from "../../components/Icon";
 import { Session } from "../../state/session";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { EmptyOr, NumericString } from "../../util/misc";
-import NumberInput from "../../components/inputs/NumberInput";
+import DecimalInput from "../../components/inputs/DecimalInput";
 import { useGraphId } from "../../state/graphId";
 import { Length } from "../../definitions/datatypes/length";
+import AngleInput from "../../components/inputs/AngleInput";
 
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
@@ -113,6 +114,8 @@ const GraphSlotChoice = ({
             return <WidgetInteger slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "float":
             return <WidgetFloat slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
+        case "angle":
+            return <WidgetAngle slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "string":
             return <WidgetString slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "length":
@@ -136,7 +139,7 @@ const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) =
     );
     switch (slot.widget) {
         case "input":
-            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step ?? 1} />;
+            return <DecimalInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step ?? 1} />;
         case "slider":
             return null;
     }
@@ -145,13 +148,30 @@ const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) =
 const WidgetFloat = ({ slot, node, disabled, update }: SlotProps<"float">) => {
     const handleChange = useCallback(
         (v: EmptyOr<NumericString>) => {
+            console.log("onCommit", v);
             update?.({ [slot.property]: v });
         },
         [slot.property, update],
     );
+
+    const debug = useCallback((v: EmptyOr<NumericString>) => {
+        console.log("onValue", v);
+    }, []);
+
     switch (slot.widget) {
         case "input":
-            return <NumberInput value={node.payload[slot.property] as EmptyOr<NumericString>} disabled={disabled} onCommit={handleChange} min={slot.min} max={slot.max} step={slot.step} />;
+            return (
+                <DecimalInput
+                    onValue={debug}
+                    value={node.payload[slot.property] as EmptyOr<NumericString>}
+                    disabled={disabled}
+                    onCommit={handleChange}
+                    min={slot.min}
+                    max={slot.max}
+                    step={slot.step}
+                    precision={slot.precision}
+                />
+            );
         case "slider":
             return null;
     }
@@ -167,6 +187,36 @@ const WidgetString = ({ slot, node, disabled, update }: SlotProps<"string">) => 
     switch (slot.widget) {
         case "input":
             return <TextInput value={node.payload[slot.property] as string} disabled={disabled} onCommit={handleChange} />;
+    }
+};
+
+const WidgetAngle = ({ slot, node, disabled, update }: SlotProps<"angle">) => {
+    const handleChange = useCallback(
+        (v: EmptyOr<NumericString>) => {
+            console.log("onCommit", v);
+            update?.({ [slot.property]: v });
+        },
+        [slot.property, update],
+    );
+
+    const debug = useCallback((v: EmptyOr<NumericString>) => {
+        console.log("onValue", v);
+    }, []);
+
+    switch (slot.widget) {
+        case "input":
+            return (
+                <AngleInput
+                    onValue={debug}
+                    value={node.payload[slot.property] as EmptyOr<NumericString>}
+                    disabled={disabled}
+                    onCommit={handleChange}
+                    min={slot.min}
+                    max={slot.max}
+                    step={slot.step}
+                    unbound={slot.unbound}
+                />
+            );
     }
 };
 

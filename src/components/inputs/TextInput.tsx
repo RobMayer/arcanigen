@@ -1,6 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
-import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import styled from "styled-components";
 import { AbstractTextInput, AbstractInputProps } from "../abstract/Inputs";
 
@@ -8,27 +7,29 @@ type TextInputProps = {
     value: string;
     onValue?: (v: string) => void;
     onCommit?: (v: string) => void;
-    onSubmit?: (v: string) => void; // fires when you hit enter, even if no change was made
+    onConfirm?: (v: string) => void; // fires when you hit enter, even if no change was made
 };
 
-const TextInput = styled(({ value, onValue, onCommit, onSubmit, ref, pattern, onChange, onKeyDown, required = false, ...rest }: Omit<AbstractInputProps, "value"> & TextInputProps) => {
+const TextInput = styled(({ value, onValue, onCommit, onConfirm, onBlur, pattern, onChange, onKeyDown, required = false, ...rest }: Omit<AbstractInputProps, "value"> & TextInputProps) => {
     const onKeyDownRef = useStable(onKeyDown);
     const onChangeRef = useStable(onChange);
+    const onBlurRef = useStable(onBlur);
 
-    const [innerRef, makeRef] = useCombinedRef(ref);
     const valueRef = useRef<string>(value);
+    const lastValidRef = useRef<string>(value);
     const [cache, setCache] = useState<string>(value);
 
     useEffect(() => {
         if (valueRef.current !== value) {
             valueRef.current = value;
+            lastValidRef.current = value;
             setCache(value);
         }
     }, [value]);
 
     const onValueRef = useStable(onValue);
     const onCommitRef = useStable(onCommit);
-    const onSubmitRef = useStable(onSubmit);
+    const onConfirmRef = useStable(onConfirm);
 
     // Validate and set custom validity
     const validate = useCallback(
@@ -62,52 +63,51 @@ const TextInput = styled(({ value, onValue, onCommit, onSubmit, ref, pattern, on
             setCache(v);
 
             if (validate(evt.target, v)) {
+                lastValidRef.current = v;
                 onValueRef.current?.(v);
             }
         },
         [validate],
     );
 
-    // On blur/change event - commit or revert
-    useEffect(() => {
-        const el = innerRef.current;
-        if (el) {
-            const handler = (evt: Event) => {
-                evt.handled = "implied";
-                const v = el.value;
+    // On blur - commit or revert
+    const handleBlur = useCallback(
+        (evt: React.FocusEvent<HTMLInputElement>) => {
+            onBlurRef.current?.(evt);
+            if (evt.nativeEvent.handled) {
+                return;
+            }
 
-                // Empty is valid when not required
-                if (!required && v === "") {
-                    setCache(v);
-                    el.setCustomValidity("");
-                    onCommitRef.current?.(v);
-                    onValueRef.current?.(v);
+            const v = evt.currentTarget.value;
+
+            // Empty is valid when not required
+            if (!required && v === "") {
+                setCache(v);
+                evt.currentTarget.setCustomValidity("");
+                lastValidRef.current = v;
+                onCommitRef.current?.(v);
+                return;
+            }
+
+            if (pattern) {
+                const regex = new RegExp(`^${pattern}$`);
+                if (!regex.test(v)) {
+                    // Revert to last valid value
+                    setCache(lastValidRef.current);
+                    evt.currentTarget.setCustomValidity("");
                     return;
                 }
+            }
 
-                if (pattern) {
-                    const regex = new RegExp(`^${pattern}$`);
-                    if (!regex.test(v)) {
-                        // Revert to last valid value
-                        setCache(valueRef.current);
-                        el.setCustomValidity("");
-                        return;
-                    }
-                }
+            setCache(v);
+            evt.currentTarget.setCustomValidity("");
+            lastValidRef.current = v;
+            onCommitRef.current?.(v);
+        },
+        [pattern, required],
+    );
 
-                setCache(v);
-                el.setCustomValidity("");
-                onCommitRef.current?.(v);
-                onValueRef.current?.(v);
-            };
-            el.addEventListener("change", handler);
-            return () => {
-                el.removeEventListener("change", handler);
-            };
-        }
-    }, [pattern, required]);
-
-    // Handle Enter key for onSubmit
+    // Handle Enter key for onConfirm
     const handleKeyDown = useCallback(
         (evt: React.KeyboardEvent<HTMLInputElement>) => {
             onKeyDownRef.current?.(evt);
@@ -122,22 +122,32 @@ const TextInput = styled(({ value, onValue, onCommit, onSubmit, ref, pattern, on
 
             // Empty is valid when not required
             if (!required && v === "") {
-                onSubmitRef.current?.(v);
+                evt.currentTarget.setCustomValidity("");
+                lastValidRef.current = v;
+                onConfirmRef.current?.(v);
                 return;
             }
 
             if (pattern) {
                 const regex = new RegExp(`^${pattern}$`);
                 if (!regex.test(v)) {
+                    // Invalid - revert to last valid and confirm that
+                    setCache(lastValidRef.current);
+                    evt.currentTarget.setCustomValidity("");
+                    onConfirmRef.current?.(lastValidRef.current);
                     return;
                 }
             }
-            onSubmitRef.current?.(v);
+
+            setCache(v);
+            evt.currentTarget.setCustomValidity("");
+            lastValidRef.current = v;
+            onConfirmRef.current?.(v);
         },
         [pattern, required],
     );
 
-    return <AbstractTextInput {...rest} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} ref={makeRef} />;
+    return <AbstractTextInput {...rest} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
 })``;
 
 export default TextInput;
