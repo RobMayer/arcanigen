@@ -6,21 +6,41 @@ import { useStable } from "../../util/hooks/useStable";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { BaseDefinition, DefinitionOf } from "../../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../../definitions";
-import { DATATYPE_FLAVOURS } from "../../util/misc";
-import { DataTypes } from "../../definitions/datatypes";
+import { DATATYPE_FLAVOURS, SOCKETTPYE_FLAVOURS } from "../../util/misc";
+import { DataTypes, SocketTypes } from "../../definitions/datatypes";
 
 type GraphConnectionControls = {
-    start: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => void;
-    finish: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => void;
+    start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => void;
+    finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => void;
     clear: () => void;
 };
 
-// from socket type to possible datatypes
-type SocketTypeMappings = { [K in DataTypes.Keys]: DataTypes.DataTypeBy<K>["key"] } & {
-    number: "float" | "integer" | "angle";
-};
+// Given two socket types, find the concrete datatype they agree on
+// Returns null if incompatible
+// Priority: prefer the output's concrete type if available, otherwise first common type
+const agreeOnDataType = (outType: SocketTypes.Types, inType: SocketTypes.Types): DataTypes.Keys | null => {
+    const outAccepts: readonly DataTypes.Keys[] = SocketTypes.MAPPINGS[outType];
+    const inAccepts: readonly DataTypes.Keys[] = SocketTypes.MAPPINGS[inType];
 
-type SocketType = keyof SocketTypeMappings;
+    // If out is concrete (single type), check if in accepts it
+    if (outAccepts.length === 1 && inAccepts.includes(outAccepts[0])) {
+        return outAccepts[0];
+    }
+
+    // If in is concrete (single type), check if out accepts it
+    if (inAccepts.length === 1 && outAccepts.includes(inAccepts[0])) {
+        return inAccepts[0];
+    }
+
+    // Both are abstract or no direct match - find first common type
+    for (const t of outAccepts) {
+        if (inAccepts.includes(t)) {
+            return t;
+        }
+    }
+
+    return null;
+};
 
 const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
 
@@ -31,17 +51,20 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
     const connectionContextValue = useMemo(() => {
         let pending: null | Project.PendingConnection;
         return {
-            start: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => {
+            start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => {
                 // todo: parametize scope properly...
                 const p = { node: nodeId, socket: socketId, side, type, scope: "root" };
                 setPendingConnection(p);
                 pending = p;
             },
-            finish: (nodeId: string, socketId: string, side: "in" | "out", type: DataTypes.Keys) => {
+            finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => {
                 if (pending !== null && pending.side !== side) {
                     // normalize: out -> in
                     const [fromNode, toNode, fromSocket, toSocket] = pending.side === "out" ? [pending.node, nodeId, pending.socket, socketId] : [nodeId, pending.node, socketId, pending.socket];
-                    graphMethods.connect(fromNode, toNode, fromSocket, toSocket, type);
+                    const theType = agreeOnDataType(type, pending.type);
+                    if (theType !== null) {
+                        graphMethods.connect(fromNode, toNode, fromSocket, toSocket, theType);
+                    }
                 }
             },
             clear: () => {
@@ -172,7 +195,7 @@ export const Socket = styled(
     }
 `;
 
-const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: DataTypes.Keys }) => {
+const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: SocketTypes.Types }) => {
     const style = useMemo(
         () =>
             ({
@@ -223,7 +246,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} data-flavour={DATATYPE_FLAVOURS[type]} />
+                <path ref={pathRef} data-flavour={SOCKETTPYE_FLAVOURS[type]} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>

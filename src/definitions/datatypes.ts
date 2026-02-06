@@ -41,7 +41,11 @@ type TypedSlot<D extends GenericDefinition, K extends keyof TheTypes> = {
     type: K;
     label: string;
 } & TheTypes[K]["widgets"] &
-    ({ socketIn: KeysOfType<D["inputs"], TheTypes[K]>; socketOut?: never } | { socketOut: KeysOfType<D["outputs"], TheTypes[K]>; socketIn?: never } | { socketIn?: never; socketOut?: never }) &
+    (
+        | { socketIn: KeysOfType<D["inputs"], TheTypes[K]>; socketType?: SocketTypes.SocketTypeFor<K>; socketOut?: never }
+        | { socketOut: KeysOfType<D["outputs"], TheTypes[K]>; socketIn?: never; socketType?: never }
+        | { socketIn?: never; socketOut?: never; socketType?: never }
+    ) &
     ({ property: KeysOfType<D["payload"], TheTypes[K]> } | { property?: never });
 
 export namespace DataTypes {
@@ -55,7 +59,11 @@ export namespace DataTypes {
         type: K;
         label: string;
     } & TheTypes[K]["widgets"] &
-        ({ socketIn: string; socketOut?: never } | { socketOut: string; socketIn?: never } | { socketIn?: never; socketOut?: never }) &
+        (
+            | { socketIn: string; socketType?: SocketTypes.SocketTypeFor<K>; socketOut?: never }
+            | { socketOut: string; socketIn?: never; socketType?: never }
+            | { socketIn?: never; socketOut?: never; socketType?: never }
+        ) &
         ({ property: string } | { property?: never });
 
     export type KeyOf<O> = O extends TypeDef<infer K, infer _T, infer _W> ? K : never;
@@ -90,3 +98,38 @@ export namespace DataTypes {
 }
 
 export type DataType<K extends keyof TheTypes> = TheTypes[K];
+
+export namespace SocketTypes {
+    // from socket type to possible datatypes
+    // Runtime source of truth
+    export const MAPPINGS = {
+        // Concrete types map to themselves (as single-element tuples for consistency)
+        string: ["string"],
+        length: ["length"],
+        shape: ["shape"],
+        float: ["float"],
+        integer: ["integer"],
+        color: ["color"],
+        enum: ["enum"],
+        angle: ["angle"],
+        "tokens<length>": ["tokens<length>"],
+        // Abstract types map to multiple concrete types
+        number: ["float", "integer", "angle"],
+    } as const satisfies Record<string, readonly DataTypes.Keys[]>;
+
+    // Compile-time check: ensure all DataTypes.Keys are present in MAPPINGS
+    // This will error if you add a new datatype but forget to add it here
+    type _AssertAllDataTypesPresent = DataTypes.Keys extends keyof typeof MAPPINGS ? true : "Missing DataTypes.Keys in MAPPINGS";
+    const _assertCheck: _AssertAllDataTypesPresent = true;
+
+    // Derive types from runtime
+    export type Types = keyof typeof MAPPINGS;
+
+    type SocketTypeMappings = {
+        [K in Types]: (typeof MAPPINGS)[K][number];
+    };
+
+    export type SocketTypeFor<T extends DataTypes.Keys> = {
+        [S in Types]: T extends SocketTypeMappings[S] ? S : never;
+    }[Types];
+}

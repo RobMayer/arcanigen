@@ -3,13 +3,13 @@ import { FastContextMember, useFastContextMember, useFastContextState } from "..
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { AnyDefinition, BaseDefinition, NodeType } from "../definitions/nodes/abstractNode";
 import { NodeTypeRegistry } from "../definitions";
-import { DataTypes } from "../definitions/datatypes";
+import { DataTypes, SocketTypes } from "../definitions/datatypes";
 import { useGraphId } from "./graphId";
 
 // will eventually hold a container for node-type specific logic
 
 export namespace Project {
-    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: DataTypes.Keys };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Types };
     type GraphId = string;
     type XY = { x: number; y: number };
 
@@ -73,7 +73,7 @@ export namespace Project {
             root: ["RESULT"],
         });
 
-        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: DataTypes.Keys; scope: string } | null>(null);
+        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Types; scope: string } | null>(null);
 
         const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
 

@@ -1,5 +1,5 @@
 import { Flavour } from "../components/types";
-import { DataTypes } from "../definitions/datatypes";
+import { DataTypes, SocketTypes } from "../definitions/datatypes";
 import { NodeCategory } from "../types";
 
 export type ListOf<T> = T | T[] | Set<T>;
@@ -37,6 +37,19 @@ export const DATATYPE_FLAVOURS: { [key in DataTypes.Keys]: Flavour } = {
     float: "accent",
     integer: "accent",
     color: "accent",
+    enum: "accent",
+    angle: "accent",
+    "tokens<length>": "accent",
+};
+
+export const SOCKETTPYE_FLAVOURS: { [key in SocketTypes.Types]: Flavour } = {
+    string: "accent",
+    length: "accent",
+    shape: "confirm",
+    float: "accent",
+    integer: "accent",
+    color: "accent",
+    number: "accent",
     enum: "accent",
     angle: "accent",
     "tokens<length>": "accent",
