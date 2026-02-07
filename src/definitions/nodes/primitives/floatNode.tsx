@@ -5,6 +5,11 @@ import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { DataType, DataTypes } from "../../datatypes";
 import { AbstractNodeType, BuiltNodeOf } from "../abstractNode";
 import { Resolver } from "../../../util/resolver";
+import { ReactNode } from "react";
+import { Project } from "../../../state/project";
+import { Slot, TypicalNode } from "../../../features/nodeview/node";
+import DecimalInput from "../../../components/inputs/DecimalInput";
+import { Socket } from "../../../features/nodeview/socket";
 
 type FloatDefinition = {
     inputs: {
@@ -40,6 +45,18 @@ export const FloatPrimitiveType = new (class extends AbstractNodeType<FloatDefin
             },
             type: "float",
         };
+    }
+    Controls = ({ node, methods}: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<FloatDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode  => {
+        return <TypicalNode node={node} methods={methods}>
+            <Slot>
+                Output
+                <Socket side={"out"} nodeId={node.id} socketId={"output"} type={"float"} />
+            </Slot>
+            <Slot>
+                <Socket side={"in"} nodeId={node.id} socketId={"value"} type={"float"} />
+                <DecimalInput value={node.payload.value} onCommit={(value) => methods.update({ value } as any)} disabled={node.in.value !== null} />
+            </Slot>
+        </TypicalNode>
     }
     getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<FloatDefinition>>): DataTypes.SlotFor<FloatDefinition>[] {
         return [

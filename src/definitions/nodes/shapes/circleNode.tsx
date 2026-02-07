@@ -7,6 +7,7 @@ import { NodeCategory } from "../../../types";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
+import { ReactNode } from "react";
 
 type CircleDefinition = {
     inputs: {
@@ -106,6 +107,7 @@ export const CircleNodeType = new (class extends AbstractNodeType<CircleDefiniti
             type: "circle",
         };
     }
+
     getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>): DataTypes.SlotFor<CircleDefinition>[] {
         return [
             {

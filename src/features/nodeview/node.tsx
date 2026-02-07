@@ -1,11 +1,10 @@
-import { useRef, useCallback, Ref, useState, KeyboardEvent, FocusEvent, useMemo } from "react";
+import { useRef, useCallback, Ref, useState, KeyboardEvent, FocusEvent, useMemo, ReactNode } from "react";
 import styled from "styled-components";
 import { DragMove } from "../../components/wrappers/DragMove";
 import { Project } from "../../state/project";
 import { Session } from "../../state/session";
-import { GraphSlots } from "./slots";
 import { DataTypes } from "../../definitions/datatypes";
-import { BaseDefinition } from "../../definitions/nodes/abstractNode";
+import { AnyDefinition, BaseDefinition } from "../../definitions/nodes/abstractNode";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { Icon, ICONS } from "../../components/Icon";
 import TextInput from "../../components/inputs/TextInput";
@@ -14,9 +13,22 @@ import { ActionButton } from "../../components/buttons/ActionButton";
 import { NODETITLE_FLAVOURS } from "../../util/misc";
 import { useGraphId } from "../../state/graphId";
 
-export const GraphNode = styled(({ className, nodeId }: { nodeId: string; className?: string }) => {
+export const GraphNode = ({ nodeId }: { nodeId: string }) => {
+    const [node, nodeMethods] = Project.useNode(nodeId);
+    const { type: nodeTypeId } = node;
+    const nodeType = useMemo(() => {
+        return NodeTypeRegistry.get(nodeTypeId);
+    }, [nodeTypeId])
+    if (!nodeType) {
+        return null;
+    }
+    return <nodeType.Controls node={node} methods={nodeMethods} />
+}
+
+export const TypicalNode = styled(({ className, node, methods, children }: { methods: ReturnType<typeof Project.useNode>[1]; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>; className?: string; children?: ReactNode }) => {
+    const nodeId = node.id;
+    const { update: updateNode, remove: removeNode } = methods;
     const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
-    const [node, { update: updateNode, remove: removeNode }] = Project.useNode(nodeId);
     const handleRef = useRef<HTMLDivElement>(null);
 
     const selectionRef = Session.useSelectionRef();
@@ -65,7 +77,7 @@ export const GraphNode = styled(({ className, nodeId }: { nodeId: string; classN
     return (
         <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
             <NodeTitle handleRef={handleRef} node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} onDelete={removeNode} />
-            {isClosed ? null : <GraphSlots nodeId={nodeId} />}
+            {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
         </DragMove.Item>
     );
 })`
@@ -87,6 +99,17 @@ export const GraphNode = styled(({ className, nodeId }: { nodeId: string; classN
     &[data-state~="selected"] {
         outline-color: white;
     }
+`;
+
+const NodeSlots = styled.div`
+    display: grid;
+    gap: 4px;
+    margin: 8px;
+`;
+
+export const Slot = styled.div`
+    display: flex;
+    gap: 6px;
 `;
 
 const NodeTitle = styled(

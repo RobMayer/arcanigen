@@ -1,8 +1,10 @@
+import { ReactNode } from "react";
 import { IconDefinition } from "../../components/Icon";
 import { NodeCategory } from "../../types";
 import { Resolver } from "../../util/resolver";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { DataType, DataTypes } from "../datatypes";
+import { Project } from "../../state/project";
 
 export type BaseDefinition = {
     inputs: Record<string, DataTypes.Any>;
@@ -33,6 +35,7 @@ export interface NodeType<D extends AnyDefinition = AnyDefinition> {
     iconCard: IconDefinition;
     category: NodeCategory;
     create(input: Partial<DataTypes.PayloadFor<D>>, id?: string): BuiltNodeOf<D>;
+    Controls(props: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>; methods: ReturnType<typeof Project.useNode>[1]}): ReactNode;
     getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>): DataTypes.SlotFor<D>[];
     evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: keyof D["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null;
     dependsOn(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, outSocket: keyof D["outputs"]): (keyof D["inputs"])[];
@@ -44,6 +47,9 @@ export abstract class AbstractNodeType<D extends BaseDefinition> implements Node
     type: string;
     constructor(type: string) {
         this.type = type;
+    }
+    Controls = (props: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+        return null;
     }
 
     abstract displayName: string;

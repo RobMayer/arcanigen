@@ -152,21 +152,15 @@ const WidgetInteger = ({ slot, node, disabled, update }: SlotProps<"integer">) =
 const WidgetFloat = ({ slot, node, disabled, update }: SlotProps<"float">) => {
     const handleChange = useCallback(
         (v: EmptyOr<NumericString>) => {
-            console.log("onCommit", v);
             update?.({ [slot.property]: v });
         },
         [slot.property, update],
     );
 
-    const debug = useCallback((v: EmptyOr<NumericString>) => {
-        console.log("onValue", v);
-    }, []);
-
     switch (slot.widget) {
         case "input":
             return (
                 <DecimalInput
-                    onValue={debug}
                     value={node.payload[slot.property] as EmptyOr<NumericString>}
                     disabled={disabled}
                     onCommit={handleChange}
