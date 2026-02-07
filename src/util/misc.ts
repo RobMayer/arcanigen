@@ -39,6 +39,7 @@ export const DATATYPE_FLAVOURS: { [key in DataTypes.Keys]: Flavour } = {
     color: "accent",
     enum: "accent",
     angle: "accent",
+    boolean: "accent",
     "tokens<length>": "accent",
 };
 
@@ -52,5 +53,6 @@ export const SOCKETTPYE_FLAVOURS: { [key in SocketTypes.Types]: Flavour } = {
     number: "accent",
     enum: "accent",
     angle: "accent",
+    boolean: "accent",
     "tokens<length>": "accent",
 };
