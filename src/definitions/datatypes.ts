@@ -13,6 +13,7 @@ type TypeRegistry = {
     enum: [number, { options: string[] } & ({ widget: "dropdown" } | { widget: "radiobox" | "radiobutton"; orientation?: "horizontal" | "vertical" })];
     "tokens<length>": [string, { widget: "input"; sep?: string; negative?: boolean; nullable?: boolean }];
     angle: [EmptyOr<Angle.Type>, { widget: "input"; min?: number; max?: number; unbound?: boolean; step?: number; nullable?: boolean }];
+    boolean: [boolean, { widget: "checkbox", text: string } | { widget: "checkbutton", text: string }]
 };
 
 type TypeDef<K extends string, T, W extends { widget: string } = { widget: "none" }> = {
@@ -112,6 +113,7 @@ export namespace SocketTypes {
         color: ["color"],
         enum: ["enum"],
         angle: ["angle"],
+        boolean: ["boolean"],
         "tokens<length>": ["tokens<length>"],
         // Abstract types map to multiple concrete types
         number: ["float", "integer", "angle"],

@@ -21,6 +21,8 @@ import DecimalInput from "../../components/inputs/DecimalInput";
 import { useGraphId } from "../../state/graphId";
 import { Length } from "../../definitions/datatypes/length";
 import AngleInput from "../../components/inputs/AngleInput";
+import { CheckBox } from "../../components/buttons/CheckBox";
+import { CheckButton } from "../../components/buttons/CheckButton";
 
 type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
@@ -116,6 +118,8 @@ const GraphSlotChoice = ({
             return <WidgetFloat slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "angle":
             return <WidgetAngle slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
+        case "boolean":
+            return <WidgetBoolean slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;            
         case "string":
             return <WidgetString slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "length":
@@ -187,6 +191,21 @@ const WidgetString = ({ slot, node, disabled, update }: SlotProps<"string">) => 
     switch (slot.widget) {
         case "input":
             return <TextInput value={node.payload[slot.property] as string} disabled={disabled} onCommit={handleChange} />;
+    }
+};
+
+const WidgetBoolean = ({ slot, node, disabled, update }: SlotProps<"boolean">) => {
+    const handleChange = useCallback(
+        (v: boolean) => {
+            update?.({ [slot.property]: v });
+        },
+        [slot.property, update],
+    );
+    switch (slot.widget) {
+        case "checkbox":
+            return <CheckBox checked={node.payload[slot.property] as boolean} disabled={disabled} onToggle={handleChange}>{slot.text}</CheckBox>;
+        case "checkbutton":
+            return <CheckButton checked={node.payload[slot.property] as boolean} disabled={disabled} onToggle={handleChange}>{slot.text}</CheckButton>;
     }
 };
 
