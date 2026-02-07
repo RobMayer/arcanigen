@@ -1,16 +1,13 @@
 /** JUST SKETCHING!!! */
 
+import { Length } from "../definitions/datatypes/length";
 import { SVGObject } from "../types";
 import { EmptyOr, NumericString } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
-import { Angle } from "./datatypes/angle";
-import { Length } from "./datatypes/length";
 
 /* Put registries here so that any namespace can acces them, but don't export them */
 
-const NODETYPE_REGISTRY = {
-    
-} as const;
+const NODETYPE_REGISTRY = {} as const;
 
 type DATATYPE_REGISTRY = {
     length: [EmptyOr<Length.Type>, { widget: "input"; min?: Length.Type; max?: Length.Type; nullable?: boolean }];
@@ -25,26 +22,26 @@ type DATATYPE_REGISTRY = {
 };
 
 type EXTRA_WIDGET_REGISTRY = {
-    hr: { type: "ui", widget: "hr" },
-    heading: { type: "ui"; widget: "heading"; label: string }
+    hr: { type: "ui"; widget: "hr" };
+    heading: { type: "ui"; widget: "heading"; label: string };
     accordion: {
         type: "ui";
         widget: "accordion";
         label: string;
         start?: "open" | "closed";
         children: Exclude<Slots.Any, { type: "ui"; widget: "accordion" }>[]; /* todo: this should be an array of SlotFor<D> */
-    }
-}
+    };
+};
 
 const CROSS_SOCKET_COMPAT = {
-    number: ['float', "integer", "angle"] 
-} as const satisfies {[key: string]: DataTypes.Keys[]};
+    number: ["float", "integer", "angle"],
+} as const satisfies { [key: string]: DataTypes.Keys[] };
 
 // do not export this one
 namespace Registries {
     export type DT = {
         [K in keyof DATATYPE_REGISTRY]: DTEntry<K & string, DATATYPE_REGISTRY[K][0], DATATYPE_REGISTRY[K][1] extends { widget: string } ? DATATYPE_REGISTRY[K][1] : { widget: "none" }>;
-    }
+    };
 
     export type DTEntry<K extends string, T, W extends { widget: string } = { widget: "none" }> = {
         key: K;
@@ -54,13 +51,6 @@ namespace Registries {
 }
 
 namespace DataTypes {
-
-    
-
-    
-
-    
-
     export type Any = Registries.DT[Keys];
     export type Keys = keyof Registries.DT;
 
@@ -78,20 +68,20 @@ namespace DataTypes {
     export type ArtifactOf<DT extends Any> = DT extends Registries.DTEntry<infer K, infer T, infer _W> ? { kind: K; data: T } : never;
 
     export type SlotFor<DT extends Any> = {
-        type: KeyOf<DT>,
+        type: KeyOf<DT>;
         label: string;
-    } & WidgetOf<DT> & (
-        | { socketIn: string; socketType?: Sockets.ForDataType<DT>; socketOut?: never }
-        | { socketOut: string; socketIn?: never; socketType?: never }
-        | { socketIn?: never; socketOut?: never; socketType?: never }
-    ) &
-    ({ property: string } | { property?: never })
-
+    } & WidgetOf<DT> &
+        (
+            | { socketIn: string; socketType?: Sockets.ForDataType<DT>; socketOut?: never }
+            | { socketOut: string; socketIn?: never; socketType?: never }
+            | { socketIn?: never; socketOut?: never; socketType?: never }
+        ) &
+        ({ property: string } | { property?: never });
 }
 
 namespace Artifacts {
     export type ForDataType<DT extends DataTypes.Any> = unknown;
-    export type ForNodeType<NT extends NodeTypes.Any> = unknown
+    export type ForNodeType<NT extends NodeTypes.Any> = unknown;
 }
 
 namespace Widgets {
@@ -104,10 +94,8 @@ namespace Sockets {
 }
 
 namespace Slots {
-
     // export type Any = {[K in keyof DATATYPE_REGISTRY]: }
 }
-
 
 namespace NodeTypes {
     const DEF_KEY = Symbol.for("definition");
@@ -129,11 +117,10 @@ namespace NodeTypes {
         abstract defaultLabel: string;
         abstract iconNode: unknown;
         abstract iconCard: unknown;
-        abstract category: unknown
+        abstract category: unknown;
 
         abstract create(input: Partial<NodeDefinitions.PayloadValue<D>>, id?: string): NodeDefinitions.BuiltNodeOf<D>;
         abstract dependsOn(node: ArcaneGraph.NodeOf<NodeDefinitions.PayloadOf<D>>, outSocket: keyof NodeDefinitions.OutputsOf<D>): (keyof NodeDefinitions.InputsOf<D>)[];
-
     }
     export type Keys = keyof typeof NODETYPE_REGISTRY;
     export type DefinitionOf<NT extends Any> = NT[typeof DEF_KEY];
@@ -153,11 +140,11 @@ export namespace NodeDefinitions {
         };
     };
 
-    export type PayloadOf<D extends Any> = D['payload'];
-    export type OutputsOf<D extends Any> = D['outputs'];
-    export type InputsOf<D extends Any> = D['inputs'];
-    export type PayloadValue<D extends Any> = {[K in keyof D['payload']]: DataTypes.TypeOf<D['payload'][K]>};
-    
+    export type PayloadOf<D extends Any> = D["payload"];
+    export type OutputsOf<D extends Any> = D["outputs"];
+    export type InputsOf<D extends Any> = D["inputs"];
+    export type PayloadValue<D extends Any> = { [K in keyof D["payload"]]: DataTypes.TypeOf<D["payload"][K]> };
+
     export type BuiltNodeOf<D extends Any> = ArcaneGraph.NodeOf<PayloadValue<D>> & {
         in: { [K in keyof D["inputs"]]: string | null };
         out: { [K in keyof D["outputs"]]: string[] };
@@ -165,4 +152,3 @@ export namespace NodeDefinitions {
 
     export type SlotsFor = unknown;
 }
-
