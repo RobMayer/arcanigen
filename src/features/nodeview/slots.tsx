@@ -5,7 +5,7 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import styled from "styled-components";
 import { Socket } from "./socket";
 import { AnyDefinition, NodeType } from "../../definitions/nodes/abstractNode";
-import { DataTypes } from "../../definitions/datatypes";
+import { DataTypes, SocketTypes } from "../../definitions/datatypes";
 import LengthInput from "../../components/inputs/LengthInput";
 import { Color } from "../../types";
 import ColorHexInput from "../../components/inputs/ColorHexInput";
@@ -24,28 +24,131 @@ import AngleInput from "../../components/inputs/AngleInput";
 import { CheckBox } from "../../components/buttons/CheckBox";
 import { CheckButton } from "../../components/buttons/CheckButton";
 
-type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
-
-export const GraphSlots = styled(({ nodeId, className }: { nodeId: string; className?: string }) => {
-    const [node, methods] = Project.useNode(nodeId);
-    const nodeType = NodeTypeRegistry.get(node.type);
-
-    const slots = useMemo(() => {
-        return nodeType.getSlots(node);
-    }, [nodeType, node]);
-
-    return (
-        <div className={className}>
-            {slots.map((slot, i) => {
-                return <GraphSlot node={node} nodeType={nodeType} slot={slot} key={i} update={methods.update} />;
-            })}
-        </div>
-    );
-})`
-    display: grid;
-    gap: 4px;
-    margin: 8px;
+const SlotBase = styled.div`
+    display: flex;
+    gap: 6px;
 `;
+
+export const SocketIn = <D extends AnyDefinition, K extends keyof D["inputs"] & string>({
+    node,
+    socketId,
+    type,
+    label,
+    children,
+}: {
+    children?: ReactNode;
+    label?: ReactNode;
+    node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>;
+    socketId: K;
+    type: SocketTypes.SocketTypeFor<DataTypes.KeyOf<D["inputs"][K]>>;
+}) => {
+    return (
+        <SlotBase>
+            <Socket side={"in"} socketId={socketId} nodeId={node.id} type={type} connected={node.in[socketId] !== null} />
+            {label ? <LabelSmall label={label}>{children}</LabelSmall> : <LabelBig align={"left"}>{children}</LabelBig>}
+        </SlotBase>
+    );
+};
+
+export const SocketOut = <D extends AnyDefinition, K extends keyof D["outputs"] & string>({
+    node,
+    socketId,
+    type,
+    label,
+    children,
+}: {
+    children?: ReactNode;
+    label?: ReactNode;
+    node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>;
+    socketId: K;
+    type: SocketTypes.SocketTypeFor<DataTypes.KeyOf<D["outputs"][K]>>;
+}) => {
+    return (
+        <SlotBase>
+            {label ? <LabelSmall label={label}>{children}</LabelSmall> : <LabelBig align={"right"}>{children}</LabelBig>}
+            <Socket side={"out"} socketId={socketId} nodeId={node.id} type={type} connected={node.out[socketId].length > 0} />
+        </SlotBase>
+    );
+};
+
+export const NodeAccordion = styled(
+    ({
+        className,
+        children,
+        start,
+        label,
+        nodeId,
+        socketsIn = "",
+        socketsOut = "",
+    }: {
+        className?: string;
+        children?: ReactNode;
+        start?: "open" | "closed";
+        label: string;
+        nodeId: string;
+        socketsIn?: string;
+        socketsOut?: string;
+    }) => {
+        const [inSockets, outSockets] = useMemo<[CSSProperties, CSSProperties]>(() => {
+            return [
+                {
+                    anchorName:
+                        socketsIn === ""
+                            ? undefined
+                            : socketsIn
+                                  .split("|")
+                                  .map((each) => `--socketFB_${nodeId}_${each}`)
+                                  .join(", "),
+                },
+                {
+                    anchorName:
+                        socketsOut === ""
+                            ? undefined
+                            : socketsOut
+                                  .split("|")
+                                  .map((each) => `--socketFB_${nodeId}_${each}`)
+                                  .join(", "),
+                },
+            ];
+        }, [nodeId, socketsIn, socketsOut]);
+
+        const graphId = useGraphId();
+        const [isToggled, setIsToggled] = Session.useUiState<boolean>(`nodeSlot_accordion[${graphId}][${nodeId}][${label}]`);
+        const isOpen = start === "open" ? !isToggled : isToggled;
+        const toggle = useCallback(() => {
+            setIsToggled((p) => (p ? undefined : true));
+        }, [setIsToggled]);
+
+        return (
+            <>
+                <ActionButton.Lite className={className} onClick={toggle} type={"button"}>
+                    <div style={inSockets} />
+                    <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
+                    <span>{label}</span>
+                    <div style={outSockets} />
+                </ActionButton.Lite>
+
+                {!isOpen ? null : children}
+            </>
+        );
+    },
+)`
+    background: #555;
+    font-size: 13pt;
+    cursor: pointer;
+    font-variant: small-caps;
+    gap: 0px;
+    display: flex;
+    align-items: center;
+    margin-inline: -8px;
+    & > span {
+        margin-inline: 4px;
+        flex: 1 1 auto;
+        text-align: start;
+    }
+`;
+
+type BaseNode = ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
 
 const GraphSlot = styled(
     ({
@@ -119,7 +222,7 @@ const GraphSlotChoice = ({
         case "angle":
             return <WidgetAngle slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "boolean":
-            return <WidgetBoolean slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;            
+            return <WidgetBoolean slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "string":
             return <WidgetString slot={slot} node={node} disabled={connectedIn || connectedOut} update={update} />;
         case "length":
@@ -197,9 +300,17 @@ const WidgetBoolean = ({ slot, node, disabled, update }: SlotProps<"boolean">) =
     );
     switch (slot.widget) {
         case "checkbox":
-            return <CheckBox checked={node.payload[slot.property] as boolean} disabled={disabled} onToggle={handleChange}>{slot.text}</CheckBox>;
+            return (
+                <CheckBox checked={node.payload[slot.property] as boolean} disabled={disabled} onToggle={handleChange}>
+                    {slot.text}
+                </CheckBox>
+            );
         case "checkbutton":
-            return <CheckButton checked={node.payload[slot.property] as boolean} disabled={disabled} onToggle={handleChange}>{slot.text}</CheckButton>;
+            return (
+                <CheckButton checked={node.payload[slot.property] as boolean} disabled={disabled} onToggle={handleChange}>
+                    {slot.text}
+                </CheckButton>
+            );
     }
 };
 

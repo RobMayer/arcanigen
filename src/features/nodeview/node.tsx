@@ -18,69 +18,88 @@ export const GraphNode = ({ nodeId }: { nodeId: string }) => {
     const { type: nodeTypeId } = node;
     const nodeType = useMemo(() => {
         return NodeTypeRegistry.get(nodeTypeId);
-    }, [nodeTypeId])
+    }, [nodeTypeId]);
     if (!nodeType) {
         return null;
     }
-    return <nodeType.Controls node={node} methods={nodeMethods} />
-}
+    return <nodeType.Controls node={node} methods={nodeMethods} />;
+};
 
-export const TypicalNode = styled(({ className, node, methods, children }: { methods: ReturnType<typeof Project.useNode>[1]; node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>; className?: string; children?: ReactNode }) => {
-    const nodeId = node.id;
-    const { update: updateNode, remove: removeNode } = methods;
-    const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
-    const handleRef = useRef<HTMLDivElement>(null);
+export const TypicalNode = styled(
+    ({
+        className,
+        node,
+        methods,
+        children,
+    }: {
+        methods: ReturnType<typeof Project.useNode>[1];
+        node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
+        className?: string;
+        children?: ReactNode;
+    }) => {
+        const nodeId = node.id;
+        const { update: updateNode, remove: removeNode } = methods;
+        const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
+        const handleRef = useRef<HTMLDivElement>(null);
 
-    const selectionRef = Session.useSelectionRef();
-    const positionsRef = Project.usePositionsRef();
-    const positionMethods = Project.usePositionMethods();
+        const selectionRef = Session.useSelectionRef();
+        const positionsRef = Project.usePositionsRef();
+        const positionMethods = Project.usePositionMethods();
 
-    const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
+        const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
 
-    const handleDragDelta = useCallback(
-        (delta: { x: number; y: number }) => {
-            if (!selectionRef.current.has(`node_${nodeId}`)) {
-                return;
-            }
-            const compiled = applyMoveDelta("root", delta, selectionRef, positionsRef);
-            positionMethods.setMany.passive(compiled);
-        },
-        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
-    );
+        const handleDragDelta = useCallback(
+            (delta: { x: number; y: number }) => {
+                if (!selectionRef.current.has(`node_${nodeId}`)) {
+                    return;
+                }
+                const compiled = applyMoveDelta("root", delta, selectionRef, positionsRef);
+                positionMethods.setMany.passive(compiled);
+            },
+            [selectionRef, nodeId, positionMethods.setMany, positionsRef],
+        );
 
-    const handleFinish = useCallback(
-        (pos: { x: number; y: number }) => {
-            if (!selectionRef.current.has(`node_${nodeId}`)) {
-                setPosition(pos);
-                return;
-            }
-            positionMethods.setMany.commit();
-        },
-        [nodeId, positionMethods.setMany, selectionRef, setPosition],
-    );
+        const handleFinish = useCallback(
+            (pos: { x: number; y: number }) => {
+                if (!selectionRef.current.has(`node_${nodeId}`)) {
+                    setPosition(pos);
+                    return;
+                }
+                positionMethods.setMany.commit();
+            },
+            [nodeId, positionMethods.setMany, selectionRef, setPosition],
+        );
 
-    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
+        const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
 
-    const graphId = useGraphId();
-    const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
-    const toggle = useCallback(() => {
-        setIsClosed((p) => (p ? undefined : true));
-    }, [setIsClosed]);
+        const graphId = useGraphId();
+        const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
+        const toggle = useCallback(() => {
+            setIsClosed((p) => (p ? undefined : true));
+        }, [setIsClosed]);
 
-    const setLabel = useCallback(
-        (newLabel: string) => {
-            updateNode({ label: newLabel });
-        },
-        [updateNode],
-    );
+        const setLabel = useCallback(
+            (newLabel: string) => {
+                updateNode({ label: newLabel });
+            },
+            [updateNode],
+        );
 
-    return (
-        <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <NodeTitle handleRef={handleRef} node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} onDelete={removeNode} />
-            {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
-        </DragMove.Item>
-    );
-})`
+        return (
+            <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+                <NodeTitle
+                    handleRef={handleRef}
+                    node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>}
+                    isOpen={!isClosed}
+                    toggleOpen={toggle}
+                    setLabel={setLabel}
+                    onDelete={removeNode}
+                />
+                {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
+            </DragMove.Item>
+        );
+    },
+)`
     display: grid;
     background: #363636;
     border: 1px solid #666;

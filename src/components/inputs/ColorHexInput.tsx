@@ -3,6 +3,7 @@ import { useStable } from "../../util/hooks/useStable";
 import styled from "styled-components";
 import { AbstractTextInput, AbstractInputProps } from "../abstract/Inputs";
 import { Color } from "../../types";
+import { EmptyOr } from "../../util/misc";
 
 // Matches #rgb, #rrggbb, #rgba, #rrggbbaa
 const HEX_3_REGEX = /^#[0-9a-fA-F]{3}$/;
@@ -41,7 +42,7 @@ function normalizeHex(value: string, alpha: boolean): HexColor {
 }
 
 type ColorHexInputProps = {
-    value: Color;
+    value: EmptyOr<Color>;
     onValue?: (v: Color) => void;
     onCommit?: (v: Color) => void;
     onConfirm?: (v: Color) => void; // fires when you hit enter, even if no change was made

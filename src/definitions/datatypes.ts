@@ -1,4 +1,4 @@
-import { SVGObject } from "../types";
+import { Color, SVGObject } from "../types";
 import { EmptyOr, NumericString } from "../util/misc";
 import { Angle } from "./datatypes/angle";
 import { Length } from "./datatypes/length";
@@ -9,11 +9,11 @@ type TypeRegistry = {
     float: [EmptyOr<NumericString>, { widget: "input"; min?: number; max?: number; step?: number; precision?: number } | { widget: "slider"; min: number; max: number; step?: number }];
     integer: [EmptyOr<NumericString>, { widget: "input"; min?: number; max?: number; step?: number } | { widget: "slider"; min: number; max: number; step?: number }];
     string: [string, { widget: "input"; pattern?: string }];
-    color: [string, { widget: "hex"; nullable?: boolean; alpha?: boolean }];
+    color: [EmptyOr<Color>, { widget: "hex"; nullable?: boolean; alpha?: boolean }];
     enum: [number, { options: string[] } & ({ widget: "dropdown" } | { widget: "radiobox" | "radiobutton"; orientation?: "horizontal" | "vertical" })];
     "tokens<length>": [string, { widget: "input"; sep?: string; negative?: boolean; nullable?: boolean }];
     angle: [EmptyOr<Angle.Type>, { widget: "input"; min?: number; max?: number; unbound?: boolean; step?: number; nullable?: boolean }];
-    boolean: [boolean, { widget: "checkbox", text: string } | { widget: "checkbutton", text: string }]
+    boolean: [boolean, { widget: "checkbox"; text: string } | { widget: "checkbutton"; text: string }];
 };
 
 type TypeDef<K extends string, T, W extends { widget: string } = { widget: "none" }> = {

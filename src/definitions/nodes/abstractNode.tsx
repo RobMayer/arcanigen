@@ -25,9 +25,7 @@ export type BuiltNodeOf<D extends AnyDefinition> = ArcaneGraph.NodeOf<DataTypes.
     out: { [K in keyof D["outputs"]]: string[] };
 };
 
-const DEF = Symbol.for("definition");
-
-export interface NodeType<D extends AnyDefinition = AnyDefinition> {
+export type NodeType<D extends AnyDefinition = AnyDefinition> = {
     type: string;
     displayName: string;
     defaultLabel: string;
@@ -35,36 +33,9 @@ export interface NodeType<D extends AnyDefinition = AnyDefinition> {
     iconCard: IconDefinition;
     category: NodeCategory;
     create(input: Partial<DataTypes.PayloadFor<D>>, id?: string): BuiltNodeOf<D>;
-    Controls(props: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>; methods: ReturnType<typeof Project.useNode>[1]}): ReactNode;
-    getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>): DataTypes.SlotFor<D>[];
+    Controls(props: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode;
     evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: keyof D["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null;
     dependsOn(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, outSocket: keyof D["outputs"]): (keyof D["inputs"])[];
-}
+};
 
-export abstract class AbstractNodeType<D extends BaseDefinition> implements NodeType<D> {
-    declare readonly [DEF]: D;
-
-    type: string;
-    constructor(type: string) {
-        this.type = type;
-    }
-    Controls = (props: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-        return null;
-    }
-
-    abstract displayName: string;
-    abstract defaultLabel: string;
-    abstract iconNode: IconDefinition;
-    abstract iconCard: IconDefinition;
-    abstract category: NodeCategory;
-
-    abstract create(input: Partial<DataTypes.PayloadFor<D>>, id?: string): BuiltNodeOf<D>;
-    abstract getSlots(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>): DataTypes.SlotFor<D>[];
-    // i haven't really thought this out yet...
-
-    abstract evaluate(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, socket: keyof D["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null;
-    // will be used in cyclical validity checks: which in sockets impacts a given out socket.
-    abstract dependsOn(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>, outSocket: keyof D["outputs"]): (keyof D["inputs"])[];
-}
-
-export type DefinitionOf<C> = C extends { [DEF]: infer P } ? P : never;
+export type DefinitionOf<C extends NodeType<AnyDefinition>> = C extends NodeType<infer D> ? D : never;

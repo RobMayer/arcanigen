@@ -90,7 +90,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
 };
 
 export const Socket = styled(
-    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: DataTypes.Keys; connected?: boolean }) => {
+    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: SocketTypes.Types; connected?: boolean }) => {
         const socketRef = useRef<HTMLDivElement>(null);
 
         const [pendingConnection] = Project.usePendingConnection();
@@ -156,7 +156,7 @@ export const Socket = styled(
                 data-socketside={side}
                 data-sockettype={type}
                 data-state={state}
-                data-flavour={DATATYPE_FLAVOURS[type]}
+                data-flavour={SOCKETTPYE_FLAVOURS[type]}
             />
         );
     },
@@ -292,9 +292,9 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     }
 `;
 
-// todo: use this to check for possible cylicals...
-const _validateConnection = <N extends DefinitionOf<BaseDefinition>["payload"]>(graph: ArcaneGraph.GraphOf<N>, node: ArcaneGraph.NodeOf<N>, outSocket: string): boolean => {
-    const nt = NodeTypeRegistry.get(node.type);
-    const _affected = nt.dependsOn(node, outSocket);
-    return true;
-};
+// // todo: use this to check for possible cylicals...
+// const _validateConnection = <N extends DefinitionOf<BaseDefinition>["payload"]>(graph: ArcaneGraph.GraphOf<N>, node: ArcaneGraph.NodeOf<N>, outSocket: string): boolean => {
+//     const nt = NodeTypeRegistry.get(node.type);
+//     const _affected = nt.dependsOn(node, outSocket);
+//     return true;
+// };
