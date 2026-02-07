@@ -6,6 +6,15 @@ import { ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
+import { ReactNode, useCallback } from "react";
+import { Project } from "../../../state/project";
+import { TypicalNode } from "../../../features/nodeview/node";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import LengthInput from "../../../components/inputs/LengthInput";
+import ColorHexInput from "../../../components/inputs/ColorHexInput";
+import AngleInput from "../../../components/inputs/AngleInput";
+import TextInput from "../../../components/inputs/TextInput";
+import { RadioButton } from "../../../components/buttons/RadioButton";
 
 type CircleDefinition = {
     inputs: {
@@ -99,141 +108,91 @@ const create = (input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: stri
     };
 };
 
-const getSlots = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>): DataTypes.SlotFor<CircleDefinition>[] => {
-    return [
-        {
-            label: "Output",
-            type: "shape",
-            socketOut: "output",
-            widget: "none",
+const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
+const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
+
+const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const handleUpdate = useCallback(
+        (v: Partial<DataTypes.PayloadFor<CircleDefinition>>) => {
+            methods.update(v);
         },
-        {
-            label: "Radius",
-            type: "length",
-            socketIn: "radius",
-            widget: "input",
-            property: "radius",
-            min: "0px",
-        },
-        {
-            label: "Styling",
-            type: "ui",
-            widget: "accordion",
-            children: [
-                {
-                    label: "Stroke",
-                    type: "ui",
-                    widget: "heading",
-                },
-                {
-                    label: "Stroke Color",
-                    type: "color",
-                    widget: "hex",
-                    socketIn: "strokeColor",
-                    property: "strokeColor",
-                    alpha: true,
-                    nullable: true,
-                },
-                {
-                    label: "Stroke Width",
-                    type: "length",
-                    widget: "input",
-                    socketIn: "strokeWidth",
-                    property: "strokeWidth",
-                },
-                {
-                    label: "Stroke Cap",
-                    type: "enum",
-                    widget: "radiobutton",
-                    orientation: "horizontal",
-                    socketIn: "strokeCap",
-                    property: "strokeCap",
-                    options: Enum.options(Enum.Common.strokeCap),
-                },
-                {
-                    label: "Stroke Dash",
-                    type: "tokens<length>",
-                    widget: "input",
-                    socketIn: "strokeDash",
-                    property: "strokeDash",
-                    nullable: true,
-                },
-                {
-                    label: "Stroke Dash Offset",
-                    type: "length",
-                    widget: "input",
-                    socketIn: "strokeDashOffset",
-                    property: "strokeDashOffset",
-                },
-                {
-                    label: "Fill",
-                    type: "ui",
-                    widget: "heading",
-                },
-                {
-                    label: "Fill Color",
-                    type: "color",
-                    widget: "hex",
-                    socketIn: "fillColor",
-                    property: "fillColor",
-                    alpha: true,
-                    nullable: true,
-                },
-            ],
-        },
-        {
-            label: "Transforms",
-            type: "ui",
-            widget: "accordion",
-            children: [
-                {
-                    label: "Position Mode",
-                    type: "enum",
-                    widget: "radiobutton",
-                    options: Enum.options(Enum.Common.positionMode),
-                    socketIn: "positionMode",
-                    property: "positionMode",
-                    orientation: "horizontal",
-                },
-                {
-                    label: "Position X",
-                    type: "length",
-                    widget: "input",
-                    socketIn: "positionX",
-                    property: "positionX",
-                },
-                {
-                    label: "Position Y",
-                    type: "length",
-                    widget: "input",
-                    socketIn: "positionY",
-                    property: "positionY",
-                },
-                {
-                    label: "Position Radius",
-                    type: "length",
-                    widget: "input",
-                    socketIn: "positionRadius",
-                    property: "positionRadius",
-                },
-                {
-                    label: "Position Theta",
-                    type: "angle",
-                    widget: "input",
-                    socketIn: "positionTheta",
-                    property: "positionTheta",
-                },
-                {
-                    label: "Rotation",
-                    type: "angle",
-                    widget: "input",
-                    socketIn: "rotation",
-                    property: "rotation",
-                },
-            ],
-        },
-    ];
+        [methods],
+    );
+
+    const isCartesian = node.payload.positionMode === Enum.Common.positionMode.Cartesian;
+    const isPolar = node.payload.positionMode === Enum.Common.positionMode.Polar;
+
+    return (
+        <TypicalNode node={node} methods={methods}>
+            <SocketOut node={node} socketId={"output"} type={"shape"}>
+                Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+                <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
+            </SocketIn>
+
+            <NodeAccordion socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor"} label={"Styling"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"strokeColor"} type={"color"} label={"Stroke Color"}>
+                    <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} nullable alpha />
+                </SocketIn>
+                <SocketIn node={node} socketId={"strokeWidth"} type={"length"} label={"Stroke Width"}>
+                    <LengthInput value={node.payload.strokeWidth} onCommit={(strokeWidth) => handleUpdate({ strokeWidth })} disabled={node.in.strokeWidth !== null} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"strokeCap"} type={"enum"} label={"Stroke Cap"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.strokeCap}`}
+                        onValue={(v) => handleUpdate({ strokeCap: Number(v) })}
+                        disabled={node.in.strokeCap !== null}
+                        options={STROKE_CAP_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"strokeDash"} type={"tokens<length>"} label={"Stroke Dash"}>
+                    <TextInput value={node.payload.strokeDash} onCommit={(strokeDash) => handleUpdate({ strokeDash })} disabled={node.in.strokeDash !== null} />
+                </SocketIn>
+                <SocketIn node={node} socketId={"strokeDashOffset"} type={"length"} label={"Stroke Dash Offset"}>
+                    <LengthInput value={node.payload.strokeDashOffset} onCommit={(strokeDashOffset) => handleUpdate({ strokeDashOffset })} disabled={node.in.strokeDashOffset !== null} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"fillColor"} type={"color"} label={"Fill Color"}>
+                    <ColorHexInput value={node.payload.fillColor} onCommit={(fillColor) => handleUpdate({ fillColor })} disabled={node.in.fillColor !== null} nullable alpha />
+                </SocketIn>
+            </NodeAccordion>
+
+            <NodeAccordion socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta|rotation"} label={"Transforms"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"positionMode"} type={"enum"} label={"Position Mode"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.positionMode}`}
+                        onValue={(v) => handleUpdate({ positionMode: Number(v) })}
+                        disabled={node.in.positionMode !== null}
+                        options={POSITION_MODE_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"positionX"} type={"length"} label={"Position X"}>
+                    <LengthInput value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={node.in.positionX !== null || isPolar} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"positionY"} type={"length"} label={"Position Y"}>
+                    <LengthInput value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={node.in.positionY !== null || isPolar} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"positionRadius"} type={"length"} label={"Position Radius"}>
+                    <LengthInput
+                        value={node.payload.positionRadius}
+                        onCommit={(positionRadius) => handleUpdate({ positionRadius })}
+                        disabled={node.in.positionRadius !== null || isCartesian}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"positionTheta"} type={"angle"} label={"Position Theta"}>
+                    <AngleInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
+                </SocketIn>
+                <SocketIn node={node} socketId={"rotation"} type={"angle"} label={"Rotation"}>
+                    <AngleInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
+                </SocketIn>
+            </NodeAccordion>
+        </TypicalNode>
+    );
 };
+
 const dependsOn = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] => {
     return [];
 };
@@ -298,11 +257,11 @@ const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition
         // Add stroke attributes
         if (strokeColor !== "none") {
             attributes.stroke = strokeColor;
-            attributes["stroke-width"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
-            attributes["stroke-linecap"] = strokeLinecap;
+            attributes["strokeWidth"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
+            attributes["strokeLinecap"] = strokeLinecap;
             if (strokeDasharray) {
-                attributes["stroke-dasharray"] = strokeDasharray;
-                attributes["stroke-dashoffset"] = String(Length.Emptyable.asNumber(strokeDashOffset) ?? 0);
+                attributes["strokeDasharray"] = strokeDasharray;
+                attributes["strokeDashoffset"] = String(Length.Emptyable.asNumber(strokeDashOffset) ?? 0);
             }
         }
 
@@ -357,5 +316,5 @@ export const CircleNodeType: NodeType<CircleDefinition> = {
     create,
     dependsOn,
     evaluate,
-    Controls: () => null,
+    Controls,
 };

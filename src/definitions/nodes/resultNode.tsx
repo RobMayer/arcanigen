@@ -77,13 +77,13 @@ const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.Payloa
                     <LengthInput value={node.payload.h} onCommit={(h) => handleUpdate({ h })} disabled={node.in.h !== null} required min={"0px"} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"x"} type={"length"} label={"Origin X"}>
-                    <LengthInput value={node.payload.h} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
+                    <LengthInput value={node.payload.x} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"y"} type={"length"} label={"Origin Y"}>
-                    <LengthInput value={node.payload.h} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
+                    <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"color"} type={"color"} label={"Color"}>
-                    <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha />
+                    <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
                 </SocketIn>
             </NodeAccordion>
         </TypicalNode>

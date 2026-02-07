@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export type Flavour = "base" | "accent" | "info" | "danger" | "emphasis" | "help" | "confirm";
 
 export type PopoverPosition =
@@ -21,3 +23,5 @@ export type PopoverPosition =
     | "top right"
     | "bottom left"
     | "bottom right";
+
+export type Options<T extends string = string> = { value: T; label: ReactNode; disabled?: boolean; flavour?: Flavour }[];

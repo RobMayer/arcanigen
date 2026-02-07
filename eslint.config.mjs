@@ -21,6 +21,7 @@ export default defineConfig([
         },
         rules: {
             ...reactHooksConfigurable.configs.recommended.rules,
+            "react/display-name": "off",
             "no-unused-vars": "off",
             "@typescript-eslint/no-unused-vars": [
                 "warn",
