@@ -3,10 +3,7 @@ import { Project } from "../../state/project";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
-import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { BaseDefinition, DefinitionOf } from "../../definitions/nodes/abstractNode";
-import { NodeTypeRegistry } from "../../definitions";
-import { DATATYPE_FLAVOURS, SOCKETTPYE_FLAVOURS } from "../../util/misc";
+import { SOCKETTPYE_FLAVOURS } from "../../util/misc";
 import { DataTypes, SocketTypes } from "../../definitions/datatypes";
 
 type GraphConnectionControls = {

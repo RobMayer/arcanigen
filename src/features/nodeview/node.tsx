@@ -126,11 +126,6 @@ const NodeSlots = styled.div`
     margin: 8px;
 `;
 
-export const Slot = styled.div`
-    display: flex;
-    gap: 6px;
-`;
-
 const NodeTitle = styled(
     ({
         className,
