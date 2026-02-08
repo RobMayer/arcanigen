@@ -64,10 +64,8 @@ export namespace Resolver {
 
                 return evaluateNodeOutput<K>(state, "root", theLink.fromNode, theLink.fromSocket, context);
             },
-            // todo: work in progress.
-            // resolves a subgraph by providing the already-resolved inputs to that subgraph...
-            subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
-                return {};
+            subgraph: (subgraphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
+                return evaluateSubgraph(state, subgraphId, inputs, define);
             },
         };
 
@@ -98,6 +96,60 @@ export namespace Resolver {
             definitions,
             contents,
         };
+    };
+
+    const evaluateSubgraph = (
+        state: State,
+        subgraphId: GraphId,
+        inputs: { [key: string]: DataTypes.AnyEval | null },
+        define: (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => void,
+    ): { [key: string]: DataTypes.AnyEval | null } => {
+        const subgraphNodes = state.nodes[subgraphId];
+        const subgraphLinks = state.links[subgraphId];
+        if (!subgraphNodes || !subgraphLinks) {
+            return {};
+        }
+
+        // Create a context for evaluating within the subgraph
+        const subContext: Context = {
+            graphId: subgraphId,
+            define,
+            getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
+            getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
+                return inputs[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
+            },
+            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+                const links = ArcaneGraph.linksTo({ nodes: subgraphNodes, links: subgraphLinks }, nodeId, inSocket);
+                if (links.length === 0) {
+                    return null;
+                }
+                const theLink = subgraphLinks[links[0]];
+                if (!theLink) {
+                    return null;
+                }
+                return evaluateNodeOutput<K>(state, subgraphId, theLink.fromNode, theLink.fromSocket, subContext);
+            },
+            subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
+                // Recursively evaluate nested subgraphs
+                return evaluateSubgraph(state, nestedGraphId, nestedInputs, define);
+            },
+        };
+
+        // Get output node IDs for this subgraph
+        const outputNodeIds = state.outputs[subgraphId] ?? [];
+        const results: { [key: string]: DataTypes.AnyEval | null } = {};
+
+        // For each output node, resolve its input socket
+        for (const outputNodeId of outputNodeIds) {
+            const outputNode = subgraphNodes[outputNodeId];
+            if (!outputNode) continue;
+
+            // Resolve the "input" socket of the output node
+            const resolved = subContext.resolve(outputNodeId, "input");
+            results[outputNodeId] = resolved;
+        }
+
+        return results;
     };
 
     const evaluateNodeOutput = <K extends DataTypes.Kind>(state: State, graphId: GraphId, nodeId: ArcaneGraph.NodeId, outSocket: string, context: Context): DataTypes.EvalOf<DataTypes.Use<K>> | null => {

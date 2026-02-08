@@ -17,6 +17,7 @@ import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
 import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInputNode";
 import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
+import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -38,6 +39,9 @@ namespace Registries {
         floatInput: FloatInputDefinition;
         floatOutput: FloatOutputDefinition;
         custom: CustomDefinition;
+
+        // math
+        addFloat: AddFloatDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -51,6 +55,8 @@ namespace Registries {
         floatInput: FloatInputType,
         floatOutput: FloatOutputType,
         custom: CustomNodeType,
+
+        addFloat: AddFloatType,
     } as const;
 
     export type DATATYPES = {

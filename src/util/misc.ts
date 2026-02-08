@@ -28,4 +28,9 @@ export const NODETITLE_FLAVOURS: { [key in NodeCategory]: Flavour } = {
     collection: "danger",
     shape: "confirm",
     meta: "emphasis",
+    math: "accent",
+};
+
+export const addNumericStrings = (a: EmptyOr<NumericString>, b: EmptyOr<NumericString>): NumericString => {
+    return `${Number(a || 0) + Number(b || 0)}`;
 };
