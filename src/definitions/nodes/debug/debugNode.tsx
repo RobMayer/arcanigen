@@ -39,9 +39,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <div>{valueToRender ?? "null"}</div>
             <SocketIn node={node} socketId={"input"} type={"float"} label={"Value"}>
-                Input
+                {valueToRender ?? "Nothing"}
             </SocketIn>
         </TypicalNode>
     );
