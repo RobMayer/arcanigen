@@ -23,6 +23,8 @@ export namespace Resolver {
         define: (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => void;
         resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
         subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
+        /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
+        getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
     };
 
     export type RootResult = {

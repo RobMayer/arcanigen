@@ -55,6 +55,10 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
     );
 };
 
+export const Slot = ({ children, label }: { children?: ReactNode; label?: ReactNode }) => {
+    return <SlotBase>{label ? <LabelSmall label={label}>{children}</LabelSmall> : <LabelBig align={"left"}>{children}</LabelBig>}</SlotBase>;
+};
+
 export const NodeAccordion = styled(
     ({
         className,

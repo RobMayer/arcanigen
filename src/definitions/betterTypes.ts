@@ -14,6 +14,9 @@ import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/inte
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import { Project } from "../state/project";
 import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
+import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInputNode";
+import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
+import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -30,6 +33,11 @@ namespace Registries {
 
         //debug
         debug: DebugDefinition;
+
+        // subgraph interfaces
+        floatInput: FloatInputDefinition;
+        floatOutput: FloatOutputDefinition;
+        custom: CustomDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -39,6 +47,10 @@ namespace Registries {
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
         debug: DebugType,
+
+        floatInput: FloatInputType,
+        floatOutput: FloatOutputType,
+        custom: CustomNodeType,
     } as const;
 
     export type DATATYPES = {
@@ -138,6 +150,16 @@ export namespace NodeDefinitions {
 export namespace NodeTypes {
     export type Key = keyof typeof Registries.NODETYPES;
     export type Use<K extends Key> = (typeof Registries.NODETYPES)[K];
+
+    /** State snapshot passed to lifecycle hooks */
+    export type HookState = {
+        nodes: { [graphId: string]: { [nodeId: string]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
+        links: { [graphId: string]: { [linkId: string]: ArcaneGraph.Link } };
+        inputs: { [graphId: string]: string[] };
+        outputs: { [graphId: string]: string[] };
+        users: { [graphId: string]: { node: string; scope: string }[] };
+    };
+
     export interface Type<T extends Key, D extends NodeDefinitions.Generic = NodeDefinitions.Generic> {
         type: T;
         displayName: string;
@@ -149,6 +171,8 @@ export namespace NodeTypes {
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
         evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;
         dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"]) => (keyof D["inputs"])[];
+        onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
+        onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {

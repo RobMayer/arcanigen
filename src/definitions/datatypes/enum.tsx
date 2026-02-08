@@ -21,5 +21,10 @@ export namespace Enum {
             Cartesian: 0,
             Polar: 1,
         };
+
+        export const floatInputWidget = {
+            None: 0,
+            Input: 1,
+        };
     }
 }

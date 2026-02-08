@@ -294,13 +294,34 @@ export namespace Project {
                 const newNode = nodeType.create(params);
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
                 const { nodes } = ArcaneGraph.importNodes(oldGraph, [newNode]);
-                ctx.nodes.ref.current = {
-                    ...ctx.nodes.ref.current,
-                    [graphId]: nodes,
-                };
+
+                // Build initial state with the new node added
+                let currentNodes = { ...ctx.nodes.ref.current, [graphId]: nodes };
+                let currentInputs = ctx.inputs.ref.current;
+                let currentOutputs = ctx.outputs.ref.current;
+                let currentUsers = ctx.users.ref.current;
+
+                // Call onCreate hook if defined
+                if (nodeType.onCreate) {
+                    const hookState: NodeTypes.HookState = {
+                        nodes: currentNodes,
+                        links: ctx.links.ref.current,
+                        inputs: currentInputs,
+                        outputs: currentOutputs,
+                        users: currentUsers,
+                    };
+                    const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, state: NodeTypes.HookState, graphId: string) => NodeTypes.HookState;
+                    const newState = onCreate(newNode, hookState, graphId);
+                    currentNodes = newState.nodes;
+                    currentInputs = newState.inputs;
+                    currentOutputs = newState.outputs;
+                    currentUsers = newState.users;
+                }
+
+                ctx.nodes.ref.current = currentNodes;
                 ctx.nodeList.ref.current = {
                     ...ctx.nodeList.ref.current,
-                    [graphId]: Object.keys(nodes),
+                    [graphId]: Object.keys(currentNodes[graphId]),
                 };
                 ctx.positions.ref.current = {
                     ...ctx.positions.ref.current,
@@ -309,9 +330,16 @@ export namespace Project {
                         [newNode.id]: position ?? { x: 0, y: 0 },
                     },
                 };
+                ctx.inputs.ref.current = currentInputs;
+                ctx.outputs.ref.current = currentOutputs;
+                ctx.users.ref.current = currentUsers;
+
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
                 ctx.positions.notify();
+                ctx.inputs.notify();
+                ctx.outputs.notify();
+                ctx.users.notify();
             };
 
             const updateNodePayload = <P extends NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>(id: ArcaneGraph.NodeId, data: Partial<P>) => {
@@ -340,6 +368,29 @@ export namespace Project {
 
             const removeNode = (nodeId: string) => {
                 const oldGraph = { nodes: ctx.nodes.ref.current[graphId], links: ctx.links.ref.current[graphId] };
+                const node = oldGraph.nodes[nodeId];
+                if (!node) return;
+
+                // Call onDelete hook if defined
+                let currentInputs = ctx.inputs.ref.current;
+                let currentOutputs = ctx.outputs.ref.current;
+                let currentUsers = ctx.users.ref.current;
+
+                const nodeType = NodeTypes.get(node.type);
+                if (nodeType.onDelete) {
+                    const hookState: NodeTypes.HookState = {
+                        nodes: ctx.nodes.ref.current,
+                        links: ctx.links.ref.current,
+                        inputs: currentInputs,
+                        outputs: currentOutputs,
+                        users: currentUsers,
+                    };
+                    const onDelete = nodeType.onDelete as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, state: NodeTypes.HookState, graphId: string) => NodeTypes.HookState;
+                    const newState = onDelete(node, hookState, graphId);
+                    currentInputs = newState.inputs;
+                    currentOutputs = newState.outputs;
+                    currentUsers = newState.users;
+                }
 
                 // Find downstream nodes BEFORE removing (they'll need cache rebuild)
                 const downstream = ArcaneGraph.wideDownstreamOf(oldGraph, nodeId);
@@ -354,6 +405,9 @@ export namespace Project {
                 ctx.positions.ref.current = { ...ctx.positions.ref.current, [graphId]: positions };
                 ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
                 ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
+                ctx.inputs.ref.current = currentInputs;
+                ctx.outputs.ref.current = currentOutputs;
+                ctx.users.ref.current = currentUsers;
 
                 // Invalidate cache for the removed node
                 let newCache = invalidateDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, graphId, nodeId);
@@ -372,6 +426,9 @@ export namespace Project {
                 ctx.links.notify();
                 ctx.linkList.notify();
                 ctx.cache.notify();
+                ctx.inputs.notify();
+                ctx.outputs.notify();
+                ctx.users.notify();
             };
 
             return { connect, removeNode, updateNodePayload, addNodeByType };
@@ -471,5 +528,25 @@ export namespace Project {
         }, [ctx, graphId, nodeId, inSocket]);
 
         return useSyncExternalStore(ctx.cache.subscribe, selector) as DataTypes.EvalOf<D["inputs"][K]> | null;
+    };
+
+    export const useGraphInputs = (graphId: GraphId) => {
+        const ctx = useContext(CTX)!;
+
+        const selector = useCallback(() => {
+            return ctx.inputs.get()[graphId];
+        }, [graphId, ctx]);
+
+        return useSyncExternalStore(ctx.inputs.subscribe, selector);
+    };
+
+    export const useGraphOutputs = (graphId: GraphId) => {
+        const ctx = useContext(CTX)!;
+
+        const selector = useCallback(() => {
+            return ctx.outputs.get()[graphId];
+        }, [graphId, ctx]);
+
+        return useSyncExternalStore(ctx.outputs.subscribe, selector);
     };
 }
