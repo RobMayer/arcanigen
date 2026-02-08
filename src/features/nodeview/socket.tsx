@@ -153,6 +153,7 @@ export const Socket = styled(
                 data-sockettype={type}
                 data-state={state}
                 data-flavour={SocketTypes.FLAVOURS[type]}
+                title={SocketTypes.COMPAT[type].join(" | ")}
             />
         );
     },
