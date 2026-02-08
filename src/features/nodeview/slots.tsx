@@ -6,6 +6,7 @@ import { Session } from "../../state/session";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, SocketTypes } from "../../definitions/betterTypes";
+import { Flavour } from "../../components/types";
 
 const SlotBase = styled.div`
     display: flex;
@@ -63,6 +64,7 @@ export const NodeAccordion = styled(
         nodeId,
         socketsIn = "",
         socketsOut = "",
+        flavour = "base",
     }: {
         className?: string;
         children?: ReactNode;
@@ -71,6 +73,7 @@ export const NodeAccordion = styled(
         nodeId: string;
         socketsIn?: string;
         socketsOut?: string;
+        flavour?: Flavour;
     }) => {
         const [inSockets, outSockets] = useMemo<[CSSProperties, CSSProperties]>(() => {
             return [
@@ -104,7 +107,7 @@ export const NodeAccordion = styled(
 
         return (
             <>
-                <ActionButton.Lite className={className} onClick={toggle} type={"button"}>
+                <ActionButton.Lite className={className} onClick={toggle} type={"button"} flavour={flavour}>
                     <div style={inSockets} />
                     <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
                     <span>{label}</span>
@@ -116,7 +119,7 @@ export const NodeAccordion = styled(
         );
     },
 )`
-    background: #555;
+    background: oklch(from var(--flavour) calc(l - 0.05) calc(c * 0.75) h);
     font-size: 13pt;
     cursor: pointer;
     font-variant: small-caps;
@@ -124,6 +127,7 @@ export const NodeAccordion = styled(
     display: flex;
     align-items: center;
     margin-inline: -8px;
+    margin-block: 4px;
     & > span {
         margin-inline: 4px;
         flex: 1 1 auto;

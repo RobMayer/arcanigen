@@ -22,7 +22,7 @@ export namespace Project {
         inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         // we need graph-level properties, and possibly a stable list of subgraphs
-        // evalCache: { [key: `${GraphId}|${ArcaneGraph.NodeId}|${SocketId}`]: DataTypes.AnyEval };
+        evalCache: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [socketId: SocketId]: DataTypes.AnyEval } } };
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -74,9 +74,11 @@ export namespace Project {
             root: ["RESULT"],
         });
 
+        const evalCache = useFastContextMember<TheType["evalCache"]>({});
+
         const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string } | null>(null);
 
-        const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
+        const value = useMemo(() => ({ evalCache, nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -330,5 +332,17 @@ export namespace Project {
         }, [links, nodes, inputs, outputs, users]);
 
         return value;
+    };
+
+    export const useResolved = <K extends DataTypes.Kind>(nodeId: ArcaneGraph.NodeId, socketId: SocketId): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+        const ctx = useContext(CTX)!;
+
+        const graphId = useGraphId();
+
+        const selector = useCallback(() => {
+            return ctx.evalCache.get()?.[graphId]?.[nodeId]?.[socketId];
+        }, [ctx, graphId, nodeId, socketId]);
+
+        return (useSyncExternalStore(ctx.evalCache.subscribe, selector) ?? null) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
     };
 }

@@ -26,17 +26,15 @@ namespace Registries {
         angle: AngleDefinition;
         float: FloatDefinition;
         integer: IntegerDefinition;
-    }
+    };
 
-    export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]>} = {
+    export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
         result: ResultNodeType,
         circle: CircleNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
     } as const;
-
-    const _CHECK = NODETYPES satisfies { [K in keyof typeof NODETYPES]: (typeof NODETYPES)[K] extends { type: K } ? (typeof NODETYPES)[K] : never };
 
     export type DATATYPES = {
         length: EmptyOr<Length.Type>;
@@ -109,7 +107,7 @@ export namespace NodeDefinitions {
         inputs: Record<string, DataTypes.Any>;
         outputs: Record<string, DataTypes.Any>;
         payload: Record<string, DataTypes.Any>;
-    }
+    };
 
     // Base definition requiring a label in payload
     export type Base = {
@@ -134,7 +132,7 @@ export namespace NodeDefinitions {
 
 export namespace NodeTypes {
     export type Key = keyof typeof Registries.NODETYPES;
-    export type Use<K extends Key> = typeof Registries.NODETYPES[K];
+    export type Use<K extends Key> = (typeof Registries.NODETYPES)[K];
     export interface Type<T extends Key, D extends NodeDefinitions.Generic = NodeDefinitions.Generic> {
         type: T;
         displayName: string;
@@ -148,7 +146,7 @@ export namespace NodeTypes {
         dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"]) => (keyof D["inputs"])[];
     }
 
-    export const get = <K extends Key>(key: K): typeof Registries.NODETYPES[K] => {
+    export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {
         return Registries.NODETYPES[key];
     };
 
@@ -158,13 +156,11 @@ export namespace NodeTypes {
 
     export const getEvaluator = <K extends Key>(key: K) => {
         return Registries.NODETYPES[key].evaluate;
-    }
+    };
 
-    export const list = () => Object.entries(Registries.NODETYPES);
-    export const keys = () => Object.keys(Registries.NODETYPES);
-    export const entries = () => Object.entries(Registries.NODETYPES);
+    export const list = () => Object.values(Registries.NODETYPES);
 
-    export type Any = typeof Registries.NODETYPES[keyof typeof Registries.NODETYPES];
+    export type Any = (typeof Registries.NODETYPES)[keyof typeof Registries.NODETYPES];
     export type DefinitionOf<T extends Any> = T extends Type<infer _t, infer D> ? D : never;
 }
 

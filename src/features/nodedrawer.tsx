@@ -2,13 +2,11 @@ import styled from "styled-components";
 import { Accordion } from "../components/containers/Accordion";
 import { GraphIdContext } from "../state/graphId";
 import { Icon, ICONS } from "../components/Icon";
-import { AnyDefinition, NodeType } from "../definitions/nodes/abstractNode";
 import { useCallback, useMemo } from "react";
-import { NodeTypeRegistry } from "../definitions";
 import { NODETITLE_FLAVOURS } from "../util/misc";
 import { Project } from "../state/project";
-import { DataTypes } from "../definitions/datatypes";
 import { DragPaneControls } from "../components/wrappers/DragPane";
+import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
 
 const LocalAccordion = styled(Accordion)`
     padding: 0.25em;
@@ -18,16 +16,15 @@ const LocalAccordion = styled(Accordion)`
 
 export const NodeDrawer = ({ graphId, paneControls }: { graphId: string; paneControls: DragPaneControls }) => {
     const nodeTypes = useMemo(() => {
-        return NodeTypeRegistry.entries().reduce<NodeType[]>((acc, [key, theType]) => {
-            if (key === "result" || key === "custom") {
-                return acc;
+        return NodeTypes.list().filter((each) => {
+            if (each.type === "result" || (each.type as string) === "custom") {
+                return false;
             }
-            if (graphId === "root" && theType.category === "interface") {
-                return acc;
+            if (graphId === "root" && each.category === "interface") {
+                return false;
             }
-            acc.push(theType as NodeType);
-            return acc;
-        }, []);
+            return true;
+        });
     }, [graphId]);
 
     return (
@@ -48,11 +45,11 @@ const Pane = styled.div`
     overflow-y: scroll;
 `;
 
-const CardGrid = styled(({ className, nodeTypes, paneControls }: { className?: string; nodeTypes: NodeType[]; paneControls: DragPaneControls }) => {
+const CardGrid = styled(({ className, nodeTypes, paneControls }: { className?: string; nodeTypes: NodeTypes.Any[]; paneControls: DragPaneControls }) => {
     const { addNodeByType } = Project.useMethods();
 
     const addNode = useCallback(
-        (nodeType: NodeType) => {
+        (nodeType: NodeTypes.Any) => {
             const { x, y } = paneControls.get();
             addNodeByType(nodeType, {}, { x: -x, y: -y });
         },
@@ -81,10 +78,10 @@ const NodeCard = styled(
         disabled,
         handleAdd,
     }: {
-        nodeType: NodeType;
+        nodeType: NodeTypes.Any;
         className?: string;
         disabled?: boolean;
-        handleAdd: (nodeType: NodeType, params: Partial<DataTypes.PayloadFor<AnyDefinition>>) => void;
+        handleAdd: (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>) => void;
     }) => {
         const doAdd = useCallback(() => {
             handleAdd(nodeType, {});

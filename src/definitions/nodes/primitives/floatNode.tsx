@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS } from "../../../components/Icon";
+import { NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -77,8 +77,8 @@ export const FloatPrimitiveType: NodeTypes.Type<"float", FloatDefinition> = {
     type: "float",
     displayName: "Float",
     defaultLabel: "Float",
-    iconNode: ICONS.Bolt,
-    iconCard: ICONS.Bolt,
+    iconNode: NODE_ICONS.numericValue.Item,
+    iconCard: NODE_ICONS.numericValue.Card,
     category: "primitive",
     evaluate,
     Controls,

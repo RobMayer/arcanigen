@@ -19,17 +19,7 @@ export const GraphNode = ({ nodeId }: { nodeId: string }) => {
 };
 
 export const TypicalNode = styled(
-    ({
-        className,
-        node,
-        methods,
-        children,
-    }: {
-        methods: ReturnType<typeof Project.useNode>[1];
-        node: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
-        className?: string;
-        children?: ReactNode;
-    }) => {
+    ({ className, node, methods, children }: { methods: ReturnType<typeof Project.useNode>[1]; node: NodeDefinitions.NodeFor<NodeDefinitions.Any>; className?: string; children?: ReactNode }) => {
         const nodeId = node.id;
         const { update: updateNode, remove: removeNode } = methods;
         const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
@@ -80,21 +70,14 @@ export const TypicalNode = styled(
 
         return (
             <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-                <NodeTitle
-                    handleRef={handleRef}
-                    node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
-                    isOpen={!isClosed}
-                    toggleOpen={toggle}
-                    setLabel={setLabel}
-                    onDelete={removeNode}
-                />
+                <NodeTitle handleRef={handleRef} node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} onDelete={removeNode} />
                 {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
             </DragMove.Item>
         );
     },
 )`
     display: grid;
-    background: #363636;
+    background: #333;
     border: 1px solid #666;
     width: max-content;
     min-width: 280px;

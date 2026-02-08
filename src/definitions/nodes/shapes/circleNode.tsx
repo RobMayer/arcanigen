@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS } from "../../../components/Icon";
+import { NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -243,10 +243,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         // Convert stroke dash to pixel values
         const strokeDasharray = strokeDash
             ? strokeDash
-                .split(/\s+/)
-                .filter(Boolean)
-                .map((token) => Length.Emptyable.asNumber(token as Length.Type) ?? 0)
-                .join(" ")
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .map((token) => Length.Emptyable.asNumber(token as Length.Type) ?? 0)
+                  .join(" ")
             : undefined;
 
         const attributes: Record<string, string> = {
@@ -309,8 +309,8 @@ export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     type: "circle",
     displayName: "Circle",
     defaultLabel: "Circle",
-    iconNode: ICONS.Bolt,
-    iconCard: ICONS.Bolt,
+    iconNode: NODE_ICONS.circleShape.Item,
+    iconCard: NODE_ICONS.circleShape.Card,
     category: "shape",
     create,
     dependsOn,
