@@ -46,6 +46,7 @@ const TESTING_STATE = {
                 payload: {
                     label: "",
                     graphId: "testSubgraph",
+                    value_inputA: "3",
                 },
             },
             RESULT: {
@@ -63,6 +64,7 @@ const TESTING_STATE = {
     testSubgraph: {
         nodes: {
             inputA: {
+                id: "inputA",
                 type: "floatInput",
                 in: {},
                 out: {
@@ -223,14 +225,7 @@ const evaluateSubgraphForCache = (
 };
 
 /** Evaluates a single node and caches all its output sockets */
-const evaluateAndCacheNode = (
-    cache: CacheType,
-    nodes: NodesType,
-    links: LinksType,
-    outputs: OutputsType,
-    graphId: GraphId,
-    nodeId: ArcaneGraph.NodeId,
-): CacheType => {
+const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksType, outputs: OutputsType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
     const node = nodes[graphId]?.[nodeId];
     if (!node) return cache;
 
