@@ -79,7 +79,7 @@ const TESTING_STATE = {
                     max: "1",
                     hasMax: false,
                     step: "0.01",
-                    hasSteP: false,
+                    hasStep: false,
                 },
             },
             adder: {
