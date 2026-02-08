@@ -90,10 +90,93 @@ export namespace ArcaneGraph {
     export const nodesWhere = <N>(graph: GraphOf<N>, filter: (node: NodeOf<N>) => boolean): NodeId[] => Object.keys(graph.nodes).filter((id) => filter(graph.nodes[id]));
 
     // todo: Traversal
-    // export const wideDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
-    // export const deepDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
+    // note: does not include the starting node itself
+    export const wideDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socket: SocketId | null = null): NodeId[] => {
+        const result: NodeId[] = [];
+        const visited = new Set<NodeId>();
+        visited.add(id); // don't include the starting node
+
+        const queue: NodeId[] = [];
+        // seed the queue with immediate downstream nodes
+        const initialLinks = linksFrom(graph, id, socket);
+        for (const linkId of initialLinks) {
+            const link = graph.links[linkId];
+            if (link && !visited.has(link.toNode)) {
+                visited.add(link.toNode);
+                queue.push(link.toNode);
+            }
+        }
+
+        while (queue.length > 0) {
+            const nodeId = queue.shift()!;
+            result.push(nodeId);
+
+            const outLinks = linksFrom(graph, nodeId, null);
+            for (const linkId of outLinks) {
+                const link = graph.links[linkId];
+                if (link && !visited.has(link.toNode)) {
+                    visited.add(link.toNode);
+                    queue.push(link.toNode);
+                }
+            }
+        }
+
+        return result;
+    };
+
+    // note: does not include the starting node itself
+    export const deepDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socket: SocketId | null = null): NodeId[] => {
+        const result: NodeId[] = [];
+        const visited = new Set<NodeId>();
+        visited.add(id); // don't include the starting node
+
+        const dfs = (nodeId: NodeId) => {
+            const outLinks = linksFrom(graph, nodeId, nodeId === id ? socket : null);
+            for (const linkId of outLinks) {
+                const link = graph.links[linkId];
+                if (link && !visited.has(link.toNode)) {
+                    visited.add(link.toNode);
+                    result.push(link.toNode);
+                    dfs(link.toNode);
+                }
+            }
+        };
+
+        dfs(id);
+        return result;
+    };
     // export const wideUpstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
     // export const deepUpstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socketId: SocketId | null = null): NodeId[] => {};
+
+    export const wideDownstreamPathsOf = <N>(graph: GraphOf<N>, id: NodeId, socket: SocketId | null = null): LinkId[] => {
+        const result: LinkId[] = [];
+        const visited = new Set<LinkId>();
+        const queue = linksFrom(graph, id, socket);
+
+        while (queue.length > 0) {
+            const linkId = queue.shift()!;
+            if (visited.has(linkId)) continue;
+            visited.add(linkId);
+            result.push(linkId);
+
+            const link = graph.links[linkId];
+            if (!link) continue;
+
+            // Get all outgoing links from the target node
+            const nextLinks = linksFrom(graph, link.toNode, null);
+            for (const nextLinkId of nextLinks) {
+                if (!visited.has(nextLinkId)) {
+                    queue.push(nextLinkId);
+                }
+            }
+        }
+
+        return result;
+    };
+
+    export const deepDownstreamPathsOf = <N>(graph: GraphOf<N>, id: NodeId, socket: SocketId | null = null): LinkId[] => {
+        return [];
+    };
 
     //#endregion
     //#region Query/Links

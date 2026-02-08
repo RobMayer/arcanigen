@@ -1,8 +1,10 @@
-import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, ReactNode, RefObject, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { useGraphId } from "./graphId";
 import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../definitions/betterTypes";
+import { SVGObject } from "../types";
+import { Resolver } from "../util/resolver";
 
 // will eventually hold a container for node-type specific logic
 
@@ -22,7 +24,7 @@ export namespace Project {
         inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         // we need graph-level properties, and possibly a stable list of subgraphs
-        evalCache: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [socketId: SocketId]: DataTypes.AnyEval } } };
+        cache: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [socketId: SocketId]: DataTypes.AnyEval } } };
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -74,11 +76,11 @@ export namespace Project {
             root: ["RESULT"],
         });
 
-        const evalCache = useFastContextMember<TheType["evalCache"]>({});
+        const cache = useFastContextMember<TheType["cache"]>({});
 
         const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string } | null>(null);
 
-        const value = useMemo(() => ({ evalCache, nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
+        const value = useMemo(() => ({ cache, nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -137,6 +139,9 @@ export namespace Project {
                         },
                     },
                 };
+
+                // const resolver = makeResolver()
+
                 ctx.nodes.notify();
             };
 
@@ -206,6 +211,7 @@ export namespace Project {
                         ctx.links.notify();
                         ctx.linkList.notify();
                     }
+                    // nothing needs to be *removed* from the cache, but upstream of the link needs to be regenerated.
                 }
             };
 
@@ -332,17 +338,5 @@ export namespace Project {
         }, [links, nodes, inputs, outputs, users]);
 
         return value;
-    };
-
-    export const useResolved = <K extends DataTypes.Kind>(nodeId: ArcaneGraph.NodeId, socketId: SocketId): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
-        const ctx = useContext(CTX)!;
-
-        const graphId = useGraphId();
-
-        const selector = useCallback(() => {
-            return ctx.evalCache.get()?.[graphId]?.[nodeId]?.[socketId];
-        }, [ctx, graphId, nodeId, socketId]);
-
-        return (useSyncExternalStore(ctx.evalCache.subscribe, selector) ?? null) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
     };
 }
