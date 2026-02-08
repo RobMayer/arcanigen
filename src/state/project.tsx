@@ -1,20 +1,19 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
-import { AnyDefinition, BaseDefinition, NodeType } from "../definitions/nodes/abstractNode";
-import { NodeTypeRegistry } from "../definitions";
-import { DataTypes, SocketTypes } from "../definitions/datatypes";
 import { useGraphId } from "./graphId";
+import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../definitions/betterTypes";
 
 // will eventually hold a container for node-type specific logic
 
 export namespace Project {
-    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Types };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind };
     type GraphId = string;
+    type SocketId = string;
     type XY = { x: number; y: number };
 
     type TheType = {
-        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> } };
+        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
         nodeList: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
         linkList: { [graphId: GraphId]: ArcaneGraph.LinkId[] };
@@ -23,6 +22,7 @@ export namespace Project {
         inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         // we need graph-level properties, and possibly a stable list of subgraphs
+        // evalCache: { [key: `${GraphId}|${ArcaneGraph.NodeId}|${SocketId}`]: DataTypes.AnyEval };
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -35,16 +35,17 @@ export namespace Project {
         const nodes = useFastContextMember<TheType["nodes"]>({
             root: {
                 RESULT: {
-                    ...NodeTypeRegistry.get("result").create({}, "RESULT"),
+                    ...NodeTypes.get("result").create({}, "RESULT"),
                 },
                 test: {
-                    ...NodeTypeRegistry.get("circle").create({}, "test"),
+                    ...NodeTypes.get("circle").create({}, "test"),
                 },
             },
         });
         const nodeList = useFastContextMember<TheType["nodeList"]>({
             root: ["RESULT", "test"],
         });
+        // const evalCache = useFastContextMember<TheType["evalCache"]>({});
 
         const links = useFastContextMember<TheType["links"]>({
             root: {},
@@ -73,7 +74,7 @@ export namespace Project {
             root: ["RESULT"],
         });
 
-        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Types; scope: string } | null>(null);
+        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string } | null>(null);
 
         const value = useMemo(() => ({ nodes, nodeList, links, linkList, positions, users, inputs, outputs, pendingConnection }), []);
 
@@ -118,7 +119,7 @@ export namespace Project {
         }, [ctx, id, graphId]);
 
         const methods = useMemo(() => {
-            const update = <P extends DataTypes.PayloadFor<BaseDefinition>>(data: Partial<P>) => {
+            const update = <P extends NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>(data: Partial<P>) => {
                 const prev = ctx.nodes.ref.current[graphId][id].payload as P;
 
                 ctx.nodes.ref.current = {
@@ -175,7 +176,7 @@ export namespace Project {
 
         return useMemo(() => {
             // ! Important: this assumes that 'from' and 'to' have already been normalized
-            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Keys) => {
+            const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Kind) => {
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
                 const [{ nodes, links }, newLink] = ArcaneGraph.connect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
                 if (newLink) {
@@ -206,7 +207,7 @@ export namespace Project {
                 }
             };
 
-            const addNodeByType = (nodeType: NodeType, params: Partial<DataTypes.PayloadFor<AnyDefinition>>, position?: { x: number; y: number }) => {
+            const addNodeByType = (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) => {
                 const newNode = nodeType.create(params);
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
                 const { nodes } = ArcaneGraph.importNodes(oldGraph, [newNode]);

@@ -1,20 +1,18 @@
 import { CSSProperties, ReactNode, useCallback, useMemo } from "react";
-import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import styled from "styled-components";
 import { Socket } from "./socket";
-import { AnyDefinition } from "../../definitions/nodes/abstractNode";
-import { DataTypes, SocketTypes } from "../../definitions/datatypes";
 import { Icon, ICONS } from "../../components/Icon";
 import { Session } from "../../state/session";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
+import { NodeDefinitions, SocketTypes } from "../../definitions/betterTypes";
 
 const SlotBase = styled.div`
     display: flex;
     gap: 6px;
 `;
 
-export const SocketIn = <D extends AnyDefinition, K extends keyof D["inputs"] & string>({
+export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"] & string>({
     node,
     socketId,
     type,
@@ -23,9 +21,9 @@ export const SocketIn = <D extends AnyDefinition, K extends keyof D["inputs"] & 
 }: {
     children?: ReactNode;
     label?: ReactNode;
-    node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>;
+    node: NodeDefinitions.NodeFor<D>;
     socketId: K;
-    type: SocketTypes.SocketTypeFor<DataTypes.KeyOf<D["inputs"][K]>>;
+    type: SocketTypes.ForDataType<D["inputs"][K]>;
 }) => {
     return (
         <SlotBase>
@@ -35,7 +33,7 @@ export const SocketIn = <D extends AnyDefinition, K extends keyof D["inputs"] & 
     );
 };
 
-export const SocketOut = <D extends AnyDefinition, K extends keyof D["outputs"] & string>({
+export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["outputs"] & string>({
     node,
     socketId,
     type,
@@ -44,9 +42,9 @@ export const SocketOut = <D extends AnyDefinition, K extends keyof D["outputs"] 
 }: {
     children?: ReactNode;
     label?: ReactNode;
-    node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<D>>;
+    node: NodeDefinitions.NodeFor<D>;
     socketId: K;
-    type: SocketTypes.SocketTypeFor<DataTypes.KeyOf<D["outputs"][K]>>;
+    type: SocketTypes.ForDataType<D["outputs"][K]>;
 }) => {
     return (
         <SlotBase>

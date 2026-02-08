@@ -1,37 +1,36 @@
-import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { BuiltNodeOf, NodeType } from "./abstractNode";
 import { nanoid } from "nanoid";
-import { DataType, DataTypes } from "../datatypes";
 import { ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
 import { ReactNode, useCallback } from "react";
-import { Project } from "../../state/project";
+
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import LengthInput from "../../components/inputs/LengthInput";
 import ColorHexInput from "../../components/inputs/ColorHexInput";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
+import { Project } from "../../state/project";
 
 export type ResultDefinition = {
     outputs: never;
     inputs: {
-        input: DataType<"shape">;
-        w: DataType<"length">;
-        h: DataType<"length">;
-        x: DataType<"length">;
-        y: DataType<"length">;
-        color: DataType<"color">;
+        input: DataTypes.Use<"shape">;
+        w: DataTypes.Use<"length">;
+        h: DataTypes.Use<"length">;
+        x: DataTypes.Use<"length">;
+        y: DataTypes.Use<"length">;
+        color: DataTypes.Use<"color">;
     };
     payload: {
-        label: DataType<"string">;
-        w: DataType<"length">;
-        h: DataType<"length">;
-        x: DataType<"length">;
-        y: DataType<"length">;
-        color: DataType<"color">;
+        label: DataTypes.Use<"string">;
+        w: DataTypes.Use<"length">;
+        h: DataTypes.Use<"length">;
+        x: DataTypes.Use<"length">;
+        y: DataTypes.Use<"length">;
+        color: DataTypes.Use<"color">;
     };
 };
 
-const create = (input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: string = nanoid()): BuiltNodeOf<ResultDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"result", ResultDefinition> => {
     return {
         in: {
             input: null,
@@ -56,9 +55,9 @@ const create = (input: Partial<DataTypes.PayloadFor<ResultDefinition>>, id: stri
     };
 };
 
-const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<DataTypes.PayloadFor<ResultDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -90,15 +89,15 @@ const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.Payloa
     );
 };
 
-const dependsOn = <K extends string | number | symbol>(node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] => {
+const dependsOn = <K extends string | number | symbol>(node: NodeDefinitions.NodeFor<ResultDefinition>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] => {
     return [];
 };
-const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<ResultDefinition>>, socket: string | number | symbol, context: Resolver.Context): DataTypes.AnyEvaluation | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<ResultDefinition>, socket: string | number | symbol, context: Resolver.Context): DataTypes.AnyEval | null => {
     // this should never be reached.
     return null;
 };
 
-export const ResultNodeType: NodeType<ResultDefinition> = {
+export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     type: "result",
     displayName: "Result",
     defaultLabel: "Result",

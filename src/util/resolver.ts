@@ -1,9 +1,7 @@
-import { NodeTypeRegistry } from "../definitions";
-import { DataTypes } from "../definitions/datatypes";
-import { AnyDefinition, DefinitionOf } from "../definitions/nodes/abstractNode";
 import { SVGObject } from "../types";
 import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
 
 export namespace Resolver {
 
@@ -13,7 +11,7 @@ export namespace Resolver {
 
     type GraphId = string;
     export type State = {
-        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>> } };
+        nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
         links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
         users: { [graphId: GraphId]: { node: ArcaneGraph.NodeId; scope: GraphId }[] };
         inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
@@ -22,9 +20,9 @@ export namespace Resolver {
 
     export type Context = {
         graphId: string;
-        define: (def: DataTypes.EvaluationBy<"shape">) => void;
-        resolve: <K extends DataTypes.Keys>(nodeId: string, inSocket: string) => DataTypes.EvaluationBy<K> | null;
-        subgraph: (graphId: string, inputs: { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null }) => { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null };
+        define: (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => void;
+        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
     };
 
     export type RootResult = {
@@ -42,14 +40,14 @@ export namespace Resolver {
     export const evaluateRootResult = (state: State): RootResult => {
         const definitions: SVGObject[] = [];
 
-        const define = (def: DataTypes.EvaluationBy<"shape">) => {
+        const define = (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => {
             definitions.push(def.data);
         };
 
         const context: Context = {
             graphId: "root",
             define,
-            resolve: <K extends DataTypes.Keys>(nodeId: string, inSocket: string): DataTypes.EvaluationBy<K> | null => {
+            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const links = ArcaneGraph.linksTo({ nodes: state.nodes["root"], links: state.links["root"] }, nodeId, inSocket);
                 if (links.length === 0) {
                     return null;
@@ -63,13 +61,13 @@ export namespace Resolver {
             },
             // todo: work in progress.
             // resolves a subgraph by providing the already-resolved inputs to that subgraph...
-            subgraph: (graphId: string, inputs: { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null }): { [key: string]: DataTypes.EvaluationBy<DataTypes.Keys> | null } => {
+            subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
                 return {};
             },
         };
 
         // Get the RESULT node directly and resolve its inputs
-        const resultNode = state.nodes["root"]?.["RESULT"] as ArcaneGraph.NodeOf<DataTypes.PayloadFor<DefinitionOf<NodeTypeRegistry.NodeTypeBy<"result">>>>;
+        const resultNode = state.nodes["root"]?.["RESULT"] as unknown as NodeDefinitions.NodeFor<NodeTypes.DefinitionOf<NodeTypes.Use<"result">>>;
         if (!resultNode) {
             return {
                 canvas: { width: 800, height: 800, originX: 0, originY: 0, background: "#ffffffff" },
@@ -97,16 +95,16 @@ export namespace Resolver {
         };
     };
 
-    const evaluateNodeOutput = <K extends DataTypes.Keys>(state: State, graphId: GraphId, nodeId: ArcaneGraph.NodeId, outSocket: string, context: Context): DataTypes.EvaluationBy<K> | null => {
+    const evaluateNodeOutput = <K extends DataTypes.Kind>(state: State, graphId: GraphId, nodeId: ArcaneGraph.NodeId, outSocket: string, context: Context): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
         const node = state.nodes[graphId][nodeId];
         if (!node) {
             return null;
         }
-        const nodeType = NodeTypeRegistry.get(node.type);
-        if (!nodeType) {
+        const evaluate = NodeTypes.getEvaluator(node.type);
+        if (!evaluate) {
             return null;
         }
 
-        return nodeType.evaluate(node, outSocket, context) as DataTypes.EvaluationBy<K> | null;
+        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
     };
 }

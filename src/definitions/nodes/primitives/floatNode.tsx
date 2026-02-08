@@ -1,29 +1,28 @@
 import { nanoid } from "nanoid";
 import { ICONS } from "../../../components/Icon";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
-import { DataType, DataTypes } from "../../datatypes";
-import { BuiltNodeOf, NodeType } from "../abstractNode";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
-import { Project } from "../../../state/project";
-import { TypicalNode } from "../../../features/nodeview/node";
-import DecimalInput from "../../../components/inputs/DecimalInput";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 
-type FloatDefinition = {
+import { TypicalNode } from "../../../features/nodeview/node";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import DecimalInput from "../../../components/inputs/DecimalInput";
+import { Project } from "../../../state/project";
+
+export type FloatDefinition = {
     inputs: {
-        value: DataType<"float">;
+        value: DataTypes.Use<"float">;
     };
     outputs: {
-        output: DataType<"float">;
+        output: DataTypes.Use<"float">;
     };
     payload: {
-        label: DataType<"string">;
-        value: DataType<"float">;
+        label: DataTypes.Use<"string">;
+        value: DataTypes.Use<"float">;
     };
 };
 
-const create = (input: Partial<DataTypes.PayloadFor<FloatDefinition>>, id: string = nanoid()): BuiltNodeOf<FloatDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"float", FloatDefinition> => {
     return {
         id,
         in: {
@@ -40,9 +39,9 @@ const create = (input: Partial<DataTypes.PayloadFor<FloatDefinition>>, id: strin
     };
 };
 
-const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<FloatDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<DataTypes.PayloadFor<FloatDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -59,11 +58,12 @@ const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.Payloa
         </TypicalNode>
     );
 };
-const dependsOn = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<FloatDefinition>>, outSocket: "output"): "value"[] => {
+
+const dependsOn = (node: NodeDefinitions.NodeFor<FloatDefinition>, outSocket: "output"): "value"[] => {
     if (outSocket === "output") return ["value"];
     return [];
 };
-const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<FloatDefinition>>, socket: "output", context: Resolver.Context): DataTypes.AnyEvaluation | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<FloatDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         return {
             kind: "float",
@@ -73,7 +73,8 @@ const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<FloatDefinition>
     return null;
 };
 
-export const FloatPrimitiveType: NodeType<FloatDefinition> = {
+export const FloatPrimitiveType: NodeTypes.Type<"float", FloatDefinition> = {
+    type: "float",
     displayName: "Float",
     defaultLabel: "Float",
     iconNode: ICONS.Bolt,
@@ -82,6 +83,5 @@ export const FloatPrimitiveType: NodeType<FloatDefinition> = {
     evaluate,
     Controls,
     dependsOn,
-    type: "float",
     create,
 };

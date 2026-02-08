@@ -1,29 +1,28 @@
 import { nanoid } from "nanoid";
 import { ICONS } from "../../../components/Icon";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
-import { DataType, DataTypes } from "../../datatypes";
-import { BuiltNodeOf, NodeType } from "../abstractNode";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
-import { Project } from "../../../state/project";
+
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import AngleInput from "../../../components/inputs/AngleInput";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { Project } from "../../../state/project";
 
-type AngleDefinition = {
+export type AngleDefinition = {
     inputs: {
-        value: DataType<"angle">;
+        value: DataTypes.Use<"angle">;
     };
     outputs: {
-        output: DataType<"angle">;
+        output: DataTypes.Use<"angle">;
     };
     payload: {
-        label: DataType<"string">;
-        value: DataType<"angle">;
+        label: DataTypes.Use<"string">;
+        value: DataTypes.Use<"angle">;
     };
 };
 
-const create = (input: Partial<DataTypes.PayloadFor<AngleDefinition>>, id: string = nanoid()): BuiltNodeOf<AngleDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angle", AngleDefinition> => {
     return {
         id,
         in: {
@@ -40,9 +39,9 @@ const create = (input: Partial<DataTypes.PayloadFor<AngleDefinition>>, id: strin
     };
 };
 
-const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AngleDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<DataTypes.PayloadFor<AngleDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -60,11 +59,11 @@ const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.Payloa
     );
 };
 
-const dependsOn = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AngleDefinition>>, outSocket: "output"): "value"[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<AngleDefinition>, outSocket: "output"): "value"[] => {
     if (outSocket === "output") return ["value"];
     return [];
 };
-const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AngleDefinition>>, socket: "output", context: Resolver.Context): DataTypes.AnyEvaluation | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         return {
             kind: "angle",
@@ -74,7 +73,7 @@ const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AngleDefinition>
     return null;
 };
 
-export const AnglePrimitiveType: NodeType<AngleDefinition> = {
+export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     type: "angle",
     displayName: "Angle",
     defaultLabel: "Angle",

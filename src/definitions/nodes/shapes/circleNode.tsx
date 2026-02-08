@@ -1,13 +1,10 @@
 import { nanoid } from "nanoid";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
-import { BuiltNodeOf, NodeType } from "../abstractNode";
-import { DataType, DataTypes } from "../../datatypes";
 import { ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
-import { Project } from "../../../state/project";
+
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import LengthInput from "../../../components/inputs/LengthInput";
@@ -15,55 +12,57 @@ import ColorHexInput from "../../../components/inputs/ColorHexInput";
 import AngleInput from "../../../components/inputs/AngleInput";
 import TextInput from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { Project } from "../../../state/project";
 
-type CircleDefinition = {
+export type CircleDefinition = {
     inputs: {
-        radius: DataType<"length">;
+        radius: DataTypes.Use<"length">;
 
         // stroke
-        strokeWidth: DataType<"length">;
-        strokeColor: DataType<"color">;
-        strokeCap: DataType<"enum">;
-        strokeDash: DataType<"tokens<length>">;
-        strokeDashOffset: DataType<"length">;
+        strokeWidth: DataTypes.Use<"length">;
+        strokeColor: DataTypes.Use<"color">;
+        strokeCap: DataTypes.Use<"enum">;
+        strokeDash: DataTypes.Use<"tokens<length>">;
+        strokeDashOffset: DataTypes.Use<"length">;
         // fill
-        fillColor: DataType<"color">;
+        fillColor: DataTypes.Use<"color">;
 
         // transforms
-        positionMode: DataType<"enum">;
-        positionX: DataType<"length">;
-        positionY: DataType<"length">;
-        positionRadius: DataType<"length">;
-        positionTheta: DataType<"angle">;
-        rotation: DataType<"angle">;
+        positionMode: DataTypes.Use<"enum">;
+        positionX: DataTypes.Use<"length">;
+        positionY: DataTypes.Use<"length">;
+        positionRadius: DataTypes.Use<"length">;
+        positionTheta: DataTypes.Use<"angle">;
+        rotation: DataTypes.Use<"angle">;
     };
     outputs: {
-        output: DataType<"shape">;
+        output: DataTypes.Use<"shape">;
     };
     payload: {
-        label: DataType<"string">;
-        radius: DataType<"length">;
+        label: DataTypes.Use<"string">;
+        radius: DataTypes.Use<"length">;
 
         // stroke
-        strokeWidth: DataType<"length">;
-        strokeColor: DataType<"color">;
-        strokeCap: DataType<"enum">;
-        strokeDash: DataType<"tokens<length>">;
-        strokeDashOffset: DataType<"length">;
+        strokeWidth: DataTypes.Use<"length">;
+        strokeColor: DataTypes.Use<"color">;
+        strokeCap: DataTypes.Use<"enum">;
+        strokeDash: DataTypes.Use<"tokens<length>">;
+        strokeDashOffset: DataTypes.Use<"length">;
         // fill
-        fillColor: DataType<"color">;
+        fillColor: DataTypes.Use<"color">;
 
         //transforms
-        positionMode: DataType<"enum">;
-        positionX: DataType<"length">;
-        positionY: DataType<"length">;
-        positionRadius: DataType<"length">;
-        positionTheta: DataType<"angle">;
-        rotation: DataType<"angle">;
+        positionMode: DataTypes.Use<"enum">;
+        positionX: DataTypes.Use<"length">;
+        positionY: DataTypes.Use<"length">;
+        positionRadius: DataTypes.Use<"length">;
+        positionTheta: DataTypes.Use<"angle">;
+        rotation: DataTypes.Use<"angle">;
     };
 };
 
-const create = (input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: string = nanoid()): BuiltNodeOf<CircleDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"circle", CircleDefinition> => {
     return {
         id,
         in: {
@@ -111,9 +110,9 @@ const create = (input: Partial<DataTypes.PayloadFor<CircleDefinition>>, id: stri
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 
-const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<DataTypes.PayloadFor<CircleDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -193,11 +192,11 @@ const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.Payloa
     );
 };
 
-const dependsOn = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<CircleDefinition>, outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] => {
     return [];
 };
 
-const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition>>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEvaluation | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
         if (!radius) {
@@ -244,10 +243,10 @@ const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition
         // Convert stroke dash to pixel values
         const strokeDasharray = strokeDash
             ? strokeDash
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .map((token) => Length.Emptyable.asNumber(token as Length.Type) ?? 0)
-                  .join(" ")
+                .split(/\s+/)
+                .filter(Boolean)
+                .map((token) => Length.Emptyable.asNumber(token as Length.Type) ?? 0)
+                .join(" ")
             : undefined;
 
         const attributes: Record<string, string> = {
@@ -306,7 +305,7 @@ const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<CircleDefinition
     return null;
 };
 
-export const CircleNodeType: NodeType<CircleDefinition> = {
+export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     type: "circle",
     displayName: "Circle",
     defaultLabel: "Circle",

@@ -1,29 +1,28 @@
 import { nanoid } from "nanoid";
 import { ICONS } from "../../../components/Icon";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
-import { DataType, DataTypes } from "../../datatypes";
-import { BuiltNodeOf, NodeType } from "../abstractNode";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
-import { Project } from "../../../state/project";
+
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import IntegerInput from "../../../components/inputs/IntegerInput";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import DecimalInput from "../../../components/inputs/DecimalInput";
+import { Project } from "../../../state/project";
 
-type IntegerDefinition = {
+export type IntegerDefinition = {
     inputs: {
-        value: DataType<"integer">;
+        value: DataTypes.Use<"integer">;
     };
     outputs: {
-        output: DataType<"integer">;
+        output: DataTypes.Use<"integer">;
     };
     payload: {
-        label: DataType<"string">;
-        value: DataType<"integer">;
+        label: DataTypes.Use<"string">;
+        value: DataTypes.Use<"integer">;
     };
 };
 
-const create = (input: Partial<DataTypes.PayloadFor<IntegerDefinition>>, id: string = nanoid()): BuiltNodeOf<IntegerDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"integer", IntegerDefinition> => {
     return {
         id,
         in: {
@@ -40,9 +39,9 @@ const create = (input: Partial<DataTypes.PayloadFor<IntegerDefinition>>, id: str
     };
 };
 
-const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<IntegerDefinition>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<DataTypes.PayloadFor<IntegerDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<IntegerDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -54,17 +53,17 @@ const Controls = ({ node, methods }: { node: ArcaneGraph.NodeOf<DataTypes.Payloa
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"value"} type={"integer"} label={"Value"}>
-                <IntegerInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
+                <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
             </SocketIn>
         </TypicalNode>
     );
 };
 
-const dependsOn = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<IntegerDefinition>>, outSocket: "output"): "value"[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<IntegerDefinition>, outSocket: "output"): "value"[] => {
     if (outSocket === "output") return ["value"];
     return [];
 };
-const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<IntegerDefinition>>, socket: "output", context: Resolver.Context): DataTypes.AnyEvaluation | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         return {
             kind: "integer",
@@ -74,7 +73,8 @@ const evaluate = (node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<IntegerDefinitio
     return null;
 };
 
-export const IntegerPrimitiveType: NodeType<IntegerDefinition> = {
+export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> = {
+    type: "integer",
     displayName: "Integer",
     defaultLabel: "Integer",
     iconNode: ICONS.Bolt,
@@ -83,6 +83,5 @@ export const IntegerPrimitiveType: NodeType<IntegerDefinition> = {
     evaluate,
     Controls,
     dependsOn,
-    type: "integer",
     create,
 };

@@ -3,26 +3,19 @@ import styled from "styled-components";
 import { DragMove } from "../../components/wrappers/DragMove";
 import { Project } from "../../state/project";
 import { Session } from "../../state/session";
-import { DataTypes } from "../../definitions/datatypes";
-import { AnyDefinition, BaseDefinition } from "../../definitions/nodes/abstractNode";
-import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { Icon, ICONS } from "../../components/Icon";
 import TextInput from "../../components/inputs/TextInput";
-import { NodeTypeRegistry } from "../../definitions";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { NODETITLE_FLAVOURS } from "../../util/misc";
 import { useGraphId } from "../../state/graphId";
+import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 
 export const GraphNode = ({ nodeId }: { nodeId: string }) => {
     const [node, nodeMethods] = Project.useNode(nodeId);
-    const { type: nodeTypeId } = node;
-    const nodeType = useMemo(() => {
-        return NodeTypeRegistry.get(nodeTypeId);
-    }, [nodeTypeId]);
-    if (!nodeType) {
-        return null;
-    }
-    return <nodeType.Controls node={node} methods={nodeMethods} />;
+    const Controls = useMemo(() => NodeTypes.getControls(node.type), [node.type]);
+    if (!Controls) return null;
+
+    return <Controls node={node} methods={nodeMethods} />;
 };
 
 export const TypicalNode = styled(
@@ -33,7 +26,7 @@ export const TypicalNode = styled(
         children,
     }: {
         methods: ReturnType<typeof Project.useNode>[1];
-        node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<AnyDefinition>>;
+        node: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
         className?: string;
         children?: ReactNode;
     }) => {
@@ -89,7 +82,7 @@ export const TypicalNode = styled(
             <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
                 <NodeTitle
                     handleRef={handleRef}
-                    node={node as ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>}
+                    node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
                     isOpen={!isClosed}
                     toggleOpen={toggle}
                     setLabel={setLabel}
@@ -138,7 +131,7 @@ const NodeTitle = styled(
     }: {
         className?: string;
         handleRef: Ref<HTMLDivElement>;
-        node: ArcaneGraph.NodeOf<DataTypes.PayloadFor<BaseDefinition>>;
+        node: NodeDefinitions.NodeFor<NodeDefinitions.Base>;
         isOpen: boolean;
         toggleOpen: () => void;
         setLabel: (v: string) => void;
@@ -147,7 +140,7 @@ const NodeTitle = styled(
         const [isEditing, setIsEditing] = useState<boolean>(false);
 
         const nodeType = useMemo(() => {
-            return NodeTypeRegistry.get(node.type);
+            return NodeTypes.get(node.type);
         }, [node.type]);
 
         const startEdit = useCallback(() => {

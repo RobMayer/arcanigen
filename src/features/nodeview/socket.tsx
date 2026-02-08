@@ -3,21 +3,20 @@ import { Project } from "../../state/project";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
-import { SOCKETTPYE_FLAVOURS } from "../../util/misc";
-import { DataTypes, SocketTypes } from "../../definitions/datatypes";
+import { DataTypes, SocketTypes } from "../../definitions/betterTypes";
 
 type GraphConnectionControls = {
-    start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => void;
-    finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => void;
+    start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => void;
+    finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => void;
     clear: () => void;
 };
 
 // Given two socket types, find the concrete datatype they agree on
 // Returns null if incompatible
 // Priority: prefer the output's concrete type if available, otherwise first common type
-const agreeOnDataType = (outType: SocketTypes.Types, inType: SocketTypes.Types): DataTypes.Keys | null => {
-    const outAccepts: readonly DataTypes.Keys[] = SocketTypes.MAPPINGS[outType];
-    const inAccepts: readonly DataTypes.Keys[] = SocketTypes.MAPPINGS[inType];
+const agreeOnDataType = (outType: SocketTypes.Kind, inType: SocketTypes.Kind): DataTypes.Kind | null => {
+    const outAccepts: readonly DataTypes.Kind[] = SocketTypes.COMPAT[outType];
+    const inAccepts: readonly DataTypes.Kind[] = SocketTypes.COMPAT[inType];
 
     // If out is concrete (single type), check if in accepts it
     if (outAccepts.length === 1 && inAccepts.includes(outAccepts[0])) {
@@ -48,13 +47,13 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
     const connectionContextValue = useMemo(() => {
         let pending: null | Project.PendingConnection;
         return {
-            start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => {
+            start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => {
                 // todo: parametize scope properly...
                 const p = { node: nodeId, socket: socketId, side, type, scope: "root" };
                 setPendingConnection(p);
                 pending = p;
             },
-            finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Types) => {
+            finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => {
                 if (pending !== null && pending.side !== side) {
                     // normalize: out -> in
                     const [fromNode, toNode, fromSocket, toSocket] = pending.side === "out" ? [pending.node, nodeId, pending.socket, socketId] : [nodeId, pending.node, socketId, pending.socket];
@@ -87,7 +86,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
 };
 
 export const Socket = styled(
-    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: SocketTypes.Types; connected?: boolean }) => {
+    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: SocketTypes.Kind; connected?: boolean }) => {
         const socketRef = useRef<HTMLDivElement>(null);
 
         const [pendingConnection] = Project.usePendingConnection();
@@ -153,7 +152,7 @@ export const Socket = styled(
                 data-socketside={side}
                 data-sockettype={type}
                 data-state={state}
-                data-flavour={SOCKETTPYE_FLAVOURS[type]}
+                data-flavour={SocketTypes.FLAVOURS[type]}
             />
         );
     },
@@ -192,7 +191,7 @@ export const Socket = styled(
     }
 `;
 
-const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: SocketTypes.Types }) => {
+const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: SocketTypes.Kind }) => {
     const style = useMemo(
         () =>
             ({
@@ -243,7 +242,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} data-flavour={SOCKETTPYE_FLAVOURS[type]} />
+                <path ref={pathRef} data-flavour={SocketTypes.FLAVOURS[type]} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>

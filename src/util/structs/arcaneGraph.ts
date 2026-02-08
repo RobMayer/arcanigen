@@ -1,6 +1,5 @@
 import { nanoid } from "nanoid";
-import { NodeTypeRegistry } from "../../definitions";
-import { DataTypes } from "../../definitions/datatypes";
+import { DataTypes, NodeTypes } from "../../definitions/betterTypes";
 
 export namespace ArcaneGraph {
     // aliases just for clarity of purpose when used
@@ -13,7 +12,7 @@ export namespace ArcaneGraph {
 
     export type NodeOf<P> = {
         id: NodeId;
-        type: NodeTypeRegistry.Types;
+        type: NodeTypes.Key;
         // parent: NodeId | null; // for use with containers - which container, if any, do I belong to? - unsure if this is a good idea, or if I should just use spacial stuff
         // children: NodeId[]; // for user with containers - which nodes are contained by this container? - unsure if this is a good idea, or if I should just use spacial stuff
         in: {
@@ -27,7 +26,7 @@ export namespace ArcaneGraph {
 
     export type Link = {
         id: LinkId;
-        type: DataTypes.Keys;
+        type: DataTypes.Kind;
         fromNode: NodeId;
         toNode: NodeId;
         fromSocket: SocketId;
@@ -459,7 +458,7 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: DataTypes.Keys,
+        type: DataTypes.Kind,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null] => {
         const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
@@ -471,7 +470,7 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: DataTypes.Keys,
+        type: DataTypes.Kind,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null, removed: RemovedOf<N>] => {
         const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });

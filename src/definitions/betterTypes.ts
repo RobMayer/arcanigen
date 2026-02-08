@@ -5,9 +5,14 @@ import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
 import { Length } from "./datatypes/length";
 import { IconDefinition } from "../components/Icon";
-import { Project } from "../state/project";
 import { Resolver } from "../util/resolver";
 import { Flavour } from "../components/types";
+import { ResultDefinition, ResultNodeType } from "./nodes/resultNode";
+import { AngleDefinition, AnglePrimitiveType } from "./nodes/primitives/angleNode";
+import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNode";
+import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/integerNode";
+import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
+import { Project } from "../state/project";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -15,7 +20,21 @@ import { Flavour } from "../components/types";
 
 namespace Registries {
     // will eventually replace NodeRegistry
-    export const NODETYPES = {} as const;
+    export type NODEDEFINITIONS = {
+        result: ResultDefinition;
+        circle: CircleDefinition;
+        angle: AngleDefinition;
+        float: FloatDefinition;
+        integer: IntegerDefinition;
+    }
+
+    export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]>} = {
+        result: ResultNodeType,
+        circle: CircleNodeType,
+        float: FloatPrimitiveType,
+        integer: IntegerPrimitiveType,
+        angle: AnglePrimitiveType,
+    } as const;
 
     const _CHECK = NODETYPES satisfies { [K in keyof typeof NODETYPES]: (typeof NODETYPES)[K] extends { type: K } ? (typeof NODETYPES)[K] : never };
 
@@ -65,30 +84,32 @@ namespace Registries {
     };
 }
 
-namespace DataTypes {
+export namespace DataTypes {
     const KIND = Symbol.for("key");
     const TYPE = Symbol.for("type");
 
-    type REG = { [K2 in Kinds]: { [KIND]: K2; [TYPE]: Registries.DATATYPES[K2] } };
+    type REG = { [K2 in Kind]: { [KIND]: K2; [TYPE]: Registries.DATATYPES[K2] } };
 
-    export type Kinds = keyof Registries.DATATYPES & {};
-    export type Use<K extends Kinds> = REG[K];
-    export type Any = Use<Kinds>;
+    export type Kind = keyof Registries.DATATYPES & {};
+    export type Use<K extends Kind> = REG[K];
+    export type Any = Use<Kind>;
 
-    export type KeyOf<E extends Use<Kinds>> = E[typeof KIND];
-    export type TypeOf<E extends Use<Kinds>> = E[typeof TYPE];
+    export type KeyOf<E extends Use<Kind>> = E[typeof KIND];
+    export type TypeOf<E extends Use<Kind>> = E[typeof TYPE];
 
-    export type EvalOf<E extends Use<Kinds>> = { [K in Kinds]: { kind: K; data: REG[K][typeof TYPE] } }[E[typeof KIND]];
+    export type EvalOf<E extends Use<Kind>> = { [K in Kind]: { kind: K; data: REG[K][typeof TYPE] } }[E[typeof KIND]];
     export type AnyEval = EvalOf<Any>;
     export type AnyType = TypeOf<Any>;
 }
 
-namespace NodeDefinitions {
-    export type Any = {
+export namespace NodeDefinitions {
+    export type Any = Registries.NODEDEFINITIONS[keyof Registries.NODEDEFINITIONS];
+
+    export type Generic = {
         inputs: Record<string, DataTypes.Any>;
         outputs: Record<string, DataTypes.Any>;
         payload: Record<string, DataTypes.Any>;
-    };
+    }
 
     // Base definition requiring a label in payload
     export type Base = {
@@ -99,55 +120,76 @@ namespace NodeDefinitions {
         };
     };
 
-    export type PayloadTypeOf<D extends Any> = { [K in keyof D["payload"]]: DataTypes.TypeOf<D["payload"][K]> };
+    export type PayloadTypeOf<D extends Generic> = { [K in keyof D["payload"]]: DataTypes.TypeOf<D["payload"][K]> };
+
+    export type NodeFor<D extends Generic> = ArcaneGraph.NodeOf<PayloadTypeOf<D>>;
 
     // Built node instance from a definition
-    export type BuiltNodeOf<T extends NodeTypes.Keys, D extends Any> = ArcaneGraph.NodeOf<PayloadTypeOf<D>> & {
+    export type BuiltNodeOf<T extends NodeTypes.Key, D extends Generic> = ArcaneGraph.NodeOf<PayloadTypeOf<D>> & {
         type: T;
         in: { [K in keyof D["inputs"]]: string | null };
         out: { [K in keyof D["outputs"]]: string[] };
     };
 }
 
-namespace NodeTypes {
-    export type Keys = keyof typeof Registries.NODETYPES;
-    export interface Type<T extends Keys, D extends NodeDefinitions.Any = NodeDefinitions.Any> {
+export namespace NodeTypes {
+    export type Key = keyof typeof Registries.NODETYPES;
+    export type Use<K extends Key> = typeof Registries.NODETYPES[K];
+    export interface Type<T extends Key, D extends NodeDefinitions.Generic = NodeDefinitions.Generic> {
         type: T;
         displayName: string;
         defaultLabel: string;
         iconNode: IconDefinition;
         iconCard: IconDefinition;
         category: NodeCategory;
-        create(input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string): NodeDefinitions.BuiltNodeOf<T, D>;
-        Controls(props: { node: ArcaneGraph.NodeOf<NodeDefinitions.PayloadTypeOf<D>>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode;
-        evaluate(node: ArcaneGraph.NodeOf<NodeDefinitions.PayloadTypeOf<D>>, socket: keyof D["outputs"], context: Resolver.Context): DataTypes.AnyEval | null;
-        dependsOn(node: ArcaneGraph.NodeOf<NodeDefinitions.PayloadTypeOf<D>>, outSocket: keyof D["outputs"]): (keyof D["inputs"])[];
+        create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
+        Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
+        evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;
+        dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"]) => (keyof D["inputs"])[];
     }
 
-    export type Any = Type<Keys, NodeDefinitions.Any>;
+    export const get = <K extends Key>(key: K): typeof Registries.NODETYPES[K] => {
+        return Registries.NODETYPES[key];
+    };
+
+    export const getControls = <K extends Key>(key: K) => {
+        return Registries.NODETYPES[key].Controls;
+    };
+
+    export const getEvaluator = <K extends Key>(key: K) => {
+        return Registries.NODETYPES[key].evaluate;
+    }
+
+    export const list = () => Object.entries(Registries.NODETYPES);
+    export const keys = () => Object.keys(Registries.NODETYPES);
+    export const entries = () => Object.entries(Registries.NODETYPES);
+
+    export type Any = typeof Registries.NODETYPES[keyof typeof Registries.NODETYPES];
     export type DefinitionOf<T extends Any> = T extends Type<infer _t, infer D> ? D : never;
 }
 
-namespace SocketTypes {
-    export const compatability = {
-        ...(Object.keys(Registries.DATATYPE_FLAVOURS) as DataTypes.Kinds[]).reduce<{ [key in DataTypes.Kinds]: DataTypes.Kinds[] }>(
+export namespace SocketTypes {
+    export const FLAVOURS = Registries.SOCKETTYPE_FLAVOURS;
+
+    export const COMPAT = {
+        ...(Object.keys(Registries.DATATYPE_FLAVOURS) as DataTypes.Kind[]).reduce<{ [key in DataTypes.Kind]: DataTypes.Kind[] }>(
             (acc, each) => {
                 acc[each] = [each];
                 return acc;
             },
-            {} as { [key in DataTypes.Kinds]: DataTypes.Kinds[] },
+            {} as { [key in DataTypes.Kind]: DataTypes.Kind[] },
         ),
         ...Registries.SOCKET_COMPAT,
     };
 
-    export type Any = (DataTypes.Kinds | keyof typeof Registries.SOCKET_COMPAT) & {};
-    export type DataTypeOf<K extends Any> = K extends keyof typeof Registries.SOCKET_COMPAT
+    export type Kind = (DataTypes.Kind | keyof typeof Registries.SOCKET_COMPAT) & {};
+    export type DataTypeOf<K extends Kind> = K extends keyof typeof Registries.SOCKET_COMPAT
         ? DataTypes.Use<(typeof Registries.SOCKET_COMPAT)[K][number]>
-        : K extends DataTypes.Kinds
+        : K extends DataTypes.Kind
           ? DataTypes.Use<K>
           : never;
 
     export type ForDataType<K extends DataTypes.Any> = {
-        [S in Any]: DataTypes.KeyOf<K> extends (S extends keyof typeof Registries.SOCKET_COMPAT ? (typeof Registries.SOCKET_COMPAT)[S][number] : S) ? S : never;
-    }[Any];
+        [S in Kind]: DataTypes.KeyOf<K> extends (S extends keyof typeof Registries.SOCKET_COMPAT ? (typeof Registries.SOCKET_COMPAT)[S][number] : S) ? S : never;
+    }[Kind];
 }
