@@ -8,10 +8,12 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import AngleInput from "../../../components/inputs/AngleInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
 export type AngleDefinition = {
     inputs: {
         value: DataTypes.Use<"angle">;
+        wraps: DataTypes.Use<"boolean">;
     };
     outputs: {
         output: DataTypes.Use<"angle">;
@@ -19,6 +21,7 @@ export type AngleDefinition = {
     payload: {
         label: DataTypes.Use<"string">;
         value: DataTypes.Use<"angle">;
+        wraps: DataTypes.Use<"boolean">;
     };
 };
 
@@ -27,6 +30,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, 
         id,
         in: {
             value: null,
+            wraps: null,
         },
         out: {
             output: [],
@@ -34,12 +38,16 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, 
         payload: {
             label: "",
             value: "0",
+            wraps: false,
         },
         type: "angle",
     };
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+
+    const wraps = Project.useResolved(node, "wraps")?.data ?? node.payload.wraps;
+
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>) => {
             methods.update(v);
@@ -53,7 +61,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"value"} type={"angle"} label={"Value"}>
-                <AngleInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
+                <AngleInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
+            </SocketIn>
+            <SocketIn node={node} socketId={"wraps"} type={"boolean"} label={"Wraps"}>
+                <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })} disabled={node.in.wraps !== null} />
             </SocketIn>
         </TypicalNode>
     );

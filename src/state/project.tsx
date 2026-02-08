@@ -24,7 +24,7 @@ export namespace Project {
         inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
         // we need graph-level properties, and possibly a stable list of subgraphs
-        cache: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [socketId: SocketId]: DataTypes.AnyEval } } };
+        cache: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [inSocket: SocketId]: DataTypes.AnyEval } } };
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -339,4 +339,26 @@ export namespace Project {
 
         return value;
     };
+
+    // 
+    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(node: NodeDefinitions.NodeFor<D>, inSocket: K): DataTypes.EvalOf<D["inputs"][K]> | null => {
+        const ctx = useContext(CTX)!;
+        const graphId = useGraphId();
+        const selector = useCallback(() => {
+            const n = ctx.nodes.get()[graphId]?.[node.id];
+            if (!n) { return null };
+            const linkId = n.in[inSocket as string];
+            if (!linkId) {
+                return null;
+            }
+            const link = ctx.links.get()[graphId][linkId];
+            if (!link) {
+                return null;
+            }
+            const { fromNode, fromSocket } = link;
+            return ctx.cache.get()[graphId]?.[fromNode]?.[fromSocket] ?? null;
+        }, [ctx, graphId, node.id, inSocket])
+
+        return useSyncExternalStore(ctx.cache.subscribe, selector) as DataTypes.EvalOf<D["inputs"][K]> | null;
+    }
 }
