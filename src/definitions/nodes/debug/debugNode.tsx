@@ -1,0 +1,66 @@
+import { nanoid } from "nanoid";
+import { ICONS } from "../../../components/Icon";
+import { Resolver } from "../../../util/resolver";
+import { ReactNode } from "react";
+
+import { TypicalNode } from "../../../features/nodeview/node";
+import { SocketIn } from "../../../features/nodeview/slots";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { Project } from "../../../state/project";
+
+export type DebugDefinition = {
+    inputs: {
+        input: DataTypes.Use<"float">;
+    };
+    outputs: never;
+    payload: {
+        label: DataTypes.Use<"string">;
+    };
+};
+
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DebugDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"debug", DebugDefinition> => {
+    return {
+        id,
+        in: {
+            input: null,
+        },
+        out: {},
+        payload: {
+            label: "",
+        },
+        type: "debug",
+    };
+};
+
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const valueToRender = Project.useResolved(node, "input")?.data;
+
+    return (
+        <TypicalNode node={node} methods={methods}>
+            <div>{valueToRender ?? "null"}</div>
+            <SocketIn node={node} socketId={"input"} type={"float"} label={"Value"}>
+                Input
+            </SocketIn>
+        </TypicalNode>
+    );
+};
+
+const dependsOn = (node: NodeDefinitions.NodeFor<DebugDefinition>, outSocket: keyof DebugDefinition["outputs"]): (keyof DebugDefinition["inputs"])[] => {
+    return [];
+};
+const evaluate = (node: NodeDefinitions.NodeFor<DebugDefinition>, socket: keyof DebugDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    return null;
+};
+
+export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {
+    type: "debug",
+    displayName: "Debug",
+    defaultLabel: "Debug",
+    iconNode: ICONS.Bug,
+    iconCard: ICONS.Bug,
+    category: "primitive",
+    evaluate,
+    Controls,
+    dependsOn,
+    create,
+};

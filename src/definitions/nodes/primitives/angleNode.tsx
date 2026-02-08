@@ -45,7 +45,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, 
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-
     const wraps = Project.useResolved(node, "wraps")?.data ?? node.payload.wraps;
 
     const handleUpdate = useCallback(
@@ -64,7 +63,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
                 <AngleInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
             </SocketIn>
             <SocketIn node={node} socketId={"wraps"} type={"boolean"} label={"Wraps"}>
-                <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })} disabled={node.in.wraps !== null} />
+                <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })} disabled={node.in.wraps !== null}>
+                    Wraps value between 0-360
+                </CheckBox>
             </SocketIn>
         </TypicalNode>
     );

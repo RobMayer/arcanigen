@@ -3,10 +3,113 @@ import { FastContextMember, useFastContextMember, useFastContextState } from "..
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { useGraphId } from "./graphId";
 import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../definitions/betterTypes";
-import { SVGObject } from "../types";
 import { Resolver } from "../util/resolver";
 
 // will eventually hold a container for node-type specific logic
+
+type GraphId = string;
+type SocketId = string;
+type CacheType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [outSocket: SocketId]: DataTypes.AnyEval } } };
+type NodesType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
+type LinksType = { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
+
+/** Invalidates cache for a node and all its downstream nodes */
+const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
+    const graph = { nodes: nodes[graphId], links: links[graphId] };
+    const downstream = ArcaneGraph.wideDownstreamOf(graph, nodeId);
+    const toInvalidate = [nodeId, ...downstream];
+
+    const graphCache = cache[graphId];
+    if (!graphCache) return cache;
+
+    let newGraphCache = graphCache;
+    let changed = false;
+    for (const id of toInvalidate) {
+        if (id in newGraphCache) {
+            if (!changed) {
+                newGraphCache = { ...graphCache };
+                changed = true;
+            }
+            delete newGraphCache[id];
+        }
+    }
+
+    if (!changed) return cache;
+    return { ...cache, [graphId]: newGraphCache };
+};
+
+/** Evaluates a single node and caches all its output sockets */
+const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
+    const node = nodes[graphId]?.[nodeId];
+    if (!node) return cache;
+
+    const evaluate = NodeTypes.getEvaluator(node.type);
+    if (!evaluate) return cache;
+
+    // Create a resolve function that uses the cache
+    const resolve = <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+        const targetNode = nodes[graphId]?.[targetNodeId];
+        if (!targetNode) return null;
+
+        const linkId = targetNode.in[inSocket];
+        if (!linkId) return null;
+
+        const link = links[graphId]?.[linkId];
+        if (!link) return null;
+
+        const { fromNode, fromSocket } = link;
+        return (cache[graphId]?.[fromNode]?.[fromSocket] ?? null) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+    };
+
+    const context: Resolver.Context = {
+        graphId,
+        define: () => {}, // definitions are handled at render time
+        resolve,
+        subgraph: () => ({}), // TODO: implement subgraph support
+    };
+
+    // Evaluate all output sockets
+    const outputSockets = Object.keys(node.out);
+    const nodeResults: { [outSocket: string]: DataTypes.AnyEval } = {};
+    let hasResults = false;
+
+    for (const outSocket of outputSockets) {
+        const result = evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context);
+        if (result !== null) {
+            nodeResults[outSocket] = result;
+            hasResults = true;
+        }
+    }
+
+    if (!hasResults) return cache;
+
+    return {
+        ...cache,
+        [graphId]: {
+            ...cache[graphId],
+            [nodeId]: {
+                ...(cache[graphId]?.[nodeId] ?? {}),
+                ...nodeResults,
+            },
+        },
+    };
+};
+
+/** Rebuilds cache for a node and all downstream nodes in topological order */
+const rebuildDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
+    const graph = { nodes: nodes[graphId], links: links[graphId] };
+
+    // Get downstream nodes in BFS order (ensures upstream is processed before downstream)
+    const downstream = ArcaneGraph.wideDownstreamOf(graph, nodeId);
+    const toEvaluate = [nodeId, ...downstream];
+
+    let newCache = cache;
+    for (const id of toEvaluate) {
+        newCache = evaluateAndCacheNode(newCache, nodes, links, graphId, id);
+    }
+
+    return newCache;
+};
 
 export namespace Project {
     export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind };
@@ -39,13 +142,10 @@ export namespace Project {
                 RESULT: {
                     ...NodeTypes.get("result").create({}, "RESULT"),
                 },
-                test: {
-                    ...NodeTypes.get("circle").create({}, "test"),
-                },
             },
         });
         const nodeList = useFastContextMember<TheType["nodeList"]>({
-            root: ["RESULT", "test"],
+            root: ["RESULT"],
         });
         // const evalCache = useFastContextMember<TheType["evalCache"]>({});
 
@@ -60,7 +160,6 @@ export namespace Project {
         const positions = useFastContextMember<TheType["positions"]>({
             root: {
                 RESULT: { x: 0, y: 0 },
-                test: { x: -400, y: 100 },
             },
         });
 
@@ -76,7 +175,9 @@ export namespace Project {
             root: ["RESULT"],
         });
 
-        const cache = useFastContextMember<TheType["cache"]>({});
+        const cache = useFastContextMember<TheType["cache"]>({
+            root: { result: {} },
+        });
 
         const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string } | null>(null);
 
@@ -122,53 +223,21 @@ export namespace Project {
             return ctx.nodes.get()[graphId][id];
         }, [ctx, id, graphId]);
 
-        const methods = useMemo(() => {
+        const methods = useMethods();
+
+        const nodeMethods = useMemo(() => {
             const update = <P extends NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>(data: Partial<P>) => {
-                const prev = ctx.nodes.ref.current[graphId][id].payload as P;
-
-                ctx.nodes.ref.current = {
-                    ...ctx.nodes.ref.current,
-                    [graphId]: {
-                        ...ctx.nodes.ref.current[graphId],
-                        [id]: {
-                            ...ctx.nodes.ref.current[graphId][id],
-                            payload: {
-                                ...prev,
-                                ...data,
-                            },
-                        },
-                    },
-                };
-
-                // const resolver = makeResolver()
-
-                ctx.nodes.notify();
+                return methods.updateNodePayload(id, data);
             };
 
             const remove = () => {
-                const oldGraph = { nodes: ctx.nodes.ref.current[graphId], links: ctx.links.ref.current[graphId] };
-                const [{ nodes, links }] = ArcaneGraph.removeNodes(oldGraph, id);
-
-                const positions = { ...ctx.positions.ref.current[graphId] };
-                delete positions[id];
-
-                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: nodes };
-                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(nodes) };
-                ctx.positions.ref.current = { ...ctx.positions.ref.current, [graphId]: positions };
-                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
-                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
-
-                ctx.nodes.notify();
-                ctx.nodeList.notify();
-                ctx.positions.notify();
-                ctx.links.notify();
-                ctx.linkList.notify();
+                return methods.removeNode(id);
             };
 
             return { update, remove };
-        }, [id, graphId, ctx]);
+        }, [methods, id]);
 
-        return [useSyncExternalStore(ctx.nodes.subscribe, selector), methods] as const;
+        return [useSyncExternalStore(ctx.nodes.subscribe, selector), nodeMethods] as const;
     };
 
     export const usePendingConnection = () => {
@@ -211,7 +280,13 @@ export namespace Project {
                         ctx.links.notify();
                         ctx.linkList.notify();
                     }
-                    // nothing needs to be *removed* from the cache, but upstream of the link needs to be regenerated.
+
+                    // Ensure fromNode is cached first (it may not have been evaluated yet)
+                    // Then rebuild cache for toNode and all downstream nodes
+                    let newCache = evaluateAndCacheNode(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, graphId, fromNode);
+                    newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, graphId, toNode);
+                    ctx.cache.ref.current = newCache;
+                    ctx.cache.notify();
                 }
             };
 
@@ -239,8 +314,36 @@ export namespace Project {
                 ctx.positions.notify();
             };
 
+            const updateNodePayload = <P extends NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>(id: ArcaneGraph.NodeId, data: Partial<P>) => {
+                const prev = ctx.nodes.ref.current[graphId][id].payload as P;
+
+                ctx.nodes.ref.current = {
+                    ...ctx.nodes.ref.current,
+                    [graphId]: {
+                        ...ctx.nodes.ref.current[graphId],
+                        [id]: {
+                            ...ctx.nodes.ref.current[graphId][id],
+                            payload: {
+                                ...prev,
+                                ...data,
+                            },
+                        },
+                    },
+                };
+
+                // Rebuild cache for this node and all downstream nodes
+                ctx.cache.ref.current = rebuildDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, graphId, id);
+
+                ctx.nodes.notify();
+                ctx.cache.notify();
+            };
+
             const removeNode = (nodeId: string) => {
                 const oldGraph = { nodes: ctx.nodes.ref.current[graphId], links: ctx.links.ref.current[graphId] };
+
+                // Find downstream nodes BEFORE removing (they'll need cache rebuild)
+                const downstream = ArcaneGraph.wideDownstreamOf(oldGraph, nodeId);
+
                 const [{ nodes, links }] = ArcaneGraph.removeNodes(oldGraph, nodeId);
 
                 const positions = { ...ctx.positions.ref.current[graphId] };
@@ -252,14 +355,26 @@ export namespace Project {
                 ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
                 ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
 
+                // Invalidate cache for the removed node
+                let newCache = invalidateDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, graphId, nodeId);
+
+                // Rebuild cache for downstream nodes (they lost their upstream connection)
+                for (const downstreamId of downstream) {
+                    if (nodes[downstreamId]) {
+                        newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, graphId, downstreamId);
+                    }
+                }
+                ctx.cache.ref.current = newCache;
+
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
                 ctx.positions.notify();
                 ctx.links.notify();
                 ctx.linkList.notify();
+                ctx.cache.notify();
             };
 
-            return { connect, removeNode, addNodeByType };
+            return { connect, removeNode, updateNodePayload, addNodeByType };
         }, [ctx, graphId]);
     };
 
@@ -340,25 +455,21 @@ export namespace Project {
         return value;
     };
 
-    // 
-    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(node: NodeDefinitions.NodeFor<D>, inSocket: K): DataTypes.EvalOf<D["inputs"][K]> | null => {
+    //
+    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>({ id: nodeId }: NodeDefinitions.NodeFor<D>, inSocket: K): DataTypes.EvalOf<D["inputs"][K]> | null => {
         const ctx = useContext(CTX)!;
         const graphId = useGraphId();
+
         const selector = useCallback(() => {
-            const n = ctx.nodes.get()[graphId]?.[node.id];
-            if (!n) { return null };
-            const linkId = n.in[inSocket as string];
-            if (!linkId) {
-                return null;
-            }
-            const link = ctx.links.get()[graphId][linkId];
-            if (!link) {
-                return null;
-            }
-            const { fromNode, fromSocket } = link;
-            return ctx.cache.get()[graphId]?.[fromNode]?.[fromSocket] ?? null;
-        }, [ctx, graphId, node.id, inSocket])
+            const node = ctx.nodes.ref.current[graphId]?.[nodeId];
+            if (!node) return null;
+            const linkId = node.in[inSocket as string];
+            if (!linkId) return null;
+            const link = ctx.links.ref.current[graphId]?.[linkId];
+            if (!link) return null;
+            return ctx.cache.get()[graphId]?.[link.fromNode]?.[link.fromSocket] ?? null;
+        }, [ctx, graphId, nodeId, inSocket]);
 
         return useSyncExternalStore(ctx.cache.subscribe, selector) as DataTypes.EvalOf<D["inputs"][K]> | null;
-    }
+    };
 }

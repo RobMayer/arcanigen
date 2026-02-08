@@ -8,8 +8,8 @@ import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
 import { GraphConnectionProvider } from "./nodeview/socket";
 import { GraphNode } from "./nodeview/node";
-import { DATATYPE_FLAVOURS, SOCKETTPYE_FLAVOURS } from "../util/misc";
 import { GraphIdContext } from "../state/graphId";
+import { SocketTypes } from "../definitions/betterTypes";
 
 export const GraphView = ({ graphId, paneControls }: { graphId: string; paneControls?: DragPaneControls }) => {
     return (
@@ -420,7 +420,7 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 data-state={isSelected ? "selected" : undefined}
-                data-flavour={SOCKETTPYE_FLAVOURS[link.type]}
+                data-flavour={SocketTypes.FLAVOURS[link.type]}
                 data-linktype={link.type}
             >
                 <svg preserveAspectRatio="none">

@@ -19,8 +19,8 @@ export const CheckBox = ({
     onToggle,
     onClick,
     state,
-    iconChecked = ICONS.RadioBox.Checked,
-    iconUnchecked = ICONS.RadioBox.Unchecked,
+    iconChecked = ICONS.CheckBox.Checked,
+    iconUnchecked = ICONS.CheckBox.Unchecked,
     children,
     ...rest
 }: Omit<AbstractButtonProps, "value" | "onToggle"> & CheckBoxProps) => {

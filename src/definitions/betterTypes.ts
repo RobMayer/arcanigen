@@ -13,6 +13,7 @@ import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNod
 import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/integerNode";
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import { Project } from "../state/project";
+import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -26,6 +27,9 @@ namespace Registries {
         angle: AngleDefinition;
         float: FloatDefinition;
         integer: IntegerDefinition;
+
+        //debug
+        debug: DebugDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -34,6 +38,7 @@ namespace Registries {
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
+        debug: DebugType,
     } as const;
 
     export type DATATYPES = {
