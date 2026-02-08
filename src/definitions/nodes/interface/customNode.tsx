@@ -14,6 +14,13 @@ import { NumericString } from "../../../util/misc";
 
 type StoredValueKey = `value_${string}`;
 
+/** Parse an interface entry to get the direction and nodeId */
+const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: string } | null => {
+    if (entry.startsWith("in:")) return { direction: "in", nodeId: entry.slice(3) };
+    if (entry.startsWith("out:")) return { direction: "out", nodeId: entry.slice(4) };
+    return null;
+};
+
 export type CustomDefinition = {
     inputs: Record<string, DataTypes.Any>;
     outputs: Record<string, DataTypes.Any>;
@@ -47,17 +54,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefin
         [methods],
     );
 
-    // question: should we do this?
-    const outputNodeIds = Project.useGraphOutputs(node.payload.graphId);
-    const inputNodeIds = Project.useGraphInputs(node.payload.graphId);
+    // Get interface entries (prefixed with "in:" or "out:")
+    const interfaceEntries = Project.useGraphInterfaces(node.payload.graphId);
 
     return (
         <TypicalNode node={node} methods={methods}>
-            {outputNodeIds.map((sourceId) => {
-                return <DynamicSlot key={sourceId} sourceNodeId={sourceId} graphId={node.payload.graphId} handleValue={handleValue} hostNode={node} />;
-            })}
-            {inputNodeIds.map((sourceId) => {
-                return <DynamicSlot key={sourceId} sourceNodeId={sourceId} graphId={node.payload.graphId} handleValue={handleValue} hostNode={node} />;
+            {interfaceEntries.map((entry) => {
+                const parsed = parseInterface(entry);
+                if (!parsed) return null;
+                return <DynamicSlot key={entry} sourceNodeId={parsed.nodeId} graphId={node.payload.graphId} handleValue={handleValue} hostNode={node} />;
             })}
         </TypicalNode>
     );
@@ -103,20 +108,21 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
     const targetGraphId = node.payload.graphId;
     if (!targetGraphId) return state;
 
-    // Read the subgraph's interface
-    const inputNodeIds = state.inputs[targetGraphId] ?? [];
-    const outputNodeIds = state.outputs[targetGraphId] ?? [];
+    // Read the subgraph's interface entries
+    const interfaceEntries = state.interfaces[targetGraphId] ?? [];
 
     // Build socket maps from Input/Output node labels
     const inSockets: { [key: string]: string | null } = {};
     const outSockets: { [key: string]: string[] } = {};
 
-    for (const inputNodeId of inputNodeIds) {
-        inSockets[inputNodeId] = null;
-    }
-
-    for (const outputNodeId of outputNodeIds) {
-        outSockets[outputNodeId] = [];
+    for (const entry of interfaceEntries) {
+        const parsed = parseInterface(entry);
+        if (!parsed) continue;
+        if (parsed.direction === "in") {
+            inSockets[parsed.nodeId] = null;
+        } else {
+            outSockets[parsed.nodeId] = [];
+        }
     }
 
     // Update the node with the built socket maps

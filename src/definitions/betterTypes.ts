@@ -161,8 +161,7 @@ export namespace NodeTypes {
     export type HookState = {
         nodes: { [graphId: string]: { [nodeId: string]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
         links: { [graphId: string]: { [linkId: string]: ArcaneGraph.Link } };
-        inputs: { [graphId: string]: string[] };
-        outputs: { [graphId: string]: string[] };
+        interfaces: { [graphId: string]: string[] }; // prefixed with "in:" or "out:"
         users: { [graphId: string]: { node: string; scope: string }[] };
     };
 

@@ -71,9 +71,9 @@ const evaluate = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _socket
 const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return {
         ...state,
-        outputs: {
-            ...state.outputs,
-            [graphId]: [...(state.outputs[graphId] ?? []), node.id],
+        interfaces: {
+            ...state.interfaces,
+            [graphId]: [...(state.interfaces[graphId] ?? []), `out:${node.id}`],
         },
     };
 };
@@ -81,9 +81,9 @@ const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDe
 const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return {
         ...state,
-        outputs: {
-            ...state.outputs,
-            [graphId]: (state.outputs[graphId] ?? []).filter((id) => id !== node.id),
+        interfaces: {
+            ...state.interfaces,
+            [graphId]: (state.interfaces[graphId] ?? []).filter((entry) => entry !== `out:${node.id}`),
         },
     };
 };

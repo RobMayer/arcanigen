@@ -14,8 +14,14 @@ export namespace Resolver {
         nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
         links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
         users: { [graphId: GraphId]: { node: ArcaneGraph.NodeId; scope: GraphId }[] };
-        inputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
-        outputs: { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+        interfaces: { [graphId: GraphId]: string[] }; // prefixed with "in:" or "out:"
+    };
+
+    /** Parse an interface entry to get the direction and nodeId */
+    const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: string } | null => {
+        if (entry.startsWith("in:")) return { direction: "in", nodeId: entry.slice(3) };
+        if (entry.startsWith("out:")) return { direction: "out", nodeId: entry.slice(4) };
+        return null;
     };
 
     export type Context = {
@@ -135,12 +141,15 @@ export namespace Resolver {
             },
         };
 
-        // Get output node IDs for this subgraph
-        const outputNodeIds = state.outputs[subgraphId] ?? [];
+        // Get output node IDs by parsing interfaces with "out:" prefix
+        const subgraphInterfaces = state.interfaces[subgraphId] ?? [];
         const results: { [key: string]: DataTypes.AnyEval | null } = {};
 
-        // For each output node, resolve its input socket
-        for (const outputNodeId of outputNodeIds) {
+        for (const entry of subgraphInterfaces) {
+            const parsed = parseInterface(entry);
+            if (!parsed || parsed.direction !== "out") continue;
+
+            const outputNodeId = parsed.nodeId;
             const outputNode = subgraphNodes[outputNodeId];
             if (!outputNode) continue;
 

@@ -109,9 +109,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatInputDefinition>, socket: "
 const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return {
         ...state,
-        inputs: {
-            ...state.inputs,
-            [graphId]: [...(state.inputs[graphId] ?? []), node.id],
+        interfaces: {
+            ...state.interfaces,
+            [graphId]: [...(state.interfaces[graphId] ?? []), `in:${node.id}`],
         },
     };
 };
@@ -119,9 +119,9 @@ const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefi
 const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return {
         ...state,
-        inputs: {
-            ...state.inputs,
-            [graphId]: (state.inputs[graphId] ?? []).filter((id) => id !== node.id),
+        interfaces: {
+            ...state.interfaces,
+            [graphId]: (state.interfaces[graphId] ?? []).filter((entry) => entry !== `in:${node.id}`),
         },
     };
 };
