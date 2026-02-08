@@ -1,4 +1,4 @@
-import { createContext, ReactNode, RefObject, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { useGraphId } from "./graphId";
@@ -21,6 +21,7 @@ const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: strin
     return null;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const STARTING_STATE = {
     root: {
         nodes: {
