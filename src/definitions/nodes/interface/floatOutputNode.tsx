@@ -9,6 +9,7 @@ import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import DecimalInput from "../../../components/inputs/DecimalInput";
 import TextInput from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 
 export type FloatOutputDefinition = {
     inputs: {
@@ -37,6 +38,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefiniti
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const graphId = useGraphId();
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefinition>>) => {
             methods.update(v);
@@ -44,7 +46,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutput
         [methods],
     );
 
-    const resolved = Project.useResolved(node, "input");
+    const resolved = Project.useResolved(graphId, node, "input");
 
     return (
         <TypicalNode node={node} methods={methods}>

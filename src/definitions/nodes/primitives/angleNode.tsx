@@ -9,6 +9,7 @@ import AngleInput from "../../../components/inputs/AngleInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { useGraphId } from "../../../state/graphId";
 
 export type AngleDefinition = {
     inputs: {
@@ -45,7 +46,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, 
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const wraps = Project.useResolved(node, "wraps")?.data ?? node.payload.wraps;
+    const graphId = useGraphId();
+    const wraps = Project.useResolved(graphId, node, "wraps")?.data ?? node.payload.wraps;
 
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>) => {

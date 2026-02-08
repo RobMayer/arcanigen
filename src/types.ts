@@ -6,4 +6,4 @@ export type SVGObject = {
     attributes: { [key: string]: string | undefined };
 };
 
-export type NodeCategory = "result" | "interface" | "primitive" | "collection" | "shape";
+export type NodeCategory = "result" | "interface" | "primitive" | "collection" | "shape" | "meta";

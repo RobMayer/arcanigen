@@ -66,6 +66,7 @@ const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksTy
         define: () => {}, // definitions are handled at render time
         resolve,
         subgraph: () => ({}), // TODO: implement subgraph support
+        getNode: (gId: string, nodeId: string) => nodes[gId]?.[nodeId],
     };
 
     // Evaluate all output sockets
@@ -215,8 +216,7 @@ export namespace Project {
         return useSyncExternalStore(ctx.links.subscribe, selector);
     };
 
-    export const useNode = (id: string) => {
-        const graphId = useGraphId();
+    export const useNode = (graphId: GraphId, id: string) => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
@@ -435,8 +435,7 @@ export namespace Project {
         }, [ctx, graphId]);
     };
 
-    export const usePositionOf = (id: string) => {
-        const graphId = useGraphId();
+    export const usePositionOf = (graphId: GraphId, id: string) => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
@@ -513,9 +512,8 @@ export namespace Project {
     };
 
     //
-    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>({ id: nodeId }: NodeDefinitions.NodeFor<D>, inSocket: K): DataTypes.EvalOf<D["inputs"][K]> | null => {
+    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(graphId: GraphId, { id: nodeId }: NodeDefinitions.NodeFor<D>, inSocket: K): DataTypes.EvalOf<D["inputs"][K]> | null => {
         const ctx = useContext(CTX)!;
-        const graphId = useGraphId();
 
         const selector = useCallback(() => {
             const node = ctx.nodes.ref.current[graphId]?.[nodeId];

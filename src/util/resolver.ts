@@ -25,6 +25,8 @@ export namespace Resolver {
         subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
         getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
+        /** Look up a node by graphId and nodeId */
+        getNode: (graphId: string, nodeId: string) => NodeDefinitions.NodeFor<NodeDefinitions.Any> | undefined;
     };
 
     export type RootResult = {
@@ -49,6 +51,7 @@ export namespace Resolver {
         const context: Context = {
             graphId: "root",
             define,
+            getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
             resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const links = ArcaneGraph.linksTo({ nodes: state.nodes["root"], links: state.links["root"] }, nodeId, inSocket);
                 if (links.length === 0) {

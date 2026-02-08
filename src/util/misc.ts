@@ -27,4 +27,5 @@ export const NODETITLE_FLAVOURS: { [key in NodeCategory]: Flavour } = {
     primitive: "accent",
     collection: "danger",
     shape: "confirm",
+    meta: "emphasis",
 };

@@ -11,7 +11,8 @@ import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { NODETITLE_FLAVOURS } from "../../util/misc";
 
 export const GraphNode = ({ nodeId }: { nodeId: string }) => {
-    const [node, nodeMethods] = Project.useNode(nodeId);
+    const graphId = useGraphId();
+    const [node, nodeMethods] = Project.useNode(graphId, nodeId);
     const Controls = useMemo(() => NodeTypes.getControls(node.type), [node.type]);
     if (!Controls) return null;
 
@@ -22,7 +23,8 @@ export const TypicalNode = styled(
     ({ className, node, methods, children }: { methods: ReturnType<typeof Project.useNode>[1]; node: NodeDefinitions.NodeFor<NodeDefinitions.Any>; className?: string; children?: ReactNode }) => {
         const nodeId = node.id;
         const { update: updateNode, remove: removeNode } = methods;
-        const [storedPosition, setPosition] = Project.usePositionOf(nodeId);
+        const graphId = useGraphId();
+        const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
         const handleRef = useRef<HTMLDivElement>(null);
 
         const selectionRef = Session.useSelectionRef();
@@ -55,7 +57,6 @@ export const TypicalNode = styled(
 
         const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
 
-        const graphId = useGraphId();
         const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
         const toggle = useCallback(() => {
             setIsClosed((p) => (p ? undefined : true));

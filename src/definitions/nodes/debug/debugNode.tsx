@@ -7,6 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn } from "../../../features/nodeview/slots";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 
 export type DebugDefinition = {
     inputs: {
@@ -33,7 +34,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DebugDefinition>>, 
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const valueToRender = Project.useResolved(node, "input")?.data;
+    const graphId = useGraphId();
+    const valueToRender = Project.useResolved(graphId, node, "input")?.data;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -58,7 +60,7 @@ export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {
     defaultLabel: "Debug",
     iconNode: ICONS.Bug,
     iconCard: ICONS.Bug,
-    category: "primitive",
+    category: "meta",
     evaluate,
     Controls,
     dependsOn,

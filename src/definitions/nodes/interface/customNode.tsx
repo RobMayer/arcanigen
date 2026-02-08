@@ -6,6 +6,11 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { Enum } from "../../datatypes/enum";
+import { FloatInputDefinition } from "./floatInputNode";
+import DecimalInput from "../../../components/inputs/DecimalInput";
+import { NumericString } from "../../../util/misc";
 
 type StoredValueKey = `value_${string}`;
 
@@ -34,16 +39,9 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CustomDefinition>>,
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<CustomDefinition>>) => {
-            methods.update(v);
-        },
-        [methods],
-    );
-
     // todo: for setting stored values?
-    const updateValue = useCallback(
-        (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }> /* MERR */) => {
+    const handleValue = useCallback(
+        (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => {
             methods.update(v);
         },
         [methods],
@@ -56,10 +54,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefin
     return (
         <TypicalNode node={node} methods={methods}>
             {outputNodeIds.map((sourceId) => {
-                return <DynamicSlot key={sourceId} sourceNodeId={sourceId} graphId={node.payload.graphId} />;
+                return <DynamicSlot key={sourceId} sourceNodeId={sourceId} graphId={node.payload.graphId} handleValue={handleValue} hostNode={node} />;
             })}
             {inputNodeIds.map((sourceId) => {
-                return <DynamicSlot key={sourceId} sourceNodeId={sourceId} graphId={node.payload.graphId} />;
+                return <DynamicSlot key={sourceId} sourceNodeId={sourceId} graphId={node.payload.graphId} handleValue={handleValue} hostNode={node} />;
             })}
         </TypicalNode>
     );
@@ -74,10 +72,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     const { graphId } = node.payload;
     if (!graphId) return null;
 
-    // Build inputs by resolving each input socket
+    // Build inputs by resolving each input socket, or using stored values when not connected
     const inputs: { [key: string]: DataTypes.AnyEval | null } = {};
     for (const inSocket of Object.keys(node.in)) {
-        inputs[inSocket] = context.resolve(node.id, inSocket);
+        const resolved = context.resolve(node.id, inSocket);
+        if (resolved) {
+            inputs[inSocket] = resolved;
+        } else {
+            // Use stored value when not connected
+            // The stored value key is `value_${inputNodeId}` where inputNodeId === inSocket
+            const storedValue = node.payload[`value_${inSocket}`];
+            if (storedValue !== undefined) {
+                // Look up the input node to determine its type
+                const inputNode = context.getNode(graphId, inSocket);
+                if (inputNode?.type === "floatInput") {
+                    inputs[inSocket] = { kind: "float", data: storedValue as NumericString };
+                }
+                // TODO: add other input types as they are created (integerInput, angleInput, etc.)
+            }
+        }
     }
 
     // Evaluate subgraph and get outputs
@@ -157,16 +170,46 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     onDelete,
 };
 
-const DynamicSlot = ({ sourceNodeId, graphId }: { sourceNodeId: string; graphId: string }) => {
-    // todo: This won't work - it relies on graphIdContext to pull from the correct graph.
-    const [sourceNodeData] = Project.useNode(sourceNodeId);
+const DynamicSlot = ({
+    sourceNodeId,
+    graphId,
+    hostNode,
+    handleValue,
+}: {
+    sourceNodeId: string;
+    graphId: string;
+    hostNode: NodeDefinitions.NodeFor<CustomDefinition>;
+    handleValue: (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => void;
+}) => {
+    const [sourceNode] = Project.useNode(graphId, sourceNodeId);
 
     // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-    switch (sourceNodeData.type) {
+    switch (sourceNode.type) {
         case "floatOutput":
-            return <div>will be an output!</div>;
+            return (
+                // todo: these casts are terrible, but that's because SocketOut is too safe.
+                <SocketOut node={hostNode} socketId={sourceNodeId} type={"float" as never}>
+                    {sourceNode.payload.label ?? "Float"}
+                </SocketOut>
+            );
         case "floatInput":
-            return <div>{sourceNodeData.type}</div>;
+            return (
+                // todo: these casts are terrible, but that's because SocketIn is too safe.
+                // we should probably delegate this earlier so that we don't have to do so much casting...
+                // contents will eventually be handled by a switch of sourceNode.widget
+                <SocketIn
+                    node={hostNode}
+                    socketId={sourceNodeId}
+                    type={"float" as never}
+                    label={(sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>).payload.widget !== Enum.Common.floatInputWidget.None ? (sourceNode.payload.label ?? "Input") : undefined}
+                >
+                    <DecimalInput
+                        value={(hostNode.payload[`value_${sourceNodeId}`] as NumericString) ?? (sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>).payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${sourceNodeId}`]: v })}
+                        disabled={hostNode.in[sourceNodeId] !== null}
+                    />
+                </SocketIn>
+            );
     }
     return null;
 };
