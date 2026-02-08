@@ -12,6 +12,116 @@ type SocketId = string;
 type CacheType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [outSocket: SocketId]: DataTypes.AnyEval } } };
 type NodesType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
 type LinksType = { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
+type InputsType = { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+type OutputsType = { [graphId: GraphId]: ArcaneGraph.NodeId[] };
+
+const STARTING_STATE = {
+    root: {
+        nodes: {
+            RESULT: {
+                ...NodeTypes.get("result").create({}, "RESULT"),
+            },
+        },
+        links: {},
+        positions: {
+            RESULT: { x: 0, y: 0 },
+        },
+        inputs: [],
+        outputs: ["RESULT"],
+    },
+};
+
+const TESTING_STATE = {
+    root: {
+        nodes: {
+            CUSTOM_A: {
+                type: "custom",
+                id: "CUSTOM_A",
+                in: {
+                    inputA: null,
+                },
+                out: {
+                    addResult: [],
+                },
+                payload: {
+                    label: "",
+                    graphId: "testSubgraph",
+                },
+            },
+            RESULT: {
+                ...NodeTypes.get("result").create({}, "RESULT"),
+            },
+        },
+        links: {},
+        positions: {
+            RESULT: { x: 0, y: 0 },
+            CUSTOM_A: { x: -400, y: 0 },
+        },
+        inputs: [],
+        outputs: ["RESULT"],
+    },
+    testSubgraph: {
+        nodes: {
+            inputA: {
+                type: "floatInput",
+                in: {},
+                out: {
+                    output: "aToAdder",
+                },
+                payload: {
+                    label: "A",
+                    defaultValue: "1",
+                    widget: 1,
+                    min: "0",
+                    hasMin: false,
+                    max: "1",
+                    hasMax: false,
+                    step: "0.01",
+                    hasSteP: false,
+                },
+            },
+            adder: {
+                id: "adder",
+                type: "addFloat",
+                in: {
+                    a: "aToAdder",
+                    b: null,
+                },
+                out: {
+                    output: "adderToOut",
+                },
+                payload: {
+                    label: "",
+                    a: "1",
+                    b: "3",
+                },
+            },
+            addResult: {
+                id: "addResult",
+                type: "floatOutput",
+                in: {
+                    input: "adderToOut",
+                },
+                out: {},
+                payload: {
+                    label: "Output",
+                    defaultValue: "0",
+                },
+            },
+        },
+        links: {
+            aToAdder: { id: "aToAdder", fromNode: "inputA", fromSocket: "output", toNode: "adder", toSocket: "a" },
+            adderToOut: { id: "adderToOut", fromNode: "adder", fromSocket: "output", toNode: "addResult", toSocket: "input" },
+        },
+        positions: {
+            inputA: { x: -400, y: 0 },
+            adder: { x: -200, y: 0 },
+            addResult: { x: 0, y: 0 },
+        },
+        inputs: ["inputA"],
+        outputs: ["addResult"],
+    },
+};
 
 /** Invalidates cache for a node and all its downstream nodes */
 const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
@@ -38,8 +148,89 @@ const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: LinksTy
     return { ...cache, [graphId]: newGraphCache };
 };
 
+/** Evaluates a subgraph given inputs, returns outputs */
+const evaluateSubgraphForCache = (
+    nodes: NodesType,
+    links: LinksType,
+    outputs: OutputsType,
+    subgraphId: GraphId,
+    inputValues: { [key: string]: DataTypes.AnyEval | null },
+): { [key: string]: DataTypes.AnyEval | null } => {
+    const subgraphNodes = nodes[subgraphId];
+    const subgraphLinks = links[subgraphId];
+    if (!subgraphNodes || !subgraphLinks) return {};
+
+    // Helper to evaluate a node's output within this subgraph
+    const evaluateNodeInSubgraph = (nodeId: string, outSocket: string): DataTypes.AnyEval | null => {
+        const node = subgraphNodes[nodeId];
+        if (!node) return null;
+
+        const evaluate = NodeTypes.getEvaluator(node.type);
+        if (!evaluate) return null;
+
+        const subContext: Resolver.Context = {
+            graphId: subgraphId,
+            define: () => {},
+            getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
+            getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
+                return inputValues[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
+            },
+            resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+                const targetNode = subgraphNodes[targetNodeId];
+                if (!targetNode) return null;
+
+                const linkId = targetNode.in[inSocket];
+                if (!linkId) return null;
+
+                const link = subgraphLinks[linkId];
+                if (!link) return null;
+
+                return evaluateNodeInSubgraph(link.fromNode, link.fromSocket) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+            },
+            subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }) => {
+                return evaluateSubgraphForCache(nodes, links, outputs, nestedGraphId, nestedInputs);
+            },
+        };
+
+        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], subContext);
+    };
+
+    // Get output node IDs for this subgraph and resolve their input sockets
+    const outputNodeIds = outputs[subgraphId] ?? [];
+    const results: { [key: string]: DataTypes.AnyEval | null } = {};
+
+    for (const outputNodeId of outputNodeIds) {
+        const outputNode = subgraphNodes[outputNodeId];
+        if (!outputNode) continue;
+
+        // Resolve the "input" socket of the output node
+        const linkId = outputNode.in["input"];
+        if (!linkId) {
+            results[outputNodeId] = null;
+            continue;
+        }
+
+        const link = subgraphLinks[linkId];
+        if (!link) {
+            results[outputNodeId] = null;
+            continue;
+        }
+
+        results[outputNodeId] = evaluateNodeInSubgraph(link.fromNode, link.fromSocket);
+    }
+
+    return results;
+};
+
 /** Evaluates a single node and caches all its output sockets */
-const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
+const evaluateAndCacheNode = (
+    cache: CacheType,
+    nodes: NodesType,
+    links: LinksType,
+    outputs: OutputsType,
+    graphId: GraphId,
+    nodeId: ArcaneGraph.NodeId,
+): CacheType => {
     const node = nodes[graphId]?.[nodeId];
     if (!node) return cache;
 
@@ -65,8 +256,10 @@ const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksTy
         graphId,
         define: () => {}, // definitions are handled at render time
         resolve,
-        subgraph: () => ({}), // TODO: implement subgraph support
-        getNode: (gId: string, nodeId: string) => nodes[gId]?.[nodeId],
+        subgraph: (subgraphId: string, inputValues: { [key: string]: DataTypes.AnyEval | null }) => {
+            return evaluateSubgraphForCache(nodes, links, outputs, subgraphId, inputValues);
+        },
+        getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
     };
 
     // Evaluate all output sockets
@@ -97,7 +290,7 @@ const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksTy
 };
 
 /** Rebuilds cache for a node and all downstream nodes in topological order */
-const rebuildDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
+const rebuildDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, outputs: OutputsType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
     const graph = { nodes: nodes[graphId], links: links[graphId] };
 
     // Get downstream nodes in BFS order (ensures upstream is processed before downstream)
@@ -106,10 +299,45 @@ const rebuildDownstream = (cache: CacheType, nodes: NodesType, links: LinksType,
 
     let newCache = cache;
     for (const id of toEvaluate) {
-        newCache = evaluateAndCacheNode(newCache, nodes, links, graphId, id);
+        newCache = evaluateAndCacheNode(newCache, nodes, links, outputs, graphId, id);
     }
 
     return newCache;
+};
+
+/** Builds cache for all nodes in a graph by evaluating in topological order (sources first) */
+const buildGraphCache = (cache: CacheType, nodes: NodesType, links: LinksType, outputs: OutputsType, graphId: GraphId): CacheType => {
+    const graphNodes = nodes[graphId];
+    const graphLinks = links[graphId];
+    if (!graphNodes || !graphLinks) return cache;
+
+    // Find source nodes (nodes with no incoming connections)
+    const sourceNodes: ArcaneGraph.NodeId[] = [];
+    for (const nodeId of Object.keys(graphNodes)) {
+        const node = graphNodes[nodeId];
+        const hasIncoming = Object.values(node.in).some((linkId) => linkId !== null);
+        if (!hasIncoming) {
+            sourceNodes.push(nodeId);
+        }
+    }
+
+    // Build cache starting from each source node
+    let newCache = cache;
+    for (const sourceId of sourceNodes) {
+        newCache = rebuildDownstream(newCache, nodes, links, outputs, graphId, sourceId);
+    }
+
+    return newCache;
+};
+
+/** Builds initial cache for all graphs */
+const buildInitialCache = (nodes: NodesType, links: LinksType, outputs: OutputsType): CacheType => {
+    let cache: CacheType = {};
+    for (const graphId of Object.keys(nodes)) {
+        cache[graphId] = {};
+        cache = buildGraphCache(cache, nodes, links, outputs, graphId);
+    }
+    return cache;
 };
 
 export namespace Project {
@@ -137,48 +365,27 @@ export namespace Project {
 
     const CTX = createContext<State | undefined>(undefined);
 
+    // Derive initial state from STARTING_STATE
+    const INITIAL_NODES = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.nodes])) as TheType["nodes"];
+    const INITIAL_NODE_LIST = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, Object.keys(g.nodes)])) as TheType["nodeList"];
+    const INITIAL_LINKS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.links])) as TheType["links"];
+    const INITIAL_LINK_LIST = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, Object.keys(g.links)])) as TheType["linkList"];
+    const INITIAL_POSITIONS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.positions])) as TheType["positions"];
+    const INITIAL_USERS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId]) => [graphId, []])) as TheType["users"];
+    const INITIAL_INPUTS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.inputs])) as TheType["inputs"];
+    const INITIAL_OUTPUTS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.outputs])) as TheType["outputs"];
+    const INITIAL_CACHE = buildInitialCache(INITIAL_NODES, INITIAL_LINKS, INITIAL_OUTPUTS);
+
     export const Provider = ({ children }: { children?: ReactNode }) => {
-        const nodes = useFastContextMember<TheType["nodes"]>({
-            root: {
-                RESULT: {
-                    ...NodeTypes.get("result").create({}, "RESULT"),
-                },
-            },
-        });
-        const nodeList = useFastContextMember<TheType["nodeList"]>({
-            root: ["RESULT"],
-        });
-        // const evalCache = useFastContextMember<TheType["evalCache"]>({});
-
-        const links = useFastContextMember<TheType["links"]>({
-            root: {},
-        });
-
-        const linkList = useFastContextMember<TheType["linkList"]>({
-            root: [],
-        });
-
-        const positions = useFastContextMember<TheType["positions"]>({
-            root: {
-                RESULT: { x: 0, y: 0 },
-            },
-        });
-
-        const users = useFastContextMember<TheType["users"]>({
-            root: [],
-        });
-
-        const inputs = useFastContextMember<TheType["inputs"]>({
-            root: [],
-        });
-
-        const outputs = useFastContextMember<TheType["outputs"]>({
-            root: ["RESULT"],
-        });
-
-        const cache = useFastContextMember<TheType["cache"]>({
-            root: { result: {} },
-        });
+        const nodes = useFastContextMember<TheType["nodes"]>(INITIAL_NODES);
+        const nodeList = useFastContextMember<TheType["nodeList"]>(INITIAL_NODE_LIST);
+        const links = useFastContextMember<TheType["links"]>(INITIAL_LINKS);
+        const linkList = useFastContextMember<TheType["linkList"]>(INITIAL_LINK_LIST);
+        const positions = useFastContextMember<TheType["positions"]>(INITIAL_POSITIONS);
+        const users = useFastContextMember<TheType["users"]>(INITIAL_USERS);
+        const inputs = useFastContextMember<TheType["inputs"]>(INITIAL_INPUTS);
+        const outputs = useFastContextMember<TheType["outputs"]>(INITIAL_OUTPUTS);
+        const cache = useFastContextMember<TheType["cache"]>(INITIAL_CACHE);
 
         const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string } | null>(null);
 
@@ -283,8 +490,8 @@ export namespace Project {
 
                     // Ensure fromNode is cached first (it may not have been evaluated yet)
                     // Then rebuild cache for toNode and all downstream nodes
-                    let newCache = evaluateAndCacheNode(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, graphId, fromNode);
-                    newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, graphId, toNode);
+                    let newCache = evaluateAndCacheNode(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, ctx.outputs.ref.current, graphId, fromNode);
+                    newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.outputs.ref.current, graphId, toNode);
                     ctx.cache.ref.current = newCache;
                     ctx.cache.notify();
                 }
@@ -360,7 +567,7 @@ export namespace Project {
                 };
 
                 // Rebuild cache for this node and all downstream nodes
-                ctx.cache.ref.current = rebuildDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, graphId, id);
+                ctx.cache.ref.current = rebuildDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, ctx.outputs.ref.current, graphId, id);
 
                 ctx.nodes.notify();
                 ctx.cache.notify();
@@ -415,7 +622,7 @@ export namespace Project {
                 // Rebuild cache for downstream nodes (they lost their upstream connection)
                 for (const downstreamId of downstream) {
                     if (nodes[downstreamId]) {
-                        newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, graphId, downstreamId);
+                        newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.outputs.ref.current, graphId, downstreamId);
                     }
                 }
                 ctx.cache.ref.current = newCache;
@@ -512,7 +719,11 @@ export namespace Project {
     };
 
     //
-    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(graphId: GraphId, { id: nodeId }: NodeDefinitions.NodeFor<D>, inSocket: K): DataTypes.EvalOf<D["inputs"][K]> | null => {
+    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(
+        graphId: GraphId,
+        { id: nodeId }: NodeDefinitions.NodeFor<D>,
+        inSocket: K,
+    ): DataTypes.EvalOf<D["inputs"][K]> | null => {
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
