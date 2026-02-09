@@ -49,14 +49,23 @@ function formatForDisplay(n: number, precision: number): string {
     return String(n);
 }
 
+type NumericProp = number | EmptyOr<NumericString>;
+
+const toNumber = (v: NumericProp | undefined): number | undefined => {
+    if (v === undefined || v === "") return undefined;
+    if (typeof v === "number") return v;
+    const n = Number(v);
+    return isNaN(n) ? undefined : n;
+};
+
 type DecimalInputProps = {
     value: EmptyOr<NumericString>;
     onValue?: (n: EmptyOr<NumericString>) => void;
     onCommit?: (n: EmptyOr<NumericString>) => void;
     onConfirm?: (v: EmptyOr<NumericString>) => void; // fires when you hit enter, even if no change was made
-    min?: number;
-    max?: number;
-    step?: number;
+    min?: NumericProp;
+    max?: NumericProp;
+    step?: NumericProp;
     precision?: number;
 };
 
@@ -67,9 +76,9 @@ const DecimalInput = styled(
         onValue,
         onCommit,
         onConfirm,
-        min,
-        max,
-        step,
+        min: minProp,
+        max: maxProp,
+        step: stepProp,
         onChange,
         onKeyDown,
         required,
@@ -77,6 +86,9 @@ const DecimalInput = styled(
         ...rest
     }: Omit<AbstractInputProps, "value" | "min" | "max" | "step" | "pattern"> & DecimalInputProps) => {
         const precision = precisionProp === undefined ? undefined : Math.round(precisionProp);
+        const min = toNumber(minProp);
+        const max = toNumber(maxProp);
+        const step = toNumber(stepProp);
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);

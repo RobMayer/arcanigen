@@ -45,6 +45,7 @@ const TESTING_STATE = {
                 id: "CUSTOM_A",
                 in: {
                     inputA: null,
+                    minInput: null,
                 },
                 out: {
                     addResult: [],
@@ -73,15 +74,15 @@ const TESTING_STATE = {
                 type: "floatInput",
                 in: {},
                 out: {
-                    output: "aToAdder",
+                    output: ["aToAdder"],
                 },
                 payload: {
                     label: "A",
                     defaultValue: "1",
                     widget: 1,
-                    min: "0",
-                    hasMin: false,
-                    max: "1",
+                    min: "1",
+                    hasMin: true,
+                    max: "3",
                     hasMax: false,
                     step: "0.01",
                     hasStep: false,
@@ -95,7 +96,7 @@ const TESTING_STATE = {
                     b: null,
                 },
                 out: {
-                    output: "adderToOut",
+                    output: ["adderToOut"],
                 },
                 payload: {
                     label: "",
@@ -117,15 +118,15 @@ const TESTING_STATE = {
             },
         },
         links: {
-            aToAdder: { id: "aToAdder", fromNode: "inputA", fromSocket: "output", toNode: "adder", toSocket: "a" },
-            adderToOut: { id: "adderToOut", fromNode: "adder", fromSocket: "output", toNode: "addResult", toSocket: "input" },
+            aToAdder: { id: "aToAdder", fromNode: "inputA", fromSocket: "output", toNode: "adder", toSocket: "a", type: "float" },
+            adderToOut: { id: "adderToOut", fromNode: "adder", fromSocket: "output", toNode: "addResult", toSocket: "input", type: "float" },
         },
         positions: {
             inputA: { x: -400, y: 0 },
             adder: { x: -200, y: 0 },
             addResult: { x: 0, y: 0 },
         },
-        interfaces: ["in:inputA", "out:addResult"],
+        interfaces: ["out:addResult", "in:inputA"],
     },
 };
 

@@ -24,14 +24,23 @@ function normalize(v: string): string | null {
     return String(n);
 }
 
+type NumericProp = number | EmptyOr<NumericString>;
+
+const toNumber = (v: NumericProp | undefined): number | undefined => {
+    if (v === undefined || v === "") return undefined;
+    if (typeof v === "number") return v;
+    const n = Number(v);
+    return isNaN(n) ? undefined : n;
+};
+
 type IntegerInputProps = {
     value: EmptyOr<NumericString>;
     onValue?: (n: EmptyOr<NumericString>) => void;
     onCommit?: (n: EmptyOr<NumericString>) => void;
     onConfirm?: (v: EmptyOr<NumericString>) => void; // fires when you hit enter, even if no change was made
-    min?: number;
-    max?: number;
-    step?: number;
+    min?: NumericProp;
+    max?: NumericProp;
+    step?: NumericProp;
 };
 
 const IntegerInput = styled(
@@ -49,9 +58,12 @@ const IntegerInput = styled(
         required,
         ...rest
     }: Omit<AbstractInputProps, "value" | "min" | "max" | "step" | "pattern"> & IntegerInputProps) => {
-        const min = minProp === undefined ? undefined : Math.round(minProp);
-        const max = maxProp === undefined ? undefined : Math.round(maxProp);
-        const step = stepProp === undefined ? undefined : Math.round(stepProp);
+        const minRaw = toNumber(minProp);
+        const maxRaw = toNumber(maxProp);
+        const stepRaw = toNumber(stepProp);
+        const min = minRaw !== undefined ? Math.round(minRaw) : undefined;
+        const max = maxRaw !== undefined ? Math.round(maxRaw) : undefined;
+        const step = stepRaw !== undefined ? Math.round(stepRaw) : undefined;
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);

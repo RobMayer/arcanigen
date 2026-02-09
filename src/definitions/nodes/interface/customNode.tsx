@@ -165,8 +165,8 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     type: "custom",
     displayName: "Custom",
     defaultLabel: "Custom",
-    iconNode: NODE_ICONS.numericValue.Item,
-    iconCard: NODE_ICONS.numericValue.Card,
+    iconNode: NODE_ICONS.customNode.Item,
+    iconCard: NODE_ICONS.customNode.Card,
     category: "interface",
     evaluate,
     Controls,
@@ -175,6 +175,8 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     onCreate,
     onDelete,
 };
+
+type SlotUpdateHandler = (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => void;
 
 const DynamicSlot = ({
     sourceNodeId,
@@ -185,7 +187,7 @@ const DynamicSlot = ({
     sourceNodeId: string;
     graphId: string;
     hostNode: NodeDefinitions.NodeFor<CustomDefinition>;
-    handleValue: (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => void;
+    handleValue: SlotUpdateHandler;
 }) => {
     const [sourceNode] = Project.useNode(graphId, sourceNodeId);
 
@@ -199,23 +201,27 @@ const DynamicSlot = ({
                 </SocketOut>
             );
         case "floatInput":
-            return (
-                // todo: these casts are terrible, but that's because SocketIn is too safe.
-                // we should probably delegate this earlier so that we don't have to do so much casting...
-                // contents will eventually be handled by a switch of sourceNode.widget
-                <SocketIn
-                    node={hostNode}
-                    socketId={sourceNodeId}
-                    type={"float" as never}
-                    label={(sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>).payload.widget !== Enum.Common.floatInputWidget.None ? (sourceNode.payload.label ?? "Input") : undefined}
-                >
-                    <DecimalInput
-                        value={(hostNode.payload[`value_${sourceNodeId}`] as NumericString) ?? (sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>).payload.defaultValue}
-                        onCommit={(v) => handleValue({ [`value_${sourceNodeId}`]: v })}
-                        disabled={hostNode.in[sourceNodeId] !== null}
-                    />
-                </SocketIn>
-            );
+            return <InputSlotFloat host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>} handleValue={handleValue} />;
     }
     return null;
+};
+
+const InputSlotFloat = ({ host, source, handleValue }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<FloatInputDefinition>; handleValue: SlotUpdateHandler }) => {
+    const min = source.payload.hasMin ? source.payload.min : undefined;
+    const max = source.payload.hasMax ? source.payload.max : undefined;
+    const step = source.payload.hasStep ? source.payload.step : undefined;
+
+    return (
+        <SocketIn node={host} socketId={source.id} type={"float" as never} label={source.payload.widget !== Enum.Common.floatInputWidget.None ? (source.payload.label ?? "Input") : undefined}>
+            <DecimalInput
+                value={(host.payload[`value_${source.id}`] as NumericString) ?? source.payload.defaultValue}
+                onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                disabled={host.in[source.id] !== null}
+                min={min}
+                max={max}
+                step={step}
+                required
+            />
+        </SocketIn>
+    );
 };

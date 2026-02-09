@@ -84,14 +84,23 @@ function normalizeAngle(value: number, min: number | undefined, max: number | un
     return clampValue(value, min, max);
 }
 
+type NumericProp = number | EmptyOr<NumericString>;
+
+const toNumber = (v: NumericProp | undefined): number | undefined => {
+    if (v === undefined || v === "") return undefined;
+    if (typeof v === "number") return v;
+    const n = Number(v);
+    return isNaN(n) ? undefined : n;
+};
+
 type AngleInputProps = {
     value: EmptyOr<NumericString>;
     onValue?: (n: EmptyOr<NumericString>) => void;
     onCommit?: (n: EmptyOr<NumericString>) => void;
     onConfirm?: (v: EmptyOr<NumericString>) => void; // fires when you hit enter, even if no change was made
-    min?: number;
-    max?: number;
-    step?: number;
+    min?: NumericProp;
+    max?: NumericProp;
+    step?: NumericProp;
     unbound?: boolean;
 };
 
@@ -112,14 +121,17 @@ const AngleInput = styled(
         onCommit,
         onConfirm,
         unbound = false,
-        min = unbound === false ? 0 : undefined,
-        max = unbound === false ? 360 : undefined,
-        step = 5,
+        min: minProp = unbound === false ? 0 : undefined,
+        max: maxProp = unbound === false ? 360 : undefined,
+        step: stepProp = 5,
         onChange,
         onKeyDown,
         required,
         ...rest
     }: Omit<AbstractInputProps, "value" | "min" | "max" | "step" | "pattern"> & AngleInputProps) => {
+        const min = toNumber(minProp);
+        const max = toNumber(maxProp);
+        const step = toNumber(stepProp);
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);
         const onChangeRef = useStable(onChange);
