@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
@@ -9,6 +9,7 @@ import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import SliderInput from "../../../components/inputs/SliderInput";
+import { NumericString } from "../../datatypes/numericString";
 
 export type DebugDefinition = {
     inputs: {
@@ -40,13 +41,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefini
     const graphId = useGraphId();
     const valueToRender = Project.useCachedInput(graphId, node, "input")?.data;
 
+    const onValue = useCallback((v: NumericString.Type) => {
+        console.log("onValue", v);
+    }, []);
+
+    const onCommit = useCallback((v: NumericString.Type) => {
+        console.log("onCommit", v);
+    }, []);
+
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketIn node={node} socketId={"input"} type={"float"} label={"Value"}>
                 {valueToRender ?? "Nothing"}
             </SocketIn>
             <Slot label={"Some Float"}>
-                <SliderInput value={node.payload.someFloat} onValue={console.log} onCommit={console.log} />
+                <SliderInput value={node.payload.someFloat} onValue={onValue} onCommit={onCommit} />
             </Slot>
         </TypicalNode>
     );
