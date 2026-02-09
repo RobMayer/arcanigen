@@ -263,6 +263,40 @@ const DragPaneBase = styled(
             };
         }, [member, handleChange]);
 
+        // focus-scroll: pan to bring focused elements into view (overflow: clip prevents native scrolling)
+        useEffect(() => {
+            const element = viewportRef.current;
+            if (!element) return;
+
+            const PADDING = 16;
+
+            const handleFocusIn = (evt: FocusEvent) => {
+                const target = evt.target;
+                if (!(target instanceof HTMLElement)) return;
+
+                const vr = element.getBoundingClientRect();
+                const er = target.getBoundingClientRect();
+
+                let dx = 0;
+                let dy = 0;
+
+                if (er.left < vr.left + PADDING) dx = vr.left + PADDING - er.left;
+                else if (er.right > vr.right - PADDING) dx = vr.right - PADDING - er.right;
+
+                if (er.top < vr.top + PADDING) dy = vr.top + PADDING - er.top;
+                else if (er.bottom > vr.bottom - PADDING) dy = vr.bottom - PADDING - er.bottom;
+
+                if (dx !== 0 || dy !== 0) {
+                    methods.panBy({ x: dx, y: dy });
+                }
+            };
+
+            element.addEventListener("focusin", handleFocusIn);
+            return () => {
+                element.removeEventListener("focusin", handleFocusIn);
+            };
+        }, [methods, viewportRef]);
+
         // wheel zoom
         useEffect(() => {
             const element = viewportRef.current;
@@ -349,7 +383,7 @@ const DragPaneBase = styled(
     position: absolute;
     inset: 0;
     display: grid;
-    overflow: hidden;
+    overflow: clip;
 `;
 
 const DragPaneOrigin = styled.div`
