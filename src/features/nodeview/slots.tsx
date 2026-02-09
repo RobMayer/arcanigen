@@ -29,7 +29,13 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     return (
         <SlotBase>
             <Socket side={"in"} socketId={socketId} nodeId={node.id} type={type} connected={node.in[socketId] !== null} />
-            {label ? <LabelSmall label={label}>{children}</LabelSmall> : <LabelBig align={"left"}>{children}</LabelBig>}
+            {label ? (
+                <LabelSmall label={label} align={"left"}>
+                    {children}
+                </LabelSmall>
+            ) : (
+                <LabelBig align={"left"}>{children}</LabelBig>
+            )}
         </SlotBase>
     );
 };
@@ -49,7 +55,13 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
 }) => {
     return (
         <SlotBase>
-            {label ? <LabelSmall label={label}>{children}</LabelSmall> : <LabelBig align={"right"}>{children}</LabelBig>}
+            {label ? (
+                <LabelSmall label={label} align={"right"}>
+                    {children}
+                </LabelSmall>
+            ) : (
+                <LabelBig align={"right"}>{children}</LabelBig>
+            )}
             <Socket side={"out"} socketId={socketId} nodeId={node.id} type={type} connected={node.out[socketId].length > 0} />
         </SlotBase>
     );
@@ -148,9 +160,9 @@ const LabelBig = styled(({ className, align = "left", children }: { className?: 
     }
 `;
 
-const LabelSmall = styled(({ children, className, label }: { children: ReactNode; label: ReactNode; className?: string }) => {
+const LabelSmall = styled(({ children, className, label, align }: { children: ReactNode; label: ReactNode; className?: string; align?: "right" | "left" }) => {
     return (
-        <div className={className}>
+        <div className={`${className ?? ""} align_${align}`}>
             <div data-part={"label"}>{label}</div>
             <div data-part={"contents"}>{children}</div>
         </div>
@@ -159,6 +171,11 @@ const LabelSmall = styled(({ children, className, label }: { children: ReactNode
     display: grid;
     grid-template-rows: auto 1fr;
     flex: 1 1;
+
+    &.align_right {
+        text-align: right;
+    }
+
     & > [data-part="label"] {
         font-size: 62.5%;
     }

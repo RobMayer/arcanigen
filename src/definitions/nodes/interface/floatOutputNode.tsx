@@ -2,14 +2,12 @@ import { nanoid } from "nanoid";
 import { NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
-
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn } from "../../../features/nodeview/slots";
+import { Slot, SocketIn } from "../../../features/nodeview/slots";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import DecimalInput from "../../../components/inputs/DecimalInput";
-import TextInput from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
-import { useGraphId } from "../../../state/graphId";
+import { Enum } from "../../datatypes/enum";
+import { RadioButton } from "../../../components/buttons/RadioButton";
 
 export type FloatOutputDefinition = {
     inputs: {
@@ -18,7 +16,7 @@ export type FloatOutputDefinition = {
     outputs: never;
     payload: {
         label: DataTypes.Use<"string">;
-        defaultValue: DataTypes.Use<"float">;
+        widget: DataTypes.Use<"enum">;
     };
 };
 
@@ -30,15 +28,16 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefiniti
         },
         out: {},
         payload: {
-            label: input.label ?? "Output",
-            defaultValue: input.defaultValue ?? "0",
+            label: "",
+            widget: Enum.Common.typicalOutputWidget.None,
         },
         type: "floatOutput",
     };
 };
 
+const WIDGET_OPTIONS = Enum.options(Enum.Common.typicalOutputWidget);
+
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const graphId = useGraphId();
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefinition>>) => {
             methods.update(v);
@@ -46,14 +45,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutput
         [methods],
     );
 
-    const resolved = Project.useResolved(graphId, node, "input");
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"} type={"float"} label={node.payload.label}>
-                <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Output name" />
+            <SocketIn node={node} socketId={"input"} type={"float"}>
+                Output
             </SocketIn>
-            <DecimalInput value={resolved?.data ?? node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} disabled={node.in.input !== null} />
+            <Slot label={"Widget"}>
+                <RadioButton.Group value={`${node.payload.widget}`} options={WIDGET_OPTIONS} onValue={(w) => handleUpdate({ widget: Number(w) })} />
+            </Slot>
         </TypicalNode>
     );
 };

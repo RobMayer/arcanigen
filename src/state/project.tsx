@@ -112,7 +112,7 @@ const TESTING_STATE = {
                 out: {},
                 payload: {
                     label: "Output",
-                    defaultValue: "0",
+                    widget: 1,
                 },
             },
         },
@@ -707,8 +707,20 @@ export namespace Project {
         return value;
     };
 
+    export const useCachedOutput = <D extends NodeDefinitions.Generic, K extends keyof D["outputs"]>(
+        graphId: GraphId,
+        { id: nodeId }: NodeDefinitions.NodeFor<D>,
+        outSocket: K,
+    ): DataTypes.EvalOf<D["outputs"][K]> | null => {
+        const ctx = useContext(CTX)!;
+        const selector = useCallback(() => {
+            return ctx.cache.get()[graphId]?.[nodeId]?.[outSocket as string] ?? null;
+        }, [ctx, graphId, nodeId, outSocket]);
+        return useSyncExternalStore(ctx.cache.subscribe, selector) as DataTypes.EvalOf<D["outputs"][K]> | null;
+    };
+
     //
-    export const useResolved = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(
+    export const useCachedInput = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(
         graphId: GraphId,
         { id: nodeId }: NodeDefinitions.NodeFor<D>,
         inSocket: K,

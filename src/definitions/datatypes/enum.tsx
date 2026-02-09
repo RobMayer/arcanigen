@@ -26,5 +26,10 @@ export namespace Enum {
             None: 0,
             Input: 1,
         };
+
+        export const typicalOutputWidget = {
+            None: 0,
+            Preview: 1,
+        };
     }
 }

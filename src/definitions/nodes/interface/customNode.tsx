@@ -11,6 +11,9 @@ import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
 import DecimalInput from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
+import { FloatOutputDefinition } from "./floatOutputNode";
+import { useGraphId } from "../../../state/graphId";
+import styled from "styled-components";
 
 type StoredValueKey = `value_${string}`;
 
@@ -194,34 +197,73 @@ const DynamicSlot = ({
     // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
     switch (sourceNode.type) {
         case "floatOutput":
-            return (
-                // todo: these casts are terrible, but that's because SocketOut is too safe.
-                <SocketOut node={hostNode} socketId={sourceNodeId} type={"float" as never}>
-                    {sourceNode.payload.label ?? "Float"}
-                </SocketOut>
-            );
+            return <OutputSlotFloat host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<FloatOutputDefinition>} />;
         case "floatInput":
             return <InputSlotFloat host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>} handleValue={handleValue} />;
     }
     return null;
 };
 
-const InputSlotFloat = ({ host, source, handleValue }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<FloatInputDefinition>; handleValue: SlotUpdateHandler }) => {
-    const min = source.payload.hasMin ? source.payload.min : undefined;
-    const max = source.payload.hasMax ? source.payload.max : undefined;
-    const step = source.payload.hasStep ? source.payload.step : undefined;
+type OutputWidgetProps<T extends NodeDefinitions.Any> = { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<T> };
+type InputWidgetProps<T extends NodeDefinitions.Any> = { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<T>; handleValue: SlotUpdateHandler };
 
-    return (
-        <SocketIn node={host} socketId={source.id} type={"float" as never} label={source.payload.widget !== Enum.Common.floatInputWidget.None ? (source.payload.label ?? "Input") : undefined}>
-            <DecimalInput
-                value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
-                onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
-                disabled={host.in[source.id] !== null}
-                min={min}
-                max={max}
-                step={step}
-                required
-            />
-        </SocketIn>
-    );
+const OutputSlotFloat = ({ host, source }: OutputWidgetProps<FloatOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "float" ? resolved?.data : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"float" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
 };
+
+const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInputDefinition>) => {
+    switch (source.payload.widget) {
+        case Enum.Common.floatInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"float" as never}>
+                    {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.floatInputWidget.Input: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <DecimalInput
+                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        min={source.payload.hasMin ? source.payload.min : undefined}
+                        max={source.payload.hasMax ? source.payload.max : undefined}
+                        step={source.payload.hasStep ? source.payload.step : undefined}
+                        required
+                    />
+                </SocketIn>
+            );
+        }
+    }
+
+    return null;
+};
+
+const TextPreview = styled.div`
+    text-align: center;
+    font-size: 15pt;
+    padding: 2px;
+    background: #222;
+    border: 1px solid #666;
+    flex: 1 1 auto;
+`;

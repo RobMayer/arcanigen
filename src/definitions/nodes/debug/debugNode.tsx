@@ -35,7 +35,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DebugDefinition>>, 
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
-    const valueToRender = Project.useResolved(graphId, node, "input")?.data;
+    const valueToRender = Project.useCachedInput(graphId, node, "input")?.data;
 
     return (
         <TypicalNode node={node} methods={methods}>

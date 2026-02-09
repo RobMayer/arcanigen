@@ -47,7 +47,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, 
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
-    const wraps = Project.useResolved(graphId, node, "wraps")?.data ?? node.payload.wraps;
+    const wraps = Project.useCachedInput(graphId, node, "wraps")?.data ?? node.payload.wraps;
 
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>) => {
