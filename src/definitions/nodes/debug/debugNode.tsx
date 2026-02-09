@@ -4,10 +4,11 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn } from "../../../features/nodeview/slots";
+import { Slot, SocketIn } from "../../../features/nodeview/slots";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
+import SliderInput from "../../../components/inputs/SliderInput";
 
 export type DebugDefinition = {
     inputs: {
@@ -16,6 +17,7 @@ export type DebugDefinition = {
     outputs: never;
     payload: {
         label: DataTypes.Use<"string">;
+        someFloat: DataTypes.Use<"float">;
     };
 };
 
@@ -28,6 +30,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DebugDefinition>>, 
         out: {},
         payload: {
             label: "",
+            someFloat: "0.5",
         },
         type: "debug",
     };
@@ -42,6 +45,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefini
             <SocketIn node={node} socketId={"input"} type={"float"} label={"Value"}>
                 {valueToRender ?? "Nothing"}
             </SocketIn>
+            <Slot label={"Some Float"}>
+                <SliderInput value={node.payload.someFloat} onValue={console.log} onCommit={console.log} />
+            </Slot>
         </TypicalNode>
     );
 };
