@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import DecimalInput from "../../../components/inputs/DecimalInput";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NumericString } from "../../datatypes/numericString";
 

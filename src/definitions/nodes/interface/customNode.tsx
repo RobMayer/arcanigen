@@ -9,7 +9,7 @@ import { Project } from "../../../state/project";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
-import DecimalInput from "../../../components/inputs/DecimalInput";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 import { FloatOutputDefinition } from "./floatOutputNode";
 import { useGraphId } from "../../../state/graphId";

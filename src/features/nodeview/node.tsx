@@ -4,7 +4,7 @@ import { DragMove } from "../../components/wrappers/DragMove";
 import { Project } from "../../state/project";
 import { Session } from "../../state/session";
 import { Icon, ICONS } from "../../components/Icon";
-import TextInput from "../../components/inputs/TextInput";
+import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
