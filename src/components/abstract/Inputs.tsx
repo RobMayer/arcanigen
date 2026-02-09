@@ -416,7 +416,7 @@ export namespace AbstractInput {
 
                 // Valid - apply wrapping if needed, then precision and format for display
                 evt.currentTarget.setCustomValidity("");
-                const wrappedValue = normalizeWrappedValue(asNumber, min, max, wrap);
+                const wrappedValue = cleanFloat(normalizeWrappedValue(asNumber, min, max, wrap));
                 const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                 const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
                 setCache(displayValue);
@@ -466,7 +466,7 @@ export namespace AbstractInput {
 
                     // Apply wrapping if needed, then precision and format for display on Enter
                     const asNumber = Number(normalized);
-                    const wrappedValue = normalizeWrappedValue(asNumber, min, max, wrap);
+                    const wrappedValue = cleanFloat(normalizeWrappedValue(asNumber, min, max, wrap));
                     const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                     const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
                     setCache(displayValue);
@@ -499,11 +499,11 @@ export namespace AbstractInput {
                 const precisionStep = precision !== undefined ? Math.pow(10, -precision) : 1;
                 const stepAmount = step ?? precisionStep;
                 const delta = evt.key === "ArrowUp" ? stepAmount : -stepAmount;
-                let newValue = currentValue + delta;
+                let newValue = cleanFloat(currentValue + delta);
 
                 // Apply wrapping or enforce bounds
                 if (wrap && min !== undefined && max !== undefined) {
-                    newValue = wrapValue(newValue, min, max);
+                    newValue = cleanFloat(wrapValue(newValue, min, max));
                 } else if (!isInBounds(newValue, min, max)) {
                     return;
                 }
@@ -578,11 +578,16 @@ function isComplete(v: string): boolean {
     return FLOAT_REGEX.test(v);
 }
 
+// Truncate floating point errors (e.g., 0.30000000000000004 → 0.3)
+function cleanFloat(num: number): number {
+    return Number(num.toFixed(10));
+}
+
 // Normalize a string to its canonical numeric form, or null if not a valid number
 function normalize(v: string): string | null {
     const n = Number(v);
     if (isNaN(n)) return null;
-    return String(n);
+    return String(cleanFloat(n));
 }
 
 // Apply precision to a number by truncating
