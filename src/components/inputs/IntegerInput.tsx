@@ -1,8 +1,9 @@
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
-import { EmptyOr, NumericString } from "../../util/misc";
+import { EmptyOr } from "../../util/misc";
 import styled from "styled-components";
 import { AbstractNumberInput, AbstractInputProps } from "../abstract/Inputs";
+import { NumericString } from "../../definitions/datatypes/numericString";
 
 function isInBounds(value: number, min?: number, max?: number): boolean {
     if (min !== undefined && value < min) return false;
@@ -24,23 +25,14 @@ function normalize(v: string): string | null {
     return String(n);
 }
 
-type NumericProp = number | EmptyOr<NumericString>;
-
-const toNumber = (v: NumericProp | undefined): number | undefined => {
-    if (v === undefined || v === "") return undefined;
-    if (typeof v === "number") return v;
-    const n = Number(v);
-    return isNaN(n) ? undefined : n;
-};
-
 type IntegerInputProps = {
-    value: EmptyOr<NumericString>;
-    onValue?: (n: EmptyOr<NumericString>) => void;
-    onCommit?: (n: EmptyOr<NumericString>) => void;
-    onConfirm?: (v: EmptyOr<NumericString>) => void; // fires when you hit enter, even if no change was made
-    min?: NumericProp;
-    max?: NumericProp;
-    step?: NumericProp;
+    value: EmptyOr<NumericString.Type>;
+    onValue?: (n: EmptyOr<NumericString.Type>) => void;
+    onCommit?: (n: EmptyOr<NumericString.Type>) => void;
+    onConfirm?: (v: EmptyOr<NumericString.Type>) => void; // fires when you hit enter, even if no change was made
+    min?: number | EmptyOr<NumericString.Type>;
+    max?: number | EmptyOr<NumericString.Type>;
+    step?: number | EmptyOr<NumericString.Type>;
 };
 
 const IntegerInput = styled(
@@ -58,9 +50,9 @@ const IntegerInput = styled(
         required,
         ...rest
     }: Omit<AbstractInputProps, "value" | "min" | "max" | "step" | "pattern"> & IntegerInputProps) => {
-        const minRaw = toNumber(minProp);
-        const maxRaw = toNumber(maxProp);
-        const stepRaw = toNumber(stepProp);
+        const minRaw = typeof minProp === "string" ? (NumericString.Emptyable.asNumber(minProp) ?? undefined) : minProp;
+        const maxRaw = typeof maxProp === "string" ? (NumericString.Emptyable.asNumber(maxProp) ?? undefined) : maxProp;
+        const stepRaw = typeof stepProp === "string" ? (NumericString.Emptyable.asNumber(stepProp) ?? undefined) : stepProp;
         const min = minRaw !== undefined ? Math.round(minRaw) : undefined;
         const max = maxRaw !== undefined ? Math.round(maxRaw) : undefined;
         const step = stepRaw !== undefined ? Math.round(stepRaw) : undefined;
@@ -139,7 +131,7 @@ const IntegerInput = styled(
                 // Only fire onValue if the normalized value differs from current state
                 const normalizedState = normalize(valueRef.current);
                 if (normalized !== normalizedState) {
-                    onValueRef.current?.(normalized as NumericString);
+                    onValueRef.current?.(normalized as NumericString.Type);
                 }
             },
             [min, max, required],
@@ -190,7 +182,7 @@ const IntegerInput = styled(
                 // Only fire onCommit if value differs from prop
                 const normalizedState = normalize(valueRef.current);
                 if (normalized !== normalizedState) {
-                    onCommitRef.current?.(normalized as NumericString);
+                    onCommitRef.current?.(normalized as NumericString.Type);
                 }
             },
             [min, max, required],
@@ -221,7 +213,7 @@ const IntegerInput = styled(
                         // Invalid - confirm the last valid value
                         evt.currentTarget.setCustomValidity("");
                         setCache(lastValidRef.current);
-                        onConfirmRef.current?.(lastValidRef.current as NumericString);
+                        onConfirmRef.current?.(lastValidRef.current as NumericString.Type);
                         return;
                     }
 
@@ -232,9 +224,9 @@ const IntegerInput = styled(
                     // Fire onCommit if value differs from prop
                     const normalizedProp = normalize(valueRef.current);
                     if (normalized !== normalizedProp) {
-                        onCommitRef.current?.(normalized as NumericString);
+                        onCommitRef.current?.(normalized as NumericString.Type);
                     }
-                    onConfirmRef.current?.(normalized as NumericString);
+                    onConfirmRef.current?.(normalized as NumericString.Type);
                     return;
                 }
 
@@ -263,8 +255,8 @@ const IntegerInput = styled(
                 // Only fire callbacks if value actually changed
                 const normalizedState = normalize(valueRef.current);
                 if (newValueStr !== normalizedState) {
-                    onValueRef.current?.(newValueStr as NumericString);
-                    onCommitRef.current?.(newValueStr as NumericString);
+                    onValueRef.current?.(newValueStr as NumericString.Type);
+                    onCommitRef.current?.(newValueStr as NumericString.Type);
                 }
             },
             [step, min, max, required],

@@ -3,7 +3,6 @@ import { Accordion } from "../components/containers/Accordion";
 import { GraphIdContext } from "../state/graphId";
 import { Icon, ICONS } from "../components/Icon";
 import { useCallback, useMemo } from "react";
-import { NODETITLE_FLAVOURS } from "../util/misc";
 import { Project } from "../state/project";
 import { DragPaneControls } from "../components/wrappers/DragPane";
 import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -87,7 +86,7 @@ const NodeCard = styled(
             handleAdd(nodeType, {});
         }, [nodeType, handleAdd]);
         return (
-            <button className={className} data-flavour={NODETITLE_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd}>
+            <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd}>
                 <div data-part={"title"}>{nodeType.displayName}</div>
                 <div data-part={"icon"}>
                     <Icon shape={nodeType.iconCard} />

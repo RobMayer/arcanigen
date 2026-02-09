@@ -8,7 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import DecimalInput from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { addNumericStrings } from "../../../util/misc";
+import { NumericString } from "../../datatypes/numericString";
 
 export type AddFloatDefinition = {
     inputs: {
@@ -78,7 +78,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AddFloatDefinition>, socket: "ou
         const b = context.resolve<"float">(node.id, "b")?.data ?? node.payload.b;
         return {
             kind: "float",
-            data: addNumericStrings(a, b),
+            data: NumericString.add(NumericString.Emptyable.coalesce(a, 0), NumericString.Emptyable.coalesce(b, 0)),
         };
     }
     return null;

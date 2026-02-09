@@ -5,5 +5,3 @@ export type SVGObject = {
     children: SVGObject[];
     attributes: { [key: string]: string | undefined };
 };
-
-export type NodeCategory = "result" | "interface" | "primitive" | "collection" | "shape" | "meta" | "math";

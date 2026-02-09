@@ -1,13 +1,8 @@
-import { Flavour } from "../components/types";
-import { NodeCategory } from "../types";
-
 export type ListOf<T> = T | T[] | Set<T>;
 
 type NotIterable<T> = T extends readonly unknown[] | Set<unknown> ? never : T;
 
 export type EmptyOr<T extends string> = T | "";
-
-export type NumericString = `${number}`;
 
 export const normalizeList = <T>(list: ListOf<NotIterable<T>>): Set<T> => (list instanceof Set ? list : new Set<T>(Array.isArray(list) ? list : [list]));
 
@@ -19,18 +14,4 @@ export const merge = <M, S extends Record<string, unknown>>(item: M, extra: S): 
         },
         item as M & S,
     );
-};
-
-export const NODETITLE_FLAVOURS: { [key in NodeCategory]: Flavour } = {
-    result: "emphasis",
-    interface: "emphasis",
-    primitive: "accent",
-    collection: "danger",
-    shape: "confirm",
-    meta: "emphasis",
-    math: "accent",
-};
-
-export const addNumericStrings = (a: EmptyOr<NumericString>, b: EmptyOr<NumericString>): NumericString => {
-    return `${Number(a || 0) + Number(b || 0)}`;
 };

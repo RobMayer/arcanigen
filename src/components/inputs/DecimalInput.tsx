@@ -1,8 +1,9 @@
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
-import { EmptyOr, NumericString } from "../../util/misc";
+import { EmptyOr } from "../../util/misc";
 import styled from "styled-components";
 import { AbstractNumberInput, AbstractInputProps } from "../abstract/Inputs";
+import { NumericString } from "../../definitions/datatypes/numericString";
 
 function isInBounds(value: number, min?: number, max?: number): boolean {
     if (min !== undefined && value < min) return false;
@@ -49,23 +50,14 @@ function formatForDisplay(n: number, precision: number): string {
     return String(n);
 }
 
-type NumericProp = number | EmptyOr<NumericString>;
-
-const toNumber = (v: NumericProp | undefined): number | undefined => {
-    if (v === undefined || v === "") return undefined;
-    if (typeof v === "number") return v;
-    const n = Number(v);
-    return isNaN(n) ? undefined : n;
-};
-
 type DecimalInputProps = {
-    value: EmptyOr<NumericString>;
-    onValue?: (n: EmptyOr<NumericString>) => void;
-    onCommit?: (n: EmptyOr<NumericString>) => void;
-    onConfirm?: (v: EmptyOr<NumericString>) => void; // fires when you hit enter, even if no change was made
-    min?: NumericProp;
-    max?: NumericProp;
-    step?: NumericProp;
+    value: EmptyOr<NumericString.Type>;
+    onValue?: (n: EmptyOr<NumericString.Type>) => void;
+    onCommit?: (n: EmptyOr<NumericString.Type>) => void;
+    onConfirm?: (v: EmptyOr<NumericString.Type>) => void; // fires when you hit enter, even if no change was made
+    min?: number | EmptyOr<NumericString.Type>;
+    max?: number | EmptyOr<NumericString.Type>;
+    step?: number | EmptyOr<NumericString.Type>;
     precision?: number;
 };
 
@@ -86,9 +78,9 @@ const DecimalInput = styled(
         ...rest
     }: Omit<AbstractInputProps, "value" | "min" | "max" | "step" | "pattern"> & DecimalInputProps) => {
         const precision = precisionProp === undefined ? undefined : Math.round(precisionProp);
-        const min = toNumber(minProp);
-        const max = toNumber(maxProp);
-        const step = toNumber(stepProp);
+        const min = typeof minProp === "string" ? (NumericString.Emptyable.asNumber(minProp) ?? undefined) : minProp;
+        const max = typeof maxProp === "string" ? (NumericString.Emptyable.asNumber(maxProp) ?? undefined) : maxProp;
+        const step = typeof stepProp === "string" ? (NumericString.Emptyable.asNumber(stepProp) ?? undefined) : stepProp;
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);
@@ -170,7 +162,7 @@ const DecimalInput = styled(
                 // Only fire onValue if the normalized value differs from current state
                 const normalizedState = normalize(valueRef.current);
                 if (normalized !== normalizedState) {
-                    onValueRef.current?.(normalized as NumericString);
+                    onValueRef.current?.(normalized as NumericString.Type);
                 }
             },
             [min, max, required, precision],
@@ -224,9 +216,9 @@ const DecimalInput = styled(
                 if (finalValue !== normalizedState) {
                     // Only fire onValue if precision truncation changed the value from what was typed
                     if (finalValue !== normalized) {
-                        onValueRef.current?.(finalValue as NumericString);
+                        onValueRef.current?.(finalValue as NumericString.Type);
                     }
-                    onCommitRef.current?.(finalValue as NumericString);
+                    onCommitRef.current?.(finalValue as NumericString.Type);
                 }
                 lastValidRef.current = finalValue;
             },
@@ -258,7 +250,7 @@ const DecimalInput = styled(
                         // Invalid - submit the last valid value
                         evt.currentTarget.setCustomValidity("");
                         setCache(lastValidRef.current);
-                        onConfirmRef.current?.(lastValidRef.current as NumericString);
+                        onConfirmRef.current?.(lastValidRef.current as NumericString.Type);
                         return;
                     }
 
@@ -270,15 +262,15 @@ const DecimalInput = styled(
                     evt.currentTarget.setCustomValidity("");
                     // Fire onValue if normalization/precision changed the value
                     if (finalValue !== normalized) {
-                        onValueRef.current?.(finalValue as NumericString);
+                        onValueRef.current?.(finalValue as NumericString.Type);
                     }
                     lastValidRef.current = finalValue;
                     // Fire onCommit if value differs from prop
                     const normalizedProp = normalize(valueRef.current);
                     if (finalValue !== normalizedProp) {
-                        onCommitRef.current?.(finalValue as NumericString);
+                        onCommitRef.current?.(finalValue as NumericString.Type);
                     }
-                    onConfirmRef.current?.(finalValue as NumericString);
+                    onConfirmRef.current?.(finalValue as NumericString.Type);
                     return;
                 }
 
@@ -317,8 +309,8 @@ const DecimalInput = styled(
 
                 const normalizedState = normalize(valueRef.current);
                 if (newValueStr !== normalizedState) {
-                    onValueRef.current?.(newValueStr as NumericString);
-                    onCommitRef.current?.(newValueStr as NumericString);
+                    onValueRef.current?.(newValueStr as NumericString.Type);
+                    onCommitRef.current?.(newValueStr as NumericString.Type);
                 }
             },
             [step, min, max, required, precision],

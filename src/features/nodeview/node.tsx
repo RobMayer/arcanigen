@@ -8,7 +8,6 @@ import TextInput from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
-import { NODETITLE_FLAVOURS } from "../../util/misc";
 
 export const GraphNode = ({ nodeId }: { nodeId: string }) => {
     const graphId = useGraphId();
@@ -155,9 +154,9 @@ const NodeTitle = styled(
         }, []);
 
         return (
-            <div className={className} data-nodecategory={nodeType.category} data-flavour={NODETITLE_FLAVOURS[nodeType.category]}>
+            <div className={className} data-nodecategory={nodeType.category} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
                 <NodeFallback nodeId={node.id} side={"in"} />
-                <ActionButton.Lite onClick={toggleOpen} flavour={NODETITLE_FLAVOURS[nodeType.category]}>
+                <ActionButton.Lite onClick={toggleOpen} flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
                     <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
                 </ActionButton.Lite>
 
@@ -173,7 +172,7 @@ const NodeTitle = styled(
                 {node.type === "result" ? (
                     <Icon shape={ICONS.Blank} />
                 ) : (
-                    <ActionButton.Lite onClick={onDelete} flavour={NODETITLE_FLAVOURS[nodeType.category]}>
+                    <ActionButton.Lite onClick={onDelete} flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
                         <Icon shape={ICONS.Close} />
                     </ActionButton.Lite>
                 )}

@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
-import { Color, NodeCategory, SVGObject } from "../types";
-import { EmptyOr, NumericString } from "../util/misc";
+import { Color, SVGObject } from "../types";
+import { EmptyOr } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
 import { Length } from "./datatypes/length";
@@ -18,6 +18,7 @@ import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInp
 import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
 import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
+import { NumericString } from "./datatypes/numericString";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -62,8 +63,8 @@ namespace Registries {
     export type DATATYPES = {
         length: EmptyOr<Length.Type>;
         shape: SVGObject;
-        float: EmptyOr<NumericString>;
-        integer: EmptyOr<NumericString>;
+        float: EmptyOr<NumericString.Type>;
+        integer: EmptyOr<NumericString.Type>;
         string: string;
         color: EmptyOr<Color>;
         enum: number;
@@ -103,6 +104,16 @@ namespace Registries {
         // compound
         number: "accent",
     };
+
+    export const NODECAT_FLAVOURS = {
+        result: "emphasis",
+        interface: "emphasis",
+        primitive: "accent",
+        collection: "danger",
+        shape: "confirm",
+        meta: "emphasis",
+        math: "accent",
+    } as const satisfies { [key: string]: Flavour };
 }
 
 export namespace DataTypes {
@@ -157,6 +168,10 @@ export namespace NodeTypes {
     export type Key = keyof typeof Registries.NODETYPES;
     export type Use<K extends Key> = (typeof Registries.NODETYPES)[K];
 
+    export const CATEGORY_FLAVOURS = Registries.NODECAT_FLAVOURS;
+
+    export type Category = keyof typeof Registries.NODECAT_FLAVOURS;
+
     /** State snapshot passed to lifecycle hooks */
     export type HookState = {
         nodes: { [graphId: string]: { [nodeId: string]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
@@ -171,7 +186,7 @@ export namespace NodeTypes {
         defaultLabel: string;
         iconNode: IconDefinition;
         iconCard: IconDefinition;
-        category: NodeCategory;
+        category: Category;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
         evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;

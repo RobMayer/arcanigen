@@ -10,7 +10,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
 import DecimalInput from "../../../components/inputs/DecimalInput";
-import { NumericString } from "../../../util/misc";
+import { NumericString } from "../../datatypes/numericString";
 
 type StoredValueKey = `value_${string}`;
 
@@ -91,7 +91,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
                 // Look up the input node to determine its type
                 const inputNode = context.getNode(graphId, inSocket);
                 if (inputNode?.type === "floatInput") {
-                    inputs[inSocket] = { kind: "float", data: storedValue as NumericString };
+                    inputs[inSocket] = { kind: "float", data: storedValue as NumericString.Type };
                 }
                 // TODO: add other input types as they are created (integerInput, angleInput, etc.)
             }
@@ -214,7 +214,7 @@ const InputSlotFloat = ({ host, source, handleValue }: { host: NodeDefinitions.N
     return (
         <SocketIn node={host} socketId={source.id} type={"float" as never} label={source.payload.widget !== Enum.Common.floatInputWidget.None ? (source.payload.label ?? "Input") : undefined}>
             <DecimalInput
-                value={(host.payload[`value_${source.id}`] as NumericString) ?? source.payload.defaultValue}
+                value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
                 onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                 disabled={host.in[source.id] !== null}
                 min={min}

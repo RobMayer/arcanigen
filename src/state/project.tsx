@@ -45,7 +45,6 @@ const TESTING_STATE = {
                 id: "CUSTOM_A",
                 in: {
                     inputA: null,
-                    minInput: null,
                 },
                 out: {
                     addResult: [],
