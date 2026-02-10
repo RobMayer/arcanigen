@@ -91,7 +91,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         };
     }, []);
 
-    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("-15");
+    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("0");
 
     return (
         <TypicalNode node={node} methods={methods}>
