@@ -1,10 +1,11 @@
-import { ChangeEvent, DetailedHTMLProps, InputHTMLAttributes, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, DetailedHTMLProps, HTMLAttributes, InputHTMLAttributes, Ref, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Flavour } from "../types";
 import { NumericString } from "../../definitions/datatypes/numericString";
 import { EmptyOr } from "../../util/misc";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
+import { Icon, IconDefinition, ICONS } from "../Icon";
 
 export namespace AbstractSlider {
     export const Linear = styled(
@@ -103,7 +104,498 @@ export namespace AbstractSlider {
         } & Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
     }
 
-    export namespace Radial {}
+    export const Radial = styled(
+        ({
+            value,
+            onValue,
+            onCommit,
+            wrap: wrapProp,
+            min: minProp,
+            max: maxProp,
+            trackMin: trackMinProp = "0",
+            trackMax: trackMaxProp = "360",
+            step: stepProp,
+            tooltip,
+            flavour = "accent",
+            icon = ICONS.Blank,
+            disabled,
+            tabIndex,
+            ref,
+            handleRef,
+            ...rest
+        }: Radial.Props) => {
+            const [innerRef, makeInnerRef] = useCombinedRef(ref);
+            const [innerHandleRef, makeInnerHandleRef] = useCombinedRef(handleRef);
+
+            const [cache, setCache] = useState(value);
+            const trackRef = useRef<SVGSVGElement>(null);
+
+            useEffect(() => {
+                setCache(value);
+            }, [value]);
+
+            const onValueRef = useStable(onValue);
+            const onCommitRef = useStable(onCommit);
+            const cacheRef = useRef(cache);
+            cacheRef.current = cache;
+
+            const { min, max, step, wrap, trackMin, trackMax } = useMemo(() => {
+                const wrapRaw = typeof wrapProp === "number" ? wrapProp : (NumericString.Emptyable.asNumber(wrapProp ?? "") ?? undefined);
+                const minRaw = typeof minProp === "number" ? minProp : (NumericString.Emptyable.asNumber(minProp ?? "") ?? undefined);
+                const maxRaw = typeof maxProp === "number" ? maxProp : (NumericString.Emptyable.asNumber(maxProp ?? "") ?? undefined);
+                const stepRaw = typeof stepProp === "number" ? stepProp : (NumericString.Emptyable.asNumber(stepProp ?? "") ?? undefined);
+
+                const trackMinRaw = typeof trackMinProp === "number" ? trackMinProp : (NumericString.Emptyable.asNumber(trackMinProp ?? "") ?? 0);
+                const trackMaxRaw = typeof trackMaxProp === "number" ? trackMaxProp : (NumericString.Emptyable.asNumber(trackMaxProp ?? "") ?? 360);
+
+                // Derive min/max from wrap if not provided
+                let theMin = minRaw ?? (wrapRaw !== undefined ? (maxRaw !== undefined ? maxRaw - wrapRaw : 0) : undefined);
+                let theMax = maxRaw ?? (wrapRaw !== undefined ? (minRaw !== undefined ? minRaw + wrapRaw : wrapRaw) : undefined);
+
+                // Swap if max < min
+                if (theMin !== undefined && theMax !== undefined && theMax < theMin) {
+                    [theMin, theMax] = [theMax, theMin];
+                }
+
+                // Determine if wrapping should be enabled:
+                // wrap is provided AND min and max are both defined AND distance(min, max) === wrap
+                const doesWrap = wrapRaw !== undefined && theMin !== undefined && theMax !== undefined && theMax - theMin === wrapRaw;
+
+                return {
+                    min: theMin,
+                    max: theMax,
+                    step: stepRaw,
+                    wrap: doesWrap,
+                    trackMin: trackMinRaw,
+                    trackMax: trackMaxRaw,
+                };
+            }, [minProp, maxProp, stepProp, wrapProp, trackMinProp, trackMaxProp]);
+
+            const trackRange = trackMax - trackMin;
+
+            // Visual rotation based on track range (one full circle = trackRange)
+            const rotation = useMemo(() => {
+                const v = NumericString.Emptyable.asNumber(cache ?? "") ?? trackMin;
+                if (trackRange === 0) return { rotate: "0deg" };
+                // Map value to visual angle: value within track range maps to 0-360
+                const visualAngle = ((v - trackMin) / trackRange) * 360;
+                // Modulo to handle values outside one track cycle
+                const normalized = ((visualAngle % 360) + 360) % 360;
+                return { rotate: `${normalized}deg` };
+            }, [cache, trackMin, trackRange]);
+
+            // Get angle from pointer event relative to component center (0-360, 0 = top, clockwise)
+            const getAngleFromEvent = useCallback((e: PointerEvent) => {
+                const el = innerRef.current;
+                if (!el) return null;
+
+                const rect = el.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                // atan2 with args swapped and Y inverted gives angle from top, clockwise
+                const angle = Math.atan2(e.clientX - centerX, centerY - e.clientY);
+                // Convert to 0-360
+                return ((angle * 180) / Math.PI + 360) % 360;
+            }, []);
+
+            // Ref to track drag state across events
+            const dragStateRef = useRef<{ lastAngle: number; accumulatedValue: number } | null>(null);
+            // Ref for RAF throttling
+            const rafRef = useRef<number | null>(null);
+
+            // Helper to compute visual angle from value
+            const valueToVisualAngle = useCallback(
+                (v: number) => {
+                    if (trackRange === 0) return 0;
+                    const visualAngle = ((v - trackMin) / trackRange) * 360;
+                    return ((visualAngle % 360) + 360) % 360;
+                },
+                [trackMin, trackRange],
+            );
+
+            // Pointer drag handling
+            useEffect(() => {
+                const handle = innerHandleRef.current;
+                const bounds = handle?.parentElement;
+                const container = innerRef.current;
+                const track = trackRef.current;
+                if (!handle || !bounds || !container || !track || disabled) return;
+
+                // Handle click: offset grab (maintains current value, tracks delta)
+                const handlePointerDown = (e: PointerEvent) => {
+                    if (e.button !== 0) return;
+                    handle.setPointerCapture(e.pointerId);
+
+                    const angle = getAngleFromEvent(e);
+                    if (angle === null) return;
+
+                    // Initialize drag state with current value (read from ref to avoid stale closure)
+                    const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? trackMin;
+                    dragStateRef.current = {
+                        lastAngle: angle,
+                        accumulatedValue: currentValue,
+                    };
+                };
+
+                // Track click: jump to position, then allow dragging
+                const handleTrackPointerDown = (e: PointerEvent) => {
+                    if (e.button !== 0) return;
+                    // Don't handle if click was on the handle itself
+                    if (e.target === handle || handle.contains(e.target as Node)) return;
+
+                    handle.setPointerCapture(e.pointerId);
+
+                    const clickedAngle = getAngleFromEvent(e);
+                    if (clickedAngle === null) return;
+
+                    // Get current value and its visual angle
+                    const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? trackMin;
+                    const currentAngle = valueToVisualAngle(currentValue);
+
+                    // Check if we're near the bounds (within half a turn)
+                    const nearMin = min !== undefined && currentValue < min + trackRange / 2;
+                    const nearMax = max !== undefined && currentValue > max - trackRange / 2;
+
+                    let newValue: number;
+
+                    if (!wrap && (nearMin || nearMax)) {
+                        // When near bounds, use absolute position within current turn
+                        // This allows clicking anywhere on the visible track
+                        const currentTurn = Math.floor((currentValue - trackMin) / trackRange);
+                        const clickedValueInTurn = (clickedAngle / 360) * trackRange + trackMin;
+                        newValue = currentTurn * trackRange + clickedValueInTurn;
+
+                        // Apply step if defined
+                        if (step !== undefined) {
+                            newValue = Math.round(newValue / step) * step;
+                        }
+
+                        // Clamp to bounds
+                        if (min !== undefined && max !== undefined) {
+                            newValue = Math.max(min, Math.min(max, newValue));
+                        }
+                    } else {
+                        // Normal shortest-path behavior for middle range or wrap mode
+                        let angleDelta = clickedAngle - currentAngle;
+
+                        // Normalize to -180 to +180 range (shortest path)
+                        if (angleDelta > 180) {
+                            angleDelta -= 360;
+                        } else if (angleDelta < -180) {
+                            angleDelta += 360;
+                        }
+
+                        // Convert angle delta to value delta and apply
+                        const valueDelta = (angleDelta / 360) * trackRange;
+                        newValue = currentValue + valueDelta;
+
+                        // Apply step if defined
+                        if (step !== undefined) {
+                            newValue = Math.round(newValue / step) * step;
+                        }
+
+                        // Apply bounds if defined
+                        if (min !== undefined && max !== undefined) {
+                            if (wrap) {
+                                const rangeSize = max - min;
+                                newValue = ((((newValue - min) % rangeSize) + rangeSize) % rangeSize) + min;
+                            } else {
+                                newValue = Math.max(min, Math.min(max, newValue));
+                            }
+                        }
+                    }
+
+                    dragStateRef.current = {
+                        lastAngle: clickedAngle,
+                        accumulatedValue: newValue,
+                    };
+
+                    // Update DOM directly
+                    const visualAngle = valueToVisualAngle(newValue);
+                    bounds.style.rotate = `${visualAngle}deg`;
+
+                    // Update React state
+                    const valueStr = String(newValue) as NumericString.Type;
+                    setCache(valueStr);
+                    onValueRef.current?.(valueStr);
+                };
+
+                const handlePointerMove = (e: PointerEvent) => {
+                    if (!dragStateRef.current) return;
+
+                    const angle = getAngleFromEvent(e);
+                    if (angle === null) return;
+
+                    const { lastAngle, accumulatedValue } = dragStateRef.current;
+
+                    // Calculate angle delta, handling the 0/360 boundary
+                    let angleDelta = angle - lastAngle;
+
+                    // Detect boundary crossing: if delta is large, we crossed 0/360
+                    if (angleDelta > 180) {
+                        angleDelta -= 360; // Crossed from low to high (e.g., 350 -> 10)
+                    } else if (angleDelta < -180) {
+                        angleDelta += 360; // Crossed from high to low (e.g., 10 -> 350)
+                    }
+
+                    // Convert angle delta to value delta
+                    const valueDelta = (angleDelta / 360) * trackRange;
+                    let newValue = accumulatedValue + valueDelta;
+                    const unclampedValue = newValue;
+
+                    // Apply step if defined
+                    if (step !== undefined) {
+                        newValue = Math.round(newValue / step) * step;
+                    }
+
+                    // Apply bounds (if defined) with wrap or clamp
+                    let wasClamped = false;
+                    if (min !== undefined && max !== undefined) {
+                        if (wrap) {
+                            const rangeSize = max - min;
+                            newValue = ((((newValue - min) % rangeSize) + rangeSize) % rangeSize) + min;
+                        } else {
+                            const clamped = Math.max(min, Math.min(max, newValue));
+                            wasClamped = clamped !== newValue;
+                            newValue = clamped;
+                        }
+                    }
+
+                    // Update drag state
+                    // If value was clamped, adjust lastAngle so that reversing direction
+                    // starts moving the handle immediately (handle stays "in line" with pointer)
+                    let newLastAngle = angle;
+                    if (wasClamped) {
+                        // Calculate where the angle "should be" for the clamped value
+                        // This is the difference between unclamped and clamped, converted back to angle
+                        const clampedDelta = ((unclampedValue - newValue) / trackRange) * 360;
+                        newLastAngle = (((angle - clampedDelta) % 360) + 360) % 360;
+                    }
+                    dragStateRef.current = {
+                        lastAngle: newLastAngle,
+                        accumulatedValue: newValue,
+                    };
+
+                    // Update DOM directly for smooth visuals
+                    const visualAngle = valueToVisualAngle(newValue);
+                    bounds.style.rotate = `${visualAngle}deg`;
+
+                    // Throttle React state updates via RAF
+                    // Schedule RAF if not already pending - it will read latest value from dragStateRef
+                    if (rafRef.current === null) {
+                        rafRef.current = requestAnimationFrame(() => {
+                            rafRef.current = null;
+                            if (!dragStateRef.current) return;
+                            const valueStr = String(dragStateRef.current.accumulatedValue) as NumericString.Type;
+                            setCache(valueStr);
+                            onValueRef.current?.(valueStr);
+                        });
+                    }
+                };
+
+                const handlePointerUp = (_e: PointerEvent) => {
+                    if (!dragStateRef.current) return;
+
+                    const finalValue = dragStateRef.current.accumulatedValue;
+                    dragStateRef.current = null;
+
+                    // Cancel any pending RAF
+                    if (rafRef.current !== null) {
+                        cancelAnimationFrame(rafRef.current);
+                        rafRef.current = null;
+                    }
+
+                    // Set inline style to final value to prevent flicker
+                    // React will overwrite this when it re-renders with the new cache
+                    const finalAngle = valueToVisualAngle(finalValue);
+                    bounds.style.rotate = `${finalAngle}deg`;
+
+                    // Update cache first, then fire callbacks
+                    const valueStr = String(finalValue) as NumericString.Type;
+                    setCache(valueStr);
+                    onValueRef.current?.(valueStr);
+                    onCommitRef.current?.(valueStr);
+                };
+
+                handle.addEventListener("pointerdown", handlePointerDown);
+                handle.addEventListener("pointermove", handlePointerMove);
+                handle.addEventListener("pointerup", handlePointerUp);
+                track.addEventListener("pointerdown", handleTrackPointerDown);
+
+                return () => {
+                    handle.removeEventListener("pointerdown", handlePointerDown);
+                    handle.removeEventListener("pointermove", handlePointerMove);
+                    handle.removeEventListener("pointerup", handlePointerUp);
+                    track.removeEventListener("pointerdown", handleTrackPointerDown);
+                    // Cleanup RAF on unmount
+                    if (rafRef.current !== null) {
+                        cancelAnimationFrame(rafRef.current);
+                    }
+                };
+            }, [disabled, getAngleFromEvent, trackMin, trackRange, step, min, max, wrap, valueToVisualAngle]);
+
+            // Keyboard handling
+            const handleKeyDown = useCallback(
+                (e: React.KeyboardEvent) => {
+                    if (disabled) return;
+
+                    const currentValue = NumericString.Emptyable.asNumber(cache ?? "") ?? trackMin;
+                    // Default step: 1/36 of track range (10 degrees worth)
+                    const stepAmount = step ?? trackRange / 36;
+                    let newValue: number | null = null;
+
+                    switch (e.key) {
+                        case "ArrowUp":
+                        case "ArrowRight":
+                            e.preventDefault();
+                            newValue = currentValue + stepAmount;
+                            break;
+                        case "ArrowDown":
+                        case "ArrowLeft":
+                            e.preventDefault();
+                            newValue = currentValue - stepAmount;
+                            break;
+                        case "Home":
+                            e.preventDefault();
+                            newValue = min ?? trackMin;
+                            break;
+                        case "End":
+                            e.preventDefault();
+                            newValue = max ?? trackMax;
+                            break;
+                        default:
+                            return;
+                    }
+
+                    if (newValue !== null) {
+                        // Apply bounds (if defined) with wrap or clamp
+                        if (min !== undefined && max !== undefined) {
+                            if (wrap) {
+                                const rangeSize = max - min;
+                                newValue = ((((newValue - min) % rangeSize) + rangeSize) % rangeSize) + min;
+                            } else {
+                                newValue = Math.max(min, Math.min(max, newValue));
+                            }
+                        }
+
+                        const valueStr = String(newValue) as NumericString.Type;
+                        setCache(valueStr);
+                        onValueRef.current?.(valueStr);
+                        onCommitRef.current?.(valueStr);
+                    }
+                },
+                [disabled, cache, trackMin, trackMax, trackRange, min, max, step, wrap],
+            );
+
+            return (
+                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={disabled ? "disabled" : undefined} onKeyDown={handleKeyDown}>
+                    <svg data-part="track" ref={trackRef}>
+                        <circle data-part="border" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
+                        <circle data-part="main" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
+                    </svg>
+                    <div data-part={"bounds"} style={rotation}>
+                        <div data-part={"handle"} data-flavour={"inherit"} ref={makeInnerHandleRef}>
+                            <Icon shape={icon} />
+                        </div>
+                    </div>
+                </div>
+            );
+        },
+    )`
+        height: 8em;
+        aspect-ratio: 1;
+        flex: 1 0 auto;
+        display: grid;
+        isolation: isolate;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        place-items: center;
+        padding: 4px;
+        border-radius: 100%;
+
+        --handleSize: 1lh;
+        --trackSize: 1em;
+
+        & > svg[data-part="track"] {
+            grid-area: 1 / 1;
+            width: calc(100% - var(--handleSize));
+            height: calc(100% - var(--handleSize));
+            aspect-ratio: 1;
+            overflow: visible;
+            pointer-events: stroke;
+            vector-effect: non-scaling-stroke;
+            & > circle[data-part="border"] {
+                stroke: var(--flavour);
+                stroke-width: calc(var(--trackSize) + 2px);
+            }
+            & > circle[data-part="main"] {
+                stroke: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
+                stroke-width: calc(var(--trackSize));
+            }
+        }
+        & > div[data-part="bounds"] {
+            grid-area: 1 / 1;
+            transform-origin: center center;
+            align-self: stretch;
+            align-items: start;
+            justify-items: start;
+            pointer-events: none;
+            display: flex;
+            & > div[data-part="handle"] {
+                pointer-events: auto;
+                outline: 1px solid transparent;
+                transition: outline-offset 0.1s ease;
+                outline-offset: 0;
+                display: flex;
+                place-items: center;
+                place-content: center;
+                text-align: center;
+                width: var(--handleSize);
+                height: var(--handleSize);
+                background: var(--flavour);
+                border-radius: 100%;
+                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
+            }
+        }
+
+        &[data-state~="disabled"] {
+            opacity: 0.6;
+        }
+
+        &:not([data-state~="disabled"]) {
+            & > div[data-part="bounds"] > div[data-part="handle"] {
+                cursor: move;
+                &:active,
+                &:hover {
+                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
+                }
+            }
+            &:focus > div[data-part="bounds"] > div[data-part="handle"] {
+                outline-color: #fff;
+                outline-offset: 2px;
+            }
+        }
+    `;
+
+    export namespace Radial {
+        export type Props = {
+            value: EmptyOr<NumericString.Type>;
+            onValue?: (n: NumericString.Type) => void;
+            onCommit?: (n: NumericString.Type) => void;
+            min?: number | EmptyOr<NumericString.Type>;
+            max?: number | EmptyOr<NumericString.Type>;
+            trackMin?: number | EmptyOr<NumericString.Type>;
+            trackMax?: number | EmptyOr<NumericString.Type>;
+            step?: number | EmptyOr<NumericString.Type>;
+            wrap?: number | EmptyOr<NumericString.Type>;
+            normalize?: (v: EmptyOr<NumericString.Type>) => EmptyOr<NumericString.Type>;
+            icon?: IconDefinition;
+            disabled?: boolean;
+            handleRef?: Ref<HTMLDivElement>;
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+    }
 
     export namespace Polar {}
 

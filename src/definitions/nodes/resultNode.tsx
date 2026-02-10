@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { ReactNode, useCallback } from "react";
+import { ReactNode, useCallback, useState } from "react";
 
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
@@ -9,6 +9,9 @@ import { LengthInput } from "../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
+import { AbstractSlider } from "../../components/abstract/Slider";
+import { EmptyOr } from "../../util/misc";
+import { NumericString } from "../datatypes/numericString";
 
 export type ResultDefinition = {
     outputs: never;
@@ -63,8 +66,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         [methods],
     );
 
+    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("0");
+
     return (
         <TypicalNode node={node} methods={methods}>
+            <div>{test}</div>
+            <AbstractSlider.Radial value={test} onValue={setTest} min={"0"} max={"3"} trackMax={"1"} />
             <SocketIn node={node} socketId={"input"} type={"shape"}>
                 Input
             </SocketIn>
