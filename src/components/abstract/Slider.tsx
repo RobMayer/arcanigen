@@ -7,6 +7,11 @@ import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
 import { Icon, IconDefinition, ICONS } from "../Icon";
 
+// Truncate floating point errors (e.g., 0.30000000000000004 → 0.3)
+function cleanFloat(num: number): number {
+    return Number(num.toFixed(10));
+}
+
 export namespace AbstractSlider {
     export const Linear = styled(
         ({ value, onValue, onCommit, min: minProp = "0.0", max: maxProp = "1.0", step: stepProp = "0.01", onChange, ref, tooltip, flavour = "accent", ...rest }: Linear.Props) => {
@@ -112,9 +117,11 @@ export namespace AbstractSlider {
             wrap: wrapProp,
             min: minProp,
             max: maxProp,
+            snap: snapProp,
             trackMin: trackMinProp = "0",
             trackMax: trackMaxProp = "360",
-            step: stepProp,
+            step: stepProp = Array.isArray(snapProp) ? undefined : snapProp,
+            normalize,
             tooltip,
             flavour = "accent",
             icon = ICONS.Blank,
@@ -136,10 +143,11 @@ export namespace AbstractSlider {
 
             const onValueRef = useStable(onValue);
             const onCommitRef = useStable(onCommit);
+            const normalizeRef = useStable(normalize);
             const cacheRef = useRef(cache);
             cacheRef.current = cache;
 
-            const { min, max, step, wrap, trackMin, trackMax } = useMemo(() => {
+            const { min, max, step, wrap, trackMin, trackMax, snap } = useMemo(() => {
                 const wrapRaw = typeof wrapProp === "number" ? wrapProp : (NumericString.Emptyable.asNumber(wrapProp ?? "") ?? undefined);
                 const minRaw = typeof minProp === "number" ? minProp : (NumericString.Emptyable.asNumber(minProp ?? "") ?? undefined);
                 const maxRaw = typeof maxProp === "number" ? maxProp : (NumericString.Emptyable.asNumber(maxProp ?? "") ?? undefined);
@@ -147,6 +155,18 @@ export namespace AbstractSlider {
 
                 const trackMinRaw = typeof trackMinProp === "number" ? trackMinProp : (NumericString.Emptyable.asNumber(trackMinProp ?? "") ?? 0);
                 const trackMaxRaw = typeof trackMaxProp === "number" ? trackMaxProp : (NumericString.Emptyable.asNumber(trackMaxProp ?? "") ?? 360);
+
+                // Parse snap: either a number (interval) or array of numbers (discrete values)
+                let snapParsed: number | number[] | undefined;
+                if (Array.isArray(snapProp)) {
+                    snapParsed = snapProp
+                        .map((v) => (typeof v === "number" ? v : NumericString.Emptyable.asNumber(v ?? "")))
+                        .filter((v): v is number => v !== null && !Number.isNaN(v))
+                        .sort((a, b) => a - b);
+                    if (snapParsed.length === 0) snapParsed = undefined;
+                } else if (snapProp !== undefined) {
+                    snapParsed = typeof snapProp === "number" ? snapProp : (NumericString.Emptyable.asNumber(snapProp ?? "") ?? undefined);
+                }
 
                 // Derive min/max from wrap if not provided
                 let theMin = minRaw ?? (wrapRaw !== undefined ? (maxRaw !== undefined ? maxRaw - wrapRaw : 0) : undefined);
@@ -168,10 +188,33 @@ export namespace AbstractSlider {
                     wrap: doesWrap,
                     trackMin: trackMinRaw,
                     trackMax: trackMaxRaw,
+                    snap: snapParsed,
                 };
-            }, [minProp, maxProp, stepProp, wrapProp, trackMinProp, trackMaxProp]);
+            }, [minProp, maxProp, stepProp, wrapProp, trackMinProp, trackMaxProp, snapProp]);
 
             const trackRange = trackMax - trackMin;
+
+            // Snap a value to the snap grid (interval or discrete values)
+            const snapValueRef = useStable((value: number): number => {
+                if (snap === undefined) return value;
+
+                if (Array.isArray(snap)) {
+                    // Snap to closest value in array
+                    let closest = snap[0];
+                    let closestDist = Math.abs(value - closest);
+                    for (let i = 1; i < snap.length; i++) {
+                        const dist = Math.abs(value - snap[i]);
+                        if (dist < closestDist) {
+                            closest = snap[i];
+                            closestDist = dist;
+                        }
+                    }
+                    return closest;
+                } else {
+                    // Snap to interval
+                    return cleanFloat(Math.round(value / snap) * snap);
+                }
+            });
 
             // Visual rotation based on track range (one full circle = trackRange)
             const rotation = useMemo(() => {
@@ -218,9 +261,8 @@ export namespace AbstractSlider {
             useEffect(() => {
                 const handle = innerHandleRef.current;
                 const bounds = handle?.parentElement;
-                const container = innerRef.current;
                 const track = trackRef.current;
-                if (!handle || !bounds || !container || !track || disabled) return;
+                if (!handle || !bounds || !track || disabled) return;
 
                 // Handle click: offset grab (maintains current value, tracks delta)
                 const handlePointerDown = (e: PointerEvent) => {
@@ -254,15 +296,17 @@ export namespace AbstractSlider {
                     const currentAngle = valueToVisualAngle(currentValue);
 
                     // Check if we're near the bounds (within half a turn)
-                    const nearMin = min !== undefined && currentValue < min + trackRange / 2;
-                    const nearMax = max !== undefined && currentValue > max - trackRange / 2;
+                    const nearMin = min !== undefined && currentValue <= min + trackRange / 2;
+                    const nearMax = max !== undefined && currentValue >= max - trackRange / 2;
 
                     let newValue: number;
 
                     if (!wrap && (nearMin || nearMax)) {
                         // When near bounds, use absolute position within current turn
                         // This allows clicking anywhere on the visible track
-                        const currentTurn = Math.floor((currentValue - trackMin) / trackRange);
+                        // Use floor for most cases, but when exactly at a turn boundary, stay on the previous turn
+                        const rawTurn = (currentValue - trackMin) / trackRange;
+                        const currentTurn = Number.isInteger(rawTurn) && rawTurn > 0 ? rawTurn - 1 : Math.floor(rawTurn);
                         const clickedValueInTurn = (clickedAngle / 360) * trackRange + trackMin;
                         newValue = currentTurn * trackRange + clickedValueInTurn;
 
@@ -308,7 +352,7 @@ export namespace AbstractSlider {
 
                     dragStateRef.current = {
                         lastAngle: clickedAngle,
-                        accumulatedValue: newValue,
+                        accumulatedValue: cleanFloat(newValue),
                     };
 
                     // Update DOM directly
@@ -316,7 +360,7 @@ export namespace AbstractSlider {
                     bounds.style.rotate = `${visualAngle}deg`;
 
                     // Update React state
-                    const valueStr = String(newValue) as NumericString.Type;
+                    const valueStr = String(cleanFloat(newValue)) as NumericString.Type;
                     setCache(valueStr);
                     onValueRef.current?.(valueStr);
                 };
@@ -344,11 +388,6 @@ export namespace AbstractSlider {
                     let newValue = accumulatedValue + valueDelta;
                     const unclampedValue = newValue;
 
-                    // Apply step if defined
-                    if (step !== undefined) {
-                        newValue = Math.round(newValue / step) * step;
-                    }
-
                     // Apply bounds (if defined) with wrap or clamp
                     let wasClamped = false;
                     if (min !== undefined && max !== undefined) {
@@ -374,11 +413,14 @@ export namespace AbstractSlider {
                     }
                     dragStateRef.current = {
                         lastAngle: newLastAngle,
-                        accumulatedValue: newValue,
+                        accumulatedValue: cleanFloat(newValue),
                     };
 
+                    // Snap for visual display only
+                    const snappedValue = snapValueRef.current(newValue);
+
                     // Update DOM directly for smooth visuals
-                    const visualAngle = valueToVisualAngle(newValue);
+                    const visualAngle = valueToVisualAngle(snappedValue);
                     bounds.style.rotate = `${visualAngle}deg`;
 
                     // Throttle React state updates via RAF
@@ -387,7 +429,8 @@ export namespace AbstractSlider {
                         rafRef.current = requestAnimationFrame(() => {
                             rafRef.current = null;
                             if (!dragStateRef.current) return;
-                            const valueStr = String(dragStateRef.current.accumulatedValue) as NumericString.Type;
+                            const snapped = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                            const valueStr = String(cleanFloat(snapped)) as NumericString.Type;
                             setCache(valueStr);
                             onValueRef.current?.(valueStr);
                         });
@@ -397,7 +440,8 @@ export namespace AbstractSlider {
                 const handlePointerUp = (_e: PointerEvent) => {
                     if (!dragStateRef.current) return;
 
-                    const finalValue = dragStateRef.current.accumulatedValue;
+                    // Apply snap on commit
+                    const finalValue = snapValueRef.current(dragStateRef.current.accumulatedValue);
                     dragStateRef.current = null;
 
                     // Cancel any pending RAF
@@ -412,10 +456,11 @@ export namespace AbstractSlider {
                     bounds.style.rotate = `${finalAngle}deg`;
 
                     // Update cache first, then fire callbacks
-                    const valueStr = String(finalValue) as NumericString.Type;
-                    setCache(valueStr);
-                    onValueRef.current?.(valueStr);
-                    onCommitRef.current?.(valueStr);
+                    const valueStr = String(cleanFloat(finalValue)) as NumericString.Type;
+                    const normalized = normalizeRef.current ? normalizeRef.current(valueStr) : valueStr;
+                    setCache(normalized);
+                    onValueRef.current?.(normalized as NumericString.Type);
+                    onCommitRef.current?.(normalized as NumericString.Type);
                 };
 
                 handle.addEventListener("pointerdown", handlePointerDown);
@@ -428,9 +473,10 @@ export namespace AbstractSlider {
                     handle.removeEventListener("pointermove", handlePointerMove);
                     handle.removeEventListener("pointerup", handlePointerUp);
                     track.removeEventListener("pointerdown", handleTrackPointerDown);
-                    // Cleanup RAF on unmount
+                    // Cleanup RAF on unmount/re-run
                     if (rafRef.current !== null) {
                         cancelAnimationFrame(rafRef.current);
+                        rafRef.current = null;
                     }
                 };
             }, [disabled, getAngleFromEvent, trackMin, trackRange, step, min, max, wrap, valueToVisualAngle]);
@@ -469,6 +515,9 @@ export namespace AbstractSlider {
                     }
 
                     if (newValue !== null) {
+                        // Snap to step to avoid floating point accumulation errors
+                        newValue = cleanFloat(Math.round(newValue / stepAmount) * stepAmount);
+
                         // Apply bounds (if defined) with wrap or clamp
                         if (min !== undefined && max !== undefined) {
                             if (wrap) {
@@ -479,10 +528,14 @@ export namespace AbstractSlider {
                             }
                         }
 
+                        // Apply snap on commit
+                        newValue = snapValueRef.current(newValue);
+
                         const valueStr = String(newValue) as NumericString.Type;
-                        setCache(valueStr);
-                        onValueRef.current?.(valueStr);
-                        onCommitRef.current?.(valueStr);
+                        const normalized = normalizeRef.current ? normalizeRef.current(valueStr) : valueStr;
+                        setCache(normalized);
+                        onValueRef.current?.(normalized as NumericString.Type);
+                        onCommitRef.current?.(normalized as NumericString.Type);
                     }
                 },
                 [disabled, cache, trackMin, trackMax, trackRange, min, max, step, wrap],
@@ -491,6 +544,7 @@ export namespace AbstractSlider {
             return (
                 <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={disabled ? "disabled" : undefined} onKeyDown={handleKeyDown}>
                     <svg data-part="track" ref={trackRef}>
+                        <circle data-part="capture" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
                         <circle data-part="border" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
                         <circle data-part="main" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
                     </svg>
@@ -524,15 +578,22 @@ export namespace AbstractSlider {
             height: calc(100% - var(--handleSize));
             aspect-ratio: 1;
             overflow: visible;
-            pointer-events: stroke;
+            pointer-events: none;
             vector-effect: non-scaling-stroke;
+            & > circle[data-part="capture"] {
+                stroke: transparent;
+                stroke-width: calc(var(--handleSize));
+                pointer-events: stroke;
+            }
             & > circle[data-part="border"] {
                 stroke: var(--flavour);
                 stroke-width: calc(var(--trackSize) + 2px);
+                pointer-events: none;
             }
             & > circle[data-part="main"] {
                 stroke: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
                 stroke-width: calc(var(--trackSize));
+                pointer-events: none;
             }
         }
         & > div[data-part="bounds"] {
@@ -594,6 +655,7 @@ export namespace AbstractSlider {
             icon?: IconDefinition;
             disabled?: boolean;
             handleRef?: Ref<HTMLDivElement>;
+            snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
         } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
     }
 

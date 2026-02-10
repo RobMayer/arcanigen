@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { ReactNode, useCallback, useState } from "react";
+import { ReactNode, useCallback, useEffect, useState } from "react";
 
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
@@ -66,12 +66,36 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         [methods],
     );
 
+    const [ctrl, setCtrl] = useState(false);
+
+    useEffect(() => {
+        const onKey = (evt: KeyboardEvent) => {
+            if (evt.key === "Control") {
+                setCtrl(evt.type === "keydown");
+            }
+        };
+
+        const resetMods = () => {
+            setCtrl(false);
+        };
+
+        document.addEventListener("keydown", onKey);
+        document.addEventListener("keyup", onKey);
+        document.addEventListener("trh:pagefocus", resetMods);
+
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.removeEventListener("keyup", onKey);
+            document.removeEventListener("trh:pagefocus", resetMods);
+        };
+    }, []);
+
     const [test, setTest] = useState<EmptyOr<NumericString.Type>>("0");
 
     return (
         <TypicalNode node={node} methods={methods}>
             <div>{test}</div>
-            <AbstractSlider.Radial value={test} onValue={setTest} min={"0"} max={"3"} trackMax={"1"} />
+            <AbstractSlider.Radial value={test} onValue={setTest} min={"0"} max={"720"} snap={ctrl ? "15" : undefined} />
             <SocketIn node={node} socketId={"input"} type={"shape"}>
                 Input
             </SocketIn>
