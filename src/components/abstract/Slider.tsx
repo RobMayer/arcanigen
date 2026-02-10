@@ -12,6 +12,21 @@ function cleanFloat(num: number): number {
     return Number(num.toFixed(10));
 }
 
+// Wrap a value to a range, normalizing boundary values
+// Favors: 0, then positive, then closest to 0
+function wrapNumber(value: number, min: number, max: number): number {
+    const range = max - min;
+    let wrapped = ((((value - min) % range) + range) % range) + min;
+    // Normalize boundary: favor 0, then positive, then closest to 0
+    if (wrapped === min || wrapped === max) {
+        if (min === 0 || max === 0) wrapped = 0;
+        else if (min > 0) wrapped = min;
+        else if (max > 0) wrapped = max;
+        else wrapped = Math.max(min, max);
+    }
+    return wrapped;
+}
+
 export namespace AbstractSlider {
     export const Linear = styled(
         ({ value, onValue, onCommit, min: minProp = "0.0", max: maxProp = "1.0", step: stepProp = "0.01", onChange, ref, tooltip, flavour = "accent", ...rest }: Linear.Props) => {
@@ -342,8 +357,7 @@ export namespace AbstractSlider {
                         // Apply bounds if defined
                         if (min !== undefined && max !== undefined) {
                             if (wrap) {
-                                const rangeSize = max - min;
-                                newValue = ((((newValue - min) % rangeSize) + rangeSize) % rangeSize) + min;
+                                newValue = wrapNumber(newValue, min, max);
                             } else {
                                 newValue = Math.max(min, Math.min(max, newValue));
                             }
@@ -392,8 +406,7 @@ export namespace AbstractSlider {
                     let wasClamped = false;
                     if (min !== undefined && max !== undefined) {
                         if (wrap) {
-                            const rangeSize = max - min;
-                            newValue = ((((newValue - min) % rangeSize) + rangeSize) % rangeSize) + min;
+                            newValue = wrapNumber(newValue, min, max);
                         } else {
                             const clamped = Math.max(min, Math.min(max, newValue));
                             wasClamped = clamped !== newValue;
@@ -416,8 +429,11 @@ export namespace AbstractSlider {
                         accumulatedValue: cleanFloat(newValue),
                     };
 
-                    // Snap for visual display only
-                    const snappedValue = snapValueRef.current(newValue);
+                    // Snap for visual display only, then apply wrap
+                    let snappedValue = snapValueRef.current(newValue);
+                    if (wrap && min !== undefined && max !== undefined) {
+                        snappedValue = wrapNumber(snappedValue, min, max);
+                    }
 
                     // Update DOM directly for smooth visuals
                     const visualAngle = valueToVisualAngle(snappedValue);
@@ -429,7 +445,11 @@ export namespace AbstractSlider {
                         rafRef.current = requestAnimationFrame(() => {
                             rafRef.current = null;
                             if (!dragStateRef.current) return;
-                            const snapped = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                            let snapped = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                            // Apply wrap after snap
+                            if (wrap && min !== undefined && max !== undefined) {
+                                snapped = wrapNumber(snapped, min, max);
+                            }
                             const valueStr = String(cleanFloat(snapped)) as NumericString.Type;
                             setCache(valueStr);
                             onValueRef.current?.(valueStr);
@@ -440,8 +460,11 @@ export namespace AbstractSlider {
                 const handlePointerUp = (_e: PointerEvent) => {
                     if (!dragStateRef.current) return;
 
-                    // Apply snap on commit
-                    const finalValue = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                    // Apply snap on commit, then wrap if enabled
+                    let finalValue = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                    if (wrap && min !== undefined && max !== undefined) {
+                        finalValue = wrapNumber(finalValue, min, max);
+                    }
                     dragStateRef.current = null;
 
                     // Cancel any pending RAF
@@ -518,18 +541,17 @@ export namespace AbstractSlider {
                         // Snap to step to avoid floating point accumulation errors
                         newValue = cleanFloat(Math.round(newValue / stepAmount) * stepAmount);
 
-                        // Apply bounds (if defined) with wrap or clamp
+                        // Apply snap first
+                        newValue = snapValueRef.current(newValue);
+
+                        // Then apply bounds (if defined) with wrap or clamp
                         if (min !== undefined && max !== undefined) {
                             if (wrap) {
-                                const rangeSize = max - min;
-                                newValue = ((((newValue - min) % rangeSize) + rangeSize) % rangeSize) + min;
+                                newValue = wrapNumber(newValue, min, max);
                             } else {
                                 newValue = Math.max(min, Math.min(max, newValue));
                             }
                         }
-
-                        // Apply snap on commit
-                        newValue = snapValueRef.current(newValue);
 
                         const valueStr = String(newValue) as NumericString.Type;
                         const normalized = normalizeRef.current ? normalizeRef.current(valueStr) : valueStr;
@@ -541,8 +563,32 @@ export namespace AbstractSlider {
                 [disabled, cache, trackMin, trackMax, trackRange, min, max, step, wrap],
             );
 
+            // Check if cache value is invalid (doesn't adhere to snap, or out of bounds)
+            const isInvalid = useMemo(() => {
+                const v = NumericString.Emptyable.asNumber(cache ?? "");
+                if (v === null) return false;
+
+                // Check snap validity
+                if (snap !== undefined && snapValueRef.current(v) !== v) {
+                    return true;
+                }
+
+                // Check bounds validity
+                if (min !== undefined && max !== undefined) {
+                    if (v < min || v > max) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }, [snap, cache, min, max]);
+
+            const dataState = useMemo(() => {
+                return [disabled && "disabled", isInvalid && "invalid"].filter(Boolean).join(" ") || undefined;
+            }, [disabled, isInvalid]);
+
             return (
-                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={disabled ? "disabled" : undefined} onKeyDown={handleKeyDown}>
+                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown}>
                     <svg data-part="track" ref={trackRef}>
                         <circle data-part="capture" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
                         <circle data-part="border" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
@@ -571,6 +617,10 @@ export namespace AbstractSlider {
 
         --handleSize: 1lh;
         --trackSize: 1em;
+
+        &[data-state~="invalid"] {
+            outline: 1px solid red;
+        }
 
         & > svg[data-part="track"] {
             grid-area: 1 / 1;

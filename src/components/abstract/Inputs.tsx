@@ -18,11 +18,13 @@ export namespace AbstractInput {
             outline-color: #fffa;
             outline-offset: -2px;
         }
-        &:invalid {
+        &:invalid,
+        &[data-state~="invalid"] {
             outline-color: #f00;
             background-color: #200;
         }
-        &:invalid:focus-visible {
+        &:invalid:focus-visible,
+        &[data-state~="invalid"]:focus-visible {
             outline-color: #f88;
         }
         &:disabled {
@@ -242,7 +244,8 @@ export namespace AbstractInput {
         onConfirm,
         min: minProp,
         max: maxProp,
-        step: stepProp,
+        snap: snapProp,
+        step: stepProp = Array.isArray(snapProp) ? undefined : snapProp,
         onChange,
         onKeyDown,
         required,
@@ -252,12 +255,24 @@ export namespace AbstractInput {
         flavour,
         ...props
     }: Numeric.Props) => {
-        const { precision, min, max, step, wrap } = useMemo(() => {
+        const { precision, min, max, step, wrap, snap } = useMemo(() => {
             const precisionRaw = typeof precisionProp === "number" ? precisionProp : (NumericString.Emptyable.asNumber(precisionProp ?? "") ?? undefined);
             const wrapRaw = typeof wrapProp === "number" ? wrapProp : (NumericString.Emptyable.asNumber(wrapProp ?? "") ?? undefined);
             const minRaw = typeof minProp === "number" ? minProp : (NumericString.Emptyable.asNumber(minProp ?? "") ?? undefined);
             const maxRaw = typeof maxProp === "number" ? maxProp : (NumericString.Emptyable.asNumber(maxProp ?? "") ?? undefined);
             const stepRaw = typeof stepProp === "number" ? stepProp : (NumericString.Emptyable.asNumber(stepProp ?? "") ?? undefined);
+
+            // Parse snap: either a number (interval) or array of numbers (discrete values)
+            let snapParsed: number | number[] | undefined;
+            if (Array.isArray(snapProp)) {
+                snapParsed = snapProp
+                    .map((v) => (typeof v === "number" ? v : NumericString.Emptyable.asNumber(v ?? "")))
+                    .filter((v): v is number => v !== null && !Number.isNaN(v))
+                    .sort((a, b) => a - b);
+                if (snapParsed.length === 0) snapParsed = undefined;
+            } else if (snapProp !== undefined) {
+                snapParsed = typeof snapProp === "number" ? snapProp : (NumericString.Emptyable.asNumber(snapProp ?? "") ?? undefined);
+            }
 
             // Derive min/max from wrap if not provided
             let theMin = minRaw ?? (wrapRaw !== undefined ? (maxRaw !== undefined ? maxRaw - wrapRaw : 0) : undefined);
@@ -278,8 +293,31 @@ export namespace AbstractInput {
                 max: theMax,
                 step: stepRaw,
                 wrap: doesWrap,
+                snap: snapParsed,
             };
-        }, [precisionProp, minProp, maxProp, stepProp, wrapProp]);
+        }, [precisionProp, minProp, maxProp, stepProp, wrapProp, snapProp]);
+
+        // Snap a value to the snap grid (interval or discrete values)
+        const snapValue = useStable((value: number): number => {
+            if (snap === undefined) return value;
+
+            if (Array.isArray(snap)) {
+                // Snap to closest value in array
+                let closest = snap[0];
+                let closestDist = Math.abs(value - closest);
+                for (let i = 1; i < snap.length; i++) {
+                    const dist = Math.abs(value - snap[i]);
+                    if (dist < closestDist) {
+                        closest = snap[i];
+                        closestDist = dist;
+                    }
+                }
+                return closest;
+            } else {
+                // Snap to interval
+                return cleanFloat(Math.round(value / snap) * snap);
+            }
+        });
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);
@@ -404,9 +442,10 @@ export namespace AbstractInput {
                     return;
                 }
 
-                // Valid - apply wrapping if needed, then precision and format for display
+                // Valid - apply snap, then wrapping if needed, then precision and format for display
                 evt.currentTarget.setCustomValidity("");
-                const wrappedValue = cleanFloat(normalizeWrappedValue(asNumber, min, max, wrap));
+                const snappedValue = snapValue.current(asNumber);
+                const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
                 const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                 const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
                 setCache(displayValue);
@@ -414,7 +453,7 @@ export namespace AbstractInput {
                 // Only fire callbacks if value differs from prop
                 const normalizedState = normalize(valueRef.current);
                 if (finalValue !== normalizedState) {
-                    // Only fire onValue if precision truncation changed the value from what was typed
+                    // Only fire onValue if snap/precision changed the value from what was typed
                     if (finalValue !== normalized) {
                         onValueRef.current?.(finalValue as NumericString.Type);
                     }
@@ -454,14 +493,15 @@ export namespace AbstractInput {
                         return;
                     }
 
-                    // Apply wrapping if needed, then precision and format for display on Enter
+                    // Apply snap, then wrapping if needed, then precision and format for display on Enter
                     const asNumber = Number(normalized);
-                    const wrappedValue = cleanFloat(normalizeWrappedValue(asNumber, min, max, wrap));
+                    const snappedValue = snapValue.current(asNumber);
+                    const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
                     const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                     const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
                     setCache(displayValue);
                     evt.currentTarget.setCustomValidity("");
-                    // Fire onValue if normalization/precision changed the value
+                    // Fire onValue if snap/precision changed the value
                     if (finalValue !== normalized) {
                         onValueRef.current?.(finalValue as NumericString.Type);
                     }
@@ -491,7 +531,7 @@ export namespace AbstractInput {
                 const delta = evt.key === "ArrowUp" ? stepAmount : -stepAmount;
                 let newValue = cleanFloat(currentValue + delta);
 
-                // Apply wrapping or enforce bounds
+                // Apply wrapping or enforce bounds (don't apply snap - let it show as invalid)
                 if (wrap && min !== undefined && max !== undefined) {
                     newValue = cleanFloat(wrapNumber(newValue, min, max));
                 } else if (!isNumberInBounds(newValue, min, max)) {
@@ -508,6 +548,13 @@ export namespace AbstractInput {
                     return;
                 }
 
+                // Check if the new value adheres to snap
+                if (snap !== undefined && snapValue.current(newValue) !== newValue) {
+                    // Invalid - show value but mark as invalid, don't fire callbacks
+                    evt.currentTarget.setCustomValidity("Value doesn't match snap");
+                    return;
+                }
+
                 // Valid - clear validity and fire callbacks
                 evt.currentTarget.setCustomValidity("");
                 lastValidRef.current = newValueStr;
@@ -518,10 +565,34 @@ export namespace AbstractInput {
                     onCommitRef.current?.(newValueStr as NumericString.Type);
                 }
             },
-            [step, min, max, required, precision, wrap],
+            [step, min, max, required, precision, wrap, snap],
         );
 
-        return <BaseInput {...props} type={"text"} title={tooltip} data-flavour={flavour} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
+        // Check if cache value is invalid (doesn't adhere to snap, or out of bounds)
+        const isInvalid = useMemo(() => {
+            const normalized = normalize(cache);
+            if (normalized === null) return false;
+            const v = Number(normalized);
+            if (!isFinite(v)) return false;
+
+            // Check snap validity
+            if (snap !== undefined && snapValue.current(v) !== v) {
+                return true;
+            }
+
+            // Check bounds validity
+            if (min !== undefined && max !== undefined) {
+                if (v < min || v > max) {
+                    return true;
+                }
+            }
+
+            return false;
+        }, [snap, cache, min, max]);
+
+        const dataState = isInvalid ? "invalid" : undefined;
+
+        return <BaseInput {...props} type={"text"} title={tooltip} data-flavour={flavour} data-state={dataState} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
     };
 
     export namespace Numeric {
@@ -535,6 +606,7 @@ export namespace AbstractInput {
             step?: number | EmptyOr<NumericString.Type>;
             precision?: number | EmptyOr<NumericString.Type>;
             wrap?: number | EmptyOr<NumericString.Type>;
+            snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // interval or discrete values
         } & Omit<BaseProps, "min" | "max" | "step" | "pattern">;
     }
 

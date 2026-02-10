@@ -12,6 +12,7 @@ import { Project } from "../../state/project";
 import { AbstractSlider } from "../../components/abstract/Slider";
 import { EmptyOr } from "../../util/misc";
 import { NumericString } from "../datatypes/numericString";
+import { AbstractInput } from "../../components/abstract/Inputs";
 
 export type ResultDefinition = {
     outputs: never;
@@ -90,12 +91,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         };
     }, []);
 
-    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("0");
+    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("-15");
 
     return (
         <TypicalNode node={node} methods={methods}>
             <div>{test}</div>
-            <AbstractSlider.Radial value={test} onValue={setTest} min={"0"} max={"720"} snap={ctrl ? "15" : undefined} />
+            <AbstractSlider.Radial value={test} onValue={setTest} min={"0"} max={"360"} wrap={"360"} snap={"15"} />
+            <AbstractInput.Numeric value={test} onValue={setTest} min={"0"} max={"360"} wrap={"360"} snap={TEST_SNAP} step={"1"} />
             <SocketIn node={node} socketId={"input"} type={"shape"}>
                 Input
             </SocketIn>
@@ -119,6 +121,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         </TypicalNode>
     );
 };
+
+const TEST_SNAP = [0, 15, 30, 60, 180, 360];
 
 const dependsOn = <K extends string | number | symbol>(node: NodeDefinitions.NodeFor<ResultDefinition>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] => {
     return [];
