@@ -7,7 +7,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import LengthInput from "../../../components/inputs/LengthInput";
+import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { TextInput } from "../../../components/inputs/TextInput";

@@ -1,5 +1,7 @@
 export type Color = `#${string}` | "none";
 
+export type Measure<U extends string> = `${number}${U}`;
+
 export type SVGObject = {
     tag: "g" | "path" | "svg";
     children: SVGObject[];

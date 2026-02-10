@@ -41,7 +41,7 @@ type ColorHexInputProps = {
     onConfirm?: (v: EmptyOr<Color>) => void; // fires when you hit enter, even if no change was made
     nullable?: boolean;
     alpha?: boolean;
-} & Omit<AbstractInput.TextProps<EmptyOr<Color>>, "normalize" | "pattern" | "required" | "onCommit" | "onConfirm" | "onValue">;
+} & Omit<AbstractInput.Text.Props<EmptyOr<Color>>, "normalize" | "pattern" | "required" | "onCommit" | "onConfirm" | "onValue">;
 
 export const ColorHexInput = styled(({ className, value, onValue, onCommit, onConfirm, nullable, alpha, ...rest }: ColorHexInputProps) => {
     const [cache, setCache] = useState<EmptyOr<Color>>(value);

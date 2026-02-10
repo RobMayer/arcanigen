@@ -34,14 +34,6 @@ export namespace AbstractInput {
 
     type BaseProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string; flavour?: Flavour | "inherit" };
 
-    export type TextProps<T extends string = string> = {
-        value: T;
-        onValue?: (v: T) => void;
-        onCommit?: (v: T) => void;
-        onConfirm?: (v: T) => void; // fires when you hit enter, even if no change was made
-        normalize?: (v: T) => T;
-    } & BaseProps;
-
     export const Text = <T extends string = string>({
         value,
         onValue,
@@ -56,7 +48,7 @@ export namespace AbstractInput {
         flavour,
         tooltip,
         ...props
-    }: TextProps<T>) => {
+    }: Text.Props<T>) => {
         const onKeyDownRef = useStable(onKeyDown);
         const onChangeRef = useStable(onChange);
         const onBlurRef = useStable(onBlur);
@@ -232,17 +224,15 @@ export namespace AbstractInput {
         return <BaseInput {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
     };
 
-    export type NumericProps = {
-        value: EmptyOr<NumericString.Type>;
-        onValue?: (n: EmptyOr<NumericString.Type>) => void;
-        onCommit?: (n: EmptyOr<NumericString.Type>) => void;
-        onConfirm?: (v: EmptyOr<NumericString.Type>) => void; // fires when you hit enter, even if no change was made
-        min?: number | EmptyOr<NumericString.Type>;
-        max?: number | EmptyOr<NumericString.Type>;
-        step?: number | EmptyOr<NumericString.Type>;
-        precision?: number | EmptyOr<NumericString.Type>;
-        wrap?: number | EmptyOr<NumericString.Type>;
-    } & Omit<BaseProps, "min" | "max" | "step" | "pattern">;
+    export namespace Text {
+        export type Props<T extends string = string> = {
+            value: T;
+            onValue?: (v: T) => void;
+            onCommit?: (v: T) => void;
+            onConfirm?: (v: T) => void; // fires when you hit enter, even if no change was made
+            normalize?: (v: T) => T;
+        } & BaseProps;
+    }
 
     export const Numeric = ({
         value,
@@ -261,7 +251,7 @@ export namespace AbstractInput {
         tooltip,
         flavour,
         ...props
-    }: NumericProps) => {
+    }: Numeric.Props) => {
         const { precision, min, max, step, wrap } = useMemo(() => {
             const precisionRaw = typeof precisionProp === "number" ? precisionProp : (NumericString.Emptyable.asNumber(precisionProp ?? "") ?? undefined);
             const wrapRaw = typeof wrapProp === "number" ? wrapProp : (NumericString.Emptyable.asNumber(wrapProp ?? "") ?? undefined);
@@ -503,8 +493,8 @@ export namespace AbstractInput {
 
                 // Apply wrapping or enforce bounds
                 if (wrap && min !== undefined && max !== undefined) {
-                    newValue = cleanFloat(wrapValue(newValue, min, max));
-                } else if (!isInBounds(newValue, min, max)) {
+                    newValue = cleanFloat(wrapNumber(newValue, min, max));
+                } else if (!isNumberInBounds(newValue, min, max)) {
                     return;
                 }
 
@@ -533,16 +523,403 @@ export namespace AbstractInput {
 
         return <BaseInput {...props} type={"text"} title={tooltip} data-flavour={flavour} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
     };
+
+    export namespace Numeric {
+        export type Props = {
+            value: EmptyOr<NumericString.Type>;
+            onValue?: (n: EmptyOr<NumericString.Type>) => void;
+            onCommit?: (n: EmptyOr<NumericString.Type>) => void;
+            onConfirm?: (v: EmptyOr<NumericString.Type>) => void; // fires when you hit enter, even if no change was made
+            min?: number | EmptyOr<NumericString.Type>;
+            max?: number | EmptyOr<NumericString.Type>;
+            step?: number | EmptyOr<NumericString.Type>;
+            precision?: number | EmptyOr<NumericString.Type>;
+            wrap?: number | EmptyOr<NumericString.Type>;
+        } & Omit<BaseProps, "min" | "max" | "step" | "pattern">;
+    }
+
+    export const Measurement = <U extends string>({
+        units,
+        defaultUnit,
+        value,
+        converter,
+        min,
+        max,
+        step: stepProp,
+        wrap,
+        onValue,
+        onCommit,
+        onConfirm,
+        normalize: normalizeProp,
+        onBlur,
+        onChange,
+        onKeyDown,
+        required = false,
+        tooltip,
+        flavour,
+        ...props
+    }: Measurement.Props<U>) => {
+        const resolvedDefaultUnit = defaultUnit ?? units[0];
+
+        const onKeyDownRef = useStable(onKeyDown);
+        const onChangeRef = useStable(onChange);
+        const onBlurRef = useStable(onBlur);
+        const normalizeRef = useStable(normalizeProp);
+
+        const onValueRef = useStable(onValue);
+        const onCommitRef = useStable(onCommit);
+        const onConfirmRef = useStable(onConfirm);
+
+        const valueRef = useRef<EmptyOr<Measure<U>>>(value);
+        const lastValidRef = useRef<EmptyOr<Measure<U>>>(value);
+        const lastUnitRef = useRef<U>(value ? (parseMeasure(value, units)?.[1] ?? resolvedDefaultUnit) : resolvedDefaultUnit);
+        const [cache, setCache] = useState<string>(value);
+
+        // Pattern: optional number, optional unit (for lenient typing)
+        const pattern = useMemo(() => {
+            const unitPattern = units.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+            // Allow: empty (if not required), bare number, or number+unit
+            return `([+-]?\\d*\\.?\\d+)(${unitPattern})?`;
+        }, [units]);
+
+        // Sync with incoming prop
+        useEffect(() => {
+            if (valueRef.current !== value) {
+                valueRef.current = value;
+                lastValidRef.current = value;
+                if (value) {
+                    const parsed = parseMeasure(value, units);
+                    if (parsed) {
+                        lastUnitRef.current = parsed[1];
+                    }
+                }
+                setCache(value);
+            }
+        }, [value, units]);
+
+        // Normalize: add unit if bare number, apply custom normalize
+        const normalize = useCallback(
+            (v: string): EmptyOr<Measure<U>> => {
+                if (v === "") return "" as EmptyOr<Measure<U>>;
+
+                // Check if it's already a valid dimensioned value
+                const parsed = parseMeasure(v, units);
+                if (parsed) {
+                    const [num, unit] = parsed;
+                    lastUnitRef.current = unit;
+                    const result = formatMeasure(num, unit);
+                    return normalizeRef.current ? normalizeRef.current(result) : result;
+                }
+
+                // Check if it's a bare number
+                if (NUMBER_REGEX.test(v)) {
+                    const num = Number(v);
+                    const result = formatMeasure(num, lastUnitRef.current);
+                    return normalizeRef.current ? normalizeRef.current(result) : result;
+                }
+
+                // Invalid
+                return v as EmptyOr<Measure<U>>;
+            },
+            [units],
+        );
+
+        // Validate value against pattern and bounds
+        const validate = useCallback(
+            (el: HTMLInputElement, v: string): boolean => {
+                if (!required && v === "") {
+                    el.setCustomValidity("");
+                    return true;
+                }
+                if (required && v === "") {
+                    el.setCustomValidity("Value is required");
+                    return false;
+                }
+
+                const regex = new RegExp(`^${pattern}$`);
+                if (!regex.test(v)) {
+                    el.setCustomValidity("Invalid format");
+                    return false;
+                }
+
+                // Normalize to check bounds
+                const normalized = normalize(v);
+                if (normalized === "" || !parseMeasure(normalized, units)) {
+                    el.setCustomValidity("Invalid value");
+                    return false;
+                }
+
+                // Check bounds
+                if (!isMeasureInBounds(normalized, min, max, units, converter)) {
+                    el.setCustomValidity("Value out of bounds");
+                    return false;
+                }
+
+                el.setCustomValidity("");
+                return true;
+            },
+            [pattern, required, normalize, min, max, units, converter],
+        );
+
+        const handleChange = useCallback(
+            (evt: ChangeEvent<HTMLInputElement>) => {
+                onChangeRef.current?.(evt);
+                if (evt.nativeEvent.handled) return;
+                evt.nativeEvent.handled = "implied";
+
+                const v = evt.target.value;
+                setCache(v);
+
+                if (validate(evt.target, v)) {
+                    const normalized = normalize(v);
+                    lastValidRef.current = normalized;
+                    onValueRef.current?.(normalized);
+                }
+            },
+            [validate, normalize],
+        );
+
+        const handleBlur = useCallback(
+            (evt: React.FocusEvent<HTMLInputElement>) => {
+                onBlurRef.current?.(evt);
+                if (evt.nativeEvent.handled) return;
+
+                const v = evt.currentTarget.value;
+
+                if (!required && v === "") {
+                    setCache("");
+                    evt.currentTarget.setCustomValidity("");
+                    lastValidRef.current = "";
+                    onCommitRef.current?.("");
+                    return;
+                }
+
+                const regex = new RegExp(`^${pattern}$`);
+                if (!regex.test(v)) {
+                    // Revert to last valid
+                    setCache(lastValidRef.current);
+                    evt.currentTarget.setCustomValidity("");
+                    return;
+                }
+
+                const normalized = normalize(v);
+
+                // Check bounds
+                if (normalized !== "" && !isMeasureInBounds(normalized, min, max, units, converter)) {
+                    // Revert to last valid
+                    setCache(lastValidRef.current);
+                    evt.currentTarget.setCustomValidity("");
+                    return;
+                }
+
+                // Apply wrapping if configured
+                let finalValue: EmptyOr<Measure<U>> = normalized;
+                if (normalized && wrap) {
+                    const parsed = parseMeasure(normalized, units);
+                    if (parsed) {
+                        const [num, unit] = parsed;
+                        finalValue = wrapMeasure(num, unit, min, max, wrap, units, converter);
+                    }
+                }
+
+                setCache(finalValue);
+                evt.currentTarget.setCustomValidity("");
+                lastValidRef.current = finalValue;
+
+                if (finalValue !== v) {
+                    onValueRef.current?.(finalValue);
+                }
+                onCommitRef.current?.(finalValue);
+            },
+            [pattern, required, normalize, min, max, wrap, units, converter],
+        );
+
+        const handleKeyDown = useCallback(
+            (evt: React.KeyboardEvent<HTMLInputElement>) => {
+                onKeyDownRef.current?.(evt);
+                if (evt.nativeEvent.handled) return;
+
+                if (evt.key === "Enter") {
+                    evt.nativeEvent.handled = "implied";
+                    const v = evt.currentTarget.value;
+
+                    if (!required && v === "") {
+                        setCache("");
+                        evt.currentTarget.setCustomValidity("");
+                        lastValidRef.current = "";
+                        if (valueRef.current !== "") {
+                            onCommitRef.current?.("");
+                        }
+                        onConfirmRef.current?.("");
+                        return;
+                    }
+
+                    const regex = new RegExp(`^${pattern}$`);
+                    if (!regex.test(v)) {
+                        setCache(lastValidRef.current);
+                        evt.currentTarget.setCustomValidity("");
+                        onConfirmRef.current?.(lastValidRef.current);
+                        return;
+                    }
+
+                    const normalized = normalize(v);
+
+                    if (normalized !== "" && !isMeasureInBounds(normalized, min, max, units, converter)) {
+                        setCache(lastValidRef.current);
+                        evt.currentTarget.setCustomValidity("");
+                        onConfirmRef.current?.(lastValidRef.current);
+                        return;
+                    }
+
+                    // Apply wrapping
+                    let finalValue: EmptyOr<Measure<U>> = normalized;
+                    if (normalized && wrap) {
+                        const parsed = parseMeasure(normalized, units);
+                        if (parsed) {
+                            const [num, unit] = parsed;
+                            finalValue = wrapMeasure(num, unit, min, max, wrap, units, converter);
+                        }
+                    }
+
+                    setCache(finalValue);
+                    evt.currentTarget.setCustomValidity("");
+                    lastValidRef.current = finalValue;
+
+                    if (finalValue !== v) {
+                        onValueRef.current?.(finalValue);
+                    }
+                    if (finalValue !== valueRef.current) {
+                        onCommitRef.current?.(finalValue);
+                    }
+                    onConfirmRef.current?.(finalValue);
+                    return;
+                }
+
+                if (evt.key !== "ArrowUp" && evt.key !== "ArrowDown") return;
+                evt.nativeEvent.handled = "implied";
+                evt.preventDefault();
+
+                // Get current value to step from
+                const currentDisplay = evt.currentTarget.value;
+                let normalized = normalize(currentDisplay);
+                if (normalized === "" || !parseMeasure(normalized, units)) {
+                    normalized = lastValidRef.current;
+                }
+                if (normalized === "" || !parseMeasure(normalized, units)) return;
+
+                const parsed = parseMeasure(normalized, units)!;
+                const [currentNum, currentUnit] = parsed;
+
+                // Calculate step amount
+                let stepAmount: number;
+                if (stepProp === "" || stepProp === undefined) {
+                    stepAmount = 1;
+                } else if (typeof stepProp === "number") {
+                    stepAmount = stepProp;
+                } else if (typeof stepProp === "string" && NUMBER_REGEX.test(stepProp)) {
+                    stepAmount = Number(stepProp);
+                } else {
+                    // Dimensioned step
+                    const stepParsed = parseMeasure(stepProp as string, units);
+                    if (!stepParsed) {
+                        stepAmount = 1;
+                    } else {
+                        const [stepNum, stepUnit] = stepParsed;
+                        if (converter) {
+                            // Convert step to canonical, then to current unit
+                            const stepCanonical = converter[stepUnit].from(formatMeasure(stepNum, stepUnit));
+                            const currentCanonical = converter[currentUnit].from(formatMeasure(currentNum, currentUnit));
+                            const newCanonical = cleanFloat(currentCanonical + (evt.key === "ArrowUp" ? stepCanonical : -stepCanonical));
+                            const newValue = converter[currentUnit].to(newCanonical);
+
+                            // Check bounds
+                            if (!isMeasureInBounds(newValue, min, max, units, converter)) {
+                                // Try wrapping
+                                if (wrap) {
+                                    const wrappedParsed = parseMeasure(newValue, units);
+                                    if (wrappedParsed) {
+                                        const wrapped = wrapMeasure(wrappedParsed[0], wrappedParsed[1], min, max, wrap, units, converter);
+                                        setCache(wrapped);
+                                        lastValidRef.current = wrapped;
+                                        onValueRef.current?.(wrapped);
+                                        onCommitRef.current?.(wrapped);
+                                    }
+                                }
+                                return;
+                            }
+
+                            setCache(newValue);
+                            lastValidRef.current = newValue;
+                            onValueRef.current?.(newValue);
+                            onCommitRef.current?.(newValue);
+                            return;
+                        } else {
+                            // No converter - step is just numeric
+                            stepAmount = stepNum;
+                        }
+                    }
+                }
+
+                const delta = evt.key === "ArrowUp" ? stepAmount : -stepAmount;
+                const newNum = currentNum + delta;
+                let newValue = formatMeasure(newNum, currentUnit);
+
+                // Check bounds
+                if (!isMeasureInBounds(newValue, min, max, units, converter)) {
+                    // Try wrapping
+                    if (wrap) {
+                        newValue = wrapMeasure(newNum, currentUnit, min, max, wrap, units, converter);
+                        if (!isMeasureInBounds(newValue, min, max, units, converter)) {
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+
+                setCache(newValue);
+                lastValidRef.current = newValue;
+                onValueRef.current?.(newValue);
+                onCommitRef.current?.(newValue);
+            },
+            [pattern, required, normalize, stepProp, min, max, wrap, units, converter],
+        );
+
+        return <BaseInput {...props} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
+    };
+
+    export namespace Measurement {
+        export type Measure<U extends string> = `${number}${U}`;
+        export type Converter<U extends string> = { [K in U]: { from: (value: Measure<K>) => number; to: (value: number) => Measure<K> } };
+
+        export type Props<U extends string> = {
+            units: U[] | readonly U[];
+            defaultUnit?: U;
+            value: EmptyOr<Measure<U>>;
+            converter?: Converter<U>;
+            min?: EmptyOr<Measure<U>>;
+            max?: EmptyOr<Measure<U>>;
+            step?: Measure<U> | number | `${number}` | ""; // empty string treated as undefined
+            wrap?: EmptyOr<Measure<U>>;
+            onValue?: (v: EmptyOr<Measure<U>>) => void;
+            onCommit?: (v: EmptyOr<Measure<U>>) => void;
+            onConfirm?: (v: EmptyOr<Measure<U>>) => void;
+            normalize?: (v: EmptyOr<Measure<U>>) => EmptyOr<Measure<U>>;
+        } & Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+    }
 }
 
-function isInBounds(value: number, min?: number, max?: number): boolean {
+type Measure<U extends string> = `${number}${U}`;
+type Converter<U extends string> = { [K in U]: { from: (value: Measure<K>) => number; to: (value: number) => Measure<K> } };
+
+function isNumberInBounds(value: number, min?: number, max?: number): boolean {
     if (min !== undefined && value < min) return false;
     if (max !== undefined && value > max) return false;
     return true;
 }
 
 // Wrap a value to a range, normalizing boundary values
-function wrapValue(value: number, min: number, max: number): number {
+function wrapNumber(value: number, min: number, max: number): number {
     const range = max - min;
     let wrapped = ((((value - min) % range) + range) % range) + min;
     // Normalize boundary: favor 0, then positive, then closest to 0
@@ -559,23 +936,23 @@ function wrapValue(value: number, min: number, max: number): number {
 function isValidValue(value: number, min: number | undefined, max: number | undefined, doesWrap: boolean): boolean {
     if (!isFinite(value)) return false;
     if (doesWrap) return true; // Any finite value can be wrapped
-    return isInBounds(value, min, max);
+    return isNumberInBounds(value, min, max);
 }
 
 // Normalize value based on wrapping rules (wraps if doesWrap, otherwise returns as-is)
 function normalizeWrappedValue(value: number, min: number | undefined, max: number | undefined, doesWrap: boolean): number {
     if (doesWrap && min !== undefined && max !== undefined) {
-        return wrapValue(value, min, max);
+        return wrapNumber(value, min, max);
     }
     return value;
 }
 
 // Strict pattern for syntactic completeness (rejects "3." during typing)
-const FLOAT_REGEX = /^[+-]?\d+(\.\d+)?$/;
+const NUMBER_REGEX = /^[+-]?\d+(\.\d+)?$/;
 
 // Check if a string is syntactically complete
 function isComplete(v: string): boolean {
-    return FLOAT_REGEX.test(v);
+    return NUMBER_REGEX.test(v);
 }
 
 // Truncate floating point errors (e.g., 0.30000000000000004 → 0.3)
@@ -614,77 +991,80 @@ function formatForDisplay(n: number, precision: number): string {
     return String(n);
 }
 
-export type AbstractInputProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+// Parse a dimensioned value into [number, unit] or null if invalid
+function parseMeasure<U extends string>(value: string, units: readonly U[]): [number, U] | null {
+    for (const unit of units) {
+        if (value.endsWith(unit)) {
+            const numPart = value.slice(0, -unit.length);
+            if (NUMBER_REGEX.test(numPart)) {
+                return [Number(numPart), unit];
+            }
+        }
+    }
+    return null;
+}
+
+// Format a number with a unit
+function formatMeasure<U extends string>(num: number, unit: U): Measure<U> {
+    return `${cleanFloat(num)}${unit}`;
+}
+
+// Get numeric value, using converter if present, otherwise just the number portion
+function toCanonical<U extends string>(value: string, units: readonly U[], converter?: Converter<U>): number {
+    const parsed = parseMeasure(value, units);
+    if (!parsed) return NaN;
+    const [num, unit] = parsed;
+    if (converter) {
+        return converter[unit].from(formatMeasure(num, unit));
+    }
+    return num;
+}
+
+// Check if value is within bounds
+function isMeasureInBounds<U extends string>(value: string, min: string | undefined, max: string | undefined, units: readonly U[], converter?: Converter<U>): boolean {
+    const v = toCanonical(value, units, converter);
+    if (isNaN(v)) return false;
+    if (min && min !== "") {
+        const minV = toCanonical(min, units, converter);
+        if (v < minV) return false;
+    }
+    if (max && max !== "") {
+        const maxV = toCanonical(max, units, converter);
+        if (v > maxV) return false;
+    }
+    return true;
+}
+
+// Wrap a value within bounds
+function wrapMeasure<U extends string>(value: number, unit: U, min: string | undefined, max: string | undefined, wrap: string | undefined, units: readonly U[], converter?: Converter<U>): Measure<U> {
+    if (!wrap || wrap === "" || !min || min === "" || !max || max === "") {
+        return formatMeasure(value, unit);
+    }
+
+    const minV = toCanonical(min, units, converter);
+    const maxV = toCanonical(max, units, converter);
+    const wrapV = toCanonical(wrap, units, converter);
+
+    // Only wrap if the range matches the wrap value
+    if (Math.abs(maxV - minV - wrapV) > 0.0001) {
+        return formatMeasure(value, unit);
+    }
+
+    // Convert value to canonical for wrapping
+    let canonical = converter ? converter[unit].from(formatMeasure(value, unit)) : value;
+
+    // Wrap the canonical value
+    const range = maxV - minV;
+    canonical = cleanFloat(((((canonical - minV) % range) + range) % range) + minV);
+
+    // Convert back to the original unit
+    if (converter) {
+        return converter[unit].to(canonical);
+    }
+    return formatMeasure(canonical, unit);
+}
+
 export type AbstractSelectProps = Omit<DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
-
-export const AbstractTextInput = styled(({ tooltip, flavour = "accent", ...props }: AbstractInputProps) => {
-    return <input {...props} type={"text"} title={tooltip} data-flavour={flavour} />;
-})`
-    background: #111;
-    padding: 0.25em 0.4em;
-    font-family: monospace;
-    border: 1px solid #666;
-    outline: 1px solid transparent;
-    outline-offset: 0px;
-    transition: outline-offset 0.1s ease;
-    &:focus-visible {
-        outline-color: #fffa;
-        outline-offset: -2px;
-    }
-    &:invalid {
-        outline-color: #f00;
-        background-color: #200;
-    }
-    &:invalid:focus-visible {
-        outline-color: #f88;
-    }
-    &:disabled {
-        opacity: 0.6;
-    }
-    min-width: 0;
-    flex: 1 1;
-`;
-
-export const AbstractSliderInput = styled(({ tooltip, flavour = "accent", ...props }: AbstractInputProps) => {
-    return <input {...props} type={"range"} title={tooltip} data-flavour={flavour} />;
-})`
-    flex: 1 1;
-    outline: none;
-    padding: 2px;
-    isolation: isolate;
-    &:disabled {
-        opacity: 0.6;
-    }
-    min-width: 0;
-    background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-    border: 1px solid var(--flavour);
-    border-radius: 100vw;
-    -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
-    &::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        height: calc(1em + (1lh - 1em) / 2);
-        width: calc(1em + (1lh - 1em) / 2);
-        background: var(--flavour);
-        cursor: ew-resize;
-        border-radius: 100%;
-        z-index: 1;
-        outline: 1px solid transparent;
-        outline-offset: 0px;
-        transition: outline-offset 0.1s ease;
-    }
-    &:focus-visible {
-        &::-webkit-slider-thumb {
-            outline-color: #fffa;
-            outline-offset: 2px;
-        }
-    }
-    &:not(:disabled) {
-        &::-webkit-slider-thumb:hover,
-        &::-webkit-slider-thumb:active {
-            background: oklch(from var(--flavour) calc(l + 0.1) c h);
-        }
-    }
-`;
 
 export const AbstractSelect = styled(({ tooltip, flavour, ...props }: AbstractSelectProps) => {
     return <select {...props} title={tooltip} data-flavour={flavour} />;

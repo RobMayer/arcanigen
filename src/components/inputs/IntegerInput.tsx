@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
 import { NumericString } from "../../definitions/datatypes/numericString";
 
-export const IntegerInput = styled(({ min: minProp, max: maxProp, step: stepProp, precision: precisionProp, ...props }: AbstractInput.NumericProps) => {
+export const IntegerInput = styled(({ min: minProp, max: maxProp, step: stepProp, precision: precisionProp, ...props }: AbstractInput.Numeric.Props) => {
     const min = minProp === undefined ? undefined : typeof minProp === "number" ? Math.round(minProp) : (NumericString.Emptyable.round(minProp) ?? undefined);
     const max = maxProp === undefined ? undefined : typeof maxProp === "number" ? Math.round(maxProp) : (NumericString.Emptyable.round(maxProp) ?? undefined);
     const step = stepProp === undefined ? undefined : typeof stepProp === "number" ? Math.round(stepProp) : (NumericString.Emptyable.round(stepProp) ?? undefined);
