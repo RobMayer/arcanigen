@@ -311,7 +311,7 @@ export namespace AbstractInput {
         const lastValidRef = useRef<string>(value); // tracks last valid value internally
         const [cache, setCache] = useState<string>(value);
 
-        const normalizeCacheRef = useRef(normalize(cache));
+        const normalizeCacheRef = useRef(normalizeNumeric(cache));
 
         // * this might be worth adding a ref'd version of cache
         // On incoming prop change: only update display if normalized values differ
@@ -320,7 +320,7 @@ export namespace AbstractInput {
             if (valueRef.current !== value) {
                 valueRef.current = value;
                 lastValidRef.current = value; // prop change resets last valid
-                const normalizedValue = normalize(value);
+                const normalizedValue = normalizeNumeric(value);
                 // Only update cache if the numeric values are different
                 if (normalizeCacheRef.current !== normalizedValue) {
                     setCache(value);
@@ -341,12 +341,12 @@ export namespace AbstractInput {
                     return required ? null : "";
                 }
 
-                if (!isComplete(currentValue)) {
+                if (!NUMBER_REGEX.test(currentValue)) {
                     el.setCustomValidity("Not a valid number");
                     return null;
                 }
 
-                const normalized = normalize(currentValue);
+                const normalized = normalizeNumeric(currentValue);
                 if (normalized === null || !isFinite(Number(normalized))) {
                     el.setCustomValidity("Not a valid number");
                     return null;
@@ -371,7 +371,7 @@ export namespace AbstractInput {
                 }
 
                 // Check precision validity
-                if (precision !== undefined && !adheresPrecision(v, precision)) {
+                if (precision !== undefined && applyPrecision(v, precision) !== v) {
                     el.setCustomValidity("Too many decimal places");
                     return null;
                 }
@@ -400,19 +400,19 @@ export namespace AbstractInput {
                 if (!required && v === "") {
                     el.setCustomValidity("");
                     setCache(v);
-                    normalizeCacheRef.current = normalize(v);
+                    normalizeCacheRef.current = normalizeNumeric(v);
                     if (valueRef.current !== "") {
                         onCommitRef.current?.("");
                     }
                     return "";
                 }
 
-                const normalized = normalize(v);
-                if (normalized === null || !isValidValue(Number(normalized), min, max, wrap)) {
+                const normalized = normalizeNumeric(v);
+                if (normalized === null || (!wrap && !isNumberInBounds(Number(normalized), min, max))) {
                     // Invalid or out of bounds - revert to last known good value
                     el.setCustomValidity("");
                     setCache(lastValidRef.current);
-                    normalizeCacheRef.current = normalize(lastValidRef.current);
+                    normalizeCacheRef.current = normalizeNumeric(lastValidRef.current);
                     return lastValidRef.current as EmptyOr<NumericString.Type>;
                 }
 
@@ -420,14 +420,14 @@ export namespace AbstractInput {
                 el.setCustomValidity("");
                 const asNumber = Number(normalized);
                 const snappedValue = snapNumber(asNumber, snap);
-                const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
+                const wrappedValue = cleanFloat(wrap && min !== undefined && max !== undefined ? wrapNumber(snappedValue, min, max) : snappedValue);
                 const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                 const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
                 setCache(displayValue);
-                normalizeCacheRef.current = normalize(displayValue);
+                normalizeCacheRef.current = normalizeNumeric(displayValue);
 
                 // Only fire callbacks if value differs from prop
-                const normalizedState = normalize(valueRef.current);
+                const normalizedState = normalizeNumeric(valueRef.current);
                 if (finalValue !== normalizedState) {
                     // Fire onValue if the final value differs from what we last reported
                     if (finalValue !== lastValidRef.current) {
@@ -450,7 +450,7 @@ export namespace AbstractInput {
             evt.nativeEvent.handled = "implied";
             const v = evt.target.value;
             setCache(v);
-            normalizeCacheRef.current = normalize(v);
+            normalizeCacheRef.current = normalizeNumeric(v);
 
             const normalized = validateRef.current(v as EmptyOr<NumericString.Type>, evt.target);
             if (normalized === null) {
@@ -460,7 +460,7 @@ export namespace AbstractInput {
             lastValidRef.current = normalized;
 
             // Only fire onValue if the normalized value differs from current state
-            if (normalized !== normalize(valueRef.current)) {
+            if (normalized !== normalizeNumeric(valueRef.current)) {
                 onValueRef.current?.(normalized);
             }
         }, []);
@@ -499,7 +499,7 @@ export namespace AbstractInput {
 
                 // Step from current displayed value if valid, otherwise last valid value
                 const currentDisplayed = evt.currentTarget.value;
-                const normalized = normalize(currentDisplayed) ?? normalize(lastValidRef.current);
+                const normalized = normalizeNumeric(currentDisplayed) ?? normalizeNumeric(lastValidRef.current);
                 if (normalized === null) return;
 
                 const currentValue = Number(normalized);
@@ -518,10 +518,10 @@ export namespace AbstractInput {
 
                 const newValueStr = String(newValue);
                 setCache(newValueStr);
-                normalizeCacheRef.current = normalize(newValueStr);
+                normalizeCacheRef.current = normalizeNumeric(newValueStr);
 
                 // Check if the new value adheres to precision
-                if (precision !== undefined && !adheresPrecision(newValue, precision)) {
+                if (precision !== undefined && applyPrecision(newValue, precision) !== newValue) {
                     // Invalid - show value but mark as invalid, don't fire callbacks
                     evt.currentTarget.setCustomValidity("Too many decimal places");
                     return;
@@ -538,7 +538,7 @@ export namespace AbstractInput {
                 evt.currentTarget.setCustomValidity("");
                 lastValidRef.current = newValueStr;
 
-                const normalizedState = normalize(valueRef.current);
+                const normalizedState = normalizeNumeric(valueRef.current);
                 if (newValueStr !== normalizedState) {
                     onValueRef.current?.(newValueStr as NumericString.Type);
                     onCommitRef.current?.(newValueStr as NumericString.Type);
@@ -599,6 +599,7 @@ export namespace AbstractInput {
         const normalizeRef = useStable(normalize);
         const converterRef = useStable(converter);
         const unitsRef = useStable(unitsStable);
+        const snapRef = useStable(snapStable);
 
         const onValueRef = useStable(onValue);
         const onCommitRef = useStable(onCommit);
@@ -630,10 +631,10 @@ export namespace AbstractInput {
                 }
                 setCache(value);
             }
-        }, [value, unitsStable]);
+        }, [unitsStable, value]);
 
         // Normalize: add unit if bare number, apply custom normalize
-        const normalizeInternal = useCallback((v: string): EmptyOr<Measure<U>> => {
+        const normalizeMeasure = useCallback((v: string): EmptyOr<Measure<U>> => {
             if (v === "") return "" as EmptyOr<Measure<U>>;
 
             // Check if it's already a valid dimensioned value
@@ -656,76 +657,6 @@ export namespace AbstractInput {
             return v as EmptyOr<Measure<U>>;
         }, []);
 
-        // Snap a canonical value to the nearest snap point
-        // displayUnit is needed because unit-less snap values are interpreted in the display unit
-
-        const snapMeasure = useCallback(
-            (canonicalValue: number, displayUnit: U): number => {
-                if (snapStable === undefined) return canonicalValue;
-
-                const snapValues = Array.isArray(snapStable) ? snapStable : [snapStable];
-
-                // Convert all snap values to canonical, sorting as we find closest
-                let closest = canonicalValue;
-                let closestDist = Infinity;
-
-                for (const snapVal of snapValues) {
-                    let snapCanonical: number;
-
-                    if (typeof snapVal === "number") {
-                        // Numeric snap - interpret in display unit
-                        if (converterRef.current) {
-                            snapCanonical = converterRef.current[displayUnit].from(formatMeasure(snapVal, displayUnit));
-                        } else {
-                            snapCanonical = snapVal;
-                        }
-                    } else {
-                        // String snap - could be with or without unit
-                        const parsed = parseMeasure(snapVal, unitsRef.current);
-                        if (parsed) {
-                            // Has unit - convert to canonical
-                            const [num, unit] = parsed;
-                            if (converterRef.current) {
-                                snapCanonical = converterRef.current[unit].from(formatMeasure(num, unit));
-                            } else {
-                                snapCanonical = num;
-                            }
-                        } else if (NUMBER_REGEX.test(snapVal)) {
-                            // Bare number - interpret in display unit
-                            const num = Number(snapVal);
-                            if (converterRef.current) {
-                                snapCanonical = converterRef.current[displayUnit].from(formatMeasure(num, displayUnit));
-                            } else {
-                                snapCanonical = num;
-                            }
-                        } else {
-                            // Invalid snap value, skip
-                            continue;
-                        }
-                    }
-
-                    const dist = Math.abs(canonicalValue - snapCanonical);
-                    if (dist < closestDist) {
-                        closest = snapCanonical;
-                        closestDist = dist;
-                    }
-                }
-
-                return closest;
-            },
-            [snapStable],
-        );
-
-        // Check if a canonical value matches a snap point
-
-        const isSnapValid = useCallback(
-            (canonicalValue: number, displayUnit: U): boolean => {
-                if (snapStable === undefined) return true;
-                return snapMeasure(canonicalValue, displayUnit) === canonicalValue;
-            },
-            [snapMeasure, snapStable],
-        );
-
         // Validate value against pattern, bounds, and snap
         const validate = useCallback(
             (el: HTMLInputElement, v: string): EmptyOr<Measure<U>> | null => {
@@ -741,33 +672,35 @@ export namespace AbstractInput {
                 }
 
                 // Normalize to check bounds
-                const normalized = normalizeInternal(v);
-                if (normalized === "" || !parseMeasure(normalized, unitsRef.current)) {
+                const normalized = normalizeMeasure(v);
+                if (normalized === "" || !parseMeasure(normalized, unitsStable)) {
                     el.setCustomValidity("Invalid value");
                     return null;
                 }
 
                 // Check bounds
-                if (!isMeasureInBounds(normalized, min, max, unitsRef.current, converterRef.current)) {
+                if (!isMeasureInBounds(normalized, min, max, unitsStable, converterRef.current)) {
                     el.setCustomValidity("Value out of bounds");
                     return null;
                 }
 
                 // Check snap validity
-                const parsed = parseMeasure(normalized, unitsRef.current);
+                const parsed = parseMeasure(normalized, unitsStable);
                 if (parsed) {
                     const [, unit] = parsed;
-                    const canonical = toCanonical(normalized, unitsRef.current, converterRef.current);
-                    if (!isSnapValid(canonical, unit)) {
-                        el.setCustomValidity("Value doesn't match snap");
-                        return null;
+                    const canonical = toCanonical(normalized, unitsStable, converterRef.current);
+                    if (snapStable !== undefined) {
+                        if (snapMeasure(canonical, unit, snapStable, unitsStable, converterRef.current) !== canonical) {
+                            el.setCustomValidity("Value doesn't match snap");
+                            return null;
+                        }
                     }
                 }
 
                 el.setCustomValidity("");
                 return normalized;
             },
-            [pattern, required, normalizeInternal, min, max, isSnapValid],
+            [pattern, required, normalizeMeasure, min, max, unitsStable, snapStable],
         );
 
         // Revalidate when value or validation rules change
@@ -800,7 +733,7 @@ export namespace AbstractInput {
                     return lastValidRef.current;
                 }
 
-                const normalized = normalizeInternal(v);
+                const normalized = normalizeMeasure(v);
 
                 // Check bounds
                 if (normalized !== "" && !isMeasureInBounds(normalized, min, max, unitsRef.current, converterRef.current)) {
@@ -821,12 +754,12 @@ export namespace AbstractInput {
                 }
 
                 // Apply snap if configured
-                if (finalValue) {
+                if (finalValue && snapRef.current !== undefined) {
                     const parsed = parseMeasure(finalValue, unitsRef.current);
                     if (parsed) {
                         const [, unit] = parsed;
                         const canonical = toCanonical(finalValue, unitsRef.current, converterRef.current);
-                        const snappedCanonical = snapMeasure(canonical, unit);
+                        const snappedCanonical = snapMeasure(canonical, unit, snapRef.current, unitsRef.current, converterRef.current);
                         if (snappedCanonical !== canonical) {
                             if (converterRef.current) {
                                 finalValue = converterRef.current[unit].to(snappedCanonical);
@@ -850,7 +783,7 @@ export namespace AbstractInput {
                 lastValidRef.current = finalValue;
                 return finalValue;
             },
-            [required, pattern, normalizeInternal, min, max, wrap, snapMeasure],
+            [required, pattern, normalizeMeasure, min, max, wrap],
         );
 
         const handleChange = useCallback(
@@ -903,7 +836,7 @@ export namespace AbstractInput {
 
                 // Get current value to step from
                 const currentDisplay = evt.currentTarget.value;
-                let normalized = normalizeInternal(currentDisplay);
+                let normalized = normalizeMeasure(currentDisplay);
                 if (normalized === "" || !parseMeasure(normalized, unitsRef.current)) {
                     normalized = lastValidRef.current;
                 }
@@ -953,10 +886,11 @@ export namespace AbstractInput {
                             setCache(newValue);
 
                             // Check snap validity (reuse newCanonical from above)
-                            if (!isSnapValid(newCanonical, currentUnit)) {
-                                // Invalid - show value but mark as invalid, don't fire callbacks
-                                evt.currentTarget.setCustomValidity("Value doesn't match snap");
-                                return;
+                            if (snapRef.current !== undefined) {
+                                if (snapMeasure(newCanonical, currentUnit, snapRef.current, unitsRef.current, converterRef.current) !== newCanonical) {
+                                    evt.currentTarget.setCustomValidity("Value doesn't match snap");
+                                    return;
+                                }
                             }
 
                             evt.currentTarget.setCustomValidity("");
@@ -992,10 +926,11 @@ export namespace AbstractInput {
 
                 // Check snap validity
                 const canonical = toCanonical(newValue, unitsRef.current, converterRef.current);
-                if (!isSnapValid(canonical, currentUnit)) {
-                    // Invalid - show value but mark as invalid, don't fire callbacks
-                    evt.currentTarget.setCustomValidity("Value doesn't match snap");
-                    return;
+                if (snapRef.current !== undefined) {
+                    if (snapMeasure(canonical, currentUnit, snapRef.current, unitsRef.current, converterRef.current) !== canonical) {
+                        evt.currentTarget.setCustomValidity("Value doesn't match snap");
+                        return;
+                    }
                 }
 
                 evt.currentTarget.setCustomValidity("");
@@ -1003,7 +938,7 @@ export namespace AbstractInput {
                 onValueRef.current?.(newValue);
                 onCommitRef.current?.(newValue);
             },
-            [commitValue, normalizeInternal, stepProp, min, max, isSnapValid, wrap],
+            [commitValue, normalizeMeasure, stepProp, min, max, wrap],
         );
 
         return <BaseInput {...props} ref={inputRefMaker} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
@@ -1074,28 +1009,8 @@ function wrapNumber(value: number, min: number, max: number): number {
     return wrapped;
 }
 
-// Check if a value is valid for the given configuration
-function isValidValue(value: number, min: number | undefined, max: number | undefined, doesWrap: boolean): boolean {
-    if (!isFinite(value)) return false;
-    if (doesWrap) return true; // Any finite value can be wrapped
-    return isNumberInBounds(value, min, max);
-}
-
-// Normalize value based on wrapping rules (wraps if doesWrap, otherwise returns as-is)
-function normalizeWrappedValue(value: number, min: number | undefined, max: number | undefined, doesWrap: boolean): number {
-    if (doesWrap && min !== undefined && max !== undefined) {
-        return wrapNumber(value, min, max);
-    }
-    return value;
-}
-
 // Strict pattern for syntactic completeness (rejects "3." during typing)
 const NUMBER_REGEX = /^[+-]?\d+(\.\d+)?$/;
-
-// Check if a string is syntactically complete
-function isComplete(v: string): boolean {
-    return NUMBER_REGEX.test(v);
-}
 
 // Truncate floating point errors (e.g., 0.30000000000000004 → 0.3)
 function cleanFloat(num: number): number {
@@ -1103,7 +1018,7 @@ function cleanFloat(num: number): number {
 }
 
 // Normalize a string to its canonical numeric form, or null if not a valid number
-function normalize(v: string): string | null {
+function normalizeNumeric(v: string): string | null {
     if (v === "") return "";
     const n = Number(v);
     if (isNaN(n)) return null;
@@ -1117,11 +1032,6 @@ function normalize(v: string): string | null {
 function applyPrecision(n: number, precision: number): number {
     const factor = Math.pow(10, precision);
     return Math.trunc(n * factor) / factor;
-}
-
-// Check if a number already adheres to the given precision
-function adheresPrecision(n: number, precision: number): boolean {
-    return applyPrecision(n, precision) === n;
 }
 
 // Format a number for display with the correct decimal places
@@ -1205,6 +1115,62 @@ function wrapMeasure<U extends string>(value: number, unit: U, min: string | und
         return converter[unit].to(canonical);
     }
     return formatMeasure(canonical, unit);
+}
+
+// Snap a canonical value to the nearest snap point
+// displayUnit is needed because unit-less snap values are interpreted in the display unit
+type SnapValue<U extends string> = Measure<U> | number | `${number}`;
+function snapMeasure<U extends string>(canonicalValue: number, displayUnit: U, snap: SnapValue<U> | SnapValue<U>[] | undefined, units: readonly U[], converter?: Converter<U>): number {
+    if (snap === undefined) return canonicalValue;
+
+    const snapValues = Array.isArray(snap) ? snap : [snap];
+
+    let closest = canonicalValue;
+    let closestDist = Infinity;
+
+    for (const snapVal of snapValues) {
+        let snapCanonical: number;
+
+        if (typeof snapVal === "number") {
+            // Numeric snap - interpret in display unit
+            if (converter) {
+                snapCanonical = converter[displayUnit].from(formatMeasure(snapVal, displayUnit));
+            } else {
+                snapCanonical = snapVal;
+            }
+        } else {
+            // String snap - could be with or without unit
+            const parsed = parseMeasure(snapVal, units);
+            if (parsed) {
+                // Has unit - convert to canonical
+                const [num, unit] = parsed;
+                if (converter) {
+                    snapCanonical = converter[unit].from(formatMeasure(num, unit));
+                } else {
+                    snapCanonical = num;
+                }
+            } else if (NUMBER_REGEX.test(snapVal)) {
+                // Bare number - interpret in display unit
+                const num = Number(snapVal);
+                if (converter) {
+                    snapCanonical = converter[displayUnit].from(formatMeasure(num, displayUnit));
+                } else {
+                    snapCanonical = num;
+                }
+            } else {
+                // Invalid snap value, skip
+                continue;
+            }
+        }
+
+        const dist = Math.abs(canonicalValue - snapCanonical);
+        if (dist < closestDist) {
+            closest = snapCanonical;
+            closestDist = dist;
+        }
+    }
+
+    return closest;
 }
 
 export type AbstractSelectProps = Omit<DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
