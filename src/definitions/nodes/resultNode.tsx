@@ -9,6 +9,7 @@ import { LengthInput } from "../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
+import { ColorInput } from "../../components/inputs/ColorInput";
 
 export type ResultDefinition = {
     outputs: never;
@@ -82,7 +83,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
                     <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"color"} type={"color"} label={"Color"}>
-                    <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
+                    <ColorInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
                 </SocketIn>
             </NodeAccordion>
         </TypicalNode>

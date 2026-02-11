@@ -254,12 +254,14 @@ export namespace AbstractInput {
         required,
         precision: precisionProp,
         wrap: wrapProp,
+        normalize,
         tooltip,
         flavour,
         ref,
         ...props
     }: Numeric.Props) => {
         const stableSnap = useStableValue(snapProp);
+        const normalizeRef = useStable(normalize);
 
         const { precision, min, max, step, wrap, snap } = useMemo(() => {
             const precisionRaw = typeof precisionProp === "number" ? precisionProp : (NumericString.Emptyable.asNumber(precisionProp ?? "") ?? undefined);
@@ -422,16 +424,17 @@ export namespace AbstractInput {
                 const asNumber = Number(normalized);
                 const snappedValue = snapNumber(asNumber, snap);
                 const wrappedValue = cleanFloat(wrap && min !== undefined && max !== undefined ? wrapNumber(snappedValue, min, max) : snappedValue);
-                const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
-                const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
+                const precisionApplied = precision !== undefined ? applyPrecision(wrappedValue, precision) : wrappedValue;
+                const finalValue = normalizeRef.current ? normalizeRef.current(String(precisionApplied) as NumericString.Type) : (String(precisionApplied) as NumericString.Type);
+                const displayValue = precision !== undefined ? formatForDisplay(Number(finalValue), precision) : finalValue;
                 setCache(displayValue);
                 normalizeCacheRef.current = normalizeNumeric(displayValue);
 
                 // Only fire callbacks if value differs from prop
-                onValueRef.current?.(finalValue as NumericString.Type);
-                onCommitRef.current?.(finalValue as NumericString.Type);
+                onValueRef.current?.(finalValue);
+                onCommitRef.current?.(finalValue);
                 lastValidRef.current = finalValue;
-                return finalValue as NumericString.Type;
+                return finalValue;
             },
             [required, min, max, wrap, snap, precision],
         );
@@ -531,10 +534,13 @@ export namespace AbstractInput {
 
                 // Valid - clear validity and fire callbacks
                 evt.currentTarget.setCustomValidity("");
-                lastValidRef.current = newValueStr;
+                const normalizedNewValue = normalizeRef.current ? normalizeRef.current(newValueStr as NumericString.Type) : (newValueStr as NumericString.Type);
+                lastValidRef.current = normalizedNewValue;
+                setCache(normalizedNewValue);
+                normalizeCacheRef.current = normalizeNumeric(normalizedNewValue);
 
-                onValueRef.current?.(newValueStr as NumericString.Type);
-                onCommitRef.current?.(newValueStr as NumericString.Type);
+                onValueRef.current?.(normalizedNewValue);
+                onCommitRef.current?.(normalizedNewValue);
             },
             [commitValue, precision, step, wrap, min, max, snap],
         );
@@ -554,6 +560,7 @@ export namespace AbstractInput {
             precision?: number | EmptyOr<NumericString.Type>;
             wrap?: number | EmptyOr<NumericString.Type>;
             snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // interval or discrete values
+            normalize?: (v: EmptyOr<NumericString.Type>) => EmptyOr<NumericString.Type>;
         } & Omit<BaseProps, "min" | "max" | "step" | "pattern">;
     }
 

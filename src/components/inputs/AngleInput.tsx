@@ -2,7 +2,6 @@ import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
 import { AbstractSlider } from "../abstract/Slider";
 import { DetailedHTMLProps, HTMLAttributes, Ref, useCallback, useEffect, useState } from "react";
-import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { Flavour } from "../types";
 import { NumericString } from "../../definitions/datatypes/numericString";
 import { EmptyOr } from "../../util/misc";
@@ -113,6 +112,7 @@ export const SpinnerWithDisplay = styled(
                     onConfirm={handleConfirm}
                     value={cache}
                     required={required}
+                    normalize={normalize}
                     step={step}
                     disabled={disabled}
                 />

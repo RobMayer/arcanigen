@@ -1519,7 +1519,7 @@ export namespace AbstractSlider {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
         place-items: center;
-        padding: calc(var(--trackSize));
+        padding: calc(var(--trackSize) - var(--handleSize) / 2);
 
         --handleSize: 1lh;
         --trackSize: calc(1lh / 2 + 2px);
@@ -1531,8 +1531,8 @@ export namespace AbstractSlider {
         div[data-part="track"] {
             grid-area: 1 / 1;
             align-self: stretch;
-            margin: calc(var(--handleSize) / 2 - var(--trackSize));
             justify-self: stretch;
+            margin: calc(var(--handleSize) / 2 - var(--trackSize));
             aspect-ratio: 1;
             border-radius: 100%;
             background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
