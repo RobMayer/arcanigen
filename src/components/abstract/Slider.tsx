@@ -552,7 +552,7 @@ export namespace AbstractSlider {
             );
         },
     )`
-        height: 8em;
+        min-width: 5em;
         aspect-ratio: 1;
         flex: 1 0 auto;
         display: grid;
