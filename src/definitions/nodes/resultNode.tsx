@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { ReactNode, useCallback, useState } from "react";
+import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
@@ -9,10 +9,6 @@ import { LengthInput } from "../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
-import { AbstractSlider } from "../../components/abstract/Slider";
-import { EmptyOr } from "../../util/misc";
-import { NumericString } from "../datatypes/numericString";
-import { AbstractInput } from "../../components/abstract/Inputs";
 
 export type ResultDefinition = {
     outputs: never;
@@ -67,22 +63,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         [methods],
     );
 
-    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("15");
-
-    const onValue = useCallback((v: EmptyOr<NumericString.Type>) => {
-        setTest(v);
-        console.log("onValue", v);
-    }, []);
-
-    const onCommit = useCallback((v: EmptyOr<NumericString.Type>) => {
-        console.log("onCommit", v);
-    }, []);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <div>{test}</div>
-            <AbstractSlider.Linear value={test} onValue={onValue} min={"0"} max={"360"} snap={TEST_SNAP} />
-            <AbstractInput.Numeric value={test} onValue={onValue} onCommit={onCommit} min={"0"} max={"360"} wrap={"360"} snap={TEST_SNAP} step={"1"} />
             <SocketIn node={node} socketId={"input"} type={"shape"}>
                 Input
             </SocketIn>
@@ -106,8 +88,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         </TypicalNode>
     );
 };
-
-const TEST_SNAP = [0, 15, 30, 60, 180, 360];
 
 const dependsOn = <K extends string | number | symbol>(node: NodeDefinitions.NodeFor<ResultDefinition>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] => {
     return [];

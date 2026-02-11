@@ -1,4 +1,20 @@
-import { createContext, DetailedHTMLProps, FocusEvent, HTMLAttributes, ReactNode, RefObject, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+    createContext,
+    DetailedHTMLProps,
+    FocusEvent,
+    HTMLAttributes,
+    MouseEvent,
+    ReactNode,
+    RefObject,
+    useCallback,
+    useContext,
+    useEffect,
+    useId,
+    useMemo,
+    useRef,
+    useState,
+    useSyncExternalStore,
+} from "react";
 import styled from "styled-components";
 import { useStable } from "../../util/hooks/useStable";
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
@@ -66,8 +82,9 @@ export namespace DragMove {
         left: attr(data-x px, 0px);
     `;
 
-    export const Item = ({ position, onFocus, style, ...props }: DragMoveProps) => {
+    export const Item = ({ position, onFocus, onMouseDown, style, ...props }: DragMoveProps) => {
         const onFocusRef = useStable(onFocus);
+        const onMouseDownRef = useStable(onMouseDown);
         const id = useId();
         const [zIndex, setToTop] = useDragMoveContext(id);
 
@@ -83,7 +100,15 @@ export namespace DragMove {
             [setToTop],
         );
 
-        return <TheDiv {...props} style={mergedStyle} data-x={position.x} data-y={position.y} data-trhmarker={"dragmove"} onFocus={handleFocus} tabIndex={-1} />;
+        const handleMouseDown = useCallback(
+            (event: MouseEvent<HTMLDivElement>) => {
+                setToTop();
+                onMouseDownRef.current?.(event);
+            },
+            [setToTop],
+        );
+
+        return <TheDiv {...props} style={mergedStyle} data-x={position.x} data-y={position.y} data-trhmarker={"dragmove"} onFocus={handleFocus} onMouseDown={handleMouseDown} />;
     };
 
     export const useHandle = (handleRef: RefObject<HTMLElement | null>, value: XY, { onChange, onFinish, onDelta, button = 0 }: UseHandleOptions) => {
@@ -115,7 +140,7 @@ export namespace DragMove {
             const handle = handleRef.current;
 
             if (handle) {
-                const mouseMove = (evt: MouseEvent) => {
+                const mouseMove = (evt: globalThis.MouseEvent) => {
                     const zoom = handle.currentCSSZoom * devicePixelRatio;
                     const dX = evt.movementX / zoom;
                     const dY = evt.movementY / zoom;
@@ -131,7 +156,7 @@ export namespace DragMove {
                     document.removeEventListener("mouseup", mouseUp);
                 };
 
-                const mouseDown = (evt: MouseEvent) => {
+                const mouseDown = (evt: globalThis.MouseEvent) => {
                     if (button === "any" || evt.button === button) {
                         evt.handled = "active";
                         document.addEventListener("mousemove", mouseMove);
