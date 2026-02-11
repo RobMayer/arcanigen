@@ -6,26 +6,7 @@ import { EmptyOr } from "../../util/misc";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
 import { Icon, IconDefinition, ICONS } from "../Icon";
-
-// Truncate floating point errors (e.g., 0.30000000000000004 → 0.3)
-function cleanFloat(num: number): number {
-    return Number(num.toFixed(10));
-}
-
-// Wrap a value to a range, normalizing boundary values
-// Favors: 0, then positive, then closest to 0
-function wrapNumber(value: number, min: number, max: number): number {
-    const range = max - min;
-    let wrapped = ((((value - min) % range) + range) % range) + min;
-    // Normalize boundary: favor 0, then positive, then closest to 0
-    if (wrapped === min || wrapped === max) {
-        if (min === 0 || max === 0) wrapped = 0;
-        else if (min > 0) wrapped = min;
-        else if (max > 0) wrapped = max;
-        else wrapped = Math.max(min, max);
-    }
-    return wrapped;
-}
+import { useStableValue } from "../../util/hooks/useStableValue";
 
 export namespace AbstractSlider {
     export const Linear = styled(
@@ -146,6 +127,8 @@ export namespace AbstractSlider {
             handleRef,
             ...rest
         }: Radial.Props) => {
+            const snapStable = useStableValue(snapProp);
+
             const [innerRef, makeInnerRef] = useCombinedRef(ref);
             const [innerHandleRef, makeInnerHandleRef] = useCombinedRef(handleRef);
 
@@ -159,8 +142,7 @@ export namespace AbstractSlider {
             const onValueRef = useStable(onValue);
             const onCommitRef = useStable(onCommit);
             const normalizeRef = useStable(normalize);
-            const cacheRef = useRef(cache);
-            cacheRef.current = cache;
+            const cacheRef = useStable(cache);
 
             const { min, max, step, wrap, trackMin, trackMax, snap } = useMemo(() => {
                 const wrapRaw = typeof wrapProp === "number" ? wrapProp : (NumericString.Emptyable.asNumber(wrapProp ?? "") ?? undefined);
@@ -173,14 +155,14 @@ export namespace AbstractSlider {
 
                 // Parse snap: either a number (interval) or array of numbers (discrete values)
                 let snapParsed: number | number[] | undefined;
-                if (Array.isArray(snapProp)) {
-                    snapParsed = snapProp
+                if (Array.isArray(snapStable)) {
+                    snapParsed = snapStable
                         .map((v) => (typeof v === "number" ? v : NumericString.Emptyable.asNumber(v ?? "")))
                         .filter((v): v is number => v !== null && !Number.isNaN(v))
                         .sort((a, b) => a - b);
                     if (snapParsed.length === 0) snapParsed = undefined;
-                } else if (snapProp !== undefined) {
-                    snapParsed = typeof snapProp === "number" ? snapProp : (NumericString.Emptyable.asNumber(snapProp ?? "") ?? undefined);
+                } else if (snapStable !== undefined) {
+                    snapParsed = typeof snapStable === "number" ? snapStable : (NumericString.Emptyable.asNumber(snapStable ?? "") ?? undefined);
                 }
 
                 // Derive min/max from wrap if not provided
@@ -205,42 +187,19 @@ export namespace AbstractSlider {
                     trackMax: trackMaxRaw,
                     snap: snapParsed,
                 };
-            }, [minProp, maxProp, stepProp, wrapProp, trackMinProp, trackMaxProp, snapProp]);
+            }, [minProp, maxProp, stepProp, wrapProp, trackMinProp, trackMaxProp, snapStable]);
 
-            const trackRange = trackMax - trackMin;
+            const snapRef = useStable(snap);
 
-            // Snap a value to the snap grid (interval or discrete values)
-            const snapValueRef = useStable((value: number): number => {
-                if (snap === undefined) return value;
-
-                if (Array.isArray(snap)) {
-                    // Snap to closest value in array
-                    let closest = snap[0];
-                    let closestDist = Math.abs(value - closest);
-                    for (let i = 1; i < snap.length; i++) {
-                        const dist = Math.abs(value - snap[i]);
-                        if (dist < closestDist) {
-                            closest = snap[i];
-                            closestDist = dist;
-                        }
-                    }
-                    return closest;
-                } else {
-                    // Snap to interval
-                    return cleanFloat(Math.round(value / snap) * snap);
-                }
-            });
-
-            // Visual rotation based on track range (one full circle = trackRange)
             const rotation = useMemo(() => {
                 const v = NumericString.Emptyable.asNumber(cache ?? "") ?? trackMin;
-                if (trackRange === 0) return { rotate: "0deg" };
+                if (trackMax - trackMin === 0) return { rotate: "0deg" };
                 // Map value to visual angle: value within track range maps to 0-360
-                const visualAngle = ((v - trackMin) / trackRange) * 360;
+                const visualAngle = ((v - trackMin) / (trackMax - trackMin)) * 360;
                 // Modulo to handle values outside one track cycle
                 const normalized = ((visualAngle % 360) + 360) % 360;
                 return { rotate: `${normalized}deg` };
-            }, [cache, trackMin, trackRange]);
+            }, [cache, trackMin, trackMax]);
 
             // Get angle from pointer event relative to component center (0-360, 0 = top, clockwise)
             const getAngleFromEvent = useCallback((e: PointerEvent) => {
@@ -261,16 +220,6 @@ export namespace AbstractSlider {
             const dragStateRef = useRef<{ lastAngle: number; accumulatedValue: number } | null>(null);
             // Ref for RAF throttling
             const rafRef = useRef<number | null>(null);
-
-            // Helper to compute visual angle from value
-            const valueToVisualAngle = useCallback(
-                (v: number) => {
-                    if (trackRange === 0) return 0;
-                    const visualAngle = ((v - trackMin) / trackRange) * 360;
-                    return ((visualAngle % 360) + 360) % 360;
-                },
-                [trackMin, trackRange],
-            );
 
             // Pointer drag handling
             useEffect(() => {
@@ -308,11 +257,11 @@ export namespace AbstractSlider {
 
                     // Get current value and its visual angle
                     const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? trackMin;
-                    const currentAngle = valueToVisualAngle(currentValue);
+                    const currentAngle = angleFromTrack(currentValue, trackMin, trackMax);
 
                     // Check if we're near the bounds (within half a turn)
-                    const nearMin = min !== undefined && currentValue <= min + trackRange / 2;
-                    const nearMax = max !== undefined && currentValue >= max - trackRange / 2;
+                    const nearMin = min !== undefined && currentValue <= min + (trackMax - trackMin) / 2;
+                    const nearMax = max !== undefined && currentValue >= max - (trackMax - trackMin) / 2;
 
                     let newValue: number;
 
@@ -320,10 +269,10 @@ export namespace AbstractSlider {
                         // When near bounds, use absolute position within current turn
                         // This allows clicking anywhere on the visible track
                         // Use floor for most cases, but when exactly at a turn boundary, stay on the previous turn
-                        const rawTurn = (currentValue - trackMin) / trackRange;
+                        const rawTurn = (currentValue - trackMin) / (trackMax - trackMin);
                         const currentTurn = Number.isInteger(rawTurn) && rawTurn > 0 ? rawTurn - 1 : Math.floor(rawTurn);
-                        const clickedValueInTurn = (clickedAngle / 360) * trackRange + trackMin;
-                        newValue = currentTurn * trackRange + clickedValueInTurn;
+                        const clickedValueInTurn = (clickedAngle / 360) * (trackMax - trackMin) + trackMin;
+                        newValue = currentTurn * (trackMax - trackMin) + clickedValueInTurn;
 
                         // Apply step if defined
                         if (step !== undefined) {
@@ -346,7 +295,7 @@ export namespace AbstractSlider {
                         }
 
                         // Convert angle delta to value delta and apply
-                        const valueDelta = (angleDelta / 360) * trackRange;
+                        const valueDelta = (angleDelta / 360) * (trackMax - trackMin);
                         newValue = currentValue + valueDelta;
 
                         // Apply step if defined
@@ -370,7 +319,7 @@ export namespace AbstractSlider {
                     };
 
                     // Update DOM directly
-                    const visualAngle = valueToVisualAngle(newValue);
+                    const visualAngle = angleFromTrack(newValue, trackMin, trackMax);
                     bounds.style.rotate = `${visualAngle}deg`;
 
                     // Update React state
@@ -398,7 +347,7 @@ export namespace AbstractSlider {
                     }
 
                     // Convert angle delta to value delta
-                    const valueDelta = (angleDelta / 360) * trackRange;
+                    const valueDelta = (angleDelta / 360) * (trackMax - trackMin);
                     let newValue = accumulatedValue + valueDelta;
                     const unclampedValue = newValue;
 
@@ -421,7 +370,7 @@ export namespace AbstractSlider {
                     if (wasClamped) {
                         // Calculate where the angle "should be" for the clamped value
                         // This is the difference between unclamped and clamped, converted back to angle
-                        const clampedDelta = ((unclampedValue - newValue) / trackRange) * 360;
+                        const clampedDelta = ((unclampedValue - newValue) / (trackMax - trackMin)) * 360;
                         newLastAngle = (((angle - clampedDelta) % 360) + 360) % 360;
                     }
                     dragStateRef.current = {
@@ -430,13 +379,13 @@ export namespace AbstractSlider {
                     };
 
                     // Snap for visual display only, then apply wrap
-                    let snappedValue = snapValueRef.current(newValue);
+                    let snappedValue = snapNumber(newValue, snapRef.current);
                     if (wrap && min !== undefined && max !== undefined) {
                         snappedValue = wrapNumber(snappedValue, min, max);
                     }
 
                     // Update DOM directly for smooth visuals
-                    const visualAngle = valueToVisualAngle(snappedValue);
+                    const visualAngle = angleFromTrack(snappedValue, trackMin, trackMax);
                     bounds.style.rotate = `${visualAngle}deg`;
 
                     // Throttle React state updates via RAF
@@ -445,7 +394,7 @@ export namespace AbstractSlider {
                         rafRef.current = requestAnimationFrame(() => {
                             rafRef.current = null;
                             if (!dragStateRef.current) return;
-                            let snapped = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                            let snapped = snapNumber(dragStateRef.current.accumulatedValue, snapRef.current);
                             // Apply wrap after snap
                             if (wrap && min !== undefined && max !== undefined) {
                                 snapped = wrapNumber(snapped, min, max);
@@ -461,7 +410,7 @@ export namespace AbstractSlider {
                     if (!dragStateRef.current) return;
 
                     // Apply snap on commit, then wrap if enabled
-                    let finalValue = snapValueRef.current(dragStateRef.current.accumulatedValue);
+                    let finalValue = snapNumber(dragStateRef.current.accumulatedValue, snapRef.current);
                     if (wrap && min !== undefined && max !== undefined) {
                         finalValue = wrapNumber(finalValue, min, max);
                     }
@@ -475,7 +424,7 @@ export namespace AbstractSlider {
 
                     // Set inline style to final value to prevent flicker
                     // React will overwrite this when it re-renders with the new cache
-                    const finalAngle = valueToVisualAngle(finalValue);
+                    const finalAngle = angleFromTrack(finalValue, trackMin, trackMax);
                     bounds.style.rotate = `${finalAngle}deg`;
 
                     // Update cache first, then fire callbacks
@@ -502,16 +451,16 @@ export namespace AbstractSlider {
                         rafRef.current = null;
                     }
                 };
-            }, [disabled, getAngleFromEvent, trackMin, trackRange, step, min, max, wrap, valueToVisualAngle]);
+            }, [disabled, getAngleFromEvent, trackMin, step, min, max, wrap, trackMax]);
 
             // Keyboard handling
             const handleKeyDown = useCallback(
                 (e: React.KeyboardEvent) => {
                     if (disabled) return;
 
-                    const currentValue = NumericString.Emptyable.asNumber(cache ?? "") ?? trackMin;
+                    const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? trackMin;
                     // Default step: 1/36 of track range (10 degrees worth)
-                    const stepAmount = step ?? trackRange / 36;
+                    const stepAmount = step ?? (trackMax - trackMin) / 36;
                     let newValue: number | null = null;
 
                     switch (e.key) {
@@ -542,7 +491,7 @@ export namespace AbstractSlider {
                         newValue = cleanFloat(Math.round(newValue / stepAmount) * stepAmount);
 
                         // Apply snap first
-                        newValue = snapValueRef.current(newValue);
+                        newValue = snapNumber(newValue, snapRef.current);
 
                         // Then apply bounds (if defined) with wrap or clamp
                         if (min !== undefined && max !== undefined) {
@@ -560,7 +509,7 @@ export namespace AbstractSlider {
                         onCommitRef.current?.(normalized as NumericString.Type);
                     }
                 },
-                [disabled, cache, trackMin, trackMax, trackRange, min, max, step, wrap],
+                [disabled, trackMin, step, min, max, trackMax, wrap],
             );
 
             // Check if cache value is invalid (doesn't adhere to snap, or out of bounds)
@@ -569,7 +518,7 @@ export namespace AbstractSlider {
                 if (v === null) return false;
 
                 // Check snap validity
-                if (snap !== undefined && snapValueRef.current(v) !== v) {
+                if (snap !== undefined && snapNumber(v, snap) !== v) {
                     return true;
                 }
 
@@ -713,3 +662,50 @@ export namespace AbstractSlider {
 
     export namespace Cartesian {}
 }
+
+const snapNumber = (value: number, snap: number | number[] | undefined): number => {
+    if (snap === undefined) return value;
+
+    if (Array.isArray(snap)) {
+        // Snap to closest value in array
+        let closest = snap[0];
+        let closestDist = Math.abs(value - closest);
+        for (let i = 1; i < snap.length; i++) {
+            const dist = Math.abs(value - snap[i]);
+            if (dist < closestDist) {
+                closest = snap[i];
+                closestDist = dist;
+            }
+        }
+        return closest;
+    } else {
+        // Snap to interval
+        return cleanFloat(Math.round(value / snap) * snap);
+    }
+};
+
+function cleanFloat(num: number): number {
+    return Number(num.toFixed(10));
+}
+
+// Wrap a value to a range, normalizing boundary values
+// Favors: 0, then positive, then closest to 0
+function wrapNumber(value: number, min: number, max: number): number {
+    const range = max - min;
+    let wrapped = ((((value - min) % range) + range) % range) + min;
+    // Normalize boundary: favor 0, then positive, then closest to 0
+    if (wrapped === min || wrapped === max) {
+        if (min === 0 || max === 0) wrapped = 0;
+        else if (min > 0) wrapped = min;
+        else if (max > 0) wrapped = max;
+        else wrapped = Math.max(min, max);
+    }
+    return wrapped;
+}
+
+const angleFromTrack = (v: number, trackMin: number, trackMax: number) => {
+    const trackRange = trackMax - trackMin;
+    if (trackRange === 0) return 0;
+    const visualAngle = ((v - trackMin) / trackRange) * 360;
+    return ((visualAngle % 360) + 360) % 360;
+};
