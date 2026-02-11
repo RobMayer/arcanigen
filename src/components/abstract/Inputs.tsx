@@ -4,6 +4,8 @@ import { Flavour } from "../types";
 import { useStable } from "../../util/hooks/useStable";
 import { NumericString } from "../../definitions/datatypes/numericString";
 import { EmptyOr } from "../../util/misc";
+import { useStableValue } from "../../util/hooks/useStableValue";
+import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 
 export namespace AbstractInput {
     export const BaseInput = styled.input`
@@ -253,8 +255,11 @@ export namespace AbstractInput {
         wrap: wrapProp,
         tooltip,
         flavour,
+        ref,
         ...props
     }: Numeric.Props) => {
+        const stableSnap = useStableValue(snapProp);
+
         const { precision, min, max, step, wrap, snap } = useMemo(() => {
             const precisionRaw = typeof precisionProp === "number" ? precisionProp : (NumericString.Emptyable.asNumber(precisionProp ?? "") ?? undefined);
             const wrapRaw = typeof wrapProp === "number" ? wrapProp : (NumericString.Emptyable.asNumber(wrapProp ?? "") ?? undefined);
@@ -264,14 +269,14 @@ export namespace AbstractInput {
 
             // Parse snap: either a number (interval) or array of numbers (discrete values)
             let snapParsed: number | number[] | undefined;
-            if (Array.isArray(snapProp)) {
-                snapParsed = snapProp
+            if (Array.isArray(stableSnap)) {
+                snapParsed = stableSnap
                     .map((v) => (typeof v === "number" ? v : NumericString.Emptyable.asNumber(v ?? "")))
                     .filter((v): v is number => v !== null && !Number.isNaN(v))
                     .sort((a, b) => a - b);
                 if (snapParsed.length === 0) snapParsed = undefined;
-            } else if (snapProp !== undefined) {
-                snapParsed = typeof snapProp === "number" ? snapProp : (NumericString.Emptyable.asNumber(snapProp ?? "") ?? undefined);
+            } else if (stableSnap !== undefined) {
+                snapParsed = typeof stableSnap === "number" ? stableSnap : (NumericString.Emptyable.asNumber(stableSnap ?? "") ?? undefined);
             }
 
             // Derive min/max from wrap if not provided
@@ -295,117 +300,170 @@ export namespace AbstractInput {
                 wrap: doesWrap,
                 snap: snapParsed,
             };
-        }, [precisionProp, minProp, maxProp, stepProp, wrapProp, snapProp]);
-
-        const snapValue = useCallback(
-            (value: number): number => {
-                if (snap === undefined) return value;
-
-                if (Array.isArray(snap)) {
-                    // Snap to closest value in array
-                    let closest = snap[0];
-                    let closestDist = Math.abs(value - closest);
-                    for (let i = 1; i < snap.length; i++) {
-                        const dist = Math.abs(value - snap[i]);
-                        if (dist < closestDist) {
-                            closest = snap[i];
-                            closestDist = dist;
-                        }
-                    }
-                    return closest;
-                } else {
-                    // Snap to interval
-                    return cleanFloat(Math.round(value / snap) * snap);
-                }
-            },
-            [snap],
-        );
+        }, [precisionProp, minProp, maxProp, stepProp, wrapProp, stableSnap]);
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);
         const onChangeRef = useStable(onChange);
 
+        const [inputRef, inputRefMaker] = useCombinedRef(ref);
         const valueRef = useRef<string>(value);
         const lastValidRef = useRef<string>(value); // tracks last valid value internally
         const [cache, setCache] = useState<string>(value);
 
+        const normalizeCacheRef = useRef(normalize(cache));
+
+        // * this might be worth adding a ref'd version of cache
         // On incoming prop change: only update display if normalized values differ
         // This prevents partials from being clobbered during typing
         useEffect(() => {
             if (valueRef.current !== value) {
                 valueRef.current = value;
                 lastValidRef.current = value; // prop change resets last valid
-                const normalizedCache = normalize(cache);
                 const normalizedValue = normalize(value);
                 // Only update cache if the numeric values are different
-                if (normalizedCache !== normalizedValue) {
+                if (normalizeCacheRef.current !== normalizedValue) {
                     setCache(value);
+                    normalizeCacheRef.current = normalizedValue;
                 }
             }
-        }, [value, cache]);
+        }, [value]);
 
         const onValueRef = useStable(onValue);
         const onCommitRef = useStable(onCommit);
         const onConfirmRef = useStable(onConfirm);
 
-        // During typing (native 'input' event via React onChange)
-        const handleChange = useCallback(
-            (evt: ChangeEvent<HTMLInputElement>) => {
-                onChangeRef.current?.(evt);
-                if (evt.nativeEvent.handled) {
-                    return;
+        const validate = useCallback(
+            (currentValue: EmptyOr<NumericString.Type>, el: HTMLInputElement): EmptyOr<NumericString.Type> | null => {
+                // Empty is valid when not required
+                if (currentValue === "") {
+                    el.setCustomValidity(required ? "Value is required" : "");
+                    return required ? null : "";
                 }
-                evt.nativeEvent.handled = "implied";
-                const v = evt.target.value;
-                setCache(v);
+
+                if (!isComplete(currentValue)) {
+                    el.setCustomValidity("Not a valid number");
+                    return null;
+                }
+
+                const normalized = normalize(currentValue);
+                if (normalized === null || !isFinite(Number(normalized))) {
+                    el.setCustomValidity("Not a valid number");
+                    return null;
+                }
+
+                const v = Number(normalized);
+
+                // Check bounds validity
+                if (min !== undefined && v < min) {
+                    el.setCustomValidity("Value is below minimum");
+                    return null;
+                }
+                if (max !== undefined && v > max) {
+                    el.setCustomValidity("Value is above maximum");
+                    return null;
+                }
+
+                // Check snap validity
+                if (snap !== undefined && snapNumber(v, snap) !== v) {
+                    el.setCustomValidity("Value doesn't match snap");
+                    return null;
+                }
+
+                // Check precision validity
+                if (precision !== undefined && !adheresPrecision(v, precision)) {
+                    el.setCustomValidity("Too many decimal places");
+                    return null;
+                }
+
+                el.setCustomValidity("");
+                return normalized as NumericString.Type;
+            },
+            [snap, min, max, precision, required],
+        );
+
+        // this will revalidate when a new value comes in, or when the validation rules change due to validation itself changing
+        useEffect(() => {
+            if (!inputRef.current) return;
+            validate(value, inputRef.current);
+        }, [validate, value]);
+
+        const validateRef = useStable(validate);
+
+        // Shared commit logic for blur and Enter key
+        // Returns the final value (for onConfirm to use)
+        const commitValue = useCallback(
+            (el: HTMLInputElement): EmptyOr<NumericString.Type> => {
+                const v = el.value;
 
                 // Empty is valid when not required
                 if (!required && v === "") {
-                    evt.target.setCustomValidity("");
-                    lastValidRef.current = "";
-                    // Only fire if value actually changed
+                    el.setCustomValidity("");
+                    setCache(v);
+                    normalizeCacheRef.current = normalize(v);
                     if (valueRef.current !== "") {
-                        onValueRef.current?.("");
+                        onCommitRef.current?.("");
                     }
-                    return;
-                }
-
-                // Check syntactic completeness first (rejects "3.", "-", etc.)
-                if (!isComplete(v)) {
-                    evt.target.setCustomValidity("Not a valid number");
-                    return;
+                    return "";
                 }
 
                 const normalized = normalize(v);
-                if (normalized === null) {
-                    evt.target.setCustomValidity("Not a valid number");
-                    return;
+                if (normalized === null || !isValidValue(Number(normalized), min, max, wrap)) {
+                    // Invalid or out of bounds - revert to last known good value
+                    el.setCustomValidity("");
+                    setCache(lastValidRef.current);
+                    normalizeCacheRef.current = normalize(lastValidRef.current);
+                    return lastValidRef.current as EmptyOr<NumericString.Type>;
                 }
 
+                // Valid - apply snap, then wrapping if needed, then precision and format for display
+                el.setCustomValidity("");
                 const asNumber = Number(normalized);
-                if (!isValidValue(asNumber, min, max, wrap)) {
-                    evt.target.setCustomValidity("Value is out of bounds");
-                    return;
-                }
+                const snappedValue = snapNumber(asNumber, snap);
+                const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
+                const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
+                const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
+                setCache(displayValue);
+                normalizeCacheRef.current = normalize(displayValue);
 
-                // Check if value adheres to precision (if specified)
-                if (precision !== undefined && !adheresPrecision(asNumber, precision)) {
-                    evt.target.setCustomValidity("Too many decimal places");
-                    return;
-                }
-
-                // Valid - clear any error and update last valid
-                evt.target.setCustomValidity("");
-                lastValidRef.current = normalized;
-
-                // Only fire onValue if the normalized value differs from current state
+                // Only fire callbacks if value differs from prop
                 const normalizedState = normalize(valueRef.current);
-                if (normalized !== normalizedState) {
-                    onValueRef.current?.(normalized as NumericString.Type);
+                if (finalValue !== normalizedState) {
+                    // Fire onValue if the final value differs from what we last reported
+                    if (finalValue !== lastValidRef.current) {
+                        onValueRef.current?.(finalValue as NumericString.Type);
+                    }
+                    onCommitRef.current?.(finalValue as NumericString.Type);
                 }
+                lastValidRef.current = finalValue;
+                return finalValue as NumericString.Type;
             },
-            [min, max, required, precision, wrap],
+            [required, min, max, wrap, snap, precision],
         );
+
+        // During typing (native 'input' event via React onChange)
+        const handleChange = useCallback((evt: ChangeEvent<HTMLInputElement>) => {
+            onChangeRef.current?.(evt);
+            if (evt.nativeEvent.handled) {
+                return;
+            }
+            evt.nativeEvent.handled = "implied";
+            const v = evt.target.value;
+            setCache(v);
+            normalizeCacheRef.current = normalize(v);
+
+            const normalized = validateRef.current(v as EmptyOr<NumericString.Type>, evt.target);
+            if (normalized === null) {
+                return;
+            }
+
+            lastValidRef.current = normalized;
+
+            // Only fire onValue if the normalized value differs from current state
+            if (normalized !== normalize(valueRef.current)) {
+                onValueRef.current?.(normalized);
+            }
+        }, []);
 
         // On blur - commit the value
         const handleBlur = useCallback(
@@ -414,56 +472,9 @@ export namespace AbstractInput {
                 if (evt.nativeEvent.handled) {
                     return;
                 }
-
-                const v = evt.currentTarget.value;
-
-                // Empty is valid when not required
-                if (!required && v === "") {
-                    evt.currentTarget.setCustomValidity("");
-                    setCache(v);
-                    // Only fire onCommit if value changed from prop
-                    if (valueRef.current !== "") {
-                        onCommitRef.current?.("");
-                    }
-                    return;
-                }
-
-                const normalized = normalize(v);
-                if (normalized === null) {
-                    // Invalid - revert to last known good value
-                    evt.currentTarget.setCustomValidity("");
-                    setCache(lastValidRef.current);
-                    return;
-                }
-
-                const asNumber = Number(normalized);
-                if (!isValidValue(asNumber, min, max, wrap)) {
-                    // Out of bounds - revert to last known good value
-                    evt.currentTarget.setCustomValidity("");
-                    setCache(lastValidRef.current);
-                    return;
-                }
-
-                // Valid - apply snap, then wrapping if needed, then precision and format for display
-                evt.currentTarget.setCustomValidity("");
-                const snappedValue = snapValue(asNumber);
-                const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
-                const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
-                const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
-                setCache(displayValue);
-
-                // Only fire callbacks if value differs from prop
-                const normalizedState = normalize(valueRef.current);
-                if (finalValue !== normalizedState) {
-                    // Only fire onValue if snap/precision changed the value from what was typed
-                    if (finalValue !== normalized) {
-                        onValueRef.current?.(finalValue as NumericString.Type);
-                    }
-                    onCommitRef.current?.(finalValue as NumericString.Type);
-                }
-                lastValidRef.current = finalValue;
+                commitValue(evt.currentTarget);
             },
-            [required, min, max, wrap, snapValue, precision],
+            [commitValue],
         );
 
         // Arrow key handling for step increments, Enter key for submit
@@ -474,46 +485,11 @@ export namespace AbstractInput {
                     return;
                 }
 
-                // Handle Enter key for onSubmit
+                // Handle Enter key for onConfirm
                 if (evt.key === "Enter") {
                     evt.nativeEvent.handled = "implied";
-                    const v = evt.currentTarget.value;
-
-                    // Empty is valid when not required
-                    if (!required && v === "") {
-                        evt.currentTarget.setCustomValidity("");
-                        onConfirmRef.current?.("");
-                        return;
-                    }
-
-                    const normalized = normalize(v);
-                    if (normalized === null || !isValidValue(Number(normalized), min, max, wrap)) {
-                        // Invalid - submit the last valid value
-                        evt.currentTarget.setCustomValidity("");
-                        setCache(lastValidRef.current);
-                        onConfirmRef.current?.(lastValidRef.current as NumericString.Type);
-                        return;
-                    }
-
-                    // Apply snap, then wrapping if needed, then precision and format for display on Enter
-                    const asNumber = Number(normalized);
-                    const snappedValue = snapValue(asNumber);
-                    const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
-                    const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
-                    const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
-                    setCache(displayValue);
-                    evt.currentTarget.setCustomValidity("");
-                    // Fire onValue if snap/precision changed the value
-                    if (finalValue !== normalized) {
-                        onValueRef.current?.(finalValue as NumericString.Type);
-                    }
-                    lastValidRef.current = finalValue;
-                    // Fire onCommit if value differs from prop
-                    const normalizedProp = normalize(valueRef.current);
-                    if (finalValue !== normalizedProp) {
-                        onCommitRef.current?.(finalValue as NumericString.Type);
-                    }
-                    onConfirmRef.current?.(finalValue as NumericString.Type);
+                    const finalValue = commitValue(evt.currentTarget);
+                    onConfirmRef.current?.(finalValue);
                     return;
                 }
 
@@ -542,6 +518,7 @@ export namespace AbstractInput {
 
                 const newValueStr = String(newValue);
                 setCache(newValueStr);
+                normalizeCacheRef.current = normalize(newValueStr);
 
                 // Check if the new value adheres to precision
                 if (precision !== undefined && !adheresPrecision(newValue, precision)) {
@@ -551,7 +528,7 @@ export namespace AbstractInput {
                 }
 
                 // Check if the new value adheres to snap
-                if (snap !== undefined && snapValue(newValue) !== newValue) {
+                if (snap !== undefined && snapNumber(newValue, snap) !== newValue) {
                     // Invalid - show value but mark as invalid, don't fire callbacks
                     evt.currentTarget.setCustomValidity("Value doesn't match snap");
                     return;
@@ -567,34 +544,10 @@ export namespace AbstractInput {
                     onCommitRef.current?.(newValueStr as NumericString.Type);
                 }
             },
-            [precision, step, wrap, min, max, snap, snapValue, required],
+            [commitValue, precision, step, wrap, min, max, snap],
         );
 
-        // Check if cache value is invalid (doesn't adhere to snap, or out of bounds)
-        const isInvalid = useMemo(() => {
-            const normalized = normalize(cache);
-            if (normalized === null) return false;
-            const v = Number(normalized);
-            if (!isFinite(v)) return false;
-
-            // Check snap validity
-            if (snap !== undefined && snapValue(v) !== v) {
-                return true;
-            }
-
-            // Check bounds validity
-            if (min !== undefined && max !== undefined) {
-                if (v < min || v > max) {
-                    return true;
-                }
-            }
-
-            return false;
-        }, [cache, snap, snapValue, min, max]);
-
-        const dataState = isInvalid ? "invalid" : undefined;
-
-        return <BaseInput {...props} type={"text"} title={tooltip} data-flavour={flavour} data-state={dataState} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
+        return <BaseInput {...props} ref={inputRefMaker} type={"text"} title={tooltip} data-flavour={flavour} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
     };
 
     export namespace Numeric {
@@ -632,32 +585,37 @@ export namespace AbstractInput {
         required = false,
         tooltip,
         flavour,
+        ref,
         ...props
     }: Measurement.Props<U>) => {
-        const resolvedDefaultUnit = defaultUnit ?? units[0];
+        const unitsStable = useStableValue(units);
+        const snapStable = useStableValue(snapProp);
+
+        const resolvedDefaultUnit = defaultUnit ?? unitsStable[0];
 
         const onKeyDownRef = useStable(onKeyDown);
         const onChangeRef = useStable(onChange);
         const onBlurRef = useStable(onBlur);
         const normalizeRef = useStable(normalize);
         const converterRef = useStable(converter);
-        const unitsRef = useStable(units);
+        const unitsRef = useStable(unitsStable);
 
         const onValueRef = useStable(onValue);
         const onCommitRef = useStable(onCommit);
         const onConfirmRef = useStable(onConfirm);
 
+        const [inputRef, inputRefMaker] = useCombinedRef(ref);
         const valueRef = useRef<EmptyOr<Measure<U>>>(value);
         const lastValidRef = useRef<EmptyOr<Measure<U>>>(value);
-        const lastUnitRef = useRef<U>(value ? (parseMeasure(value, units)?.[1] ?? resolvedDefaultUnit) : resolvedDefaultUnit);
+        const lastUnitRef = useRef<U>(value ? (parseMeasure(value, unitsStable)?.[1] ?? resolvedDefaultUnit) : resolvedDefaultUnit);
         const [cache, setCache] = useState<string>(value);
 
         // Pattern: optional number, optional unit (for lenient typing)
         const pattern = useMemo(() => {
-            const unitPattern = units.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+            const unitPattern = unitsStable.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
             // Allow: empty (if not required), bare number, or number+unit
             return `([+-]?\\d*\\.?\\d+)(${unitPattern})?`;
-        }, [units]);
+        }, [unitsStable]);
 
         // Sync with incoming prop
         useEffect(() => {
@@ -665,14 +623,14 @@ export namespace AbstractInput {
                 valueRef.current = value;
                 lastValidRef.current = value;
                 if (value) {
-                    const parsed = parseMeasure(value, units);
+                    const parsed = parseMeasure(value, unitsStable);
                     if (parsed) {
                         lastUnitRef.current = parsed[1];
                     }
                 }
                 setCache(value);
             }
-        }, [value, units]);
+        }, [value, unitsStable]);
 
         // Normalize: add unit if bare number, apply custom normalize
         const normalizeInternal = useCallback((v: string): EmptyOr<Measure<U>> => {
@@ -703,9 +661,9 @@ export namespace AbstractInput {
 
         const snapMeasure = useCallback(
             (canonicalValue: number, displayUnit: U): number => {
-                if (snapProp === undefined) return canonicalValue;
+                if (snapStable === undefined) return canonicalValue;
 
-                const snapValues = Array.isArray(snapProp) ? snapProp : [snapProp];
+                const snapValues = Array.isArray(snapStable) ? snapStable : [snapStable];
 
                 // Convert all snap values to canonical, sorting as we find closest
                 let closest = canonicalValue;
@@ -755,105 +713,101 @@ export namespace AbstractInput {
 
                 return closest;
             },
-            [snapProp],
+            [snapStable],
         );
 
         // Check if a canonical value matches a snap point
 
         const isSnapValid = useCallback(
             (canonicalValue: number, displayUnit: U): boolean => {
-                if (snapProp === undefined) return true;
+                if (snapStable === undefined) return true;
                 return snapMeasure(canonicalValue, displayUnit) === canonicalValue;
             },
-            [snapMeasure, snapProp],
+            [snapMeasure, snapStable],
         );
 
-        // Validate value against pattern and bounds
+        // Validate value against pattern, bounds, and snap
         const validate = useCallback(
-            (el: HTMLInputElement, v: string): boolean => {
-                if (!required && v === "") {
-                    el.setCustomValidity("");
-                    return true;
-                }
-                if (required && v === "") {
-                    el.setCustomValidity("Value is required");
-                    return false;
+            (el: HTMLInputElement, v: string): EmptyOr<Measure<U>> | null => {
+                if (v === "") {
+                    el.setCustomValidity(required ? "Value is required" : "");
+                    return required ? null : ("" as EmptyOr<Measure<U>>);
                 }
 
                 const regex = new RegExp(`^${pattern}$`);
                 if (!regex.test(v)) {
                     el.setCustomValidity("Invalid format");
-                    return false;
+                    return null;
                 }
 
                 // Normalize to check bounds
                 const normalized = normalizeInternal(v);
                 if (normalized === "" || !parseMeasure(normalized, unitsRef.current)) {
                     el.setCustomValidity("Invalid value");
-                    return false;
+                    return null;
                 }
 
                 // Check bounds
                 if (!isMeasureInBounds(normalized, min, max, unitsRef.current, converterRef.current)) {
                     el.setCustomValidity("Value out of bounds");
-                    return false;
+                    return null;
+                }
+
+                // Check snap validity
+                const parsed = parseMeasure(normalized, unitsRef.current);
+                if (parsed) {
+                    const [, unit] = parsed;
+                    const canonical = toCanonical(normalized, unitsRef.current, converterRef.current);
+                    if (!isSnapValid(canonical, unit)) {
+                        el.setCustomValidity("Value doesn't match snap");
+                        return null;
+                    }
                 }
 
                 el.setCustomValidity("");
-                return true;
+                return normalized;
             },
-            [pattern, required, normalizeInternal, min, max],
+            [pattern, required, normalizeInternal, min, max, isSnapValid],
         );
 
-        const handleChange = useCallback(
-            (evt: ChangeEvent<HTMLInputElement>) => {
-                onChangeRef.current?.(evt);
-                if (evt.nativeEvent.handled) return;
-                evt.nativeEvent.handled = "implied";
+        // Revalidate when value or validation rules change
+        useEffect(() => {
+            if (!inputRef.current) return;
+            validate(inputRef.current, value);
+        }, [validate, value]);
 
-                const v = evt.target.value;
-                setCache(v);
+        // Shared commit logic for blur and Enter key
+        // Returns the final value (for onConfirm to use)
+        const commitValue = useCallback(
+            (el: HTMLInputElement): EmptyOr<Measure<U>> => {
+                const v = el.value;
 
-                if (validate(evt.target, v)) {
-                    const normalized = normalizeInternal(v);
-                    lastValidRef.current = normalized;
-                    onValueRef.current?.(normalized);
-                }
-            },
-            [validate, normalizeInternal],
-        );
-
-        const handleBlur = useCallback(
-            (evt: React.FocusEvent<HTMLInputElement>) => {
-                onBlurRef.current?.(evt);
-                if (evt.nativeEvent.handled) return;
-
-                const v = evt.currentTarget.value;
-
+                // Empty is valid when not required
                 if (!required && v === "") {
+                    el.setCustomValidity("");
                     setCache("");
-                    evt.currentTarget.setCustomValidity("");
-                    lastValidRef.current = "";
-                    onCommitRef.current?.("");
-                    return;
+                    if (valueRef.current !== "") {
+                        onCommitRef.current?.("");
+                    }
+                    return "" as EmptyOr<Measure<U>>;
                 }
 
                 const regex = new RegExp(`^${pattern}$`);
                 if (!regex.test(v)) {
-                    // Revert to last valid
+                    // Invalid format - revert to last known good value
+                    el.setCustomValidity("");
                     setCache(lastValidRef.current);
-                    evt.currentTarget.setCustomValidity("");
-                    return;
+                    return lastValidRef.current;
                 }
 
                 const normalized = normalizeInternal(v);
 
                 // Check bounds
                 if (normalized !== "" && !isMeasureInBounds(normalized, min, max, unitsRef.current, converterRef.current)) {
-                    // Revert to last valid
+                    // Out of bounds - revert to last known good value
+                    el.setCustomValidity("");
                     setCache(lastValidRef.current);
-                    evt.currentTarget.setCustomValidity("");
-                    return;
+                    return lastValidRef.current;
                 }
 
                 // Apply wrapping if configured
@@ -884,15 +838,51 @@ export namespace AbstractInput {
                 }
 
                 setCache(finalValue);
-                evt.currentTarget.setCustomValidity("");
-                lastValidRef.current = finalValue;
+                el.setCustomValidity("");
 
-                if (finalValue !== v) {
+                // Fire callbacks if value differs
+                if (finalValue !== lastValidRef.current) {
                     onValueRef.current?.(finalValue);
                 }
-                onCommitRef.current?.(finalValue);
+                if (finalValue !== valueRef.current) {
+                    onCommitRef.current?.(finalValue);
+                }
+                lastValidRef.current = finalValue;
+                return finalValue;
             },
             [required, pattern, normalizeInternal, min, max, wrap, snapMeasure],
+        );
+
+        const handleChange = useCallback(
+            (evt: ChangeEvent<HTMLInputElement>) => {
+                onChangeRef.current?.(evt);
+                if (evt.nativeEvent.handled) return;
+                evt.nativeEvent.handled = "implied";
+
+                const v = evt.target.value;
+                setCache(v);
+
+                const normalized = validate(evt.target, v);
+                if (normalized === null) {
+                    return;
+                }
+
+                lastValidRef.current = normalized;
+
+                if (normalized !== valueRef.current) {
+                    onValueRef.current?.(normalized);
+                }
+            },
+            [validate],
+        );
+
+        const handleBlur = useCallback(
+            (evt: React.FocusEvent<HTMLInputElement>) => {
+                onBlurRef.current?.(evt);
+                if (evt.nativeEvent.handled) return;
+                commitValue(evt.currentTarget);
+            },
+            [commitValue],
         );
 
         const handleKeyDown = useCallback(
@@ -902,73 +892,7 @@ export namespace AbstractInput {
 
                 if (evt.key === "Enter") {
                     evt.nativeEvent.handled = "implied";
-                    const v = evt.currentTarget.value;
-
-                    if (!required && v === "") {
-                        setCache("");
-                        evt.currentTarget.setCustomValidity("");
-                        lastValidRef.current = "";
-                        if (valueRef.current !== "") {
-                            onCommitRef.current?.("");
-                        }
-                        onConfirmRef.current?.("");
-                        return;
-                    }
-
-                    const regex = new RegExp(`^${pattern}$`);
-                    if (!regex.test(v)) {
-                        setCache(lastValidRef.current);
-                        evt.currentTarget.setCustomValidity("");
-                        onConfirmRef.current?.(lastValidRef.current);
-                        return;
-                    }
-
-                    const normalized = normalizeInternal(v);
-
-                    if (normalized !== "" && !isMeasureInBounds(normalized, min, max, unitsRef.current, converterRef.current)) {
-                        setCache(lastValidRef.current);
-                        evt.currentTarget.setCustomValidity("");
-                        onConfirmRef.current?.(lastValidRef.current);
-                        return;
-                    }
-
-                    // Apply wrapping
-                    let finalValue: EmptyOr<Measure<U>> = normalized;
-                    if (normalized && wrap) {
-                        const parsed = parseMeasure(normalized, unitsRef.current);
-                        if (parsed) {
-                            const [num, unit] = parsed;
-                            finalValue = wrapMeasure(num, unit, min, max, wrap, unitsRef.current, converterRef.current);
-                        }
-                    }
-
-                    // Apply snap if configured
-                    if (finalValue) {
-                        const parsed = parseMeasure(finalValue, unitsRef.current);
-                        if (parsed) {
-                            const [, unit] = parsed;
-                            const canonical = toCanonical(finalValue, unitsRef.current, converterRef.current);
-                            const snappedCanonical = snapMeasure(canonical, unit);
-                            if (snappedCanonical !== canonical) {
-                                if (converterRef.current) {
-                                    finalValue = converterRef.current[unit].to(snappedCanonical);
-                                } else {
-                                    finalValue = formatMeasure(snappedCanonical, unit);
-                                }
-                            }
-                        }
-                    }
-
-                    setCache(finalValue);
-                    evt.currentTarget.setCustomValidity("");
-                    lastValidRef.current = finalValue;
-
-                    if (finalValue !== v) {
-                        onValueRef.current?.(finalValue);
-                    }
-                    if (finalValue !== valueRef.current) {
-                        onCommitRef.current?.(finalValue);
-                    }
+                    const finalValue = commitValue(evt.currentTarget);
                     onConfirmRef.current?.(finalValue);
                     return;
                 }
@@ -1079,27 +1003,10 @@ export namespace AbstractInput {
                 onValueRef.current?.(newValue);
                 onCommitRef.current?.(newValue);
             },
-            [normalizeInternal, stepProp, min, max, isSnapValid, required, pattern, wrap, snapMeasure],
+            [commitValue, normalizeInternal, stepProp, min, max, isSnapValid, wrap],
         );
 
-        // Check if cache value is invalid (doesn't adhere to snap)
-        const isInvalid = useMemo(() => {
-            if (cache === "") return false;
-            if (snapProp === undefined) return false;
-
-            const parsed = parseMeasure(cache, unitsRef.current);
-            if (!parsed) return false;
-
-            const [, unit] = parsed;
-            const canonical = toCanonical(cache, unitsRef.current, converterRef.current);
-            if (!isFinite(canonical)) return false;
-
-            return !isSnapValid(canonical, unit);
-        }, [cache, isSnapValid, snapProp]);
-
-        const dataState = isInvalid ? "invalid" : undefined;
-
-        return <BaseInput {...props} type="text" value={cache} data-state={dataState} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
+        return <BaseInput {...props} ref={inputRefMaker} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
     };
 
     export namespace Measurement {
@@ -1131,6 +1038,26 @@ function isNumberInBounds(value: number, min?: number, max?: number): boolean {
     if (min !== undefined && value < min) return false;
     if (max !== undefined && value > max) return false;
     return true;
+}
+
+function snapNumber(value: number, snap: undefined | number | number[]) {
+    if (snap === undefined) return value;
+    if (Array.isArray(snap)) {
+        // Snap to closest value in array
+        let closest = snap[0];
+        let closestDist = Math.abs(value - closest);
+        for (let i = 1; i < snap.length; i++) {
+            const dist = Math.abs(value - snap[i]);
+            if (dist < closestDist) {
+                closest = snap[i];
+                closestDist = dist;
+            }
+        }
+        return closest;
+    } else {
+        // Snap to interval
+        return cleanFloat(Math.round(value / snap) * snap);
+    }
 }
 
 // Wrap a value to a range, normalizing boundary values
@@ -1177,6 +1104,7 @@ function cleanFloat(num: number): number {
 
 // Normalize a string to its canonical numeric form, or null if not a valid number
 function normalize(v: string): string | null {
+    if (v === "") return "";
     const n = Number(v);
     if (isNaN(n)) return null;
     return String(cleanFloat(n));

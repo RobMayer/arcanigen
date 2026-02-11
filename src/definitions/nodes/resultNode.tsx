@@ -67,37 +67,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         [methods],
     );
 
-    const [ctrl, setCtrl] = useState(false);
+    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("15");
 
-    useEffect(() => {
-        const onKey = (evt: KeyboardEvent) => {
-            if (evt.key === "Control") {
-                setCtrl(evt.type === "keydown");
-            }
-        };
-
-        const resetMods = () => {
-            setCtrl(false);
-        };
-
-        document.addEventListener("keydown", onKey);
-        document.addEventListener("keyup", onKey);
-        document.addEventListener("trh:pagefocus", resetMods);
-
-        return () => {
-            document.removeEventListener("keydown", onKey);
-            document.removeEventListener("keyup", onKey);
-            document.removeEventListener("trh:pagefocus", resetMods);
-        };
+    const onValue = useCallback((v: EmptyOr<NumericString.Type>) => {
+        setTest(v);
+        console.log("onValue", v);
     }, []);
 
-    const [test, setTest] = useState<EmptyOr<NumericString.Type>>("0");
+    const onCommit = useCallback((v: EmptyOr<NumericString.Type>) => {
+        console.log("onCommit", v);
+    }, []);
 
     return (
         <TypicalNode node={node} methods={methods}>
             <div>{test}</div>
-            <AbstractSlider.Radial value={test} onValue={setTest} min={"0"} max={"360"} wrap={"360"} snap={"15"} />
-            <AbstractInput.Numeric value={test} onValue={setTest} min={"0"} max={"360"} wrap={"360"} snap={TEST_SNAP} step={"1"} />
+            <AbstractSlider.Radial value={test} onValue={onValue} min={"0"} max={"360"} wrap={"360"} snap={"15"} />
+            <AbstractInput.Numeric value={test} onValue={onValue} onCommit={onCommit} min={"0"} max={"360"} wrap={"360"} snap={TEST_SNAP} step={"1"} />
             <SocketIn node={node} socketId={"input"} type={"shape"}>
                 Input
             </SocketIn>
