@@ -1,4 +1,4 @@
-import { ChangeEvent, DetailedHTMLProps, HTMLAttributes, InputHTMLAttributes, Ref, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DetailedHTMLProps, HTMLAttributes, Ref, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Flavour } from "../types";
 import { NumericString } from "../../definitions/datatypes/numericString";
@@ -10,86 +10,428 @@ import { useStableValue } from "../../util/hooks/useStableValue";
 
 export namespace AbstractSlider {
     export const Linear = styled(
-        ({ value, onValue, onCommit, min: minProp = "0.0", max: maxProp = "1.0", step: stepProp = "0.01", onChange, ref, tooltip, flavour = "accent", ...rest }: Linear.Props) => {
-            const [inputRef, makeRef] = useCombinedRef(ref);
-            const min = typeof minProp === "string" ? (NumericString.Emptyable.asNumber(minProp) ?? 0.0) : minProp;
-            const max = typeof maxProp === "string" ? (NumericString.Emptyable.asNumber(maxProp) ?? 1.0) : maxProp;
-            const step = typeof stepProp === "string" ? (NumericString.Emptyable.asNumber(stepProp) ?? 0.01) : stepProp;
+        ({
+            value,
+            onValue,
+            onKeyDown,
+            onCommit,
+            min: minProp = "0",
+            max: maxProp = "1",
+            step: stepProp = "0.01",
+            snap: snapProp,
+            normalize,
+            tooltip,
+            flavour = "accent",
+            disabled,
+            tabIndex,
+            ref,
+            handleRef,
+            ...rest
+        }: Linear.Props) => {
+            const snapStable = useStableValue(snapProp);
+            const onKeyDownRef = useStable(onKeyDown);
+
+            const [, makeInnerRef] = useCombinedRef(ref);
+            const [innerHandleRef, makeInnerHandleRef] = useCombinedRef(handleRef);
 
             const [cache, setCache] = useState(value);
+            const trackRef = useRef<SVGSVGElement>(null);
 
-            // Sync cache when prop changes
             useEffect(() => {
                 setCache(value);
             }, [value]);
 
-            const onChangeRef = useStable(onChange);
             const onValueRef = useStable(onValue);
             const onCommitRef = useStable(onCommit);
+            const normalizeRef = useStable(normalize);
+            const cacheRef = useStable(cache);
 
-            // Native 'change' event fires on release - use for onCommit
+            const { min, max, step, snap } = useMemo(() => {
+                const minRaw = typeof minProp === "number" ? minProp : (NumericString.Emptyable.asNumber(minProp ?? "") ?? 0);
+                const maxRaw = typeof maxProp === "number" ? maxProp : (NumericString.Emptyable.asNumber(maxProp ?? "") ?? 1);
+                const stepRaw = typeof stepProp === "number" ? stepProp : (NumericString.Emptyable.asNumber(stepProp ?? "") ?? undefined);
+
+                let snapParsed: number | number[] | undefined;
+                if (Array.isArray(snapStable)) {
+                    snapParsed = snapStable
+                        .map((v) => (typeof v === "number" ? v : NumericString.Emptyable.asNumber(v ?? "")))
+                        .filter((v): v is number => v !== null && !Number.isNaN(v))
+                        .sort((a, b) => a - b);
+                    if (snapParsed.length === 0) snapParsed = undefined;
+                } else if (snapStable !== undefined) {
+                    snapParsed = typeof snapStable === "number" ? snapStable : (NumericString.Emptyable.asNumber(snapStable ?? "") ?? undefined);
+                }
+
+                return { min: minRaw, max: maxRaw, step: stepRaw, snap: snapParsed };
+            }, [minProp, maxProp, stepProp, snapStable]);
+
+            const snapRef = useStable(snap);
+
+            // Compute the fraction (0-1) for positioning the handle
+            const fraction = useMemo(() => {
+                const v = NumericString.Emptyable.asNumber(cache ?? "") ?? min;
+                if (max - min === 0) return 0;
+                return Math.max(0, Math.min(1, (v - min) / (max - min)));
+            }, [cache, min, max]);
+
+            // Get fraction (0-1) from pointer X relative to the track
+            const getFractionFromEvent = useCallback((e: PointerEvent) => {
+                const track = trackRef.current;
+                if (!track) return null;
+                const rect = track.getBoundingClientRect();
+                if (rect.width === 0) return null;
+                return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            }, []);
+
+            const dragStateRef = useRef<{ lastX: number; accumulatedValue: number } | null>(null);
+            const rafRef = useRef<number | null>(null);
+
+            // Pointer drag handling
             useEffect(() => {
-                const input = inputRef.current;
-                if (!input) return;
+                const handle = innerHandleRef.current;
+                const track = trackRef.current;
+                if (!handle || !track || disabled) return;
 
-                const handleNativeChange = (evt: Event) => {
-                    evt.handled = "implied";
-                    const v = (evt.target as HTMLInputElement).value;
-                    onCommitRef.current?.(v as NumericString.Type);
+                // Handle click: offset grab (maintains current value, tracks delta)
+                const handlePointerDown = (e: PointerEvent) => {
+                    if (e.button !== 0) return;
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
+                    handle.setPointerCapture(e.pointerId);
+                    const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? min;
+                    dragStateRef.current = { lastX: e.clientX, accumulatedValue: currentValue };
                 };
 
-                input.addEventListener("change", handleNativeChange);
-                return () => input.removeEventListener("change", handleNativeChange);
-            }, []);
+                // Track click: jump to position, then allow dragging
+                const handleTrackPointerDown = (e: PointerEvent) => {
+                    if (e.button !== 0) return;
+                    if (e.target === handle || handle.contains(e.target as Node)) return;
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
 
-            // React onChange (native 'input' event) fires continuously during drag - use for onValue
-            const handleChange = useCallback((evt: ChangeEvent<HTMLInputElement>) => {
-                onChangeRef.current?.(evt);
-                if (evt.nativeEvent.handled) {
-                    return;
-                }
-                evt.nativeEvent.handled = "implied";
-                const v = evt.target.value as NumericString.Type;
-                setCache(v);
-                onValueRef.current?.(v);
-            }, []);
-            return <input {...rest} ref={makeRef} {...rest} min={min} max={max} step={step} value={cache} onChange={handleChange} type={"range"} title={tooltip} data-flavour={flavour} />;
+                    handle.setPointerCapture(e.pointerId);
+
+                    const frac = getFractionFromEvent(e);
+                    if (frac === null) return;
+
+                    let newValue = min + frac * (max - min);
+                    if (step !== undefined) newValue = Math.round(newValue / step) * step;
+                    newValue = Math.max(min, Math.min(max, cleanFloat(newValue)));
+
+                    dragStateRef.current = { lastX: e.clientX, accumulatedValue: newValue };
+
+                    // Update DOM directly
+                    const visualFrac = max - min === 0 ? 0 : (newValue - min) / (max - min);
+                    handle.style.left = `${visualFrac * 100}%`;
+
+                    // Update React state
+                    const valueStr = String(newValue) as NumericString.Type;
+                    setCache(valueStr);
+                    onValueRef.current?.(valueStr);
+                };
+
+                const handlePointerMove = (e: PointerEvent) => {
+                    if (!dragStateRef.current) return;
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
+
+                    const rect = track.getBoundingClientRect();
+                    if (rect.width === 0) return;
+
+                    const { lastX, accumulatedValue } = dragStateRef.current;
+                    const deltaX = e.clientX - lastX;
+                    const valueDelta = (deltaX / rect.width) * (max - min);
+                    let newValue = accumulatedValue + valueDelta;
+
+                    // Clamp to bounds
+                    const clamped = Math.max(min, Math.min(max, newValue));
+                    const wasClamped = clamped !== newValue;
+                    newValue = clamped;
+
+                    // If clamped, adjust lastX so reversing direction responds immediately
+                    let newLastX = e.clientX;
+                    if (wasClamped) {
+                        const overshootPx = ((accumulatedValue + valueDelta - newValue) / (max - min)) * rect.width;
+                        newLastX = e.clientX - overshootPx;
+                    }
+
+                    dragStateRef.current = { lastX: newLastX, accumulatedValue: cleanFloat(newValue) };
+
+                    // Snap for visual display
+                    let snappedValue = snapNumber(newValue, snapRef.current);
+                    snappedValue = Math.max(min, Math.min(max, snappedValue));
+
+                    // Update DOM directly for smooth visuals
+                    const visualFrac = max - min === 0 ? 0 : (snappedValue - min) / (max - min);
+                    handle.style.left = `${visualFrac * 100}%`;
+
+                    // Throttle React state updates via RAF
+                    if (rafRef.current === null) {
+                        rafRef.current = requestAnimationFrame(() => {
+                            rafRef.current = null;
+                            if (!dragStateRef.current) return;
+                            let snapped = snapNumber(dragStateRef.current.accumulatedValue, snapRef.current);
+                            snapped = Math.max(min, Math.min(max, snapped));
+                            const valueStr = String(cleanFloat(snapped)) as NumericString.Type;
+                            setCache(valueStr);
+                            onValueRef.current?.(valueStr);
+                        });
+                    }
+                };
+
+                const handlePointerUp = (e: PointerEvent) => {
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
+                    if (!dragStateRef.current) return;
+
+                    let finalValue = snapNumber(dragStateRef.current.accumulatedValue, snapRef.current);
+                    finalValue = Math.max(min, Math.min(max, finalValue));
+                    dragStateRef.current = null;
+
+                    // Cancel any pending RAF
+                    if (rafRef.current !== null) {
+                        cancelAnimationFrame(rafRef.current);
+                        rafRef.current = null;
+                    }
+
+                    // Set inline style to final value to prevent flicker
+                    const visualFrac = max - min === 0 ? 0 : (finalValue - min) / (max - min);
+                    handle.style.left = `${visualFrac * 100}%`;
+
+                    // Update cache first, then fire callbacks
+                    const valueStr = String(cleanFloat(finalValue)) as NumericString.Type;
+                    const normalized = normalizeRef.current ? normalizeRef.current(valueStr) : valueStr;
+                    setCache(normalized);
+                    onValueRef.current?.(normalized as NumericString.Type);
+                    onCommitRef.current?.(normalized as NumericString.Type);
+                };
+
+                handle.addEventListener("pointerdown", handlePointerDown);
+                handle.addEventListener("pointermove", handlePointerMove);
+                handle.addEventListener("pointerup", handlePointerUp);
+                track.addEventListener("pointerdown", handleTrackPointerDown);
+
+                return () => {
+                    handle.removeEventListener("pointerdown", handlePointerDown);
+                    handle.removeEventListener("pointermove", handlePointerMove);
+                    handle.removeEventListener("pointerup", handlePointerUp);
+                    track.removeEventListener("pointerdown", handleTrackPointerDown);
+                    if (rafRef.current !== null) {
+                        cancelAnimationFrame(rafRef.current);
+                        rafRef.current = null;
+                    }
+                };
+            }, [disabled, getFractionFromEvent, min, max, step]);
+
+            // Keyboard handling
+            const handleKeyDown = useCallback(
+                (e: React.KeyboardEvent<HTMLDivElement>) => {
+                    onKeyDownRef.current?.(e);
+                    if (disabled) return;
+                    if (e.nativeEvent.handled) {
+                        return;
+                    }
+                    e.nativeEvent.handled = "implied";
+
+                    const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? min;
+                    const currentSnap = snapRef.current;
+                    let newValue: number | null = null;
+
+                    // Array snap: navigate directly to next/prev snap value
+                    if (Array.isArray(currentSnap) && currentSnap.length > 0) {
+                        switch (e.key) {
+                            case "ArrowRight":
+                            case "ArrowUp": {
+                                e.preventDefault();
+                                const next = currentSnap.find((v) => v > currentValue + 1e-10);
+                                newValue = next ?? currentSnap[currentSnap.length - 1];
+                                break;
+                            }
+                            case "ArrowLeft":
+                            case "ArrowDown": {
+                                e.preventDefault();
+                                let prev: number | undefined;
+                                for (let i = currentSnap.length - 1; i >= 0; i--) {
+                                    if (currentSnap[i] < currentValue - 1e-10) {
+                                        prev = currentSnap[i];
+                                        break;
+                                    }
+                                }
+                                newValue = prev ?? currentSnap[0];
+                                break;
+                            }
+                            case "Home":
+                                e.preventDefault();
+                                newValue = min;
+                                break;
+                            case "End":
+                                e.preventDefault();
+                                newValue = max;
+                                break;
+                            default:
+                                return;
+                        }
+                    } else {
+                        // Interval snap: step by the snap interval; otherwise use step or default
+                        const stepAmount = typeof currentSnap === "number" ? currentSnap : (step ?? (max - min) / 100);
+
+                        switch (e.key) {
+                            case "ArrowRight":
+                            case "ArrowUp":
+                                e.preventDefault();
+                                newValue = currentValue + stepAmount;
+                                break;
+                            case "ArrowLeft":
+                            case "ArrowDown":
+                                e.preventDefault();
+                                newValue = currentValue - stepAmount;
+                                break;
+                            case "Home":
+                                e.preventDefault();
+                                newValue = min;
+                                break;
+                            case "End":
+                                e.preventDefault();
+                                newValue = max;
+                                break;
+                            default:
+                                return;
+                        }
+
+                        if (newValue !== null) {
+                            newValue = cleanFloat(Math.round(newValue / stepAmount) * stepAmount);
+                        }
+                    }
+
+                    if (newValue !== null) {
+                        newValue = Math.max(min, Math.min(max, newValue));
+
+                        const valueStr = String(newValue) as NumericString.Type;
+                        const normalized = normalizeRef.current ? normalizeRef.current(valueStr) : valueStr;
+                        setCache(normalized);
+                        onValueRef.current?.(normalized as NumericString.Type);
+                        onCommitRef.current?.(normalized as NumericString.Type);
+                    }
+                },
+                [disabled, min, max, step],
+            );
+
+            const isInvalid = useMemo(() => {
+                const v = NumericString.Emptyable.asNumber(cache ?? "");
+                if (v === null) return false;
+                if (snap !== undefined && snapNumber(v, snap) !== v) return true;
+                if (v < min || v > max) return true;
+                return false;
+            }, [snap, cache, min, max]);
+
+            const dataState = useMemo(() => {
+                return [disabled && "disabled", isInvalid && "invalid"].filter(Boolean).join(" ") || undefined;
+            }, [disabled, isInvalid]);
+
+            const style = useMemo(() => {
+                return { left: `${fraction * 100}%` };
+            }, [fraction]);
+
+            return (
+                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
+                    <svg data-part="track" ref={trackRef}>
+                        <line data-part="capture" x1="0" y1="50%" x2="100%" y2="50%" />
+                        <line data-part="border" x1="0" y1="50%" x2="100%" y2="50%" />
+                        <line data-part="main" x1="0" y1="50%" x2="100%" y2="50%" />
+                    </svg>
+                    <div data-part="bounds">
+                        <div data-part="handle" data-flavour="inherit" style={style} ref={makeInnerHandleRef} />
+                    </div>
+                </div>
+            );
         },
     )`
         flex: 1 1;
-        outline: none;
-        padding: 2px;
-        isolation: isolate;
-        &:disabled {
-            opacity: 0.6;
-        }
         min-width: 0;
-        background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-        border: 1px solid var(--flavour);
-        border-radius: 100vw;
-        -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
-        &::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: calc(1em + (1lh - 1em) / 2);
-            width: calc(1em + (1lh - 1em) / 2);
-            background: var(--flavour);
-            cursor: ew-resize;
-            border-radius: 100%;
-            z-index: 1;
-            outline: 1px solid transparent;
-            outline-offset: 0px;
-            transition: outline-offset 0.1s ease;
+        isolation: isolate;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        place-items: center;
+        padding: 0 calc(max(var(--handleSize), var(--trackSize)) / 2);
+
+        --handleSize: 1lh;
+        --trackSize: 1em;
+
+        &[data-state~="invalid"] {
+            outline: 1px solid red;
         }
-        &:focus-visible {
-            &::-webkit-slider-thumb {
-                outline-color: #fffa;
-                outline-offset: 2px;
+
+        & > svg[data-part="track"] {
+            grid-area: 1 / 1;
+            width: 100%;
+            height: var(--handleSize);
+            overflow: visible;
+            pointer-events: none;
+            vector-effect: non-scaling-stroke;
+            & > line[data-part="capture"] {
+                stroke: transparent;
+                stroke-width: var(--handleSize);
+                pointer-events: stroke;
+            }
+            & > line[data-part="border"] {
+                stroke: var(--flavour);
+                stroke-width: calc(var(--trackSize) + 2px);
+                stroke-linecap: round;
+                pointer-events: none;
+            }
+            & > line[data-part="main"] {
+                stroke: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
+                stroke-width: var(--trackSize);
+                stroke-linecap: round;
+                pointer-events: none;
             }
         }
-        &:not(:disabled) {
-            &::-webkit-slider-thumb:hover,
-            &::-webkit-slider-thumb:active {
-                background: oklch(from var(--flavour) calc(l + 0.1) c h);
+        & > div[data-part="bounds"] {
+            grid-area: 1 / 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            pointer-events: none;
+            & > div[data-part="handle"] {
+                pointer-events: auto;
+                position: absolute;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                outline: 1px solid transparent;
+                transition: outline-offset 0.1s ease;
+                outline-offset: 0;
+                width: var(--handleSize);
+                height: var(--handleSize);
+                background: var(--flavour);
+                border-radius: 100%;
+                cursor: ew-resize;
+                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
+            }
+        }
+
+        &[data-state~="disabled"] {
+            opacity: 0.6;
+        }
+
+        &:not([data-state~="disabled"]) {
+            & > div[data-part="bounds"] > div[data-part="handle"] {
+                &:active,
+                &:hover {
+                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
+                }
+            }
+            &:focus-visible > div[data-part="bounds"] > div[data-part="handle"] {
+                outline-color: #fffa;
+                outline-offset: 2px;
             }
         }
     `;
@@ -102,7 +444,11 @@ export namespace AbstractSlider {
             min?: number | EmptyOr<NumericString.Type>;
             max?: number | EmptyOr<NumericString.Type>;
             step?: number | EmptyOr<NumericString.Type>;
-        } & Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+            snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[];
+            normalize?: (v: EmptyOr<NumericString.Type>) => EmptyOr<NumericString.Type>;
+            disabled?: boolean;
+            handleRef?: Ref<HTMLDivElement>;
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
     }
 
     export const Radial = styled(
@@ -110,6 +456,7 @@ export namespace AbstractSlider {
             value,
             onValue,
             onCommit,
+            onKeyDown,
             wrap: wrapProp,
             min: minProp,
             max: maxProp,
@@ -128,6 +475,7 @@ export namespace AbstractSlider {
             ...rest
         }: Radial.Props) => {
             const snapStable = useStableValue(snapProp);
+            const onKeyDownRef = useStable(onKeyDown);
 
             const [innerRef, makeInnerRef] = useCombinedRef(ref);
             const [innerHandleRef, makeInnerHandleRef] = useCombinedRef(handleRef);
@@ -249,6 +597,10 @@ export namespace AbstractSlider {
                     if (e.button !== 0) return;
                     // Don't handle if click was on the handle itself
                     if (e.target === handle || handle.contains(e.target as Node)) return;
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
 
                     handle.setPointerCapture(e.pointerId);
 
@@ -330,6 +682,10 @@ export namespace AbstractSlider {
 
                 const handlePointerMove = (e: PointerEvent) => {
                     if (!dragStateRef.current) return;
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
 
                     const angle = getAngleFromEvent(e);
                     if (angle === null) return;
@@ -406,8 +762,12 @@ export namespace AbstractSlider {
                     }
                 };
 
-                const handlePointerUp = (_e: PointerEvent) => {
+                const handlePointerUp = (e: PointerEvent) => {
                     if (!dragStateRef.current) return;
+                    if (e.handled) {
+                        return;
+                    }
+                    e.handled = "implied";
 
                     // Apply snap on commit, then wrap if enabled
                     let finalValue = snapNumber(dragStateRef.current.accumulatedValue, snapRef.current);
@@ -455,8 +815,13 @@ export namespace AbstractSlider {
 
             // Keyboard handling
             const handleKeyDown = useCallback(
-                (e: React.KeyboardEvent) => {
+                (e: React.KeyboardEvent<HTMLDivElement>) => {
+                    onKeyDownRef.current?.(e);
                     if (disabled) return;
+                    if (e.nativeEvent.handled) {
+                        return;
+                    }
+                    e.nativeEvent.handled = "implied";
 
                     const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? trackMin;
                     // Default step: 1/36 of track range (10 degrees worth)
@@ -658,9 +1023,51 @@ export namespace AbstractSlider {
         } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
     }
 
-    export namespace Polar {}
+    export namespace Polar {
+        type Payload = { r: EmptyOr<NumericString.Type>; a: EmptyOr<NumericString.Type> };
+        export type Props = {
+            value: Payload;
+            onValue?: (n: Payload) => void;
+            onCommit?: (n: Payload) => void;
+            minRadius?: number | EmptyOr<NumericString.Type>;
+            maxRadius?: number | EmptyOr<NumericString.Type>;
+            minAngle?: number | EmptyOr<NumericString.Type>;
+            maxAngle?: number | EmptyOr<NumericString.Type>;
+            stepRadius?: number | EmptyOr<NumericString.Type>;
+            stepAngle?: number | EmptyOr<NumericString.Type>;
+            normalize?: (v: Payload) => Payload;
+            icon?: IconDefinition;
+            disabled?: boolean;
+            handleRef?: Ref<HTMLDivElement>;
+            snapRadius?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
+            snapAngle?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+    }
 
-    export namespace Cartesian {}
+    export namespace Cartesian {
+        type Payload = { x: EmptyOr<NumericString.Type>; y: EmptyOr<NumericString.Type> };
+        export type Props = {
+            value: Payload;
+            onValue?: (n: Payload) => void;
+            onCommit?: (n: Payload) => void;
+            min?: number | EmptyOr<NumericString.Type>;
+            max?: number | EmptyOr<NumericString.Type>;
+            minX?: number | EmptyOr<NumericString.Type>;
+            maxX?: number | EmptyOr<NumericString.Type>;
+            minY?: number | EmptyOr<NumericString.Type>;
+            maxY?: number | EmptyOr<NumericString.Type>;
+            step?: number | EmptyOr<NumericString.Type>;
+            stepX?: number | EmptyOr<NumericString.Type>;
+            stepY?: number | EmptyOr<NumericString.Type>;
+            normalize?: (v: Payload) => Payload;
+            icon?: IconDefinition;
+            disabled?: boolean;
+            handleRef?: Ref<HTMLDivElement>;
+            snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
+            snapX?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
+            snapY?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+    }
 }
 
 const snapNumber = (value: number, snap: number | number[] | undefined): number => {

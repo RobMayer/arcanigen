@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { ReactNode, useCallback, useEffect, useState } from "react";
+import { ReactNode, useCallback, useState } from "react";
 
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
@@ -81,7 +81,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     return (
         <TypicalNode node={node} methods={methods}>
             <div>{test}</div>
-            <AbstractSlider.Radial value={test} onValue={onValue} min={"0"} max={"360"} wrap={"360"} snap={"15"} />
+            <AbstractSlider.Linear value={test} onValue={onValue} min={"0"} max={"360"} snap={TEST_SNAP} />
             <AbstractInput.Numeric value={test} onValue={onValue} onCommit={onCommit} min={"0"} max={"360"} wrap={"360"} snap={TEST_SNAP} step={"1"} />
             <SocketIn node={node} socketId={"input"} type={"shape"}>
                 Input

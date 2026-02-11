@@ -124,6 +124,7 @@ export namespace AbstractInput {
                 if (evt.nativeEvent.handled) {
                     return;
                 }
+                evt.nativeEvent.handled = "implied";
 
                 const v = evt.currentTarget.value;
 
