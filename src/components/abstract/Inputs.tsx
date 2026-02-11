@@ -297,27 +297,29 @@ export namespace AbstractInput {
             };
         }, [precisionProp, minProp, maxProp, stepProp, wrapProp, snapProp]);
 
-        // Snap a value to the snap grid (interval or discrete values)
-        const snapValue = useStable((value: number): number => {
-            if (snap === undefined) return value;
+        const snapValue = useCallback(
+            (value: number): number => {
+                if (snap === undefined) return value;
 
-            if (Array.isArray(snap)) {
-                // Snap to closest value in array
-                let closest = snap[0];
-                let closestDist = Math.abs(value - closest);
-                for (let i = 1; i < snap.length; i++) {
-                    const dist = Math.abs(value - snap[i]);
-                    if (dist < closestDist) {
-                        closest = snap[i];
-                        closestDist = dist;
+                if (Array.isArray(snap)) {
+                    // Snap to closest value in array
+                    let closest = snap[0];
+                    let closestDist = Math.abs(value - closest);
+                    for (let i = 1; i < snap.length; i++) {
+                        const dist = Math.abs(value - snap[i]);
+                        if (dist < closestDist) {
+                            closest = snap[i];
+                            closestDist = dist;
+                        }
                     }
+                    return closest;
+                } else {
+                    // Snap to interval
+                    return cleanFloat(Math.round(value / snap) * snap);
                 }
-                return closest;
-            } else {
-                // Snap to interval
-                return cleanFloat(Math.round(value / snap) * snap);
-            }
-        });
+            },
+            [snap],
+        );
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);
@@ -444,7 +446,7 @@ export namespace AbstractInput {
 
                 // Valid - apply snap, then wrapping if needed, then precision and format for display
                 evt.currentTarget.setCustomValidity("");
-                const snappedValue = snapValue.current(asNumber);
+                const snappedValue = snapValue(asNumber);
                 const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
                 const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                 const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
@@ -461,7 +463,7 @@ export namespace AbstractInput {
                 }
                 lastValidRef.current = finalValue;
             },
-            [min, max, required, precision, wrap],
+            [required, min, max, wrap, snapValue, precision],
         );
 
         // Arrow key handling for step increments, Enter key for submit
@@ -495,7 +497,7 @@ export namespace AbstractInput {
 
                     // Apply snap, then wrapping if needed, then precision and format for display on Enter
                     const asNumber = Number(normalized);
-                    const snappedValue = snapValue.current(asNumber);
+                    const snappedValue = snapValue(asNumber);
                     const wrappedValue = cleanFloat(normalizeWrappedValue(snappedValue, min, max, wrap));
                     const finalValue = precision !== undefined ? String(applyPrecision(wrappedValue, precision)) : String(wrappedValue);
                     const displayValue = precision !== undefined ? formatForDisplay(applyPrecision(wrappedValue, precision), precision) : String(wrappedValue);
@@ -549,7 +551,7 @@ export namespace AbstractInput {
                 }
 
                 // Check if the new value adheres to snap
-                if (snap !== undefined && snapValue.current(newValue) !== newValue) {
+                if (snap !== undefined && snapValue(newValue) !== newValue) {
                     // Invalid - show value but mark as invalid, don't fire callbacks
                     evt.currentTarget.setCustomValidity("Value doesn't match snap");
                     return;
@@ -565,7 +567,7 @@ export namespace AbstractInput {
                     onCommitRef.current?.(newValueStr as NumericString.Type);
                 }
             },
-            [step, min, max, required, precision, wrap, snap],
+            [precision, step, wrap, min, max, snap, snapValue, required],
         );
 
         // Check if cache value is invalid (doesn't adhere to snap, or out of bounds)
@@ -576,7 +578,7 @@ export namespace AbstractInput {
             if (!isFinite(v)) return false;
 
             // Check snap validity
-            if (snap !== undefined && snapValue.current(v) !== v) {
+            if (snap !== undefined && snapValue(v) !== v) {
                 return true;
             }
 
@@ -588,7 +590,7 @@ export namespace AbstractInput {
             }
 
             return false;
-        }, [snap, cache, min, max]);
+        }, [cache, snap, snapValue, min, max]);
 
         const dataState = isInvalid ? "invalid" : undefined;
 
