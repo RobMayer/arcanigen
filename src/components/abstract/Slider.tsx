@@ -15,6 +15,7 @@ export namespace AbstractSlider {
             onValue,
             onKeyDown,
             onCommit,
+            orientation = "horizontal",
             min: minProp = "0",
             max: maxProp = "1",
             step: stepProp = "0.01",
@@ -30,12 +31,14 @@ export namespace AbstractSlider {
         }: Linear.Props) => {
             const snapStable = useStableValue(snapProp);
             const onKeyDownRef = useStable(onKeyDown);
+            const isVertical = orientation === "vertical";
 
             const [, makeInnerRef] = useCombinedRef(ref);
             const [innerHandleRef, makeInnerHandleRef] = useCombinedRef(handleRef);
 
             const [cache, setCache] = useState(value);
-            const trackRef = useRef<SVGSVGElement>(null);
+            const trackRef = useRef<HTMLDivElement>(null);
+            const boundsRef = useRef<HTMLDivElement>(null);
 
             useEffect(() => {
                 setCache(value);
@@ -74,23 +77,43 @@ export namespace AbstractSlider {
                 return Math.max(0, Math.min(1, (v - min) / (max - min)));
             }, [cache, min, max]);
 
-            // Get fraction (0-1) from pointer X relative to the track
-            const getFractionFromEvent = useCallback((e: PointerEvent) => {
-                const track = trackRef.current;
-                if (!track) return null;
-                const rect = track.getBoundingClientRect();
-                if (rect.width === 0) return null;
-                return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            }, []);
+            // Get fraction (0-1) from pointer position relative to the bounds
+            const getFractionFromEvent = useCallback(
+                (e: PointerEvent) => {
+                    const bounds = boundsRef.current;
+                    if (!bounds) return null;
+                    const rect = bounds.getBoundingClientRect();
+                    if (isVertical) {
+                        if (rect.height === 0) return null;
+                        // Invert: bottom = 0, top = 1
+                        return Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+                    }
+                    if (rect.width === 0) return null;
+                    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                },
+                [isVertical],
+            );
 
-            const dragStateRef = useRef<{ lastX: number; accumulatedValue: number } | null>(null);
+            const dragStateRef = useRef<{ lastPos: number; accumulatedValue: number } | null>(null);
             const rafRef = useRef<number | null>(null);
+
+            // Helper: update --f on the bounds div for direct DOM positioning
+            const updateDOMFraction = useCallback((frac: number) => {
+                boundsRef.current?.style.setProperty("--f", String(frac));
+            }, []);
 
             // Pointer drag handling
             useEffect(() => {
                 const handle = innerHandleRef.current;
                 const track = trackRef.current;
-                if (!handle || !track || disabled) return;
+                const bounds = boundsRef.current;
+                if (!handle || !track || !bounds || disabled) return;
+
+                const getPos = (e: PointerEvent) => (isVertical ? e.clientY : e.clientX);
+                const getSize = () => {
+                    const rect = bounds.getBoundingClientRect();
+                    return isVertical ? rect.height : rect.width;
+                };
 
                 // Handle click: offset grab (maintains current value, tracks delta)
                 const handlePointerDown = (e: PointerEvent) => {
@@ -101,7 +124,7 @@ export namespace AbstractSlider {
                     e.handled = "implied";
                     handle.setPointerCapture(e.pointerId);
                     const currentValue = NumericString.Emptyable.asNumber(cacheRef.current ?? "") ?? min;
-                    dragStateRef.current = { lastX: e.clientX, accumulatedValue: currentValue };
+                    dragStateRef.current = { lastPos: getPos(e), accumulatedValue: currentValue };
                 };
 
                 // Track click: jump to position, then allow dragging
@@ -122,11 +145,11 @@ export namespace AbstractSlider {
                     if (step !== undefined) newValue = Math.round(newValue / step) * step;
                     newValue = Math.max(min, Math.min(max, cleanFloat(newValue)));
 
-                    dragStateRef.current = { lastX: e.clientX, accumulatedValue: newValue };
+                    dragStateRef.current = { lastPos: getPos(e), accumulatedValue: newValue };
 
                     // Update DOM directly
                     const visualFrac = max - min === 0 ? 0 : (newValue - min) / (max - min);
-                    handle.style.left = `${visualFrac * 100}%`;
+                    updateDOMFraction(visualFrac);
 
                     // Update React state
                     const valueStr = String(newValue) as NumericString.Type;
@@ -141,12 +164,13 @@ export namespace AbstractSlider {
                     }
                     e.handled = "implied";
 
-                    const rect = track.getBoundingClientRect();
-                    if (rect.width === 0) return;
+                    const size = getSize();
+                    if (size === 0) return;
 
-                    const { lastX, accumulatedValue } = dragStateRef.current;
-                    const deltaX = e.clientX - lastX;
-                    const valueDelta = (deltaX / rect.width) * (max - min);
+                    const { lastPos, accumulatedValue } = dragStateRef.current;
+                    const deltaPos = getPos(e) - lastPos;
+                    // For vertical, moving up (negative deltaY) = increasing value
+                    const valueDelta = ((isVertical ? -deltaPos : deltaPos) / size) * (max - min);
                     let newValue = accumulatedValue + valueDelta;
 
                     // Clamp to bounds
@@ -154,14 +178,14 @@ export namespace AbstractSlider {
                     const wasClamped = clamped !== newValue;
                     newValue = clamped;
 
-                    // If clamped, adjust lastX so reversing direction responds immediately
-                    let newLastX = e.clientX;
+                    // If clamped, adjust lastPos so reversing direction responds immediately
+                    let newLastPos = getPos(e);
                     if (wasClamped) {
-                        const overshootPx = ((accumulatedValue + valueDelta - newValue) / (max - min)) * rect.width;
-                        newLastX = e.clientX - overshootPx;
+                        const overshootPx = ((accumulatedValue + valueDelta - newValue) / (max - min)) * size;
+                        newLastPos = getPos(e) - (isVertical ? -overshootPx : overshootPx);
                     }
 
-                    dragStateRef.current = { lastX: newLastX, accumulatedValue: cleanFloat(newValue) };
+                    dragStateRef.current = { lastPos: newLastPos, accumulatedValue: cleanFloat(newValue) };
 
                     // Snap for visual display
                     let snappedValue = snapNumber(newValue, snapRef.current);
@@ -169,7 +193,7 @@ export namespace AbstractSlider {
 
                     // Update DOM directly for smooth visuals
                     const visualFrac = max - min === 0 ? 0 : (snappedValue - min) / (max - min);
-                    handle.style.left = `${visualFrac * 100}%`;
+                    updateDOMFraction(visualFrac);
 
                     // Throttle React state updates via RAF
                     if (rafRef.current === null) {
@@ -204,7 +228,7 @@ export namespace AbstractSlider {
 
                     // Set inline style to final value to prevent flicker
                     const visualFrac = max - min === 0 ? 0 : (finalValue - min) / (max - min);
-                    handle.style.left = `${visualFrac * 100}%`;
+                    updateDOMFraction(visualFrac);
 
                     // Update cache first, then fire callbacks
                     const valueStr = String(cleanFloat(finalValue)) as NumericString.Type;
@@ -229,7 +253,7 @@ export namespace AbstractSlider {
                         rafRef.current = null;
                     }
                 };
-            }, [disabled, getFractionFromEvent, min, max, step]);
+            }, [disabled, isVertical, getFractionFromEvent, updateDOMFraction, min, max, step]);
 
             // Keyboard handling
             const handleKeyDown = useCallback(
@@ -337,18 +361,23 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             const style = useMemo(() => {
-                return { left: `${fraction * 100}%` };
+                return { "--f": fraction } as React.CSSProperties;
             }, [fraction]);
 
             return (
-                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
-                    <svg data-part="track" ref={trackRef}>
-                        <line data-part="capture" x1="0" y1="50%" x2="100%" y2="50%" />
-                        <line data-part="border" x1="0" y1="50%" x2="100%" y2="50%" />
-                        <line data-part="main" x1="0" y1="50%" x2="100%" y2="50%" />
-                    </svg>
-                    <div data-part="bounds">
-                        <div data-part="handle" data-flavour="inherit" style={style} ref={makeInnerHandleRef} />
+                <div
+                    {...rest}
+                    data-flavour={flavour}
+                    data-orientation={orientation}
+                    tabIndex={disabled ? undefined : (tabIndex ?? 0)}
+                    ref={makeInnerRef}
+                    data-state={dataState}
+                    onKeyDown={handleKeyDown}
+                    title={tooltip}
+                >
+                    <div data-part="track" ref={trackRef} />
+                    <div data-part="bounds" style={style} ref={boundsRef}>
+                        <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef} />
                     </div>
                 </div>
             );
@@ -361,51 +390,31 @@ export namespace AbstractSlider {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
         place-items: center;
-        padding: 0 calc(max(var(--handleSize), var(--trackSize)) / 2);
 
         --handleSize: 1lh;
-        --trackSize: 1em;
+        --trackSize: calc(1lh / 2 + 2px);
 
         &[data-state~="invalid"] {
             outline: 1px solid red;
         }
 
-        & > svg[data-part="track"] {
+        & > div[data-part="track"] {
             grid-area: 1 / 1;
-            width: 100%;
-            height: var(--handleSize);
-            overflow: visible;
-            pointer-events: none;
-            vector-effect: non-scaling-stroke;
-            & > line[data-part="capture"] {
-                stroke: transparent;
-                stroke-width: var(--handleSize);
-                pointer-events: stroke;
-            }
-            & > line[data-part="border"] {
-                stroke: var(--flavour);
-                stroke-width: calc(var(--trackSize) + 1px);
-                stroke-linecap: round;
-                pointer-events: none;
-            }
-            & > line[data-part="main"] {
-                stroke: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-                stroke-width: var(--trackSize);
-                stroke-linecap: round;
-                pointer-events: none;
-            }
+            border-radius: 100vw;
+            background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
+            border: 1px solid var(--flavour);
+            pointer-events: auto;
         }
+
         & > div[data-part="bounds"] {
             grid-area: 1 / 1;
-            width: 100%;
-            height: 100%;
             position: relative;
             pointer-events: none;
+            min-height: var(--handleSize);
+            min-width: var(--handleSize);
             & > div[data-part="handle"] {
                 pointer-events: auto;
                 position: absolute;
-                top: 50%;
-                transform: translate(-50%, -50%);
                 outline: 1px solid transparent;
                 transition: outline-offset 0.1s ease;
                 outline-offset: 0;
@@ -413,8 +422,50 @@ export namespace AbstractSlider {
                 height: var(--handleSize);
                 background: var(--flavour);
                 border-radius: 100%;
-                cursor: ew-resize;
                 border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
+            }
+        }
+
+        /* Horizontal layout */
+        &[data-orientation="horizontal"] {
+            & > div[data-part="track"] {
+                align-self: center;
+                justify-self: stretch;
+                height: calc(var(--trackSize) * 2);
+            }
+            & > div[data-part="bounds"] {
+                align-self: stretch;
+                justify-self: stretch;
+                margin-inline: calc(var(--trackSize) - var(--handleSize) / 2);
+                & > div[data-part="handle"] {
+                    left: calc(var(--f, 0) * (100% - var(--handleSize)));
+                    top: 50%;
+                    transform: translateY(-50%);
+                    cursor: ew-resize;
+                }
+            }
+        }
+
+        /* Vertical layout */
+        &[data-orientation="vertical"] {
+            min-height: 12em;
+            flex: 0 1 auto;
+            align-self: stretch;
+            & > div[data-part="track"] {
+                justify-self: center;
+                align-self: stretch;
+                width: calc(var(--trackSize) * 2);
+            }
+            & > div[data-part="bounds"] {
+                align-self: stretch;
+                justify-self: stretch;
+                margin-block: calc(var(--trackSize) - var(--handleSize) / 2);
+                & > div[data-part="handle"] {
+                    bottom: calc(var(--f, 0) * (100% - var(--handleSize)));
+                    left: 50%;
+                    transform: translateX(-50%);
+                    cursor: ns-resize;
+                }
             }
         }
 
@@ -441,6 +492,7 @@ export namespace AbstractSlider {
             value: EmptyOr<NumericString.Type>;
             onValue?: (n: NumericString.Type) => void;
             onCommit?: (n: NumericString.Type) => void;
+            orientation?: "horizontal" | "vertical";
             min?: number | EmptyOr<NumericString.Type>;
             max?: number | EmptyOr<NumericString.Type>;
             step?: number | EmptyOr<NumericString.Type>;

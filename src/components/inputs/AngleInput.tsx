@@ -75,7 +75,6 @@ export const SpinnerWithDisplay = styled(
         }, []);
 
         const handleCommit = useCallback((v: EmptyOr<NumericString.Type>) => {
-            console.log("handleCommit fired");
             onCommitRef.current?.(v);
             setCache(v);
         }, []);
