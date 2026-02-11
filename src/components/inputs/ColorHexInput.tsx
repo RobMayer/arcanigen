@@ -88,8 +88,9 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
 
     return (
         <div className={className}>
-            <span className={"swatch"} style={styleValue} />
+            <span data-part={"swatch"} style={styleValue} />
             <AbstractInput.Text<EmptyOr<Color>>
+                data-part={"input"}
                 {...rest}
                 value={cache}
                 onCommit={handleCommit}
@@ -105,7 +106,10 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     display: flex;
     gap: 4px;
     flex: 1 1 0;
-    & > .swatch {
+    min-width: 0;
+    align-items: center;
+    & > [data-part="swatch"] {
+        flex: 0 0 1lh;
         background: url("swatch.png");
         background-size: 25%;
         display: block;
@@ -120,5 +124,10 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
             height: 100%;
             background-color: var(--value);
         }
+    }
+    & > [data-part="input"] {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
     }
 `;

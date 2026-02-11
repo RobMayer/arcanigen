@@ -15,4 +15,4 @@
 # componnet improvements
 
 [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe
-[ ] should a change to min/max/step (and unbound) on the various inputs trigger a state change _if_ the would get changed by that setting being in place.
+[ ] rework mouse drag to pointer drag

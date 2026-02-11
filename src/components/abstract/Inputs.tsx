@@ -33,7 +33,7 @@ export namespace AbstractInput {
             opacity: 0.6;
         }
         min-width: 0;
-        flex: 1 1;
+        flex: 1 1 auto;
     `;
 
     type BaseProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string; flavour?: Flavour | "inherit" };
@@ -428,14 +428,8 @@ export namespace AbstractInput {
                 normalizeCacheRef.current = normalizeNumeric(displayValue);
 
                 // Only fire callbacks if value differs from prop
-                const normalizedState = normalizeNumeric(valueRef.current);
-                if (finalValue !== normalizedState) {
-                    // Fire onValue if the final value differs from what we last reported
-                    if (finalValue !== lastValidRef.current) {
-                        onValueRef.current?.(finalValue as NumericString.Type);
-                    }
-                    onCommitRef.current?.(finalValue as NumericString.Type);
-                }
+                onValueRef.current?.(finalValue as NumericString.Type);
+                onCommitRef.current?.(finalValue as NumericString.Type);
                 lastValidRef.current = finalValue;
                 return finalValue as NumericString.Type;
             },
@@ -539,11 +533,8 @@ export namespace AbstractInput {
                 evt.currentTarget.setCustomValidity("");
                 lastValidRef.current = newValueStr;
 
-                const normalizedState = normalizeNumeric(valueRef.current);
-                if (newValueStr !== normalizedState) {
-                    onValueRef.current?.(newValueStr as NumericString.Type);
-                    onCommitRef.current?.(newValueStr as NumericString.Type);
-                }
+                onValueRef.current?.(newValueStr as NumericString.Type);
+                onCommitRef.current?.(newValueStr as NumericString.Type);
             },
             [commitValue, precision, step, wrap, min, max, snap],
         );
@@ -774,13 +765,8 @@ export namespace AbstractInput {
                 setCache(finalValue);
                 el.setCustomValidity("");
 
-                // Fire callbacks if value differs
-                if (finalValue !== lastValidRef.current) {
-                    onValueRef.current?.(finalValue);
-                }
-                if (finalValue !== valueRef.current) {
-                    onCommitRef.current?.(finalValue);
-                }
+                onValueRef.current?.(finalValue);
+                onCommitRef.current?.(finalValue);
                 lastValidRef.current = finalValue;
                 return finalValue;
             },
