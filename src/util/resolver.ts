@@ -79,7 +79,7 @@ export namespace Resolver {
         const resultNode = state.nodes["root"]?.["RESULT"] as unknown as NodeDefinitions.NodeFor<NodeTypes.DefinitionOf<NodeTypes.Use<"result">>>;
         if (!resultNode) {
             return {
-                canvas: { width: 800, height: 800, originX: 0, originY: 0, background: "#ffffffff" },
+                canvas: { width: 800, height: 800, originX: 0, originY: 0, background: Color.toHex(Color.WHITE, true) },
                 definitions: [],
                 contents: null,
             };
