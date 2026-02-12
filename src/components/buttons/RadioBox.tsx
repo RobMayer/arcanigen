@@ -1,51 +1,14 @@
-import { MouseEvent, useCallback } from "react";
-import { AbstractButtonProps, AbstractLiteButton } from "../abstract/Button";
+import { DetailedHTMLProps, HTMLAttributes, MouseEvent, useCallback } from "react";
+import { AbstractButton } from "../abstract/Button";
 import { useStable } from "../../util/hooks/useStable";
 import { Icon, IconDefinition, ICONS } from "../Icon";
 import styled from "styled-components";
 import { Flavour, Options } from "../types";
+import { COMMON_STYLES } from "../styles";
 
-type RadioBoxProps<T extends string = string> = {
-    value: T;
-    target: T;
-    iconChecked?: IconDefinition;
-    iconUnchecked?: IconDefinition;
-    onValue?: (v: T) => void;
-};
-
-export const RadioBox = <T extends string = string>({
-    value,
-    target,
-    onValue,
-    onClick,
-    state,
-    children,
-    iconChecked = ICONS.RadioBox.Checked,
-    iconUnchecked = ICONS.RadioBox.Unchecked,
-    ...rest
-}: Omit<AbstractButtonProps, "value"> & RadioBoxProps<T>) => {
-    const onValueRef = useStable(onValue);
-    const onClickRef = useStable(onClick);
-
-    const handleClick = useCallback(
-        (evt: MouseEvent<HTMLButtonElement>) => {
-            onClickRef.current?.(evt);
-            if (evt.nativeEvent.handled) {
-                return;
-            }
-            evt.nativeEvent.handled = "implied";
-            onValueRef.current?.(target);
-        },
-        [target],
-    );
-
-    return (
-        <AbstractLiteButton {...rest} state={`${state ?? ""} ${target === value ? "checked" : "unchecked"}`} onClick={handleClick}>
-            <Icon shape={target === value ? iconChecked : iconUnchecked} />
-            {children}
-        </AbstractLiteButton>
-    );
-};
+const Base = styled(AbstractButton)`
+    ${COMMON_STYLES.LITEBUTTON}
+`;
 
 const GroupBase = styled.div`
     flex: 1 1;
@@ -62,46 +25,76 @@ const GroupBase = styled.div`
     }
 `;
 
-type GroupOptions<T extends string = string> = {
-    value: T;
-    iconChecked?: IconDefinition;
-    iconUnchecked?: IconDefinition;
-    onValue?: (v: T) => void;
-    options: Options<T>;
-    disabled?: boolean;
-};
-
-const Group = <T extends string = string>({
-    className,
-    orientation = "vertical",
-    flavour,
-    options,
+export function RadioBox<T extends string = string>({
     value,
-    iconChecked,
-    iconUnchecked,
+    target,
     onValue,
-    disabled,
-}: { className?: string; orientation?: "vertical" | "horizontal"; flavour?: Flavour } & GroupOptions<T>) => {
-    return (
-        <GroupBase className={className} data-orientation={orientation} data-flavour={flavour}>
-            {options.map(({ value: target, label: children, disabled: optionDisabled, flavour: optionFlavour }) => {
-                return (
-                    <RadioBox<T>
-                        key={target}
-                        onValue={onValue}
-                        value={value}
-                        target={target}
-                        iconChecked={iconChecked}
-                        iconUnchecked={iconUnchecked}
-                        flavour={optionFlavour}
-                        disabled={disabled || optionDisabled}
-                    >
-                        {children}
-                    </RadioBox>
-                );
-            })}
-        </GroupBase>
-    );
-};
+    onClick,
+    state,
+    children,
+    iconChecked = ICONS.RadioBox.Checked,
+    iconUnchecked = ICONS.RadioBox.Unchecked,
+    flavour,
+    ...rest
+}: RadioBox.Props<T>) {
+    const onValueRef = useStable(onValue);
+    const onClickRef = useStable(onClick);
 
-RadioBox.Group = Group;
+    const handleClick = useCallback(
+        (evt: MouseEvent<HTMLButtonElement>) => {
+            onClickRef.current?.(evt);
+            if (evt.nativeEvent.handled) {
+                return;
+            }
+            evt.nativeEvent.handled = "implied";
+            onValueRef.current?.(target);
+        },
+        [target],
+    );
+
+    return (
+        <Base {...rest} state={`${state ?? ""} ${target === value ? "checked" : "unchecked"}`} onClick={handleClick}>
+            <Icon shape={target === value ? iconChecked : iconUnchecked} />
+            {children}
+        </Base>
+    );
+}
+
+export namespace RadioBox {
+    export type Props<T extends string = string> = Omit<AbstractButton.Props, "value"> & {
+        value: T;
+        target: T;
+        iconChecked?: IconDefinition;
+        iconUnchecked?: IconDefinition;
+        onValue?: (v: T) => void;
+        flavour?: Flavour | "inherit";
+    };
+
+    export function Group<T extends string = string>({ className, orientation = "vertical", flavour = "base", options, value, onValue, disabled }: Group.Props<T>) {
+        return (
+            <GroupBase className={className} data-orientation={orientation} data-flavour={flavour}>
+                {options.map(({ value: target, label: children, disabled: optionDisabled, flavour: optionFlavour }) => {
+                    return (
+                        <RadioBox<T> key={target} onValue={onValue} value={value} target={target} flavour={optionFlavour} disabled={optionDisabled || disabled}>
+                            {children}
+                        </RadioBox>
+                    );
+                })}
+            </GroupBase>
+        );
+    }
+
+    export namespace Group {
+        export type Props<T extends string = string> = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string } & {
+            value: T;
+            target: T;
+            onValue?: (v: T) => void;
+            flavour?: Flavour | "inherit";
+            options: Options<T>;
+            disabled?: boolean;
+            orientation?: "vertical" | "horizontal";
+            iconChecked?: IconDefinition;
+            iconUnchecked?: IconDefinition;
+        };
+    }
+}

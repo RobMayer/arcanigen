@@ -1,33 +1,13 @@
-import { MouseEvent, useCallback } from "react";
-import { AbstractButton, AbstractButtonProps } from "../abstract/Button";
+import { DetailedHTMLProps, HTMLAttributes, MouseEvent, useCallback } from "react";
+import { AbstractButton } from "../abstract/Button";
 import { useStable } from "../../util/hooks/useStable";
 import { Flavour, Options } from "../types";
 import styled from "styled-components";
+import { COMMON_STYLES } from "../styles";
 
-type RadioButtonProps<T extends string = string> = {
-    value: T;
-    target: T;
-    onValue?: (v: T) => void;
-};
-
-export const RadioButton = <T extends string = string>({ value, target, onValue, onClick, state, ...rest }: Omit<AbstractButtonProps, "value"> & RadioButtonProps<T>) => {
-    const onValueRef = useStable(onValue);
-    const onClickRef = useStable(onClick);
-
-    const handleClick = useCallback(
-        (evt: MouseEvent<HTMLButtonElement>) => {
-            onClickRef.current?.(evt);
-            if (evt.nativeEvent.handled) {
-                return;
-            }
-            evt.nativeEvent.handled = "implied";
-            onValueRef.current?.(target);
-        },
-        [target],
-    );
-
-    return <AbstractButton {...rest} state={`${state ?? ""} ${target === value ? "checked" : "unchecked"}`} onClick={handleClick} />;
-};
+const Base = styled(AbstractButton)`
+    ${COMMON_STYLES.BUTTON}
+`;
 
 const GroupBase = styled.div`
     flex: 1 1;
@@ -44,33 +24,56 @@ const GroupBase = styled.div`
     }
 `;
 
-type GroupOptions<T extends string = string> = {
-    value: T;
-    onValue?: (v: T) => void;
-    options: Options<T>;
-    disabled?: boolean;
-};
+export function RadioButton<T extends string = string>({ value, target, onValue, onClick, state, flavour, ...rest }: RadioButton.Props<T>) {
+    const onValueRef = useStable(onValue);
+    const onClickRef = useStable(onClick);
 
-const Group = <T extends string = string>({
-    className,
-    orientation = "vertical",
-    flavour = "base",
-    options,
-    value,
-    onValue,
-    disabled,
-}: { className?: string; orientation?: "vertical" | "horizontal"; flavour?: Flavour } & GroupOptions<T>) => {
-    return (
-        <GroupBase className={className} data-orientation={orientation} data-flavour={flavour}>
-            {options.map(({ value: target, label: children, disabled: optionDisabled, flavour: optionFlavour }) => {
-                return (
-                    <RadioButton<T> key={target} onValue={onValue} value={value} target={target} flavour={optionFlavour} disabled={optionDisabled || disabled}>
-                        {children}
-                    </RadioButton>
-                );
-            })}
-        </GroupBase>
+    const handleClick = useCallback(
+        (evt: MouseEvent<HTMLButtonElement>) => {
+            onClickRef.current?.(evt);
+            if (evt.nativeEvent.handled) {
+                return;
+            }
+            evt.nativeEvent.handled = "implied";
+            onValueRef.current?.(target);
+        },
+        [target],
     );
-};
 
-RadioButton.Group = Group;
+    return <Base {...rest} state={`${state ?? ""} ${target === value ? "checked" : "unchecked"}`} onClick={handleClick} data-flavour={flavour} />;
+}
+
+export namespace RadioButton {
+    export type Props<T extends string = string> = Omit<AbstractButton.Props, "value"> & {
+        value: T;
+        target: T;
+        onValue?: (v: T) => void;
+        flavour?: Flavour | "inherit";
+    };
+
+    export function Group<T extends string = string>({ className, orientation = "vertical", flavour = "base", options, value, onValue, disabled }: Group.Props<T>) {
+        return (
+            <GroupBase className={className} data-orientation={orientation} data-flavour={flavour}>
+                {options.map(({ value: target, label: children, disabled: optionDisabled, flavour: optionFlavour }) => {
+                    return (
+                        <RadioButton<T> key={target} onValue={onValue} value={value} target={target} flavour={optionFlavour} disabled={optionDisabled || disabled}>
+                            {children}
+                        </RadioButton>
+                    );
+                })}
+            </GroupBase>
+        );
+    }
+
+    export namespace Group {
+        export type Props<T extends string = string> = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string } & {
+            value: T;
+            target: T;
+            onValue?: (v: T) => void;
+            flavour?: Flavour | "inherit";
+            options: Options<T>;
+            disabled?: boolean;
+            orientation?: "vertical" | "horizontal";
+        };
+    }
+}

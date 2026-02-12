@@ -21,7 +21,6 @@ import {
 import styled from "styled-components";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
-import { Flavour } from "../types";
 import { createController } from "../../util/hooks/useController";
 
 export namespace AbstractPopup {
@@ -345,109 +344,6 @@ export namespace AbstractPopup {
         }
     `;
 
-    //#region Anchored
-    const {
-        useController: useAnchoredController,
-        useControllerInternal: useAnchoredInternal,
-        useControllerExternal: useAnchoredExternal,
-        Controller: AnchoredController,
-    } = createController<HTMLElement | null, Anchored.Controls>();
-
-    export function Anchored({ controls, placement = "bottom right", force = false, onOpen, onClose, onPopupToggle, style, flavour = "base", ...props }: Anchored.Props) {
-        const [, setAnchorElement, state] = useAnchoredController(null);
-        const popoverHandle = useRef<AbstractPopupHandle>(null);
-        const anchorElementRef = useRef<HTMLElement>(null);
-        const anchorId = useId();
-        const onPopupToggleRef = useStable(onPopupToggle);
-        const onCloseRef = useStable(onClose);
-        const onOpenRef = useStable(onOpen);
-
-        const openPopover = useCallback(
-            (element: HTMLElement) => {
-                anchorElementRef.current = element;
-                (element.style as CSSProperties).anchorName = `--trh-anchor_popover-${anchorId}`;
-                setAnchorElement(element);
-                onPopupToggleRef.current?.(true);
-                onOpenRef.current?.();
-                popoverHandle.current?.open();
-            },
-            [anchorId, setAnchorElement],
-        );
-
-        const closePopover = useCallback(() => {
-            popoverHandle.current?.close();
-            onPopupToggleRef.current?.(false);
-            onCloseRef.current?.();
-            if (anchorElementRef.current) {
-                (anchorElementRef.current.style as CSSProperties).anchorName = "";
-                anchorElementRef.current = null;
-                setAnchorElement(null);
-            }
-        }, [setAnchorElement]);
-
-        const handleCancel = useCallback(() => {
-            onPopupToggleRef.current?.(false);
-            onCloseRef.current?.();
-            if (anchorElementRef.current) {
-                (anchorElementRef.current.style as CSSProperties).anchorName = "";
-                anchorElementRef.current = null;
-                setAnchorElement(null);
-            }
-        }, [setAnchorElement]);
-
-        const popoverMethods = useMemo<Anchored.Controls>(
-            () => ({
-                openFor: (element: HTMLElement) => openPopover(element),
-                openOn: (event: MouseEvent<HTMLElement>) => openPopover(event.currentTarget),
-                close: closePopover,
-            }),
-            [openPopover, closePopover],
-        );
-
-        const contentsStyle = useMemo(() => {
-            return {
-                ...(style ?? {}),
-                positionAnchor: `--trh-anchor_popover-${anchorId}`,
-                positionArea: placement,
-            };
-        }, [anchorId, placement, style]);
-
-        return (
-            <AnchoredController state={state} controls={controls} methods={popoverMethods}>
-                <BaseWithFallback
-                    handle={popoverHandle}
-                    backdrop={force ? "block" : "click"}
-                    escape={force ? "none" : "close"}
-                    onCancel={handleCancel}
-                    style={contentsStyle}
-                    data-flavour={flavour}
-                    {...props}
-                />
-            </AnchoredController>
-        );
-    }
-
-    export namespace Anchored {
-        export const useInternal = useAnchoredInternal;
-        export const useControls = useAnchoredExternal;
-        export type Controls = {
-            openFor: (e: HTMLElement) => void;
-            openOn: (e: MouseEvent<HTMLElement>) => void;
-            close: () => void;
-        };
-        export type Props = DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> & {
-            controls?: Controls;
-            placement?: Placement;
-            force?: boolean; // when true, prevents closing via backdrop click or escape
-            onPopupToggle?: (state: boolean) => void;
-            onOpen?: () => void;
-            onClose?: () => void;
-            flavour?: Flavour;
-        };
-    }
-
-    //#endregion
-
     //#region Context
     const {
         useController: useContextController,
@@ -456,7 +352,7 @@ export namespace AbstractPopup {
         Controller: ContextController,
     } = createController<{ x: number; y: number } | null, Context.Controls>();
 
-    export function Context({ controls, style, onOpen, onClose, onPopupToggle, placement = "bottom right", trapFocus, flavour = "base", ...props }: Context.Props) {
+    export function Context({ controls, style, onOpen, onClose, onPopupToggle, placement = "bottom right", trapFocus, ...props }: Context.Props) {
         const [location, setLocation, state] = useContextController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorRef = useRef<HTMLDivElement>(null);
@@ -527,7 +423,7 @@ export namespace AbstractPopup {
         return (
             <ContextController state={state} controls={controls} methods={popupMethods}>
                 <PositionAnchor style={anchorStyle} ref={anchorRef} />
-                <BaseWithFallback trapFocus={trapFocus} handle={popoverHandle} backdrop={"click"} escape={"close"} onCancel={handleCancel} style={contentsStyle} data-flavour={flavour} {...props} />
+                <BaseWithFallback trapFocus={trapFocus} handle={popoverHandle} backdrop={"click"} escape={"close"} onCancel={handleCancel} style={contentsStyle} {...props} />
             </ContextController>
         );
     }
@@ -546,7 +442,6 @@ export namespace AbstractPopup {
             onPopupToggle?: (state: boolean) => void;
             onOpen?: () => void;
             onClose?: () => void;
-            flavour?: Flavour;
             placement?: Placement;
             trapFocus?: boolean;
         };
@@ -577,7 +472,7 @@ export namespace AbstractPopup {
         }
     `;
 
-    export function Dialog({ controls, onPositionChange, onOpen, onClose, onPopupToggle, style, flavour = "base", children, ...props }: Dialog.Props) {
+    export function Dialog({ controls, onPositionChange, onOpen, onClose, onPopupToggle, style, children, ...props }: Dialog.Props) {
         const [position, setPosition, state] = useDialogController(null);
         const positionRef = useRef<Point | null>(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
@@ -844,7 +739,6 @@ export namespace AbstractPopup {
                         onLayout={handleLayout}
                         style={contentsStyle}
                         ref={contentsRef}
-                        data-flavour={flavour}
                         data-dragging={isDragging || undefined}
                         {...props}
                     >
@@ -880,12 +774,19 @@ export namespace AbstractPopup {
             onPopupToggle?: (state: boolean) => void;
             onOpen?: () => void;
             onClose?: () => void;
-            flavour?: Flavour;
         };
     }
     //#endregion
 
     //#region Flyout
+
+    /*
+    Click-dismiss (old Anchored): <AbstractPopup.Flyout backdrop="click" /> — the default
+    Hover-dismiss (old Flyout): <AbstractPopup.Flyout backdrop="hover" />
+    Forced open (old Anchored with force): <AbstractPopup.Flyout force />
+
+    Safe zone only wires up when backdrop="hover" (the only case it's needed). The Anchored export, controller, and namespace are gone entirely.
+    */
 
     const {
         useController: useFlyoutController,
@@ -894,7 +795,7 @@ export namespace AbstractPopup {
         Controller: FlyoutController,
     } = createController<HTMLElement | null, Flyout.Controls>();
 
-    export function Flyout({ controls, placement = "bottom right", onOpen, onClose, onPopupToggle, style, flavour = "base", trapFocus, ...props }: Flyout.Props) {
+    export function Flyout({ controls, placement = "bottom right", force = false, backdrop = "click", onOpen, onClose, onPopupToggle, style, trapFocus, ...props }: Flyout.Props) {
         const [, setAnchorElement, state] = useFlyoutController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorElementRef = useRef<HTMLElement>(null);
@@ -955,16 +856,18 @@ export namespace AbstractPopup {
             };
         }, [anchorId, placement, style]);
 
+        const resolvedBackdrop = force ? "block" : backdrop;
+        const resolvedEscape = force ? "none" : "close";
+
         return (
             <FlyoutController state={state} controls={controls} methods={flyoutMethods}>
                 <BaseWithFallback
                     handle={popoverHandle}
-                    backdrop="hover"
-                    escape="close"
-                    safeZone={anchorElementRef}
+                    backdrop={resolvedBackdrop}
+                    escape={resolvedEscape}
+                    safeZone={resolvedBackdrop === "hover" ? anchorElementRef : undefined}
                     onCancel={handleCancel}
                     style={contentsStyle}
-                    data-flavour={flavour}
                     trapFocus={trapFocus}
                     {...props}
                 />
@@ -983,10 +886,11 @@ export namespace AbstractPopup {
         export type Props = DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> & {
             controls?: Controls;
             placement?: Placement;
+            force?: boolean; // when true, prevents closing via backdrop click or escape
+            backdrop?: "click" | "hover";
             onPopupToggle?: (state: boolean) => void;
             onOpen?: () => void;
             onClose?: () => void;
-            flavour?: Flavour;
             trapFocus?: boolean;
         };
     }
@@ -1041,7 +945,7 @@ export namespace AbstractPopup {
         }
     `;
 
-    export function Modal({ controls, force = false, align, size, flavour = "base", onCancel, onOpen, onClose, onPopupToggle, style, ...props }: Modal.Props) {
+    export function Modal({ controls, force = false, align, size, onCancel, onOpen, onClose, onPopupToggle, style, ...props }: Modal.Props) {
         const [, setIsOpen, state] = useModalController(false);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
 
@@ -1103,7 +1007,6 @@ export namespace AbstractPopup {
                     style={contentsStyle}
                     data-align-vertical={alignment.vertical}
                     data-align-horizontal={alignment.horizontal}
-                    data-flavour={flavour}
                     {...props}
                 />
             </ModalController>
@@ -1127,7 +1030,6 @@ export namespace AbstractPopup {
             onCancel?: () => void;
             align?: AlignmentOptions; // e.g., "center", "top left", "center right"
             size?: Size | `${Size} ${Size}`; // e.g., "1024px", "80vw 600px"
-            flavour?: Flavour;
         };
     }
     //#endregion

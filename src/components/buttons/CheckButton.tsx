@@ -1,15 +1,15 @@
 import { MouseEvent, useCallback } from "react";
-import { AbstractButton, AbstractButtonProps } from "../abstract/Button";
+import { AbstractButton } from "../abstract/Button";
 import { useStable } from "../../util/hooks/useStable";
+import styled from "styled-components";
+import { COMMON_STYLES } from "../styles";
+import { Flavour } from "../types";
 
-type CheckButtonProps = {
-    checked: boolean;
-    onToggle?: (v: boolean) => void;
-    onCheck?: () => void;
-    onUncheck?: () => void;
-};
+const Base = styled(AbstractButton)`
+    ${COMMON_STYLES.BUTTON}
+`;
 
-export const CheckButton = ({ checked, onCheck, onUncheck, onToggle, onClick, state, ...rest }: Omit<AbstractButtonProps, "value" | "onToggle"> & CheckButtonProps) => {
+export function CheckButton({ checked, onCheck, onUncheck, onToggle, onClick, state, flavour, ...rest }: CheckButton.Props) {
     const onToggleRef = useStable(onToggle);
     const onClickRef = useStable(onClick);
     const checkedRef = useStable(checked);
@@ -26,5 +26,15 @@ export const CheckButton = ({ checked, onCheck, onUncheck, onToggle, onClick, st
         (checkedRef.current ? onUncheckRef : onCheckRef).current?.();
     }, []);
 
-    return <AbstractButton {...rest} state={`${state ?? ""} ${checked ? "checked" : "unchecked"}`} onClick={handleClick} />;
-};
+    return <Base {...rest} state={`${state ?? ""} ${checked ? "checked" : "unchecked"}`} onClick={handleClick} data-flavour={flavour} />;
+}
+
+export namespace CheckButton {
+    export type Props = Omit<AbstractButton.Props, "value" | "onToggle"> & {
+        checked: boolean;
+        onToggle?: (v: boolean) => void;
+        onCheck?: () => void;
+        onUncheck?: () => void;
+        flavour?: Flavour | "inherit";
+    };
+}

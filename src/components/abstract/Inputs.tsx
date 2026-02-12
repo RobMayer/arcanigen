@@ -8,34 +8,6 @@ import { useStableValue } from "../../util/hooks/useStableValue";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 
 export namespace AbstractInput {
-    export const BaseInput = styled.input`
-        background: #111;
-        padding: 0.25em 0.4em;
-        font-family: monospace;
-        border: 1px solid #666;
-        outline: 1px solid transparent;
-        outline-offset: 0px;
-        transition: outline-offset 0.1s ease;
-        &:focus-visible {
-            outline-color: #fffa;
-            outline-offset: -2px;
-        }
-        &:invalid,
-        &[data-state~="invalid"] {
-            outline-color: #f00;
-            background-color: #200;
-        }
-        &:invalid:focus-visible,
-        &[data-state~="invalid"]:focus-visible {
-            outline-color: #f88;
-        }
-        &:disabled {
-            opacity: 0.6;
-        }
-        min-width: 0;
-        flex: 1 1 auto;
-    `;
-
     type BaseProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string; flavour?: Flavour | "inherit" };
 
     export function Text<T extends string = string>({
@@ -238,7 +210,7 @@ export namespace AbstractInput {
             [pattern, required],
         );
 
-        return <BaseInput {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} data-flavour={flavour} />;
+        return <input {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} data-flavour={flavour} />;
     }
 
     export namespace Text {
@@ -567,10 +539,10 @@ export namespace AbstractInput {
         );
 
         return (
-            <BaseInput
+            <input
                 {...props}
-                ref={inputRefMaker}
                 type={"text"}
+                ref={inputRefMaker}
                 title={tooltip}
                 data-flavour={flavour}
                 value={cache}
@@ -982,7 +954,7 @@ export namespace AbstractInput {
         );
 
         return (
-            <BaseInput
+            <input
                 {...props}
                 ref={inputRefMaker}
                 type="text"

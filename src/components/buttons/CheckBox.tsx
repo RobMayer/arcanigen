@@ -1,18 +1,16 @@
 import { MouseEvent, useCallback } from "react";
-import { AbstractButtonProps, AbstractLiteButton } from "../abstract/Button";
 import { useStable } from "../../util/hooks/useStable";
 import { Icon, IconDefinition, ICONS } from "../Icon";
+import styled from "styled-components";
+import { AbstractButton } from "../abstract/Button";
+import { COMMON_STYLES } from "../styles";
+import { Flavour } from "../types";
 
-type CheckBoxProps = {
-    checked: boolean;
-    iconChecked?: IconDefinition;
-    iconUnchecked?: IconDefinition;
-    onToggle?: (v: boolean) => void;
-    onCheck?: () => void;
-    onUncheck?: () => void;
-};
+const Base = styled(AbstractButton)`
+    ${COMMON_STYLES.LITEBUTTON}
+`;
 
-export const CheckBox = ({
+export function CheckBox({
     checked,
     onCheck,
     onUncheck,
@@ -22,8 +20,9 @@ export const CheckBox = ({
     iconChecked = ICONS.CheckBox.Checked,
     iconUnchecked = ICONS.CheckBox.Unchecked,
     children,
+    flavour,
     ...rest
-}: Omit<AbstractButtonProps, "value" | "onToggle"> & CheckBoxProps) => {
+}: CheckBox.Props) {
     const onToggleRef = useStable(onToggle);
     const onClickRef = useStable(onClick);
     const checkedRef = useStable(checked);
@@ -45,9 +44,21 @@ export const CheckBox = ({
     }, []);
 
     return (
-        <AbstractLiteButton {...rest} state={`${state ?? ""} ${checked ? "checked" : "unchecked"}`} onClick={handleClick}>
+        <Base {...rest} state={`${state ?? ""} ${checked ? "checked" : "unchecked"}`} onClick={handleClick} data-flavour={flavour}>
             <Icon shape={checked ? iconChecked : iconUnchecked} />
             {children}
-        </AbstractLiteButton>
+        </Base>
     );
-};
+}
+
+export namespace CheckBox {
+    export type Props = Omit<AbstractButton.Props, "value" | "onToggle"> & {
+        checked: boolean;
+        iconChecked?: IconDefinition;
+        iconUnchecked?: IconDefinition;
+        onToggle?: (v: boolean) => void;
+        onCheck?: () => void;
+        onUncheck?: () => void;
+        flavour?: Flavour | "inherit";
+    };
+}

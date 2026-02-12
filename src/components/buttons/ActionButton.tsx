@@ -1,8 +1,24 @@
 import styled from "styled-components";
-import { AbstractLiteButton, AbstractButton } from "../abstract/Button";
-import { merge } from "../../util/misc";
+import { AbstractButton } from "../abstract/Button";
+import { COMMON_STYLES } from "../styles";
+import { Flavour } from "../types";
 
-const Primary = styled(AbstractButton)``;
-const Lite = styled(AbstractLiteButton)``;
+const Base = styled(AbstractButton)`
+    ${COMMON_STYLES.BUTTON}
+`;
+const BaseLite = styled(AbstractButton)`
+    ${COMMON_STYLES.BUTTON}
+`;
 
-export const ActionButton = merge(Primary, { Lite });
+export function ActionButton({ flavour, ...props }: ActionButton.Props) {
+    return <Base {...props} data-flavour={flavour} />;
+}
+
+export namespace ActionButton {
+    export type Props = AbstractButton.Props & {
+        flavour?: Flavour | "inherit";
+    };
+    export function Lite({ flavour, ...props }: Props) {
+        return <BaseLite {...props} data-flavour={flavour} />;
+    }
+}
