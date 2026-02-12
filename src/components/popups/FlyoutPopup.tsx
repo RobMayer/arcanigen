@@ -29,7 +29,7 @@ type FlyoutPopupProps = DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDi
 };
 
 const BaseComponent = styled(
-    ({ controls, position = "bottom right", onOpen, onClose, onPopupToggle, style, className, variant = "typical", flavour = "default", trapFocus, ...props }: FlyoutPopupProps) => {
+    ({ controls, position = "bottom right", onOpen, onClose, onPopupToggle, style, className, variant = "typical", flavour = "base", trapFocus, ...props }: FlyoutPopupProps) => {
         const [, setAnchorElement, state] = useController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorElementRef = useRef<HTMLElement>(null);
@@ -128,6 +128,4 @@ const BaseComponent = styled(
     }
 `;
 
-type ToExport = typeof BaseComponent;
-
-export const FlyoutPopup = BaseComponent as ToExport;
+export const FlyoutPopup = BaseComponent;

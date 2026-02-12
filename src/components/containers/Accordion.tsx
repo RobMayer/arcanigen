@@ -6,14 +6,13 @@ import { createController } from "../../util/hooks/useController";
 import { merge } from "../../util/misc";
 import { Icon, IconDefinition, ICONS } from "../Icon";
 
-type AccordionState = boolean;
 type AccordionControls = {
     open: () => void;
     close: () => void;
     toggle: () => void;
 };
 
-const { useController, useControllerExternal: useAccordion, useControllerInternal: useAccordionControls, Controller } = createController<AccordionState, AccordionControls>();
+const { useController, useControllerExternal: useAccordion, useControllerInternal: useAccordionControls, Controller } = createController<boolean, AccordionControls>();
 
 const Base = styled(
     ({

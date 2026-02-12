@@ -44,7 +44,8 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     // Internal hex string cache for display
     const [hexCache, setHexCache] = useState<string>(() => {
         if (value === null) return "none";
-        return Color.toHex(value);
+        const hex = Color.toHex(value);
+        return alpha ? hex : hex.slice(0, 7);
     });
 
     const onValueRef = useStable(onValue);
@@ -61,7 +62,8 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
         if (value === null) {
             setHexCache("none");
         } else {
-            setHexCache(Color.toHex(value));
+            const hex = Color.toHex(value);
+            setHexCache(alpha ? hex : hex.slice(0, 7));
         }
     }, [value, alpha]);
 

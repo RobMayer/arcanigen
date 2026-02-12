@@ -75,7 +75,7 @@ const parseSize = (size?: string): { width: string; height: string } => {
     }
 };
 
-const ModalBase = styled(({ controls, force = false, align, size, variant = "typical", flavour = "default", onCancel, onOpen, onClose, onPopupToggle, style, className, ...props }: ModalProps) => {
+const ModalBase = styled(({ controls, force = false, align, size, variant = "typical", flavour = "base", onCancel, onOpen, onClose, onPopupToggle, style, className, ...props }: ModalProps) => {
     const [, setIsOpen, state] = useController(false);
     const popoverHandle = useRef<AbstractPopupHandle>(null);
 

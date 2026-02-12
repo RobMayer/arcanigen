@@ -60,8 +60,10 @@ export const ColorInput = styled(({ className, alpha, value, onValue, onCommit, 
     // Hex string for text input display
     const hexDisplay = useMemo(() => {
         if (rgbaCache === null) return "";
-        return Color.toHex(rgbaCache);
-    }, [rgbaCache]);
+        const hex = Color.toHex(rgbaCache);
+        // Strip alpha suffix when alpha mode is disabled
+        return alpha ? hex : hex.slice(0, 7);
+    }, [rgbaCache, alpha]);
 
     const hsvCacheRef = useRef(hsvCache);
 
@@ -258,17 +260,19 @@ export const ColorInput = styled(({ className, alpha, value, onValue, onCommit, 
                     step={1}
                     disabled={disabled}
                 />
-                <AbstractSlider.Linear
-                    data-part={"alpha"}
-                    orientation={"vertical"}
-                    disabled={!alpha || disabled}
-                    value={String(hsvCache?.a ?? "") as NumericString.Type}
-                    onValue={handleAlphaValue}
-                    onCommit={handleAlphaCommit}
-                    min={0}
-                    max={100}
-                    step={1}
-                />
+                {!alpha ? null : (
+                    <AbstractSlider.Linear
+                        data-part={"alpha"}
+                        orientation={"vertical"}
+                        disabled={!alpha || disabled}
+                        value={String(hsvCache?.a ?? "") as NumericString.Type}
+                        onValue={handleAlphaValue}
+                        onCommit={handleAlphaCommit}
+                        min={0}
+                        max={100}
+                        step={1}
+                    />
+                )}
             </div>
         </div>
     );

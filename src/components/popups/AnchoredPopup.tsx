@@ -29,7 +29,7 @@ type AnchoredPopupProps = DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTML
 };
 
 const BaseComponent = styled(
-    ({ controls, position = "bottom right", force = false, onOpen, onClose, onPopupToggle, style, className, flavour = "default", variant = "typical", ...props }: AnchoredPopupProps) => {
+    ({ controls, position = "bottom right", force = false, onOpen, onClose, onPopupToggle, style, className, flavour = "base", variant = "typical", ...props }: AnchoredPopupProps) => {
         const [, setAnchorElement, state] = useController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorElementRef = useRef<HTMLElement>(null);
@@ -123,6 +123,4 @@ const BaseComponent = styled(
     }
 `;
 
-type ToExport = typeof BaseComponent;
-
-export const AnchoredPopup = BaseComponent as ToExport;
+export const AnchoredPopup = BaseComponent;

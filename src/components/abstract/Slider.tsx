@@ -470,7 +470,8 @@ export namespace AbstractSlider {
         }
 
         &[data-state~="disabled"] {
-            opacity: 0.6;
+            opacity: 0.3;
+            filter: saturate(0);
         }
 
         &:not([data-state~="disabled"]) {
@@ -1038,7 +1039,8 @@ export namespace AbstractSlider {
         }
 
         &[data-state~="disabled"] {
-            opacity: 0.6;
+            opacity: 0.3;
+            filter: saturate(0);
         }
 
         &:not([data-state~="disabled"]) {
@@ -1568,7 +1570,8 @@ export namespace AbstractSlider {
         }
 
         &[data-state~="disabled"] {
-            opacity: 0.6;
+            opacity: 0.3;
+            filter: saturate(0);
         }
 
         &:not([data-state~="disabled"]) {
@@ -2064,7 +2067,8 @@ export namespace AbstractSlider {
         }
 
         &[data-state~="disabled"] {
-            opacity: 0.6;
+            opacity: 0.3;
+            filter: saturate(0);
         }
 
         &:not([data-state~="disabled"]) {

@@ -38,7 +38,7 @@ const PositionAnchor = styled.div`
 `;
 
 const BaseComponent = styled(
-    ({ controls, style, onOpen, onClose, onPopupToggle: onPopupToggle, position = "bottom right", trapFocus, className, variant = "typical", flavour = "default", ...props }: ContextPopupProps) => {
+    ({ controls, style, onOpen, onClose, onPopupToggle: onPopupToggle, position = "bottom right", trapFocus, className, variant = "typical", flavour = "base", ...props }: ContextPopupProps) => {
         const [location, setLocation, state] = useController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorRef = useRef<HTMLDivElement>(null);
@@ -140,6 +140,4 @@ const BaseComponent = styled(
     }
 `;
 
-type ToExport = typeof BaseComponent;
-
-export const ContextPopup = BaseComponent as ToExport;
+export const ContextPopup = BaseComponent;
