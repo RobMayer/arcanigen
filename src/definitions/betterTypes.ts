@@ -66,7 +66,7 @@ namespace Registries {
         float: EmptyOr<NumericString.Type>;
         integer: EmptyOr<NumericString.Type>;
         string: string;
-        color: EmptyOr<Color>;
+        color: Color;
         enum: number;
         "tokens<length>": string;
         angle: EmptyOr<Angle.Type>;

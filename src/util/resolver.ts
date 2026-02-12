@@ -1,4 +1,4 @@
-import { SVGObject } from "../types";
+import { Color, SVGObject } from "../types";
 import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -91,7 +91,8 @@ export namespace Resolver {
         const height = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "h")?.data ?? resultNode.payload.h ?? "800px") ?? 800;
         const originX = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x ?? "0px") ?? 0;
         const originY = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y ?? "0px") ?? 0;
-        const background = context.resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
+        const backgroundColor = context.resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
+        const background = backgroundColor === null ? "none" : Color.toHex(backgroundColor, true);
 
         // Resolve the shape input
         const shapeEval = context.resolve<"shape">("RESULT", "input");

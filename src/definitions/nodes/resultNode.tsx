@@ -6,10 +6,10 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { LengthInput } from "../../components/inputs/LengthInput";
-import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
 import { ColorInput } from "../../components/inputs/ColorInput";
+import { Color } from "../../types";
 
 export type ResultDefinition = {
     outputs: never;
@@ -47,7 +47,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>,
             h: `800px`,
             x: `0px`,
             y: `0px`,
-            color: "#ffffffff",
+            color: Color.WHITE,
             label: "",
             ...input,
         },

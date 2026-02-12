@@ -9,11 +9,12 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
-import { AngleInput, SpinnerWithDisplay } from "../../../components/inputs/AngleInput";
+import { SpinnerWithDisplay } from "../../../components/inputs/AngleInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { Color } from "../../../types";
 
 export type CircleDefinition = {
     inputs: {
@@ -90,11 +91,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
-            strokeColor: "#000000ff",
+            strokeColor: Color.BLACK,
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.Butt,
             // fill
-            fillColor: "none",
+            fillColor: null,
             // transforms
             positionMode: Enum.Common.positionMode.Cartesian,
             positionX: "0px",
@@ -254,8 +255,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         };
 
         // Add stroke attributes
-        if (strokeColor !== "none") {
-            attributes.stroke = strokeColor;
+        if (strokeColor !== null) {
+            attributes.stroke = Color.toHex(strokeColor, true);
             attributes["strokeWidth"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
             attributes["strokeLinecap"] = strokeLinecap;
             if (strokeDasharray) {
@@ -265,7 +266,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         }
 
         // Add fill attribute
-        attributes.fill = fillColor;
+        attributes.fill = fillColor === null ? "none" : Color.toHex(fillColor, true);
 
         // Build transform string
         const transforms: string[] = [];

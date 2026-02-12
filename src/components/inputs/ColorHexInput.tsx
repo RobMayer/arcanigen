@@ -3,102 +3,137 @@ import { useStable } from "../../util/hooks/useStable";
 import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
 import { Color } from "../../types";
-import { EmptyOr } from "../../util/misc";
 
 // Matches #rgb, #rrggbb, #rgba, #rrggbbaa
 const HEX_3_REGEX = /^#[0-9a-fA-F]{3}$/;
 const HEX_4_REGEX = /^#[0-9a-fA-F]{4}$/;
 const HEX_6_REGEX = /^#[0-9a-fA-F]{6}$/;
-// const HEX_8_REGEX = /^#[0-9a-fA-F]{8}$/;
 
-type HexColor = `#${string}`;
-
-function normalizeHex(value: string, alpha: boolean): HexColor {
+function normalizeHexString(value: string, alpha: boolean): string {
     // Expand 3-digit to 6-digit (or 8-digit if alpha mode)
     if (HEX_3_REGEX.test(value)) {
         const [, r, g, b] = value.match(/^#(.)(.)(.)$/)!;
-        const base = `#${r}${r}${g}${g}${b}${b}` as HexColor;
-        return alpha ? (`${base}ff` as HexColor) : base;
+        const base = `#${r}${r}${g}${g}${b}${b}`;
+        return alpha ? `${base}ff` : base;
     }
     // Expand 4-digit to 8-digit
     if (HEX_4_REGEX.test(value)) {
         const [, r, g, b, a] = value.match(/^#(.)(.)(.)(.)$/)!;
-        return `#${r}${r}${g}${g}${b}${b}${a}${a}` as HexColor;
+        return `#${r}${r}${g}${g}${b}${b}${a}${a}`;
     }
     // 6-digit: add ff if alpha mode
     if (HEX_6_REGEX.test(value)) {
-        const base = value.toLowerCase() as HexColor;
-        return alpha ? (`${base}ff` as HexColor) : base;
+        const base = value.toLowerCase();
+        return alpha ? `${base}ff` : base;
     }
     // 8-digit: just lowercase
-    return value.toLowerCase() as HexColor;
+    return value.toLowerCase();
 }
 
 type ColorHexInputProps = {
-    value: EmptyOr<Color>;
-    onValue?: (v: EmptyOr<Color>) => void;
-    onCommit?: (v: EmptyOr<Color>) => void;
-    onConfirm?: (v: EmptyOr<Color>) => void; // fires when you hit enter, even if no change was made
+    value: Color;
+    onValue?: (v: Color) => void;
+    onCommit?: (v: Color) => void;
+    onConfirm?: (v: Color) => void; // fires when you hit enter, even if no change was made
     nullable?: boolean;
     alpha?: boolean;
-} & Omit<AbstractInput.Text.Props<EmptyOr<Color>>, "normalize" | "pattern" | "required" | "onCommit" | "onConfirm" | "onValue">;
+    disabled?: boolean;
+};
 
-export const ColorHexInput = styled(({ className, value, onValue, onCommit, onConfirm, nullable, alpha, ...rest }: ColorHexInputProps) => {
-    const [cache, setCache] = useState<EmptyOr<Color>>(value);
+export const ColorHexInput = styled(({ className, value, onValue, onCommit, onConfirm, nullable, alpha, disabled }: ColorHexInputProps & { className?: string }) => {
+    // Internal hex string cache for display
+    const [hexCache, setHexCache] = useState<string>(() => {
+        if (value === null) return "none";
+        return Color.toHex(value, alpha ?? false);
+    });
+
     const onValueRef = useStable(onValue);
     const onCommitRef = useStable(onCommit);
     const onConfirmRef = useStable(onConfirm);
 
+    // Style for swatch preview
     const styleValue = useMemo(() => {
-        return { "--value": cache } as CSSProperties;
-    }, [cache]);
-
-    useEffect(() => {
-        setCache(value);
+        return { "--value": value === null ? "transparent" : Color.toHex(value, true) } as CSSProperties;
     }, [value]);
 
+    // Sync with incoming prop
+    useEffect(() => {
+        if (value === null) {
+            setHexCache("none");
+        } else {
+            setHexCache(Color.toHex(value, alpha ?? false));
+        }
+    }, [value, alpha]);
+
+    // Normalize text input
     const normalize = useCallback(
-        (v: EmptyOr<Color>): EmptyOr<Color> => {
+        (v: string): string => {
             if (v === "") {
                 return nullable ? "none" : "";
             }
-            return normalizeHex(v, alpha ?? false);
+            if (v === "none") return "none";
+            return normalizeHexString(v, alpha ?? false);
         },
         [nullable, alpha],
     );
 
+    // Pattern for validation
     const pattern = useMemo(() => {
         return `${nullable ? "(none)|" : ""}${alpha ? "#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})" : "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"}`;
     }, [nullable, alpha]);
 
-    const handleValue = useCallback((v: EmptyOr<Color>) => {
-        setCache(v);
-        onValueRef.current?.(v);
-    }, []);
+    const handleValue = useCallback(
+        (v: string) => {
+            setHexCache(v);
+            if (v === "" || v === "none") {
+                onValueRef.current?.(null);
+            } else {
+                const rgba = Color.fromHex(v);
+                onValueRef.current?.(rgba);
+            }
+        },
+        [onValueRef],
+    );
 
-    const handleCommit = useCallback((v: EmptyOr<Color>) => {
-        setCache(v);
-        onCommitRef.current?.(v);
-    }, []);
+    const handleCommit = useCallback(
+        (v: string) => {
+            setHexCache(v);
+            if (v === "" || v === "none") {
+                onCommitRef.current?.(null);
+            } else {
+                const rgba = Color.fromHex(v);
+                onCommitRef.current?.(rgba);
+            }
+        },
+        [onCommitRef],
+    );
 
-    const handleConfirm = useCallback((v: EmptyOr<Color>) => {
-        setCache(v);
-        onConfirmRef.current?.(v);
-    }, []);
+    const handleConfirm = useCallback(
+        (v: string) => {
+            setHexCache(v);
+            if (v === "" || v === "none") {
+                onConfirmRef.current?.(null);
+            } else {
+                const rgba = Color.fromHex(v);
+                onConfirmRef.current?.(rgba);
+            }
+        },
+        [onConfirmRef],
+    );
 
     return (
         <div className={className}>
             <span data-part={"swatch"} style={styleValue} />
-            <AbstractInput.Text<EmptyOr<Color>>
+            <AbstractInput.Text<string>
                 data-part={"input"}
-                {...rest}
-                value={cache}
+                value={hexCache}
                 onCommit={handleCommit}
                 onValue={handleValue}
                 onConfirm={handleConfirm}
                 pattern={pattern}
                 normalize={normalize}
                 required={!nullable}
+                disabled={disabled}
             />
         </div>
     );
