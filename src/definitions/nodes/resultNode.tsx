@@ -9,7 +9,6 @@ import { LengthInput } from "../../components/inputs/LengthInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
 import { ColorInput } from "../../components/inputs/ColorInput";
-import { Color } from "../../types";
 
 export type ResultDefinition = {
     outputs: never;
@@ -47,7 +46,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>,
             h: `800px`,
             x: `0px`,
             y: `0px`,
-            color: Color.WHITE,
+            color: { r: 1, g: 1, b: 1, a: 1 },
             label: "",
             ...input,
         },

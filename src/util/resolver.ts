@@ -1,10 +1,10 @@
-import { Color, SVGObject } from "../types";
+import { SVGObject } from "../types";
 import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
+import { Color } from "../definitions/datatypes/color";
 
 export namespace Resolver {
-
     export namespace EnumMappings {
         export const strokeCap = ["butt", "square", "round"] as const;
     }
@@ -79,7 +79,7 @@ export namespace Resolver {
         const resultNode = state.nodes["root"]?.["RESULT"] as unknown as NodeDefinitions.NodeFor<NodeTypes.DefinitionOf<NodeTypes.Use<"result">>>;
         if (!resultNode) {
             return {
-                canvas: { width: 800, height: 800, originX: 0, originY: 0, background: Color.toHex(Color.WHITE, true) },
+                canvas: { width: 800, height: 800, originX: 0, originY: 0, background: Color.toHex({ r: 1, g: 1, b: 1, a: 1 }) },
                 definitions: [],
                 contents: null,
             };
@@ -92,7 +92,7 @@ export namespace Resolver {
         const originX = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x ?? "0px") ?? 0;
         const originY = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y ?? "0px") ?? 0;
         const backgroundColor = context.resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
-        const background = backgroundColor === null ? "none" : Color.toHex(backgroundColor, true);
+        const background = backgroundColor === null ? "none" : Color.toHex(backgroundColor);
 
         // Resolve the shape input
         const shapeEval = context.resolve<"shape">("RESULT", "input");
@@ -162,7 +162,13 @@ export namespace Resolver {
         return results;
     };
 
-    const evaluateNodeOutput = <K extends DataTypes.Kind>(state: State, graphId: GraphId, nodeId: ArcaneGraph.NodeId, outSocket: string, context: Context): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+    const evaluateNodeOutput = <K extends DataTypes.Kind>(
+        state: State,
+        graphId: GraphId,
+        nodeId: ArcaneGraph.NodeId,
+        outSocket: string,
+        context: Context,
+    ): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
         const node = state.nodes[graphId][nodeId];
         if (!node) {
             return null;

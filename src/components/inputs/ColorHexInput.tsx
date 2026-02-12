@@ -2,7 +2,7 @@ import { CSSProperties, useCallback, useEffect, useMemo, useState } from "react"
 import { useStable } from "../../util/hooks/useStable";
 import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
-import { Color } from "../../types";
+import { Color } from "../../definitions/datatypes/color";
 
 // Matches #rgb, #rrggbb, #rgba, #rrggbbaa
 const HEX_3_REGEX = /^#[0-9a-fA-F]{3}$/;
@@ -31,10 +31,10 @@ function normalizeHexString(value: string, alpha: boolean): string {
 }
 
 type ColorHexInputProps = {
-    value: Color;
-    onValue?: (v: Color) => void;
-    onCommit?: (v: Color) => void;
-    onConfirm?: (v: Color) => void; // fires when you hit enter, even if no change was made
+    value: Color.Type;
+    onValue?: (v: Color.Type) => void;
+    onCommit?: (v: Color.Type) => void;
+    onConfirm?: (v: Color.Type) => void; // fires when you hit enter, even if no change was made
     nullable?: boolean;
     alpha?: boolean;
     disabled?: boolean;
@@ -44,7 +44,7 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     // Internal hex string cache for display
     const [hexCache, setHexCache] = useState<string>(() => {
         if (value === null) return "none";
-        return Color.toHex(value, alpha ?? false);
+        return Color.toHex(value);
     });
 
     const onValueRef = useStable(onValue);
@@ -53,7 +53,7 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
 
     // Style for swatch preview
     const styleValue = useMemo(() => {
-        return { "--value": value === null ? "transparent" : Color.toHex(value, true) } as CSSProperties;
+        return { "--value": value === null ? "transparent" : Color.toHex(value) } as CSSProperties;
     }, [value]);
 
     // Sync with incoming prop
@@ -61,7 +61,7 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
         if (value === null) {
             setHexCache("none");
         } else {
-            setHexCache(Color.toHex(value, alpha ?? false));
+            setHexCache(Color.toHex(value));
         }
     }, [value, alpha]);
 

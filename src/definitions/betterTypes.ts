@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Color, SVGObject } from "../types";
+import { SVGObject } from "../types";
 import { EmptyOr } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
@@ -19,6 +19,7 @@ import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatO
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
 import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
 import { NumericString } from "./datatypes/numericString";
+import { Color } from "./datatypes/color";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -66,7 +67,7 @@ namespace Registries {
         float: EmptyOr<NumericString.Type>;
         integer: EmptyOr<NumericString.Type>;
         string: string;
-        color: Color;
+        color: Color.Type;
         enum: number;
         "tokens<length>": string;
         angle: EmptyOr<Angle.Type>;

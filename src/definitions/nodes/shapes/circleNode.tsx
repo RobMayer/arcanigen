@@ -14,7 +14,7 @@ import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { Color } from "../../../types";
+import { Color } from "../../datatypes/color";
 
 export type CircleDefinition = {
     inputs: {
@@ -91,7 +91,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
-            strokeColor: Color.BLACK,
+            strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.Butt,
             // fill
@@ -256,7 +256,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
 
         // Add stroke attributes
         if (strokeColor !== null) {
-            attributes.stroke = Color.toHex(strokeColor, true);
+            attributes.stroke = Color.toHex(strokeColor);
             attributes["strokeWidth"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
             attributes["strokeLinecap"] = strokeLinecap;
             if (strokeDasharray) {
@@ -266,7 +266,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         }
 
         // Add fill attribute
-        attributes.fill = fillColor === null ? "none" : Color.toHex(fillColor, true);
+        attributes.fill = fillColor === null ? "none" : Color.toHex(fillColor);
 
         // Build transform string
         const transforms: string[] = [];
