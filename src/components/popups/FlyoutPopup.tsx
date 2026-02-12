@@ -28,87 +28,84 @@ type FlyoutPopupProps = DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDi
     trapFocus?: boolean;
 };
 
-const BaseComponent = styled(
-    ({ controls, position = "bottom right", onOpen, onClose, onPopupToggle, style, className, variant = "typical", flavour = "base", trapFocus, ...props }: FlyoutPopupProps) => {
-        const [, setAnchorElement, state] = useController(null);
-        const popoverHandle = useRef<AbstractPopupHandle>(null);
-        const anchorElementRef = useRef<HTMLElement>(null);
+const BaseComponent = styled(({ controls, position = "bottom right", onOpen, onClose, onPopupToggle, style, variant = "typical", flavour = "base", trapFocus, ...props }: FlyoutPopupProps) => {
+    const [, setAnchorElement, state] = useController(null);
+    const popoverHandle = useRef<AbstractPopupHandle>(null);
+    const anchorElementRef = useRef<HTMLElement>(null);
 
-        const onPopupToggleRef = useStable(onPopupToggle);
-        const onCloseRef = useStable(onClose);
-        const onOpenRef = useStable(onOpen);
+    const onPopupToggleRef = useStable(onPopupToggle);
+    const onCloseRef = useStable(onClose);
+    const onOpenRef = useStable(onOpen);
 
-        const anchorId = useId();
+    const anchorId = useId();
 
-        const openFlyout = useCallback(
-            (element: HTMLElement) => {
-                anchorElementRef.current = element;
-                (element.style as CSSProperties).anchorName = `--trh-anchor_flyout-${anchorId}`;
-                setAnchorElement(element);
-                onPopupToggleRef.current?.(true);
-                onOpenRef.current?.();
-                popoverHandle.current?.open();
-            },
-            [anchorId],
-        );
+    const openFlyout = useCallback(
+        (element: HTMLElement) => {
+            anchorElementRef.current = element;
+            (element.style as CSSProperties).anchorName = `--trh-anchor_flyout-${anchorId}`;
+            setAnchorElement(element);
+            onPopupToggleRef.current?.(true);
+            onOpenRef.current?.();
+            popoverHandle.current?.open();
+        },
+        [anchorId],
+    );
 
-        const closeFlyout = useCallback(() => {
-            popoverHandle.current?.close();
-            onPopupToggleRef.current?.(false);
-            onCloseRef.current?.();
-            if (anchorElementRef.current) {
-                (anchorElementRef.current.style as CSSProperties).anchorName = "";
-                anchorElementRef.current = null;
-                setAnchorElement(null);
-            }
-        }, []);
+    const closeFlyout = useCallback(() => {
+        popoverHandle.current?.close();
+        onPopupToggleRef.current?.(false);
+        onCloseRef.current?.();
+        if (anchorElementRef.current) {
+            (anchorElementRef.current.style as CSSProperties).anchorName = "";
+            anchorElementRef.current = null;
+            setAnchorElement(null);
+        }
+    }, []);
 
-        const handleCancel = useCallback(() => {
-            onPopupToggleRef.current?.(false);
-            onCloseRef.current?.();
-            if (anchorElementRef.current) {
-                (anchorElementRef.current.style as CSSProperties).anchorName = "";
-                anchorElementRef.current = null;
-                setAnchorElement(null);
-            }
-        }, []);
+    const handleCancel = useCallback(() => {
+        onPopupToggleRef.current?.(false);
+        onCloseRef.current?.();
+        if (anchorElementRef.current) {
+            (anchorElementRef.current.style as CSSProperties).anchorName = "";
+            anchorElementRef.current = null;
+            setAnchorElement(null);
+        }
+    }, []);
 
-        const flyoutMethods = useMemo<FlyoutPopupControls>(
-            () => ({
-                openFor: (element: HTMLElement) => openFlyout(element),
-                openOn: (event: MouseEvent<HTMLElement>) => openFlyout(event.currentTarget),
-                close: closeFlyout,
-            }),
-            [openFlyout, closeFlyout],
-        );
+    const flyoutMethods = useMemo<FlyoutPopupControls>(
+        () => ({
+            openFor: (element: HTMLElement) => openFlyout(element),
+            openOn: (event: MouseEvent<HTMLElement>) => openFlyout(event.currentTarget),
+            close: closeFlyout,
+        }),
+        [openFlyout, closeFlyout],
+    );
 
-        const contentsStyle = useMemo(() => {
-            return {
-                ...(style ?? {}),
-                positionAnchor: `--trh-anchor_flyout-${anchorId}`,
-                positionArea: position,
-            };
-        }, [anchorId, position, style]);
+    const contentsStyle = useMemo(() => {
+        return {
+            ...(style ?? {}),
+            positionAnchor: `--trh-anchor_flyout-${anchorId}`,
+            positionArea: position,
+        };
+    }, [anchorId, position, style]);
 
-        return (
-            <Controller state={state} controls={controls} methods={flyoutMethods}>
-                <AbstractPopup
-                    handle={popoverHandle}
-                    backdrop="hover"
-                    escape="close"
-                    safeZone={anchorElementRef}
-                    onCancel={handleCancel}
-                    style={contentsStyle}
-                    data-variant={variant}
-                    data-flavour={flavour}
-                    trapFocus={trapFocus}
-                    {...props}
-                    className={`${className ?? ""} meta-component_floater meta-component_floater-flyout`}
-                />
-            </Controller>
-        );
-    },
-)`
+    return (
+        <Controller state={state} controls={controls} methods={flyoutMethods}>
+            <AbstractPopup
+                handle={popoverHandle}
+                backdrop="hover"
+                escape="close"
+                safeZone={anchorElementRef}
+                onCancel={handleCancel}
+                style={contentsStyle}
+                data-variant={variant}
+                data-flavour={flavour}
+                trapFocus={trapFocus}
+                {...props}
+            />
+        </Controller>
+    );
+})`
     & > [data-part="contents"] {
         position-try-fallbacks:
             flip-block,

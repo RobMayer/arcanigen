@@ -1,5 +1,5 @@
 import { MouseEvent, useCallback } from "react";
-import { AbstractButton, AbstractButtonProps } from "../abstract/button";
+import { AbstractButton, AbstractButtonProps } from "../abstract/Button";
 import { useStable } from "../../util/hooks/useStable";
 import { Flavour, Options } from "../types";
 import styled from "styled-components";

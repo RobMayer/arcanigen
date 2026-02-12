@@ -153,7 +153,7 @@ type PendingPositionInstruction =
     | { type: "at"; x: number; y: number; placement?: PlacementAnchor }
     | { type: "on"; elementRect: DOMRect; placement?: PlacementAnchor; anchor?: PlacementAnchor };
 
-const DialogBase = styled(({ controls, onPositionChange, onOpen, onClose, onPopupToggle, style, className, variant = "typical", flavour = "base", children, ...props }: DialogProps) => {
+const DialogBase = styled(({ controls, onPositionChange, onOpen, onClose, onPopupToggle, style, variant = "typical", flavour = "base", children, ...props }: DialogProps) => {
     const [position, setPosition, state] = useController(null);
     const positionRef = useRef<Position | null>(null);
     const popoverHandle = useRef<AbstractPopupHandle>(null);
@@ -448,7 +448,6 @@ const DialogBase = styled(({ controls, onPositionChange, onOpen, onClose, onPopu
                     data-flavour={flavour}
                     data-dragging={isDragging || undefined}
                     {...props}
-                    className={`${className ?? ""} meta-component_floater meta-component_floater-dialog`}
                 >
                     {children}
                 </AbstractPopup>

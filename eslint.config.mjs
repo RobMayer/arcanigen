@@ -44,7 +44,12 @@ export default defineConfig([
                 },
             ],
             "react/prop-types": "off",
-            "@typescript-eslint/switch-exhaustiveness-check": "warn",
+            "@typescript-eslint/switch-exhaustiveness-check": [
+                "warn",
+                {
+                    considerDefaultExhaustiveForUnions: true,
+                },
+            ],
             "react-hooks-configurable/exhaustive-deps": [
                 "warn",
                 {

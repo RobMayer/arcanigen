@@ -28,83 +28,80 @@ type AnchoredPopupProps = DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTML
     flavour?: Flavour;
 };
 
-const BaseComponent = styled(
-    ({ controls, position = "bottom right", force = false, onOpen, onClose, onPopupToggle, style, className, flavour = "base", variant = "typical", ...props }: AnchoredPopupProps) => {
-        const [, setAnchorElement, state] = useController(null);
-        const popoverHandle = useRef<AbstractPopupHandle>(null);
-        const anchorElementRef = useRef<HTMLElement>(null);
-        const anchorId = useId();
-        const onPopupToggleRef = useStable(onPopupToggle);
-        const onCloseRef = useStable(onClose);
-        const onOpenRef = useStable(onOpen);
+const BaseComponent = styled(({ controls, position = "bottom right", force = false, onOpen, onClose, onPopupToggle, style, flavour = "base", variant = "typical", ...props }: AnchoredPopupProps) => {
+    const [, setAnchorElement, state] = useController(null);
+    const popoverHandle = useRef<AbstractPopupHandle>(null);
+    const anchorElementRef = useRef<HTMLElement>(null);
+    const anchorId = useId();
+    const onPopupToggleRef = useStable(onPopupToggle);
+    const onCloseRef = useStable(onClose);
+    const onOpenRef = useStable(onOpen);
 
-        const openPopover = useCallback(
-            (element: HTMLElement) => {
-                anchorElementRef.current = element;
-                (element.style as CSSProperties).anchorName = `--trh-anchor_popover-${anchorId}`;
-                setAnchorElement(element);
-                onPopupToggleRef.current?.(true);
-                onOpenRef.current?.();
-                popoverHandle.current?.open();
-            },
-            [anchorId],
-        );
+    const openPopover = useCallback(
+        (element: HTMLElement) => {
+            anchorElementRef.current = element;
+            (element.style as CSSProperties).anchorName = `--trh-anchor_popover-${anchorId}`;
+            setAnchorElement(element);
+            onPopupToggleRef.current?.(true);
+            onOpenRef.current?.();
+            popoverHandle.current?.open();
+        },
+        [anchorId],
+    );
 
-        const closePopover = useCallback(() => {
-            popoverHandle.current?.close();
-            onPopupToggleRef.current?.(false);
-            onCloseRef.current?.();
-            if (anchorElementRef.current) {
-                (anchorElementRef.current.style as CSSProperties).anchorName = "";
-                anchorElementRef.current = null;
-                setAnchorElement(null);
-            }
-        }, []);
+    const closePopover = useCallback(() => {
+        popoverHandle.current?.close();
+        onPopupToggleRef.current?.(false);
+        onCloseRef.current?.();
+        if (anchorElementRef.current) {
+            (anchorElementRef.current.style as CSSProperties).anchorName = "";
+            anchorElementRef.current = null;
+            setAnchorElement(null);
+        }
+    }, []);
 
-        const handleCancel = useCallback(() => {
-            onPopupToggleRef.current?.(false);
-            onCloseRef.current?.();
-            if (anchorElementRef.current) {
-                (anchorElementRef.current.style as CSSProperties).anchorName = "";
-                anchorElementRef.current = null;
-                setAnchorElement(null);
-            }
-        }, []);
+    const handleCancel = useCallback(() => {
+        onPopupToggleRef.current?.(false);
+        onCloseRef.current?.();
+        if (anchorElementRef.current) {
+            (anchorElementRef.current.style as CSSProperties).anchorName = "";
+            anchorElementRef.current = null;
+            setAnchorElement(null);
+        }
+    }, []);
 
-        const popoverMethods = useMemo<AnchoredPopupControls>(
-            () => ({
-                openFor: (element: HTMLElement) => openPopover(element),
-                openOn: (event: MouseEvent<HTMLElement>) => openPopover(event.currentTarget),
-                close: closePopover,
-            }),
-            [openPopover, closePopover],
-        );
+    const popoverMethods = useMemo<AnchoredPopupControls>(
+        () => ({
+            openFor: (element: HTMLElement) => openPopover(element),
+            openOn: (event: MouseEvent<HTMLElement>) => openPopover(event.currentTarget),
+            close: closePopover,
+        }),
+        [openPopover, closePopover],
+    );
 
-        const contentsStyle = useMemo(() => {
-            return {
-                ...(style ?? {}),
-                positionAnchor: `--trh-anchor_popover-${anchorId}`,
-                positionArea: position,
-            };
-        }, [anchorId, position, style]);
+    const contentsStyle = useMemo(() => {
+        return {
+            ...(style ?? {}),
+            positionAnchor: `--trh-anchor_popover-${anchorId}`,
+            positionArea: position,
+        };
+    }, [anchorId, position, style]);
 
-        return (
-            <Controller state={state} controls={controls} methods={popoverMethods}>
-                <AbstractPopup
-                    handle={popoverHandle}
-                    backdrop={force ? "block" : "click"}
-                    escape={force ? "none" : "close"}
-                    onCancel={handleCancel}
-                    style={contentsStyle}
-                    data-flavour={flavour}
-                    data-variant={variant}
-                    {...props}
-                    className={`${className ?? ""} meta-component_floater meta-component_floater-popover`}
-                />
-            </Controller>
-        );
-    },
-)`
+    return (
+        <Controller state={state} controls={controls} methods={popoverMethods}>
+            <AbstractPopup
+                handle={popoverHandle}
+                backdrop={force ? "block" : "click"}
+                escape={force ? "none" : "close"}
+                onCancel={handleCancel}
+                style={contentsStyle}
+                data-flavour={flavour}
+                data-variant={variant}
+                {...props}
+            />
+        </Controller>
+    );
+})`
     & > [data-part="contents"] {
         position-try-fallbacks:
             flip-block,

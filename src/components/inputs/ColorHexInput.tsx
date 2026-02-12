@@ -43,7 +43,7 @@ type ColorHexInputProps = {
 export const ColorHexInput = styled(({ className, value, onValue, onCommit, onConfirm, nullable, alpha, disabled }: ColorHexInputProps & { className?: string }) => {
     // Internal hex string cache for display
     const [hexCache, setHexCache] = useState<string>(() => {
-        if (value === null) return "none";
+        if (value === null) return "transparent";
         const hex = Color.toHex(value);
         return alpha ? hex : hex.slice(0, 7);
     });
@@ -60,7 +60,7 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     // Sync with incoming prop
     useEffect(() => {
         if (value === null) {
-            setHexCache("none");
+            setHexCache("transparent");
         } else {
             const hex = Color.toHex(value);
             setHexCache(alpha ? hex : hex.slice(0, 7));
@@ -71,9 +71,9 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     const normalize = useCallback(
         (v: string): string => {
             if (v === "") {
-                return nullable ? "none" : "";
+                return nullable ? "transparent" : "";
             }
-            if (v === "none") return "none";
+            if (v === "transparent") return "transparent";
             return normalizeHexString(v, alpha ?? false);
         },
         [nullable, alpha],
@@ -81,13 +81,13 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
 
     // Pattern for validation
     const pattern = useMemo(() => {
-        return `${nullable ? "(none)|" : ""}${alpha ? "#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})" : "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"}`;
+        return `${nullable ? "(transparent)|" : ""}${alpha ? "#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})" : "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"}`;
     }, [nullable, alpha]);
 
     const handleValue = useCallback(
         (v: string) => {
             setHexCache(v);
-            if (v === "" || v === "none") {
+            if (v === "" || v === "transparent") {
                 onValueRef.current?.(null);
             } else {
                 const rgba = Color.fromHex(v);
@@ -100,7 +100,7 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     const handleCommit = useCallback(
         (v: string) => {
             setHexCache(v);
-            if (v === "" || v === "none") {
+            if (v === "" || v === "transparent") {
                 onCommitRef.current?.(null);
             } else {
                 const rgba = Color.fromHex(v);
@@ -113,7 +113,7 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     const handleConfirm = useCallback(
         (v: string) => {
             setHexCache(v);
-            if (v === "" || v === "none") {
+            if (v === "" || v === "transparent") {
                 onConfirmRef.current?.(null);
             } else {
                 const rgba = Color.fromHex(v);

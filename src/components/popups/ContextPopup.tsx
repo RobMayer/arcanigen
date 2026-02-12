@@ -38,7 +38,7 @@ const PositionAnchor = styled.div`
 `;
 
 const BaseComponent = styled(
-    ({ controls, style, onOpen, onClose, onPopupToggle: onPopupToggle, position = "bottom right", trapFocus, className, variant = "typical", flavour = "base", ...props }: ContextPopupProps) => {
+    ({ controls, style, onOpen, onClose, onPopupToggle: onPopupToggle, position = "bottom right", trapFocus, variant = "typical", flavour = "base", ...props }: ContextPopupProps) => {
         const [location, setLocation, state] = useController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorRef = useRef<HTMLDivElement>(null);
@@ -116,7 +116,6 @@ const BaseComponent = styled(
                     data-flavour={flavour}
                     data-variant={variant}
                     {...props}
-                    className={`${className ?? ""} meta-component_floater meta-component_floater-contextpopup`}
                 />
             </Controller>
         );

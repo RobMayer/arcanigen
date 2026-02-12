@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { AbstractLiteButton, AbstractButton } from "../abstract/button";
+import { AbstractLiteButton, AbstractButton } from "../abstract/Button";
 import { merge } from "../../util/misc";
 
 const Primary = styled(AbstractButton)``;

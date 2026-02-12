@@ -75,7 +75,7 @@ const parseSize = (size?: string): { width: string; height: string } => {
     }
 };
 
-const ModalBase = styled(({ controls, force = false, align, size, variant = "typical", flavour = "base", onCancel, onOpen, onClose, onPopupToggle, style, className, ...props }: ModalProps) => {
+const ModalBase = styled(({ controls, force = false, align, size, variant = "typical", flavour = "base", onCancel, onOpen, onClose, onPopupToggle, style, ...props }: ModalProps) => {
     const [, setIsOpen, state] = useController(false);
     const popoverHandle = useRef<AbstractPopupHandle>(null);
 
@@ -141,7 +141,6 @@ const ModalBase = styled(({ controls, force = false, align, size, variant = "typ
                 data-variant={variant}
                 data-flavour={flavour}
                 {...props}
-                className={`${className ?? ""} meta-component_floater meta-component_floater-modal`}
             />
         </Controller>
     );

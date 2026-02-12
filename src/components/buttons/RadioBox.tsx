@@ -1,5 +1,5 @@
 import { MouseEvent, useCallback } from "react";
-import { AbstractButtonProps, AbstractLiteButton } from "../abstract/button";
+import { AbstractButtonProps, AbstractLiteButton } from "../abstract/Button";
 import { useStable } from "../../util/hooks/useStable";
 import { Icon, IconDefinition, ICONS } from "../Icon";
 import styled from "styled-components";
