@@ -1,8 +1,42 @@
-import { CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { CSSProperties, DetailedHTMLProps, HTMLAttributes, useCallback, useEffect, useMemo, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
 import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
 import { Color } from "../../definitions/datatypes/color";
+import { COMMON_STYLES } from "../styles";
+
+const BaseInput = styled(AbstractInput.Text)`
+    ${COMMON_STYLES.INPUT}
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+`;
+
+const BaseSwatch = styled.span`
+    flex: 0 0 1lh;
+    background: url("swatch.png");
+    background-size: 25%;
+    display: block;
+    height: 1lh;
+    aspect-ratio: 1;
+    align-self: center;
+    border: 1px solid black;
+    &:after {
+        display: block;
+        content: "";
+        width: 100%;
+        height: 100%;
+        background-color: var(--value);
+    }
+`;
+
+const BaseDiv = styled.div`
+    display: flex;
+    gap: 4px;
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
+`;
 
 // Matches #rgb, #rrggbb, #rgba, #rrggbbaa
 const HEX_3_REGEX = /^#[0-9a-fA-F]{3}$/;
@@ -29,6 +63,8 @@ function normalizeHexString(value: string, alpha: boolean): string {
     // 8-digit: just lowercase
     return value.toLowerCase();
 }
+
+type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
 
 type ColorHexInputProps = {
     value: Color.Type;
@@ -139,32 +175,4 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
             />
         </div>
     );
-})`
-    display: flex;
-    gap: 4px;
-    flex: 1 1 0;
-    min-width: 0;
-    align-items: center;
-    & > [data-part="swatch"] {
-        flex: 0 0 1lh;
-        background: url("swatch.png");
-        background-size: 25%;
-        display: block;
-        height: 1lh;
-        aspect-ratio: 1;
-        align-self: center;
-        border: 1px solid black;
-        &:after {
-            display: block;
-            content: "";
-            width: 100%;
-            height: 100%;
-            background-color: var(--value);
-        }
-    }
-    & > [data-part="input"] {
-        flex: 1 1 0;
-        width: 0;
-        min-width: 0;
-    }
-`;
+})``;

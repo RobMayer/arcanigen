@@ -22,7 +22,6 @@ export namespace AbstractSlider {
             snap: snapProp,
             normalize,
             tooltip,
-            flavour = "accent",
             disabled,
             tabIndex,
             ref,
@@ -365,16 +364,7 @@ export namespace AbstractSlider {
             }, [fraction]);
 
             return (
-                <div
-                    {...rest}
-                    data-flavour={flavour}
-                    data-orientation={orientation}
-                    tabIndex={disabled ? undefined : (tabIndex ?? 0)}
-                    ref={makeInnerRef}
-                    data-state={dataState}
-                    onKeyDown={handleKeyDown}
-                    title={tooltip}
-                >
+                <div {...rest} data-orientation={orientation} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
                     <div data-part="track" ref={trackRef} />
                     <div data-part="bounds" style={style} ref={boundsRef}>
                         <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef} />
@@ -501,7 +491,7 @@ export namespace AbstractSlider {
             normalize?: (v: EmptyOr<NumericString.Type>) => EmptyOr<NumericString.Type>;
             disabled?: boolean;
             handleRef?: Ref<HTMLDivElement>;
-        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
     }
 
     export const Radial = styled(
@@ -519,7 +509,6 @@ export namespace AbstractSlider {
             step: stepProp = Array.isArray(snapProp) ? undefined : snapProp,
             normalize,
             tooltip,
-            flavour = "accent",
             icon = ICONS.Blank,
             disabled,
             tabIndex,
@@ -955,7 +944,7 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             return (
-                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown}>
+                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown}>
                     <svg data-part="track" ref={trackRef}>
                         <circle data-part="capture" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
                         <circle data-part="border" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
@@ -1074,7 +1063,7 @@ export namespace AbstractSlider {
             disabled?: boolean;
             handleRef?: Ref<HTMLDivElement>;
             snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
-        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
     }
 
     export const Polar = styled(
@@ -1093,7 +1082,6 @@ export namespace AbstractSlider {
             snapAngle: snapAngleProp,
             normalize,
             tooltip,
-            flavour = "accent",
             icon = ICONS.Blank,
             disabled,
             tabIndex,
@@ -1502,7 +1490,7 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             return (
-                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
+                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
                     <div data-part="track" ref={trackRef} />
                     <div data-part={"bounds"} style={style}>
                         <div data-part={"handle"} data-flavour={"inherit"} ref={makeInnerHandleRef}>
@@ -1607,7 +1595,7 @@ export namespace AbstractSlider {
             handleRef?: Ref<HTMLDivElement>;
             snapRadius?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
             snapAngle?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
-        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
     }
 
     export const Cartesian = styled(
@@ -1630,7 +1618,6 @@ export namespace AbstractSlider {
             snapY: snapYProp,
             normalize,
             tooltip,
-            flavour = "accent",
             icon = ICONS.Blank,
             disabled,
             tabIndex,
@@ -2001,7 +1988,7 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             return (
-                <div {...rest} data-flavour={flavour} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
+                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
                     <div data-part="track" ref={trackRef} />
                     <div data-part="bounds" style={style}>
                         <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef}>
@@ -2108,7 +2095,7 @@ export namespace AbstractSlider {
             snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
             snapX?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
             snapY?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // if array, snap to the inverval, otherwise snap to the closest/next value in the array.
-        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+        } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
     }
 }
 

@@ -7,14 +7,19 @@ import { NumericString } from "../../definitions/datatypes/numericString";
 import { EmptyOr } from "../../util/misc";
 import { IconDefinition } from "../Icon";
 import { useStable } from "../../util/hooks/useStable";
+import { COMMON_STYLES } from "../styles";
 
-export const AngleInput = styled(({ min = 0, max = 360, unbound, ...props }: Omit<AbstractInput.Numeric.Props, "wrap"> & { unbound?: boolean }) => {
-    return <AbstractInput.Numeric {...props} wrap={unbound ? undefined : 360} min={min} max={max} />;
-})``;
+const Base = styled(AbstractInput.Numeric)`
+    ${COMMON_STYLES.INPUT}
+`;
 
-const Spinner = styled(({ min = 0, max = 360, unbound, ...props }: Omit<AbstractSlider.Radial.Props, "wrap"> & { unbound?: boolean }) => {
-    return <AbstractSlider.Radial {...props} wrap={unbound ? undefined : 360} min={min} max={max} />;
-})``;
+export function AngleInput({ min = 0, max = 360, unbound, ...props }: AngleInput.Props) {
+    return <Base {...props} wrap={unbound ? undefined : 360} min={min} max={max} data-flavour={"flavour"} />;
+}
+
+export namespace AngleInput {
+    export type Props = Omit<AbstractInput.Numeric.Props, "wrap"> & { unbound?: boolean; flavour?: Flavour };
+}
 
 type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
 
@@ -91,7 +96,7 @@ export const SpinnerWithDisplay = styled(
                     wrap={unbound ? undefined : 360}
                     min={min}
                     max={max}
-                    flavour={"inherit"}
+                    data-flavour={"inherit"}
                     onValue={handleValue}
                     onCommit={handleCommit}
                     value={cache}
@@ -106,7 +111,7 @@ export const SpinnerWithDisplay = styled(
                     wrap={unbound ? undefined : 360}
                     min={min}
                     max={max}
-                    flavour={"inherit"}
+                    data-flavour={"inherit"}
                     onValue={handleValue}
                     onCommit={handleCommit}
                     onConfirm={handleConfirm}

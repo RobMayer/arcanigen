@@ -8,7 +8,7 @@ import { useStableValue } from "../../util/hooks/useStableValue";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 
 export namespace AbstractInput {
-    type BaseProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+    type BaseProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string };
 
     export function Text<T extends string = string>({
         value,
@@ -22,7 +22,6 @@ export namespace AbstractInput {
         onKeyDown,
         required = false,
         normalize,
-        flavour,
         tooltip,
         ...props
     }: Text.Props<T>) {
@@ -210,7 +209,7 @@ export namespace AbstractInput {
             [pattern, required],
         );
 
-        return <input {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} data-flavour={flavour} />;
+        return <input {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} />;
     }
 
     export namespace Text {
@@ -241,7 +240,6 @@ export namespace AbstractInput {
         wrap: wrapProp,
         normalize,
         tooltip,
-        flavour,
         ref,
         ...props
     }: Numeric.Props) {
@@ -538,20 +536,7 @@ export namespace AbstractInput {
             [commitValue, precision, step, wrap, min, max, snap],
         );
 
-        return (
-            <input
-                {...props}
-                type={"text"}
-                ref={inputRefMaker}
-                title={tooltip}
-                data-flavour={flavour}
-                value={cache}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                onBlur={handleBlur}
-                onFocus={handleFocus}
-            />
-        );
+        return <input {...props} type={"text"} ref={inputRefMaker} title={tooltip} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} />;
     }
 
     export namespace Numeric {
@@ -590,7 +575,6 @@ export namespace AbstractInput {
         onKeyDown,
         required = false,
         tooltip,
-        flavour,
         ref,
         ...props
     }: Measurement.Props<U>) {
@@ -953,20 +937,7 @@ export namespace AbstractInput {
             [commitValue, normalizeMeasure, stepProp, min, max, wrap],
         );
 
-        return (
-            <input
-                {...props}
-                ref={inputRefMaker}
-                type="text"
-                value={cache}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                onBlur={handleBlur}
-                onFocus={handleFocus}
-                title={tooltip}
-                data-flavour={flavour}
-            />
-        );
+        return <input {...props} ref={inputRefMaker} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} />;
     }
 
     export namespace Measurement {
@@ -987,7 +958,7 @@ export namespace AbstractInput {
             onCommit?: (v: EmptyOr<Measure<U>>) => void;
             onConfirm?: (v: EmptyOr<Measure<U>>) => void;
             normalize?: (v: EmptyOr<Measure<U>>) => EmptyOr<Measure<U>>;
-        } & Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string; flavour?: Flavour | "inherit" };
+        } & BaseProps;
     }
 }
 

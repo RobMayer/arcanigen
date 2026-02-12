@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-export type Flavour = "base" | "accent" | "info" | "danger" | "emphasis" | "help" | "confirm";
+export type Flavour = "base" | "accent" | "info" | "danger" | "emphasis" | "help" | "confirm" | "inherit";
 
 export type PopoverPosition =
     | "top"
