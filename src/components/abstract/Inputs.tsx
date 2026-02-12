@@ -44,6 +44,7 @@ export namespace AbstractInput {
         onCommit,
         onConfirm,
         onBlur,
+        onFocus,
         pattern,
         onChange,
         onKeyDown,
@@ -56,17 +57,22 @@ export namespace AbstractInput {
         const onKeyDownRef = useStable(onKeyDown);
         const onChangeRef = useStable(onChange);
         const onBlurRef = useStable(onBlur);
+        const onFocusRef = useStable(onFocus);
         const normalizeRef = useStable(normalize);
 
         const valueRef = useRef<T>(value);
         const lastValidRef = useRef<T>(value);
         const [cache, setCache] = useState<string>(value);
+        const isFocusedRef = useRef(false);
 
         useEffect(() => {
             if (valueRef.current !== value) {
                 valueRef.current = value;
                 lastValidRef.current = value;
-                setCache(value);
+                // Don't clobber the display while user is typing
+                if (!isFocusedRef.current) {
+                    setCache(value);
+                }
             }
         }, [value]);
 
@@ -117,9 +123,15 @@ export namespace AbstractInput {
             [validate],
         );
 
+        const handleFocus = useCallback((evt: React.FocusEvent<HTMLInputElement>) => {
+            onFocusRef.current?.(evt);
+            isFocusedRef.current = true;
+        }, []);
+
         // On blur - commit or revert
         const handleBlur = useCallback(
             (evt: React.FocusEvent<HTMLInputElement>) => {
+                isFocusedRef.current = false;
                 onBlurRef.current?.(evt);
                 if (evt.nativeEvent.handled) {
                     return;
@@ -226,7 +238,7 @@ export namespace AbstractInput {
             [pattern, required],
         );
 
-        return <BaseInput {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
+        return <BaseInput {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} data-flavour={flavour} />;
     };
 
     export namespace Text {
@@ -242,6 +254,7 @@ export namespace AbstractInput {
     export const Numeric = ({
         value,
         onBlur,
+        onFocus,
         onValue,
         onCommit,
         onConfirm,
@@ -307,12 +320,14 @@ export namespace AbstractInput {
 
         const onKeyDownRef = useStable(onKeyDown);
         const onBlurRef = useStable(onBlur);
+        const onFocusRef = useStable(onFocus);
         const onChangeRef = useStable(onChange);
 
         const [inputRef, inputRefMaker] = useCombinedRef(ref);
         const valueRef = useRef<string>(value);
         const lastValidRef = useRef<string>(value); // tracks last valid value internally
         const [cache, setCache] = useState<string>(value);
+        const isFocusedRef = useRef(false);
 
         const normalizeCacheRef = useRef(normalizeNumeric(cache));
 
@@ -324,8 +339,8 @@ export namespace AbstractInput {
                 valueRef.current = value;
                 lastValidRef.current = value; // prop change resets last valid
                 const normalizedValue = normalizeNumeric(value);
-                // Only update cache if the numeric values are different
-                if (normalizeCacheRef.current !== normalizedValue) {
+                // Only update cache if the numeric values are different AND not focused
+                if (normalizeCacheRef.current !== normalizedValue && !isFocusedRef.current) {
                     setCache(value);
                     normalizeCacheRef.current = normalizedValue;
                 }
@@ -463,9 +478,15 @@ export namespace AbstractInput {
             }
         }, []);
 
+        const handleFocus = useCallback((evt: React.FocusEvent<HTMLInputElement>) => {
+            onFocusRef.current?.(evt);
+            isFocusedRef.current = true;
+        }, []);
+
         // On blur - commit the value
         const handleBlur = useCallback(
             (evt: React.FocusEvent<HTMLInputElement>) => {
+                isFocusedRef.current = false;
                 onBlurRef.current?.(evt);
                 if (evt.nativeEvent.handled) {
                     return;
@@ -545,7 +566,7 @@ export namespace AbstractInput {
             [commitValue, precision, step, wrap, min, max, snap],
         );
 
-        return <BaseInput {...props} ref={inputRefMaker} type={"text"} title={tooltip} data-flavour={flavour} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} />;
+        return <BaseInput {...props} ref={inputRefMaker} type={"text"} title={tooltip} data-flavour={flavour} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} />;
     };
 
     export namespace Numeric {
@@ -579,6 +600,7 @@ export namespace AbstractInput {
         onConfirm,
         normalize,
         onBlur,
+        onFocus,
         onChange,
         onKeyDown,
         required = false,
@@ -595,6 +617,7 @@ export namespace AbstractInput {
         const onKeyDownRef = useStable(onKeyDown);
         const onChangeRef = useStable(onChange);
         const onBlurRef = useStable(onBlur);
+        const onFocusRef = useStable(onFocus);
         const normalizeRef = useStable(normalize);
         const converterRef = useStable(converter);
         const unitsRef = useStable(unitsStable);
@@ -609,6 +632,7 @@ export namespace AbstractInput {
         const lastValidRef = useRef<EmptyOr<Measure<U>>>(value);
         const lastUnitRef = useRef<U>(value ? (parseMeasure(value, unitsStable)?.[1] ?? resolvedDefaultUnit) : resolvedDefaultUnit);
         const [cache, setCache] = useState<string>(value);
+        const isFocusedRef = useRef(false);
 
         // Pattern: optional number, optional unit (for lenient typing)
         const pattern = useMemo(() => {
@@ -628,7 +652,10 @@ export namespace AbstractInput {
                         lastUnitRef.current = parsed[1];
                     }
                 }
-                setCache(value);
+                // Don't clobber the display while user is typing
+                if (!isFocusedRef.current) {
+                    setCache(value);
+                }
             }
         }, [unitsStable, value]);
 
@@ -803,8 +830,14 @@ export namespace AbstractInput {
             [validate],
         );
 
+        const handleFocus = useCallback((evt: React.FocusEvent<HTMLInputElement>) => {
+            onFocusRef.current?.(evt);
+            isFocusedRef.current = true;
+        }, []);
+
         const handleBlur = useCallback(
             (evt: React.FocusEvent<HTMLInputElement>) => {
+                isFocusedRef.current = false;
                 onBlurRef.current?.(evt);
                 if (evt.nativeEvent.handled) return;
                 commitValue(evt.currentTarget);
@@ -935,7 +968,7 @@ export namespace AbstractInput {
             [commitValue, normalizeMeasure, stepProp, min, max, wrap],
         );
 
-        return <BaseInput {...props} ref={inputRefMaker} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} title={tooltip} data-flavour={flavour} />;
+        return <BaseInput {...props} ref={inputRefMaker} type="text" value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} data-flavour={flavour} />;
     };
 
     export namespace Measurement {
