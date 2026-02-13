@@ -412,12 +412,15 @@ export namespace Project {
         return useSyncExternalStore(ctx.linkList.subscribe, selector);
     };
 
-    export const useLink = (id: string) => {
+    export const useLink = (id: string | null) => {
         const graphId = useGraphId();
         const ctx = useContext(CTX)!;
 
         const selector = useCallback(() => {
-            return ctx.links.get()[graphId][id];
+            if (id !== null) {
+                return ctx.links.get()[graphId][id];
+            }
+            return null;
         }, [ctx, id, graphId]);
 
         return useSyncExternalStore(ctx.links.subscribe, selector);
@@ -463,30 +466,64 @@ export namespace Project {
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
                 const [{ nodes, links }, newLink] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
                 if (newLink) {
-                    if (nodes !== oldGraph.nodes) {
-                        ctx.nodes.ref.current = {
-                            ...ctx.nodes.ref.current,
-                            [graphId]: nodes,
+                    let currentNodes = { ...ctx.nodes.ref.current, [graphId]: nodes };
+                    let currentLinks = { ...ctx.links.ref.current, [graphId]: links };
+                    let currentInterfaces = ctx.interfaces.ref.current;
+                    let currentUsers = ctx.users.ref.current;
+
+                    // Fire onConnect hooks for both endpoints
+                    const fromNodeObj = nodes[fromNode];
+                    const toNodeObj = nodes[toNode];
+                    const fromType = NodeTypes.get(fromNodeObj.type);
+                    const toType = NodeTypes.get(toNodeObj.type);
+
+                    if (fromType.onConnect || toType.onConnect) {
+                        let hookState: NodeTypes.HookState = {
+                            nodes: currentNodes,
+                            links: currentLinks,
+                            interfaces: currentInterfaces,
+                            users: currentUsers,
                         };
-                        ctx.nodeList.ref.current = {
-                            ...ctx.nodeList.ref.current,
-                            [graphId]: Object.keys(nodes),
-                        };
-                        ctx.nodes.notify();
-                        ctx.nodeList.notify();
+                        if (fromType.onConnect) {
+                            const onConnect = fromType.onConnect as (
+                                node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                                linkId: string,
+                                direction: "in" | "out",
+                                state: NodeTypes.HookState,
+                                graphId: string,
+                            ) => NodeTypes.HookState;
+                            hookState = onConnect(fromNodeObj, newLink, "out", hookState, graphId);
+                        }
+                        if (toType.onConnect) {
+                            const onConnect = toType.onConnect as (
+                                node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                                linkId: string,
+                                direction: "in" | "out",
+                                state: NodeTypes.HookState,
+                                graphId: string,
+                            ) => NodeTypes.HookState;
+                            hookState = onConnect(toNodeObj, newLink, "in", hookState, graphId);
+                        }
+                        currentNodes = hookState.nodes;
+                        currentLinks = hookState.links;
+                        currentInterfaces = hookState.interfaces;
+                        currentUsers = hookState.users;
                     }
-                    if (links !== oldGraph.links) {
-                        ctx.links.ref.current = {
-                            ...ctx.links.ref.current,
-                            [graphId]: links,
-                        };
-                        ctx.linkList.ref.current = {
-                            ...ctx.linkList.ref.current,
-                            [graphId]: Object.keys(links),
-                        };
-                        ctx.links.notify();
-                        ctx.linkList.notify();
-                    }
+
+                    // Apply state
+                    ctx.nodes.ref.current = currentNodes;
+                    ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(currentNodes[graphId]) };
+                    ctx.links.ref.current = currentLinks;
+                    ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(currentLinks[graphId]) };
+                    ctx.interfaces.ref.current = currentInterfaces;
+                    ctx.users.ref.current = currentUsers;
+
+                    ctx.nodes.notify();
+                    ctx.nodeList.notify();
+                    ctx.links.notify();
+                    ctx.linkList.notify();
+                    ctx.interfaces.notify();
+                    ctx.users.notify();
 
                     // Ensure fromNode is cached first (it may not have been evaluated yet)
                     // Then rebuild cache for toNode and all downstream nodes
@@ -498,7 +535,7 @@ export namespace Project {
             };
 
             const addNodeByType = (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) => {
-                const newNode = nodeType.create(params);
+                const newNode = nodeType.create(params as Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>);
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
                 const { nodes } = ArcaneGraph.importNodes(oldGraph, [newNode]);
 
@@ -628,7 +665,51 @@ export namespace Project {
                 ctx.users.notify();
             };
 
-            return { connect, removeNode, updateNodePayload, addNodeByType };
+            const removeLinks = (...linkIds: string[]) => {
+                const oldGraph = { nodes: ctx.nodes.ref.current[graphId], links: ctx.links.ref.current[graphId] };
+                const [{ nodes, links }, removed] = ArcaneGraph.removeLinks(oldGraph, linkIds);
+                if (removed.links.length === 0) return;
+
+                // Find affected toNodes for cache rebuild
+                const affectedNodes = new Set(removed.links.map((l) => l.toNode));
+
+                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: nodes };
+                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(nodes) };
+                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
+                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
+
+                let newCache = ctx.cache.ref.current;
+                for (const nodeId of affectedNodes) {
+                    if (nodes[nodeId]) {
+                        newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, graphId, nodeId);
+                    }
+                }
+                ctx.cache.ref.current = newCache;
+
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+                ctx.cache.notify();
+            };
+
+            const alterNode = (id: ArcaneGraph.NodeId, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) => {
+                const node = ctx.nodes.ref.current[graphId][id];
+                if (!node) return;
+                const updated = fn(node);
+
+                ctx.nodes.ref.current = {
+                    ...ctx.nodes.ref.current,
+                    [graphId]: { ...ctx.nodes.ref.current[graphId], [id]: updated },
+                };
+
+                ctx.cache.ref.current = rebuildDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, graphId, id);
+
+                ctx.nodes.notify();
+                ctx.cache.notify();
+            };
+
+            return { connect, removeNode, updateNodePayload, addNodeByType, removeLinks, alterNode };
         }, [ctx, graphId]);
     };
 

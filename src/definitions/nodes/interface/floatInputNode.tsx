@@ -19,15 +19,15 @@ export type FloatInputDefinition = {
         output: DataTypes.Use<"float">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        defaultValue: DataTypes.Use<"float">;
-        widget: DataTypes.Use<"enum">;
-        min: DataTypes.Use<"float">;
-        hasMin: DataTypes.Use<"boolean">;
-        max: DataTypes.Use<"float">;
-        hasMax: DataTypes.Use<"boolean">;
-        step: DataTypes.Use<"float">;
-        hasStep: DataTypes.Use<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        defaultValue: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        min: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        hasMin: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        max: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        hasMax: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        step: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        hasStep: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     };
 };
 

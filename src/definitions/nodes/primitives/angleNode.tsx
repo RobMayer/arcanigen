@@ -20,9 +20,9 @@ export type AngleDefinition = {
         output: DataTypes.Use<"angle">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        value: DataTypes.Use<"angle">;
-        wraps: DataTypes.Use<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        value: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        wraps: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     };
 };
 

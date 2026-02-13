@@ -6,21 +6,21 @@ import styled from "styled-components";
 import { DragPane, DragPaneControls } from "../../components/wrappers/DragPane";
 
 const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode => {
-    const { tag, attributes, children } = obj;
+    const { tag, attributes, children, style } = obj;
     const childNodes = children.map((child, i) => renderSVGObject(child, i));
 
     switch (tag) {
         case "g":
             return (
-                <g key={key} {...attributes}>
+                <g key={key} {...attributes} style={style}>
                     {childNodes}
                 </g>
             );
         case "path":
-            return <path key={key} {...attributes} />;
+            return <path key={key} {...attributes} style={style} />;
         case "svg":
             return (
-                <svg key={key} {...attributes}>
+                <svg key={key} {...attributes} style={style}>
                     {childNodes}
                 </svg>
             );

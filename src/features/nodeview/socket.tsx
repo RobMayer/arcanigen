@@ -98,9 +98,8 @@ export const Socket = styled(
             if (pendingConnection.side === side) {
                 return false;
             }
-            // todo: don't assume that pending.type === type is valid. a type of "number" is compatible with "float" and "integer", but they are not compatible with each other.
-            if (pendingConnection.type !== type) {
-                // but for now, it's okay.
+            const [outType, inType] = pendingConnection.side === "out" ? [pendingConnection.type, type] : [type, pendingConnection.type];
+            if (agreeOnDataType(outType, inType) === null) {
                 return false;
             }
             // todo: use the validateConnection() utility method below;

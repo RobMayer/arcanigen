@@ -15,8 +15,8 @@ export type FloatOutputDefinition = {
     };
     outputs: never;
     payload: {
-        label: DataTypes.Use<"string">;
-        widget: DataTypes.Use<"enum">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
     };
 };
 

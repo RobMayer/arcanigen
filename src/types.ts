@@ -6,6 +6,7 @@ export type SVGObject = {
     tag: "g" | "path" | "svg";
     children: SVGObject[];
     attributes: { [key: string]: string | undefined };
+    style?: { [key: string]: string };
 };
 
 export type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };

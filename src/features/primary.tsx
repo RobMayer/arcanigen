@@ -370,13 +370,16 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     const link = Project.useLink(linkId);
 
     const style = useMemo(() => {
+        if (!link) {
+            return {};
+        }
         return {
             "--fromTarget": `anchor(--socket_${link.fromNode}_${link.fromSocket} center, anchor(--socketFB_${link.fromNode}_${link.fromSocket} center, anchor(--nodeFB_${link.fromNode}_out center, 0)))`,
             "--toTarget": `anchor(--socket_${link.toNode}_${link.toSocket} center, anchor(--socketFB_${link.toNode}_${link.toSocket} center, anchor(--nodeFB_${link.toNode}_in center, 0)))`,
             "--fromNode": `--node_${link.fromNode}`,
             "--toNode": `--node_${link.toNode}`,
         } as CSSProperties;
-    }, [link.fromNode, link.toNode, link.fromSocket, link.toSocket]);
+    }, [link]);
 
     const ref = useRef<HTMLDivElement>(null);
     const fromMarkerRef = useRef<HTMLDivElement>(null);
@@ -409,6 +412,10 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
     const handleBlur = useCallback(() => {
         setIsSelected(false);
     }, []);
+
+    if (!link) {
+        return null;
+    }
 
     return (
         <>

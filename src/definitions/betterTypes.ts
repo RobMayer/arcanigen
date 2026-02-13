@@ -22,6 +22,7 @@ import { NumericString } from "./datatypes/numericString";
 import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
 import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
+import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -50,6 +51,7 @@ namespace Registries {
 
         // collections
         layerCompose: LayerComposeDefinition;
+        layers: LayerDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -57,6 +59,7 @@ namespace Registries {
         circle: CircleNodeType,
         polygon: PolygonNodeType,
         layerCompose: LayerComposeNodeType,
+        layers: LayerNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
@@ -81,6 +84,7 @@ namespace Registries {
         angle: EmptyOr<Angle.Type>;
         boolean: boolean;
         layer: { shape: SVGObject | null; enabled: boolean | null; blend: number | null };
+        "array<layer>": { shape: SVGObject | null; enabled: boolean | null; blend: number | null }[];
     };
 
     export const DATATYPE_FLAVOURS: { [key in keyof DATATYPES]: Flavour } = {
@@ -95,6 +99,7 @@ namespace Registries {
         boolean: "accent",
         "tokens<length>": "accent",
         layer: "danger",
+        "array<layer>": "danger",
     };
 
     export const SOCKET_COMPAT = {
@@ -113,9 +118,10 @@ namespace Registries {
         angle: "accent",
         boolean: "accent",
         "tokens<length>": "accent",
+        "array<layer>": "danger",
+        layer: "confirm",
         // compound
         number: "accent",
-        layer: "danger",
         layerOrShape: "confirm",
     };
 
@@ -154,7 +160,7 @@ export namespace NodeDefinitions {
     export type Generic = {
         inputs: Record<string, DataTypes.Any>;
         outputs: Record<string, DataTypes.Any>;
-        payload: Record<string, DataTypes.Any>;
+        payload: Record<string, unknown>;
     };
 
     // Base definition requiring a label in payload
@@ -162,11 +168,11 @@ export namespace NodeDefinitions {
         inputs: Record<string, DataTypes.Any>;
         outputs: Record<string, DataTypes.Any>;
         payload: {
-            label: DataTypes.Use<"string">;
+            label: string;
         };
     };
 
-    export type PayloadTypeOf<D extends Generic> = { [K in keyof D["payload"]]: DataTypes.TypeOf<D["payload"][K]> };
+    export type PayloadTypeOf<D extends Generic> = { [K in keyof D["payload"]]: D["payload"][K] };
 
     export type NodeFor<D extends Generic> = ArcaneGraph.NodeOf<PayloadTypeOf<D>>;
 
@@ -207,6 +213,7 @@ export namespace NodeTypes {
         dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"]) => (keyof D["inputs"])[];
         onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
+        onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", state: HookState, graphId: string) => HookState;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {

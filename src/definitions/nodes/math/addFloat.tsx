@@ -19,9 +19,9 @@ export type AddFloatDefinition = {
         output: DataTypes.Use<"float">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        a: DataTypes.Use<"float">;
-        b: DataTypes.Use<"float">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        a: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        b: DataTypes.TypeOf<DataTypes.Use<"float">>;
     };
 };
 

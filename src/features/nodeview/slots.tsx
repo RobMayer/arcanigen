@@ -154,9 +154,11 @@ export const NodeAccordion = styled(
 const LabelBig = styled(({ className, align = "left", children }: { className?: string; children?: ReactNode; align?: "right" | "left" }) => {
     return <div className={`${className ?? ""} align_${align}`}>{children}</div>;
 })`
-    flex: 1 1;
+    flex: 1 1 auto;
+    display: flex;
+    gap: 4px;
     &.align_right {
-        text-align: right;
+        justify-content: right;
     }
 `;
 

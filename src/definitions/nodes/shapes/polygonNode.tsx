@@ -54,27 +54,27 @@ export type PolygonDefinition = {
         eMiddle: DataTypes.Use<"length">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        pointCount: DataTypes.Use<"integer">;
-        rScribe: DataTypes.Use<"enum">;
-        radius: DataTypes.Use<"length">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        pointCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
+        rScribe: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
 
         // stroke
-        strokeWidth: DataTypes.Use<"length">;
-        strokeColor: DataTypes.Use<"color">;
-        strokeCap: DataTypes.Use<"enum">;
-        strokeDash: DataTypes.Use<"tokens<length>">;
-        strokeDashOffset: DataTypes.Use<"length">;
+        strokeWidth: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        strokeColor: DataTypes.TypeOf<DataTypes.Use<"color">>;
+        strokeCap: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        strokeDash: DataTypes.TypeOf<DataTypes.Use<"tokens<length>">>;
+        strokeDashOffset: DataTypes.TypeOf<DataTypes.Use<"length">>;
         // fill
-        fillColor: DataTypes.Use<"color">;
+        fillColor: DataTypes.TypeOf<DataTypes.Use<"color">>;
 
         //transforms
-        positionMode: DataTypes.Use<"enum">;
-        positionX: DataTypes.Use<"length">;
-        positionY: DataTypes.Use<"length">;
-        positionRadius: DataTypes.Use<"length">;
-        positionTheta: DataTypes.Use<"angle">;
-        rotation: DataTypes.Use<"angle">;
+        positionMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        positionX: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        positionY: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        positionRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        positionTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        rotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
     };
 };
 

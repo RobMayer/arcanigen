@@ -21,9 +21,9 @@ export type LayerComposeDefinition = {
         output: DataTypes.Use<"layer">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        enabled: DataTypes.Use<"boolean">;
-        blend: DataTypes.Use<"enum">;
+        label: string;
+        enabled: boolean;
+        blend: DataTypes.TypeOf<DataTypes.Use<"enum">>;
     };
 };
 

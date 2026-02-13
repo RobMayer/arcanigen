@@ -22,12 +22,12 @@ export type ResultDefinition = {
         color: DataTypes.Use<"color">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        w: DataTypes.Use<"length">;
-        h: DataTypes.Use<"length">;
-        x: DataTypes.Use<"length">;
-        y: DataTypes.Use<"length">;
-        color: DataTypes.Use<"color">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        w: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        h: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        x: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        y: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        color: DataTypes.TypeOf<DataTypes.Use<"color">>;
     };
 };
 

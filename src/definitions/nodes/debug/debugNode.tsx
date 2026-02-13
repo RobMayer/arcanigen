@@ -15,8 +15,8 @@ export type DebugDefinition = {
     };
     outputs: never;
     payload: {
-        label: DataTypes.Use<"string">;
-        someFloat: DataTypes.Use<"float">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        someFloat: DataTypes.TypeOf<DataTypes.Use<"float">>;
     };
 };
 

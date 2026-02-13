@@ -28,10 +28,10 @@ export type CustomDefinition = {
     inputs: Record<string, DataTypes.Any>;
     outputs: Record<string, DataTypes.Any>;
     payload: {
-        label: DataTypes.Use<"string">;
-        graphId: DataTypes.Use<"string">;
+        label: string;
+        graphId: string;
     } & {
-        [key: StoredValueKey]: DataTypes.Any;
+        [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any>;
     };
 };
 

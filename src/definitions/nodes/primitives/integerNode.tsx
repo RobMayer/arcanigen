@@ -17,8 +17,8 @@ export type IntegerDefinition = {
         output: DataTypes.Use<"integer">;
     };
     payload: {
-        label: DataTypes.Use<"string">;
-        value: DataTypes.Use<"integer">;
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        value: DataTypes.TypeOf<DataTypes.Use<"integer">>;
     };
 };
 
