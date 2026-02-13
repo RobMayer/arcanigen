@@ -1,14 +1,16 @@
 # UI/UX stuff
 
 - [ ] Finish cleaning up component namespaces
-- [ ] Consolidate ColorInput and ColorInputHex into one ColorInput namespace (add picker, too)
-    - [ ] container/wrapper nodes for spacial organization
-    - [ ] drag and drop from node drawer onto viewport
+    - [ ] Consolidate ColorInput and ColorInputHex into one ColorInput namespace (add picker, too)
+- [ ] container/wrapper nodes for spacial organization
+- [ ] drag and drop from node drawer onto viewport
 
 # code quality
 
 - [ ] svgCanvas resolver should use cache - eventually
 - [ ] project state file is starting to get unwieldy - should we move cache into it's own file?
+- [ ] cyclical checks
+    - [ ] properly implement depemdsOn
 
 # tasks that will get completed as the system gets fleshed out
 

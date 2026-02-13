@@ -66,6 +66,7 @@ export namespace Length {
     export const within = (value: Type, min: Type | null, max: Type | null): boolean => compareBounds(value, min, max) === 0;
 
     export namespace Emptyable {
+        export const parse = (value: EmptyOr<Type>) => (value === "" ? null : Length.parse(value));
         export const asNumber = (value: EmptyOr<Type>) => (value === "" ? null : Length.asNumber(value));
         // todo: fix.
         export const min = (a: EmptyOr<Type>, b: EmptyOr<Type>): EmptyOr<Type> => (a === "" || b === "" ? "" : Length.asNumber(b) < Length.asNumber(a) ? b : a);

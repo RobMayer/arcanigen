@@ -5,6 +5,11 @@ import { Flavour } from "../types";
 import { createController } from "../../util/hooks/useController";
 import { merge } from "../../util/misc";
 import { Icon, IconDefinition, ICONS } from "../Icon";
+import { COMMON_STYLES } from "../styles";
+
+const BaseButton = styled(AbstractButton)`
+    ${COMMON_STYLES.BUTTON}
+`;
 
 type AccordionControls = {
     open: () => void;
@@ -57,10 +62,10 @@ const Base = styled(
 
         return (
             <Controller state={member} controls={controls} methods={methods}>
-                <AbstractButton className={className} onClick={handleClick} disabled={disabled} data-flavour={flavour}>
+                <BaseButton className={className} onClick={handleClick} disabled={disabled} data-flavour={flavour}>
                     <Icon shape={value ? iconOpen : iconClosed} />
                     {title}
-                </AbstractButton>
+                </BaseButton>
                 {value ? children : null}
             </Controller>
         );

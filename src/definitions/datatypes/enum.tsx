@@ -3,7 +3,11 @@ import { Options } from "../../components/types";
 export namespace Enum {
     type Base = Record<string, number>;
 
-    export const members = <O extends Base>(o: O) => Object.keys({ ...o });
+    export const members = <O extends Base>(o: O) => Object.keys(o) as (keyof O)[];
+    export const keyOf = <O extends Base>(o: O, k: number) => {
+        const keys = Object.keys(o);
+        return keys[k > keys.length - 1 || k < 0 ? 0 : k] as keyof O;
+    };
     export const options = <O extends Base>(o: O): Options<keyof O & string> =>
         Object.keys(o).map((label) => {
             return { value: `${o[label]}`, label };
@@ -17,19 +21,25 @@ export namespace Enum {
             Round: 2,
         } as const;
 
+        export const scribeMode = {
+            Inscribe: 0,
+            Middle: 1,
+            Circumscribe: 2,
+        } as const;
+
         export const positionMode = {
             Cartesian: 0,
             Polar: 1,
-        };
+        } as const;
 
         export const floatInputWidget = {
             None: 0,
             Input: 1,
-        };
+        } as const;
 
         export const typicalOutputWidget = {
             None: 0,
             Preview: 1,
-        };
+        } as const;
     }
 }

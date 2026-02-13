@@ -1,3 +1,5 @@
+import { DetailedHTMLProps, HTMLAttributes } from "react";
+
 export type Measure<U extends string> = `${number}${U}`;
 
 export type SVGObject = {
@@ -5,3 +7,5 @@ export type SVGObject = {
     children: SVGObject[];
     attributes: { [key: string]: string | undefined };
 };
+
+export type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };

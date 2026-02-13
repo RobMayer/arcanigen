@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import { AbstractPopup } from "../abstract/Popup";
 import { Flavour } from "../types";
+import { ReactNode } from "react";
+import { DivProps } from "../../types";
 
 const Base = styled(AbstractPopup.Modal)`
     & > [data-part="content"] {
@@ -15,6 +17,20 @@ const Base = styled(AbstractPopup.Modal)`
     }
 `;
 
+const BaseTitle = styled.div`
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-column: auto;
+    grid-auto-flow: column;
+    margin: 1px;
+    background: var(--flavour-plate-layer);
+    corner-shape: bevel;
+    border-radius: 7px 7px 0px 0px;
+    color: var(--flavour-plate-title);
+    padding: 4px;
+    padding-left: 8px;
+`;
+
 export function Modal({ flavour, ...props }: Modal.Props) {
     return <Base {...props} data-flavour={flavour} />;
 }
@@ -26,6 +42,15 @@ export namespace Modal {
 
     export const useControls = AbstractPopup.Modal.useControls;
     export const useInternal = AbstractPopup.Modal.useInternal;
+
+    export function Title({ flavour = "inherit", children, options, ...rest }: DivProps & { options?: ReactNode; flavour?: Flavour }) {
+        return (
+            <BaseTitle {...rest}>
+                <div data-part={"title"}>{children}</div>
+                {options ? <div data-part={"options"}>{options}</div> : null}
+            </BaseTitle>
+        );
+    }
 }
 
 /*
@@ -86,6 +111,7 @@ const ModalTitle = styled(({ children, noClose = false, ...props }: HTMLAttribut
         padding: 4px;
         padding-left: 8px;
     }
+
 `;
 
 const ModalContent = styled.div`

@@ -20,6 +20,7 @@ import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
 import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
 import { NumericString } from "./datatypes/numericString";
 import { Color } from "./datatypes/color";
+import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -30,6 +31,7 @@ namespace Registries {
     export type NODEDEFINITIONS = {
         result: ResultDefinition;
         circle: CircleDefinition;
+        polygon: PolygonDefinition;
         angle: AngleDefinition;
         float: FloatDefinition;
         integer: IntegerDefinition;
@@ -49,6 +51,7 @@ namespace Registries {
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
         result: ResultNodeType,
         circle: CircleNodeType,
+        polygon: PolygonNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
