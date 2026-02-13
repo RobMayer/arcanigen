@@ -8,7 +8,6 @@ import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { LengthInput } from "../../components/inputs/LengthInput";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
-import { ColorInput } from "../../components/inputs/ColorInput";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 
 export type ResultDefinition = {
