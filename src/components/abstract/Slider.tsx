@@ -1,6 +1,5 @@
 import { DetailedHTMLProps, HTMLAttributes, Ref, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Flavour } from "../types";
 import { NumericString } from "../../definitions/datatypes/numericString";
 import { EmptyOr } from "../../util/misc";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
@@ -364,7 +363,16 @@ export namespace AbstractSlider {
             }, [fraction]);
 
             return (
-                <div {...rest} data-orientation={orientation} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
+                <div
+                    {...rest}
+                    data-orientation={orientation}
+                    tabIndex={disabled ? undefined : (tabIndex ?? 0)}
+                    ref={makeInnerRef}
+                    data-state={dataState}
+                    onKeyDown={handleKeyDown}
+                    title={tooltip}
+                    data-type="linear"
+                >
                     <div data-part="track" ref={trackRef} />
                     <div data-part="bounds" style={style} ref={boundsRef}>
                         <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef} />
@@ -373,7 +381,6 @@ export namespace AbstractSlider {
             );
         },
     )`
-        flex: 1 1;
         min-width: 0;
         isolation: isolate;
         display: grid;
@@ -384,16 +391,8 @@ export namespace AbstractSlider {
         --handleSize: 1lh;
         --trackSize: calc(1lh / 2 + 2px);
 
-        &[data-state~="invalid"] {
-            outline: 1px solid red;
-        }
-
         & > div[data-part="track"] {
             grid-area: 1 / 1;
-            border-radius: 100vw;
-            background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-            border: 1px solid var(--flavour);
-            pointer-events: auto;
         }
 
         & > div[data-part="bounds"] {
@@ -405,14 +404,8 @@ export namespace AbstractSlider {
             & > div[data-part="handle"] {
                 pointer-events: auto;
                 position: absolute;
-                outline: 1px solid transparent;
-                transition: outline-offset 0.1s ease;
-                outline-offset: 0;
                 width: var(--handleSize);
                 height: var(--handleSize);
-                background: var(--flavour);
-                border-radius: 100%;
-                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
             }
         }
 
@@ -431,7 +424,6 @@ export namespace AbstractSlider {
                     left: calc(var(--f, 0) * (100% - var(--handleSize)));
                     top: 50%;
                     transform: translateY(-50%);
-                    cursor: ew-resize;
                 }
             }
         }
@@ -439,7 +431,6 @@ export namespace AbstractSlider {
         /* Vertical layout */
         &[data-orientation="vertical"] {
             min-height: 12em;
-            flex: 0 1 auto;
             align-self: stretch;
             & > div[data-part="track"] {
                 justify-self: center;
@@ -454,26 +445,7 @@ export namespace AbstractSlider {
                     bottom: calc(var(--f, 0) * (100% - var(--handleSize)));
                     left: 50%;
                     transform: translateX(-50%);
-                    cursor: ns-resize;
                 }
-            }
-        }
-
-        &[data-state~="disabled"] {
-            opacity: 0.3;
-            filter: saturate(0);
-        }
-
-        &:not([data-state~="disabled"]) {
-            & > div[data-part="bounds"] > div[data-part="handle"] {
-                &:active,
-                &:hover {
-                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
-                }
-            }
-            &:focus-visible > div[data-part="bounds"] > div[data-part="handle"] {
-                outline-color: #fffa;
-                outline-offset: 2px;
             }
         }
     `;
@@ -944,7 +916,7 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             return (
-                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown}>
+                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} data-type="radial">
                     <svg data-part="track" ref={trackRef}>
                         <circle data-part="capture" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
                         <circle data-part="border" cx={"50%"} cy={"50%"} r={"50%"} fill={"none"} />
@@ -961,22 +933,17 @@ export namespace AbstractSlider {
     )`
         min-width: 5em;
         aspect-ratio: 1;
-        flex: 1 0 auto;
         display: grid;
         isolation: isolate;
         display: grid;
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
         place-items: center;
-        padding: 4px;
+        padding: 4px; /* Revisit this: this hsouldn't be hardcoded, pretty sure this should be derived from handleSize and trackSize */
         border-radius: 100%;
 
         --handleSize: 1lh;
         --trackSize: 1em;
-
-        &[data-state~="invalid"] {
-            outline: 1px solid red;
-        }
 
         & > svg[data-part="track"] {
             grid-area: 1 / 1;
@@ -992,13 +959,9 @@ export namespace AbstractSlider {
                 pointer-events: stroke;
             }
             & > circle[data-part="border"] {
-                stroke: var(--flavour);
-                stroke-width: calc(var(--trackSize) + 2px);
                 pointer-events: none;
             }
             & > circle[data-part="main"] {
-                stroke: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-                stroke-width: calc(var(--trackSize));
                 pointer-events: none;
             }
         }
@@ -1012,8 +975,6 @@ export namespace AbstractSlider {
             display: flex;
             & > div[data-part="handle"] {
                 pointer-events: auto;
-                outline: 1px solid transparent;
-                transition: outline-offset 0.1s ease;
                 outline-offset: 0;
                 display: flex;
                 place-items: center;
@@ -1021,28 +982,6 @@ export namespace AbstractSlider {
                 text-align: center;
                 width: var(--handleSize);
                 height: var(--handleSize);
-                background: var(--flavour);
-                border-radius: 100%;
-                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
-            }
-        }
-
-        &[data-state~="disabled"] {
-            opacity: 0.3;
-            filter: saturate(0);
-        }
-
-        &:not([data-state~="disabled"]) {
-            & > div[data-part="bounds"] > div[data-part="handle"] {
-                cursor: move;
-                &:active,
-                &:hover {
-                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
-                }
-            }
-            &:focus > div[data-part="bounds"] > div[data-part="handle"] {
-                outline-color: #fff;
-                outline-offset: 2px;
             }
         }
     `;
@@ -1490,7 +1429,7 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             return (
-                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
+                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip} data-type="polar">
                     <div data-part="track" ref={trackRef} />
                     <div data-part={"bounds"} style={style}>
                         <div data-part={"handle"} data-flavour={"inherit"} ref={makeInnerHandleRef}>
@@ -1503,7 +1442,6 @@ export namespace AbstractSlider {
     )`
         min-width: 5em;
         aspect-ratio: 1;
-        flex: 1 0 auto;
         display: grid;
         isolation: isolate;
         grid-template-columns: 1fr;
@@ -1514,10 +1452,6 @@ export namespace AbstractSlider {
         --handleSize: 1lh;
         --trackSize: calc(1lh / 2 + 2px);
 
-        &[data-state~="invalid"] {
-            outline: 1px solid red;
-        }
-
         div[data-part="track"] {
             grid-area: 1 / 1;
             align-self: stretch;
@@ -1525,8 +1459,6 @@ export namespace AbstractSlider {
             margin: calc(var(--handleSize) / 2 - var(--trackSize));
             aspect-ratio: 1;
             border-radius: 100%;
-            background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-            border: 1px solid var(--flavour);
         }
 
         & > div[data-part="bounds"] {
@@ -1542,9 +1474,6 @@ export namespace AbstractSlider {
                 position: absolute;
                 top: calc((1 - var(--rf, 1)) * (50% - var(--handleSize) / 2));
                 left: 0;
-                outline: 1px solid transparent;
-                transition: outline-offset 0.1s ease;
-                outline-offset: 0;
                 display: flex;
                 place-items: center;
                 place-content: center;
@@ -1552,27 +1481,6 @@ export namespace AbstractSlider {
                 width: var(--handleSize);
                 height: var(--handleSize);
                 background: var(--flavour);
-                border-radius: 100%;
-                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
-            }
-        }
-
-        &[data-state~="disabled"] {
-            opacity: 0.3;
-            filter: saturate(0);
-        }
-
-        &:not([data-state~="disabled"]) {
-            & > div[data-part="bounds"] > div[data-part="handle"] {
-                cursor: move;
-                &:active,
-                &:hover {
-                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
-                }
-            }
-            &:focus > div[data-part="bounds"] > div[data-part="handle"] {
-                outline-color: #fff;
-                outline-offset: 2px;
             }
         }
     `;
@@ -1988,7 +1896,7 @@ export namespace AbstractSlider {
             }, [disabled, isInvalid]);
 
             return (
-                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip}>
+                <div {...rest} tabIndex={disabled ? undefined : (tabIndex ?? 0)} ref={makeInnerRef} data-state={dataState} onKeyDown={handleKeyDown} title={tooltip} data-type="cartesian">
                     <div data-part="track" ref={trackRef} />
                     <div data-part="bounds" style={style}>
                         <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef}>
@@ -2001,7 +1909,6 @@ export namespace AbstractSlider {
     )`
         min-width: 5em;
         aspect-ratio: 1;
-        flex: 1 0 auto;
         display: grid;
         isolation: isolate;
         grid-template-columns: 1fr;
@@ -2012,19 +1919,12 @@ export namespace AbstractSlider {
         --handleSize: 1lh;
         --trackSize: calc(1lh / 2 + 2px);
 
-        &[data-state~="invalid"] {
-            outline: 1px solid red;
-        }
-
         div[data-part="track"] {
             grid-area: 1 / 1;
             align-self: stretch;
             margin: calc(var(--handleSize) / 2 - var(--trackSize));
             justify-self: stretch;
             aspect-ratio: 1;
-            background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
-            border: 1px solid var(--flavour);
-            border-radius: calc(0.5lh + 2px);
         }
 
         & > div[data-part="bounds"] {
@@ -2038,37 +1938,12 @@ export namespace AbstractSlider {
                 position: absolute;
                 left: calc(var(--xf, 0) * (100% - var(--handleSize)));
                 top: calc((1 - var(--yf, 0)) * (100% - var(--handleSize)));
-                outline: 1px solid transparent;
-                transition: outline-offset 0.1s ease;
-                outline-offset: 0;
                 display: flex;
                 place-items: center;
                 place-content: center;
                 text-align: center;
                 width: var(--handleSize);
                 height: var(--handleSize);
-                background: var(--flavour);
-                border-radius: 100%;
-                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
-            }
-        }
-
-        &[data-state~="disabled"] {
-            opacity: 0.3;
-            filter: saturate(0);
-        }
-
-        &:not([data-state~="disabled"]) {
-            & > div[data-part="bounds"] > div[data-part="handle"] {
-                cursor: move;
-                &:active,
-                &:hover {
-                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
-                }
-            }
-            &:focus > div[data-part="bounds"] > div[data-part="handle"] {
-                outline-color: #fff;
-                outline-offset: 2px;
             }
         }
     `;

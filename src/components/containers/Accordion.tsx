@@ -57,7 +57,7 @@ const Base = styled(
 
         return (
             <Controller state={member} controls={controls} methods={methods}>
-                <AbstractButton className={className} onClick={handleClick} disabled={disabled} flavour={flavour}>
+                <AbstractButton className={className} onClick={handleClick} disabled={disabled} data-flavour={flavour}>
                     <Icon shape={value ? iconOpen : iconClosed} />
                     {title}
                 </AbstractButton>

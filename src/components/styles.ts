@@ -101,4 +101,80 @@ export namespace COMMON_STYLES {
         min-width: 0;
         flex: 1 1 auto;
     `;
+
+    export const SLIDER = `
+        --handleSize: 1lh;
+        --trackSize: calc(1lh / 2 + 2px);
+    
+        flex: 1 0 auto;
+
+        &[data-orientation="vertical"] {
+            flex: 0 1 auto;
+        }
+        &[data-orientation="vertical"] {
+            flex: 1 1;
+        }
+
+        &[data-state~="invalid"] {
+            outline: 1px solid red;
+        }
+
+        &[data-type="polar"] > div[data-part="track"] {
+            border-radius: 100vw;
+        }
+        &[data-type="cartesian"] > div[data-part="track"] {
+            border-radius: calc(0.5lh + 2px);
+        }
+        & > div[data-part="track"] {
+            background: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
+            border: 1px solid var(--flavour);
+        }
+        & > svg[data-part="track"] {
+            & > circle[data-part="border"] {
+                stroke: var(--flavour);
+                stroke-width: calc(var(--trackSize) + 2px);
+            }
+
+            & > circle[data-part="main"] {
+                stroke: oklch(from var(--flavour) calc(l - 0.2) calc(c * 0.6) h);
+                stroke-width: calc(var(--trackSize));
+            }
+        }
+
+        & > div[data-part="bounds"] {
+            & > div[data-part="handle"] {
+                cursor: auto;
+                outline: 1px solid transparent;
+                transition: outline-offset 0.1s ease;
+                outline-offset: 0;
+                background: var(--flavour);
+                border-radius: 100%;
+                border: 1px solid oklch(from var(--flavour) calc(l + 0.1) c h);
+            }
+        }
+        &[data-state~="disabled"] {
+            opacity: 0.3;
+            filter: saturate(0);
+        }
+        &:not([data-state~="disabled"]) {
+            & > div[data-part="bounds"] > div[data-part="handle"] {
+                cursor: move;
+
+                &:active,
+                &:hover {
+                    background: oklch(from var(--flavour) calc(l + 0.1) c h);
+                }
+            }
+            &:focus-visible > div[data-part="bounds"] > div[data-part="handle"] {
+                outline-color: #fffa;
+                outline-offset: 2px;
+            }
+            &[data-orientation="horizontal"] > div[data-part="bounds"] > div[data-part="handle"] {
+                cursor: ew-resize;
+            }
+            &[data-orientation="vertical"] > div[data-part="bounds"] > div[data-part="handle"] {
+                cursor: ns-resize;
+            }
+        }
+    `;
 }
