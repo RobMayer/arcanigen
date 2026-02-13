@@ -87,6 +87,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _outS
     return ["shape", "enabled", "blend"];
 };
 
+const contributesTo = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _inSocket: keyof LayerComposeDefinition["inputs"]): (keyof LayerComposeDefinition["outputs"])[] => {
+    // All inputs contribute to output
+    return ["output"];
+};
+
 const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket: keyof LayerComposeDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const shapeEval = context.resolve<"shape">(node.id, "shape");
@@ -117,6 +122,7 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     category: "collection",
     create,
     dependsOn,
+    contributesTo,
     evaluate,
     Controls,
 };

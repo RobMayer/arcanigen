@@ -61,6 +61,10 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _outSo
     return [];
 };
 
+const contributesTo = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _inSocket: keyof FloatOutputDefinition["inputs"]): (keyof FloatOutputDefinition["outputs"])[] => {
+    return [];
+};
+
 const evaluate = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _socket: keyof FloatOutputDefinition["outputs"], _context: Resolver.Context): DataTypes.AnyEval | null => {
     // Output nodes don't have output sockets - they're sinks
     // The Custom node reads their input values via context.subgraph()
@@ -97,6 +101,7 @@ export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinitio
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
     onCreate,
     onDelete,

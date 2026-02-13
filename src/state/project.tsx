@@ -4,6 +4,7 @@ import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { useGraphId } from "./graphId";
 import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../definitions/betterTypes";
 import { Resolver } from "../util/resolver";
+import { computeForbiddenSockets } from "../util/cycleDetection";
 
 // will eventually hold a container for node-type specific logic
 
@@ -344,7 +345,7 @@ const buildInitialCache = (nodes: NodesType, links: LinksType, interfaces: Inter
 };
 
 export namespace Project {
-    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; forbidden: Set<string> };
     type GraphId = string;
     type SocketId = string;
     type XY = { x: number; y: number };
@@ -387,7 +388,7 @@ export namespace Project {
         const interfaces = useFastContextMember<TheType["interfaces"]>(INITIAL_INTERFACES);
         const cache = useFastContextMember<TheType["cache"]>(INITIAL_CACHE);
 
-        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string } | null>(null);
+        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string; forbidden: Set<string> } | null>(null);
 
         const value = useMemo(() => ({ cache, nodes, nodeList, links, linkList, positions, users, interfaces, pendingConnection }), []);
 
@@ -451,8 +452,28 @@ export namespace Project {
     };
 
     export const usePendingConnection = () => {
+        // YOU HAVE EVERYTHING YOU NEED HERE!!!!!!!!!!!!!!!!!!!!!
         const ctx = useContext(CTX)!;
-        return useFastContextState(ctx.pendingConnection);
+
+        const value = useSyncExternalStore(ctx.pendingConnection.subscribe, ctx.pendingConnection.get);
+
+        const set = useCallback(
+            (payload: { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind } | null) => {
+                if (payload === null) {
+                    ctx.pendingConnection.ref.current = null;
+                    ctx.pendingConnection.notify();
+                    return null;
+                }
+                const graph = { nodes: ctx.nodes.ref.current[payload.scope], links: ctx.links.ref.current[payload.scope] };
+                const forbidden = computeForbiddenSockets(graph, payload.node, payload.socket, payload.side);
+                ctx.pendingConnection.ref.current = { ...payload, forbidden };
+                ctx.pendingConnection.notify();
+                return ctx.pendingConnection.ref.current;
+            },
+            [ctx],
+        );
+
+        return [value, set] as const;
     };
 
     // todo: handle the case where graphId doesn't yet exist!

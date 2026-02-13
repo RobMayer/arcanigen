@@ -252,8 +252,34 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"]): (keyof PolygonDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"]): (keyof PolygonDefinition["inputs"])[] => {
+    if (outSocket === "output") {
+        // output shape depends on all inputs
+        return ["pointCount", "radius", "rScribe", "strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+    }
+    if (outSocket === "rInscribe" || outSocket === "rCircumscribe" || outSocket === "rMiddle") {
+        // radius outputs depend on pointCount and radius only
+        return ["pointCount", "radius"];
+    }
+    if (outSocket === "eInscribe" || outSocket === "eCircumscribe" || outSocket === "eMiddle") {
+        // effective radius outputs depend on pointCount, radius, and rScribe
+        return ["pointCount", "radius", "rScribe"];
+    }
     return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSocket: keyof PolygonDefinition["inputs"]): (keyof PolygonDefinition["outputs"])[] => {
+    if (inSocket === "pointCount") {
+        return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
+    }
+    if (inSocket === "radius") {
+        return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
+    }
+    if (inSocket === "rScribe") {
+        return ["output", "eInscribe", "eCircumscribe", "eMiddle"];
+    }
+    // all other inputs only affect the shape output
+    return ["output"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyof PolygonDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -421,6 +447,7 @@ export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     category: "shape",
     create,
     dependsOn,
+    contributesTo,
     evaluate,
     Controls,
 };

@@ -211,6 +211,7 @@ export namespace NodeTypes {
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
         evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;
         dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"]) => (keyof D["inputs"])[];
+        contributesTo: (node: NodeDefinitions.NodeFor<D>, inSocket: keyof D["inputs"]) => (keyof D["outputs"])[];
         onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", state: HookState, graphId: string) => HookState;

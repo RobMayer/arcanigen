@@ -212,8 +212,28 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>,
     };
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, _outSocket: keyof LayerDefinition["outputs"]): (keyof LayerDefinition["inputs"])[] => {
-    return ["layers", ...(node.payload.layers.map((l) => l.socket) as `layer_${string}`[])];
+const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: keyof LayerDefinition["outputs"]): (keyof LayerDefinition["inputs"])[] => {
+    if (outSocket === "output") {
+        return ["layers", "isolate", ...(node.payload.layers.map((l) => l.socket) as `layer_${string}`[])];
+    }
+    if (outSocket === "layerCount") {
+        return ["layers"];
+    }
+    return [];
+};
+
+const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket: keyof LayerDefinition["inputs"]): (keyof LayerDefinition["outputs"])[] => {
+    if (inSocket === "layers") {
+        return ["output", "layerCount"];
+    }
+    if (inSocket === "isolate") {
+        return ["output"];
+    }
+    // layer_* sockets contribute to output
+    if (typeof inSocket === "string" && inSocket.startsWith("layer_")) {
+        return ["output"];
+    }
+    return [];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof LayerDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -307,6 +327,7 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     category: "collection",
     create,
     dependsOn,
+    contributesTo,
     evaluate,
     Controls,
     onConnect,

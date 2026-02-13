@@ -59,8 +59,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatDefini
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<FloatDefinition>, outSocket: "output"): "value"[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<FloatDefinition>, outSocket: "output"): (keyof FloatDefinition["inputs"])[] => {
     if (outSocket === "output") return ["value"];
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<FloatDefinition>, inSocket: keyof FloatDefinition["inputs"]): (keyof FloatDefinition["outputs"])[] => {
+    if (inSocket === "value") return ["output"];
     return [];
 };
 const evaluate = (node: NodeDefinitions.NodeFor<FloatDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -83,5 +88,6 @@ export const FloatPrimitiveType: NodeTypes.Type<"float", FloatDefinition> = {
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
 };

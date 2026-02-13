@@ -59,8 +59,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefi
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<IntegerDefinition>, outSocket: "output"): "value"[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, outSocket: "output"): (keyof IntegerDefinition["inputs"])[] => {
     if (outSocket === "output") return ["value"];
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, inSocket: keyof IntegerDefinition["inputs"]): (keyof IntegerDefinition["outputs"])[] => {
+    if (inSocket === "value") return ["output"];
     return [];
 };
 const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -83,5 +88,6 @@ export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> 
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
 };

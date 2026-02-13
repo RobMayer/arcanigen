@@ -9,8 +9,9 @@
 
 - [ ] svgCanvas resolver should use cache - eventually
 - [ ] project state file is starting to get unwieldy - should we move cache into it's own file?
-- [ ] cyclical checks
-    - [ ] properly implement depemdsOn
+- [x] cyclical checks
+    - [x] properly implement depemdsOn
+    - [ ] Custom Nodes needs special handling. we should not assume that all inputs rely on all outputs (or the inverse thereof). We need to cache the relationship between input-type nodes and output-type nodes on a per subgraph basis.
 
 # tasks that will get completed as the system gets fleshed out
 

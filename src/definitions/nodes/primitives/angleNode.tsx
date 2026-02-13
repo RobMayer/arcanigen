@@ -73,8 +73,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<AngleDefinition>, outSocket: "output"): "value"[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<AngleDefinition>, outSocket: "output"): (keyof AngleDefinition["inputs"])[] => {
     if (outSocket === "output") return ["value"];
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<AngleDefinition>, inSocket: keyof AngleDefinition["inputs"]): (keyof AngleDefinition["outputs"])[] => {
+    if (inSocket === "value") return ["output"];
     return [];
 };
 const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -97,5 +102,6 @@ export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
 };

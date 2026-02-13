@@ -50,8 +50,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
             start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => {
                 // todo: parametize scope properly...
                 const p = { node: nodeId, socket: socketId, side, type, scope: "root" };
-                setPendingConnection(p);
-                pending = p;
+                pending = setPendingConnection(p);
             },
             finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => {
                 if (pending !== null && pending.side !== side) {
@@ -102,7 +101,9 @@ export const Socket = styled(
             if (agreeOnDataType(outType, inType) === null) {
                 return false;
             }
-            // todo: use the validateConnection() utility method below;
+            if (pendingConnection.forbidden.has(`${nodeId}:${socketId}`)) {
+                return false;
+            }
             return true;
         }, [pendingConnection, side, type]);
 

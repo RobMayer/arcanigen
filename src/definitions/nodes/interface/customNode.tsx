@@ -76,6 +76,11 @@ const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, _outSocket: 
     return Object.keys(node.in);
 };
 
+const contributesTo = (node: NodeDefinitions.NodeFor<CustomDefinition>, _inSocket: string): string[] => {
+    // All inputs contribute to all outputs
+    return Object.keys(node.out);
+};
+
 const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: string, context: Resolver.Context): DataTypes.AnyEval | null => {
     const { graphId } = node.payload;
     if (!graphId) return null;
@@ -174,6 +179,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
     onCreate,
     onDelete,

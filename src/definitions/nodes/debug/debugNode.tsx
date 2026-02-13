@@ -48,7 +48,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DebugDefini
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<DebugDefinition>, outSocket: keyof DebugDefinition["outputs"]): (keyof DebugDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<DebugDefinition>, _outSocket: keyof DebugDefinition["outputs"]): (keyof DebugDefinition["inputs"])[] => {
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<DebugDefinition>, _inSocket: keyof DebugDefinition["inputs"]): (keyof DebugDefinition["outputs"])[] => {
     return [];
 };
 const evaluate = (node: NodeDefinitions.NodeFor<DebugDefinition>, socket: keyof DebugDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -65,5 +69,6 @@ export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
 };

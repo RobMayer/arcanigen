@@ -89,7 +89,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     );
 };
 
-const dependsOn = <K extends string | number | symbol>(node: NodeDefinitions.NodeFor<ResultDefinition>, outSocket: K): ("w" | "h" | "x" | "y" | "color")[] => {
+const dependsOn = <K extends string | number | symbol>(_node: NodeDefinitions.NodeFor<ResultDefinition>, _outSocket: K): (keyof ResultDefinition["inputs"])[] => {
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<ResultDefinition>, _inSocket: keyof ResultDefinition["inputs"]): (keyof ResultDefinition["outputs"])[] => {
     return [];
 };
 const evaluate = (node: NodeDefinitions.NodeFor<ResultDefinition>, socket: string | number | symbol, context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -106,6 +110,7 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     category: "result",
     create,
     dependsOn,
+    contributesTo,
     evaluate,
     Controls,
 };

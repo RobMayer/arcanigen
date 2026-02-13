@@ -90,7 +90,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, _outSocket: "output"): never[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, _outSocket: "output"): (keyof FloatInputDefinition["inputs"])[] => {
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, _inSocket: keyof FloatInputDefinition["inputs"]): (keyof FloatInputDefinition["outputs"])[] => {
     return [];
 };
 
@@ -136,6 +140,7 @@ export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> 
     evaluate,
     Controls,
     dependsOn,
+    contributesTo,
     create,
     onCreate,
     onDelete,

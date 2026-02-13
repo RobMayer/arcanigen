@@ -194,8 +194,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<CircleDefinition>, outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] => {
-    return [];
+const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] => {
+    // output depends on all inputs
+    return ["radius", "strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _inSocket: keyof CircleDefinition["inputs"]): (keyof CircleDefinition["outputs"])[] => {
+    // all inputs contribute to output
+    return ["output"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -316,6 +322,7 @@ export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     category: "shape",
     create,
     dependsOn,
+    contributesTo,
     evaluate,
     Controls,
 };
