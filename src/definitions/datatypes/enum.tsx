@@ -32,6 +32,27 @@ export namespace Enum {
             Polar: 1,
         } as const;
 
+        export const blendMode = {
+            Normal: 0,
+            Multiply: 1,
+            Screen: 2,
+            Overlay: 3,
+            Darken: 4,
+            Lighten: 5,
+            ColorDodge: 6,
+            ColorBurn: 7,
+            HardLight: 8,
+            SoftLight: 9,
+            Difference: 10,
+            Exclusion: 11,
+            Hue: 12,
+            Saturation: 13,
+            Color: 14,
+            Luminosity: 15,
+            PlusLighter: 16,
+            // PlusDarker: 17, // not yet supported
+        } as const;
+
         export const floatInputWidget = {
             None: 0,
             Input: 1,

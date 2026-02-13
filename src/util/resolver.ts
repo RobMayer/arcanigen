@@ -7,6 +7,25 @@ import { Color } from "../definitions/datatypes/color";
 export namespace Resolver {
     export namespace EnumMappings {
         export const strokeCap = ["butt", "square", "round"] as const;
+        export const blendMode = [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "color-dodge",
+            "color-burn",
+            "hard-light",
+            "soft-light",
+            "difference",
+            "exclusion",
+            "hue",
+            "saturation",
+            "color",
+            "luminosity",
+            "plus-lighter",
+        ] as const;
     }
 
     type GraphId = string;

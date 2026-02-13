@@ -1,0 +1,122 @@
+import { nanoid } from "nanoid";
+import { NODE_ICONS } from "../../../components/Icon";
+import { Enum } from "../../datatypes/enum";
+import { ReactNode, useCallback } from "react";
+
+import { TypicalNode } from "../../../features/nodeview/node";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { CheckBox } from "../../../components/buttons/CheckBox";
+import { Dropdown } from "../../../components/inputs/Dropdown";
+import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { Project } from "../../../state/project";
+import { Resolver } from "../../../util/resolver";
+
+export type LayerComposeDefinition = {
+    inputs: {
+        shape: DataTypes.Use<"shape">;
+        enabled: DataTypes.Use<"boolean">;
+        blend: DataTypes.Use<"enum">;
+    };
+    outputs: {
+        output: DataTypes.Use<"layer">;
+    };
+    payload: {
+        label: DataTypes.Use<"string">;
+        enabled: DataTypes.Use<"boolean">;
+        blend: DataTypes.Use<"enum">;
+    };
+};
+
+const BLEND_MODE_OPTIONS = Enum.options(Enum.Common.blendMode);
+
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LayerComposeDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"layerCompose", LayerComposeDefinition> => {
+    return {
+        id,
+        in: {
+            shape: null,
+            enabled: null,
+            blend: null,
+        },
+        out: {
+            output: [],
+        },
+        payload: {
+            label: "",
+            enabled: input.enabled ?? true,
+            blend: input.blend ?? Enum.Common.blendMode.Normal,
+        },
+        type: "layerCompose",
+    };
+};
+
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerComposeDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<LayerComposeDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
+
+    return (
+        <TypicalNode node={node} methods={methods}>
+            <SocketOut node={node} socketId={"output"} type={"layer"}>
+                Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"shape"} type={"shape"}>
+                Shape
+            </SocketIn>
+            <SocketIn node={node} socketId={"enabled"} type={"boolean"}>
+                <CheckBox checked={node.payload.enabled} onToggle={(enabled) => handleUpdate({ enabled })} disabled={node.in.enabled !== null}>
+                    Enabled
+                </CheckBox>
+            </SocketIn>
+            <SocketIn node={node} socketId={"blend"} type={"enum"} label={"Blend Mode"}>
+                <Dropdown value={`${node.payload.blend}`} onValue={(v) => handleUpdate({ blend: Number(v) })} disabled={node.in.blend !== null}>
+                    {BLEND_MODE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </Dropdown>
+            </SocketIn>
+        </TypicalNode>
+    );
+};
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _outSocket: keyof LayerComposeDefinition["outputs"]): (keyof LayerComposeDefinition["inputs"])[] => {
+    return ["shape", "enabled", "blend"];
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket: keyof LayerComposeDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "output") {
+        const shapeEval = context.resolve<"shape">(node.id, "shape");
+        const shape = shapeEval?.data ?? null;
+
+        if (shape === null) {
+            return null;
+        }
+
+        const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
+        const blend = context.resolve<"enum">(node.id, "blend")?.data ?? node.payload.blend;
+
+        return {
+            kind: "layer",
+            data: { shape, enabled, blend },
+        };
+    }
+
+    return null;
+};
+
+export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDefinition> = {
+    type: "layerCompose",
+    displayName: "Compose Layer",
+    defaultLabel: "Compose Layer",
+    iconNode: NODE_ICONS.layerCompose.Item,
+    iconCard: NODE_ICONS.layerCompose.Card,
+    category: "collection",
+    create,
+    dependsOn,
+    evaluate,
+    Controls,
+};

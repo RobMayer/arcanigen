@@ -21,6 +21,7 @@ import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
 import { NumericString } from "./datatypes/numericString";
 import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
+import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -46,12 +47,16 @@ namespace Registries {
 
         // math
         addFloat: AddFloatDefinition;
+
+        // collections
+        layerCompose: LayerComposeDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
         result: ResultNodeType,
         circle: CircleNodeType,
         polygon: PolygonNodeType,
+        layerCompose: LayerComposeNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
@@ -75,6 +80,7 @@ namespace Registries {
         "tokens<length>": string;
         angle: EmptyOr<Angle.Type>;
         boolean: boolean;
+        layer: { shape: SVGObject | null; enabled: boolean | null; blend: number | null };
     };
 
     export const DATATYPE_FLAVOURS: { [key in keyof DATATYPES]: Flavour } = {
@@ -88,10 +94,12 @@ namespace Registries {
         angle: "accent",
         boolean: "accent",
         "tokens<length>": "accent",
+        layer: "danger",
     };
 
     export const SOCKET_COMPAT = {
         number: ["integer", "float", "angle"],
+        layerOrShape: ["shape", "layer"],
     } as const satisfies Record<string, (keyof DATATYPES)[]>;
 
     export const SOCKETTYPE_FLAVOURS: { [key in keyof typeof SOCKET_COMPAT | keyof DATATYPES]: Flavour } = {
@@ -107,6 +115,8 @@ namespace Registries {
         "tokens<length>": "accent",
         // compound
         number: "accent",
+        layer: "danger",
+        layerOrShape: "confirm",
     };
 
     export const NODECAT_FLAVOURS = {
