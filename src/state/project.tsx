@@ -461,7 +461,7 @@ export namespace Project {
             // ! Important: this assumes that 'from' and 'to' have already been normalized
             const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Kind) => {
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
-                const [{ nodes, links }, newLink] = ArcaneGraph.connect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
+                const [{ nodes, links }, newLink] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
                 if (newLink) {
                     if (nodes !== oldGraph.nodes) {
                         ctx.nodes.ref.current = {

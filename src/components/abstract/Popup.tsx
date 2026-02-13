@@ -153,6 +153,7 @@ export namespace AbstractPopup {
 
             const handleKeyDown = (e: KeyboardEvent) => {
                 if (e.key !== "Tab") return;
+                if (e.defaultPrevented) return;
 
                 const focusable = contents.querySelectorAll<HTMLElement>(focusableSelector);
                 if (focusable.length === 0) return;

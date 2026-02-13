@@ -274,6 +274,10 @@ const DragPaneBase = styled(
                 const target = evt.target;
                 if (!(target instanceof HTMLElement)) return;
 
+                if (target.tabIndex === -1) {
+                    return;
+                }
+
                 const vr = element.getBoundingClientRect();
                 const er = target.getBoundingClientRect();
 

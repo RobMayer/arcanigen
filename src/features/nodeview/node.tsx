@@ -91,6 +91,7 @@ export const TypicalNode = styled(
     transition: outline-color 0.25s;
     box-shadow: 0px 4px 8px black;
 
+    &:focus-within,
     &[data-state~="selected"] {
         outline-color: white;
     }
