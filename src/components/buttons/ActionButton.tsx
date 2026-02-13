@@ -7,7 +7,7 @@ const Base = styled(AbstractButton)`
     ${COMMON_STYLES.BUTTON}
 `;
 const BaseLite = styled(AbstractButton)`
-    ${COMMON_STYLES.BUTTON}
+    ${COMMON_STYLES.LITEBUTTON}
 `;
 
 export function ActionButton({ flavour, ...props }: ActionButton.Props) {

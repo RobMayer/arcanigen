@@ -1,9 +1,10 @@
-import { CSSProperties, DetailedHTMLProps, HTMLAttributes, useCallback, useEffect, useMemo, useState } from "react";
+import { CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import { useStable } from "../../util/hooks/useStable";
 import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
 import { Color } from "../../definitions/datatypes/color";
 import { COMMON_STYLES } from "../styles";
+import { Flavour } from "../types";
 
 const BaseInput = styled(AbstractInput.Text)`
     ${COMMON_STYLES.INPUT}
@@ -64,8 +65,6 @@ function normalizeHexString(value: string, alpha: boolean): string {
     return value.toLowerCase();
 }
 
-type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
-
 type ColorHexInputProps = {
     value: Color.Type;
     onValue?: (v: Color.Type) => void;
@@ -74,9 +73,10 @@ type ColorHexInputProps = {
     nullable?: boolean;
     alpha?: boolean;
     disabled?: boolean;
+    flavour?: Flavour;
 };
 
-export const ColorHexInput = styled(({ className, value, onValue, onCommit, onConfirm, nullable, alpha, disabled }: ColorHexInputProps & { className?: string }) => {
+export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, alpha, disabled, flavour }: ColorHexInputProps) => {
     // Internal hex string cache for display
     const [hexCache, setHexCache] = useState<string>(() => {
         if (value === null) return "transparent";
@@ -160,9 +160,10 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
     );
 
     return (
-        <div className={className}>
-            <span data-part={"swatch"} style={styleValue} />
-            <AbstractInput.Text<string>
+        <BaseDiv data-flavour={flavour}>
+            <BaseSwatch data-part={"swatch"} style={styleValue} />
+            <BaseInput
+                data-flavour={"inherit"}
                 data-part={"input"}
                 value={hexCache}
                 onCommit={handleCommit}
@@ -173,6 +174,6 @@ export const ColorHexInput = styled(({ className, value, onValue, onCommit, onCo
                 required={!nullable}
                 disabled={disabled}
             />
-        </div>
+        </BaseDiv>
     );
-})``;
+};

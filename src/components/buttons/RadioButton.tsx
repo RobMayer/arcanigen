@@ -68,7 +68,6 @@ export namespace RadioButton {
     export namespace Group {
         export type Props<T extends string = string> = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string } & {
             value: T;
-            target: T;
             onValue?: (v: T) => void;
             flavour?: Flavour | "inherit";
             options: Options<T>;

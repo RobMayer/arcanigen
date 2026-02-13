@@ -9,12 +9,12 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
-import { SpinnerWithDisplay } from "../../../components/inputs/AngleInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Color } from "../../datatypes/color";
+import { AngleInput } from "../../../components/inputs/AngleInput";
 
 export type CircleDefinition = {
     inputs: {
@@ -183,10 +183,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
                     />
                 </SocketIn>
                 <SocketIn node={node} socketId={"positionTheta"} type={"angle"} label={"Position Theta"}>
-                    <SpinnerWithDisplay value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
+                    <AngleInput.Combined value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"rotation"} type={"angle"} label={"Rotation"}>
-                    <SpinnerWithDisplay value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
+                    <AngleInput.Combined value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
             </NodeAccordion>
         </TypicalNode>

@@ -13,6 +13,7 @@ export namespace COMMON_STYLES {
 
         &:disabled {
             opacity: 0.4;
+            filter: saturate(0);
             cursor: auto;
         }
 
@@ -52,6 +53,7 @@ export namespace COMMON_STYLES {
 
         &:disabled {
             opacity: 0.4;
+            filter: saturate(0);
             cursor: auto;
         }
 
@@ -96,7 +98,9 @@ export namespace COMMON_STYLES {
             outline-color: #f88;
         }
         &:disabled {
-            opacity: 0.6;
+            opacity: 0.4;
+            filter: saturate(0);
+            cursor: auto;
         }
         min-width: 0;
         flex: 1 1 auto;
@@ -153,8 +157,9 @@ export namespace COMMON_STYLES {
             }
         }
         &[data-state~="disabled"] {
-            opacity: 0.3;
+            opacity: 0.4;
             filter: saturate(0);
+            cursor: auto;
         }
         &:not([data-state~="disabled"]) {
             & > div[data-part="bounds"] > div[data-part="handle"] {
