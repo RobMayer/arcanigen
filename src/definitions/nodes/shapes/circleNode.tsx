@@ -11,7 +11,7 @@ import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -194,12 +194,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _outSocket: keyof CircleDefinition["outputs"]): (keyof CircleDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _outSocket: keyof CircleDefinition["outputs"], _deps: AllDeps): (keyof CircleDefinition["inputs"])[] => {
     // output depends on all inputs
     return ["radius", "strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _inSocket: keyof CircleDefinition["inputs"]): (keyof CircleDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _inSocket: keyof CircleDefinition["inputs"], _deps: AllDeps): (keyof CircleDefinition["outputs"])[] => {
     // all inputs contribute to output
     return ["output"];
 };

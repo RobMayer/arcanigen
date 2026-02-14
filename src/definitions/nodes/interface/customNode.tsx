@@ -4,7 +4,8 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
@@ -14,7 +15,6 @@ import { NumericString } from "../../datatypes/numericString";
 import { FloatOutputDefinition } from "./floatOutputNode";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
-
 type StoredValueKey = `value_${string}`;
 
 /** Parse an interface entry to get the direction and nodeId */
@@ -71,14 +71,36 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefin
     );
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, _outSocket: string): string[] => {
-    // All outputs depend on all inputs
-    return Object.keys(node.in);
+const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, outSocket: string, deps: AllDeps): string[] => {
+    const { graphId } = node.payload;
+    if (!graphId) return [];
+
+    const subgraphDeps = deps[graphId];
+    if (!subgraphDeps) {
+        // Fallback: all outputs depend on all inputs
+        return Object.keys(node.in);
+    }
+
+    // outSocket is the ID of an output interface node in the subgraph
+    const outKey: InterfaceKey = `out:${outSocket}`;
+    // Values are already plain nodeIds (input interface node IDs = custom node's input sockets)
+    return subgraphDeps[outKey] ?? [];
 };
 
-const contributesTo = (node: NodeDefinitions.NodeFor<CustomDefinition>, _inSocket: string): string[] => {
-    // All inputs contribute to all outputs
-    return Object.keys(node.out);
+const contributesTo = (node: NodeDefinitions.NodeFor<CustomDefinition>, inSocket: string, deps: AllDeps): string[] => {
+    const { graphId } = node.payload;
+    if (!graphId) return [];
+
+    const subgraphDeps = deps[graphId];
+    if (!subgraphDeps) {
+        // Fallback: all inputs contribute to all outputs
+        return Object.keys(node.out);
+    }
+
+    // inSocket is the ID of an input interface node in the subgraph
+    const inKey: InterfaceKey = `in:${inSocket}`;
+    // Values are already plain nodeIds (output interface node IDs = custom node's output sockets)
+    return subgraphDeps[inKey] ?? [];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: string, context: Resolver.Context): DataTypes.AnyEval | null => {

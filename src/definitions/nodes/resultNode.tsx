@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { LengthInput } from "../../components/inputs/LengthInput";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
 import { Project } from "../../state/project";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 
@@ -89,11 +89,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     );
 };
 
-const dependsOn = <K extends string | number | symbol>(_node: NodeDefinitions.NodeFor<ResultDefinition>, _outSocket: K): (keyof ResultDefinition["inputs"])[] => {
+const dependsOn = <K extends string | number | symbol>(_node: NodeDefinitions.NodeFor<ResultDefinition>, _outSocket: K, _deps: AllDeps): (keyof ResultDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<ResultDefinition>, _inSocket: keyof ResultDefinition["inputs"]): (keyof ResultDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<ResultDefinition>, _inSocket: keyof ResultDefinition["inputs"], _deps: AllDeps): (keyof ResultDefinition["outputs"])[] => {
     return [];
 };
 const evaluate = (node: NodeDefinitions.NodeFor<ResultDefinition>, socket: string | number | symbol, context: Resolver.Context): DataTypes.AnyEval | null => {

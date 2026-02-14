@@ -8,7 +8,7 @@ import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/s
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
@@ -212,7 +212,7 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>,
     };
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: keyof LayerDefinition["outputs"]): (keyof LayerDefinition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: keyof LayerDefinition["outputs"], _deps: AllDeps): (keyof LayerDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ["layers", "isolate", ...(node.payload.layers.map((l) => l.socket) as `layer_${string}`[])];
     }
@@ -222,7 +222,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: ke
     return [];
 };
 
-const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket: keyof LayerDefinition["inputs"]): (keyof LayerDefinition["outputs"])[] => {
+const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket: keyof LayerDefinition["inputs"], _deps: AllDeps): (keyof LayerDefinition["outputs"])[] => {
     if (inSocket === "layers") {
         return ["output", "layerCount"];
     }

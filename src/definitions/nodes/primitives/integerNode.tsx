@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 
@@ -59,12 +59,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefi
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, outSocket: "output"): (keyof IntegerDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, outSocket: "output", _deps: AllDeps): (keyof IntegerDefinition["inputs"])[] => {
     if (outSocket === "output") return ["value"];
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, inSocket: keyof IntegerDefinition["inputs"]): (keyof IntegerDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, inSocket: keyof IntegerDefinition["inputs"], _deps: AllDeps): (keyof IntegerDefinition["outputs"])[] => {
     if (inSocket === "value") return ["output"];
     return [];
 };

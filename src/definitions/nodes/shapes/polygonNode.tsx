@@ -11,7 +11,7 @@ import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -252,7 +252,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"]): (keyof PolygonDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"], _deps: AllDeps): (keyof PolygonDefinition["inputs"])[] => {
     if (outSocket === "output") {
         // output shape depends on all inputs
         return ["pointCount", "radius", "rScribe", "strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
@@ -268,7 +268,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket:
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSocket: keyof PolygonDefinition["inputs"]): (keyof PolygonDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSocket: keyof PolygonDefinition["inputs"], _deps: AllDeps): (keyof PolygonDefinition["outputs"])[] => {
     if (inSocket === "pointCount") {
         return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
     }

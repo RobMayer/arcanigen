@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NumericString } from "../../datatypes/numericString";
@@ -67,12 +67,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddFloatDef
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, outSocket: "output"): (keyof AddFloatDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, outSocket: "output", _deps: AllDeps): (keyof AddFloatDefinition["inputs"])[] => {
     if (outSocket === "output") return ["a", "b"];
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, _inSocket: keyof AddFloatDefinition["inputs"]): (keyof AddFloatDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, _inSocket: keyof AddFloatDefinition["inputs"], _deps: AllDeps): (keyof AddFloatDefinition["outputs"])[] => {
     // Both a and b contribute to output
     return ["output"];
 };

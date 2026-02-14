@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { useGraphId } from "../../../state/graphId";
@@ -73,12 +73,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<AngleDefinition>, outSocket: "output"): (keyof AngleDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<AngleDefinition>, outSocket: "output", _deps: AllDeps): (keyof AngleDefinition["inputs"])[] => {
     if (outSocket === "output") return ["value"];
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<AngleDefinition>, inSocket: keyof AngleDefinition["inputs"]): (keyof AngleDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<AngleDefinition>, inSocket: keyof AngleDefinition["inputs"], _deps: AllDeps): (keyof AngleDefinition["outputs"])[] => {
     if (inSocket === "value") return ["output"];
     return [];
 };

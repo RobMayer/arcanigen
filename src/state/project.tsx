@@ -1,10 +1,10 @@
 import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
-import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
+import { FastContextMember, useFastContextMember } from "../util/hooks/useFastContext";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { useGraphId } from "./graphId";
 import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../definitions/betterTypes";
 import { Resolver } from "../util/resolver";
-import { computeForbiddenSockets } from "../util/cycleDetection";
+import { computeForbiddenSockets, computeSubgraphDeps, SubgraphDeps } from "../util/cycleDetection";
 
 // will eventually hold a container for node-type specific logic
 
@@ -14,6 +14,7 @@ type CacheType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [outSoc
 type NodesType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
 type LinksType = { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
 type InterfacesType = { [graphId: GraphId]: string[] }; // prefixed with "in:" or "out:"
+type DepsType = { [graphId: GraphId]: SubgraphDeps };
 
 /** Parse an interface entry to get the direction and nodeId */
 const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: string } | null => {
@@ -25,6 +26,7 @@ const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: strin
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const STARTING_STATE = {
     root: {
+        uses: [],
         nodes: {
             RESULT: {
                 ...NodeTypes.get("result").create({}, "RESULT"),
@@ -40,6 +42,7 @@ const STARTING_STATE = {
 
 const TESTING_STATE = {
     root: {
+        uses: [{ node: "CUSTOM_A", target: "testSubgraph" }],
         nodes: {
             CUSTOM_A: {
                 type: "custom",
@@ -68,6 +71,7 @@ const TESTING_STATE = {
         interfaces: ["out:RESULT"],
     },
     testSubgraph: {
+        uses: [],
         nodes: {
             inputA: {
                 id: "inputA",
@@ -344,6 +348,64 @@ const buildInitialCache = (nodes: NodesType, links: LinksType, interfaces: Inter
     return cache;
 };
 
+type UsersType = { [graphId: string]: { node: string; scope: string }[] };
+
+/** Builds initial deps for all graphs, processing in topological order (inside-out) */
+const buildInitialDeps = (nodes: NodesType, links: LinksType, interfaces: InterfacesType, users: UsersType): DepsType => {
+    const deps: DepsType = {};
+
+    // Build dependency graph from users: scope depends on targetGraphId
+    // So we need to process targetGraphId before scope
+    const graphDependsOn: { [graphId: string]: Set<string> } = {};
+    for (const graphId of Object.keys(nodes)) {
+        graphDependsOn[graphId] = new Set();
+    }
+    for (const [targetGraphId, userList] of Object.entries(users)) {
+        for (const { scope } of userList) {
+            // scope depends on targetGraphId
+            if (graphDependsOn[scope]) {
+                graphDependsOn[scope].add(targetGraphId);
+            }
+        }
+    }
+
+    // Topological sort: process graphs whose dependencies have all been processed
+    const processed = new Set<string>();
+    const toProcess = new Set(Object.keys(nodes));
+
+    while (toProcess.size > 0) {
+        let foundOne = false;
+        for (const graphId of toProcess) {
+            const unprocessedDeps = [...graphDependsOn[graphId]].filter((dep) => !processed.has(dep) && toProcess.has(dep));
+            if (unprocessedDeps.length === 0) {
+                // All dependencies processed, compute deps for this graph
+                const graphInterfaces = interfaces[graphId] ?? [];
+                if (graphInterfaces.length > 0) {
+                    const graph = { nodes: nodes[graphId], links: links[graphId] };
+                    deps[graphId] = computeSubgraphDeps(graph, graphInterfaces, deps);
+                }
+                processed.add(graphId);
+                toProcess.delete(graphId);
+                foundOne = true;
+                break;
+            }
+        }
+        if (!foundOne) {
+            // Circular dependency - process remaining graphs anyway
+            for (const graphId of toProcess) {
+                const graphInterfaces = interfaces[graphId] ?? [];
+                if (graphInterfaces.length > 0) {
+                    const graph = { nodes: nodes[graphId], links: links[graphId] };
+                    deps[graphId] = computeSubgraphDeps(graph, graphInterfaces, deps);
+                }
+            }
+            break;
+        }
+    }
+
+    return deps;
+};
+
 export namespace Project {
     export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; forbidden: Set<string> };
     type GraphId = string;
@@ -360,6 +422,7 @@ export namespace Project {
         interfaces: { [graphId: GraphId]: string[] }; // prefixed with "in:" or "out:"
         // we need graph-level properties, and possibly a stable list of subgraphs
         cache: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [inSocket: SocketId]: DataTypes.AnyEval } } };
+        deps: { [graphId: GraphId]: SubgraphDeps };
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -374,9 +437,18 @@ export namespace Project {
     const INITIAL_LINKS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.links])) as TheType["links"];
     const INITIAL_LINK_LIST = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, Object.keys(g.links)])) as TheType["linkList"];
     const INITIAL_POSITIONS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.positions])) as TheType["positions"];
-    const INITIAL_USERS = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId]) => [graphId, []])) as TheType["users"];
+    const INITIAL_USERS = (() => {
+        const users: TheType["users"] = Object.fromEntries(Object.keys(TESTING_STATE).map((graphId) => [graphId, []]));
+        for (const [scope, g] of Object.entries(TESTING_STATE)) {
+            for (const use of g.uses) {
+                users[use.target].push({ node: use.node, scope });
+            }
+        }
+        return users;
+    })();
     const INITIAL_INTERFACES = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.interfaces])) as TheType["interfaces"];
     const INITIAL_CACHE = buildInitialCache(INITIAL_NODES, INITIAL_LINKS, INITIAL_INTERFACES);
+    const INITIAL_DEPS = buildInitialDeps(INITIAL_NODES, INITIAL_LINKS, INITIAL_INTERFACES, INITIAL_USERS);
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
         const nodes = useFastContextMember<TheType["nodes"]>(INITIAL_NODES);
@@ -387,10 +459,11 @@ export namespace Project {
         const users = useFastContextMember<TheType["users"]>(INITIAL_USERS);
         const interfaces = useFastContextMember<TheType["interfaces"]>(INITIAL_INTERFACES);
         const cache = useFastContextMember<TheType["cache"]>(INITIAL_CACHE);
+        const deps = useFastContextMember<TheType["deps"]>(INITIAL_DEPS);
 
         const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string; forbidden: Set<string> } | null>(null);
 
-        const value = useMemo(() => ({ cache, nodes, nodeList, links, linkList, positions, users, interfaces, pendingConnection }), []);
+        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, pendingConnection }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -452,7 +525,6 @@ export namespace Project {
     };
 
     export const usePendingConnection = () => {
-        // YOU HAVE EVERYTHING YOU NEED HERE!!!!!!!!!!!!!!!!!!!!!
         const ctx = useContext(CTX)!;
 
         const value = useSyncExternalStore(ctx.pendingConnection.subscribe, ctx.pendingConnection.get);
@@ -465,7 +537,7 @@ export namespace Project {
                     return null;
                 }
                 const graph = { nodes: ctx.nodes.ref.current[payload.scope], links: ctx.links.ref.current[payload.scope] };
-                const forbidden = computeForbiddenSockets(graph, payload.node, payload.socket, payload.side);
+                const forbidden = computeForbiddenSockets(graph, payload.node, payload.socket, payload.side, ctx.deps.ref.current);
                 ctx.pendingConnection.ref.current = { ...payload, forbidden };
                 ctx.pendingConnection.notify();
                 return ctx.pendingConnection.ref.current;
@@ -552,6 +624,12 @@ export namespace Project {
                     newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, graphId, toNode);
                     ctx.cache.ref.current = newCache;
                     ctx.cache.notify();
+
+                    // Update deps for this graph
+                    const graph = { nodes: currentNodes[graphId], links: currentLinks[graphId] };
+                    const newDeps = computeSubgraphDeps(graph, currentInterfaces[graphId] ?? [], ctx.deps.ref.current);
+                    ctx.deps.ref.current = { ...ctx.deps.ref.current, [graphId]: newDeps };
+                    ctx.deps.notify();
                 }
             };
 
@@ -707,11 +785,17 @@ export namespace Project {
                 }
                 ctx.cache.ref.current = newCache;
 
+                // Update deps for this graph
+                const graph = { nodes, links };
+                const newDeps = computeSubgraphDeps(graph, ctx.interfaces.ref.current[graphId] ?? [], ctx.deps.ref.current);
+                ctx.deps.ref.current = { ...ctx.deps.ref.current, [graphId]: newDeps };
+
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
                 ctx.links.notify();
                 ctx.linkList.notify();
                 ctx.cache.notify();
+                ctx.deps.notify();
             };
 
             const alterNode = (id: ArcaneGraph.NodeId, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) => {

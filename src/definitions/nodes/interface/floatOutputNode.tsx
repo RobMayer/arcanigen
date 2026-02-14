@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -57,11 +57,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutput
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _outSocket: keyof FloatOutputDefinition["outputs"]): (keyof FloatOutputDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _outSocket: keyof FloatOutputDefinition["outputs"], _deps: AllDeps): (keyof FloatOutputDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _inSocket: keyof FloatOutputDefinition["inputs"]): (keyof FloatOutputDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _inSocket: keyof FloatOutputDefinition["inputs"], _deps: AllDeps): (keyof FloatOutputDefinition["outputs"])[] => {
     return [];
 };
 

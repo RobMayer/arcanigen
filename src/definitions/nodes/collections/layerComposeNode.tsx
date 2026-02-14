@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
@@ -83,11 +83,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerCompos
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _outSocket: keyof LayerComposeDefinition["outputs"]): (keyof LayerComposeDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _outSocket: keyof LayerComposeDefinition["outputs"], _deps: AllDeps): (keyof LayerComposeDefinition["inputs"])[] => {
     return ["shape", "enabled", "blend"];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _inSocket: keyof LayerComposeDefinition["inputs"]): (keyof LayerComposeDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _inSocket: keyof LayerComposeDefinition["inputs"], _deps: AllDeps): (keyof LayerComposeDefinition["outputs"])[] => {
     // All inputs contribute to output
     return ["output"];
 };

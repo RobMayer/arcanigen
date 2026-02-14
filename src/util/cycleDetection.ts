@@ -4,8 +4,10 @@ import { NodeTypes } from "../definitions/betterTypes";
 type SocketRef = `${string}:${string}`; // "nodeId:socketId"
 
 // Type-erased versions for dynamic dispatch
-type AnyDependsOn = (node: ArcaneGraph.NodeOf<unknown>, outSocket: string) => string[];
-type AnyContributesTo = (node: ArcaneGraph.NodeOf<unknown>, inSocket: string) => string[];
+type AnyDependsOn = (node: ArcaneGraph.NodeOf<unknown>, outSocket: string, deps: AllDeps) => string[];
+type AnyContributesTo = (node: ArcaneGraph.NodeOf<unknown>, inSocket: string, deps: AllDeps) => string[];
+
+type AllDeps = { [graphId: string]: SubgraphDeps };
 
 /**
  * Computes the set of sockets that would create a cycle if connected to the given source socket.
@@ -17,15 +19,16 @@ type AnyContributesTo = (node: ArcaneGraph.NodeOf<unknown>, inSocket: string) =>
  * @param nodeId - The node where the drag started
  * @param socketId - The socket where the drag started
  * @param side - Whether the drag started from an "in" or "out" socket
+ * @param deps - Precomputed subgraph dependencies for custom nodes
  * @returns A Set of "nodeId:socketId" strings representing forbidden connection targets
  */
-export function computeForbiddenSockets<N>(graph: ArcaneGraph.GraphOf<N>, nodeId: string, socketId: string, side: "in" | "out"): Set<SocketRef> {
+export function computeForbiddenSockets<N>(graph: ArcaneGraph.GraphOf<N>, nodeId: string, socketId: string, side: "in" | "out", deps: AllDeps): Set<SocketRef> {
     if (side === "out") {
         // Dragging from an output - find all upstream input sockets
-        return traceUpstream(graph, nodeId, socketId);
+        return traceUpstream(graph, nodeId, socketId, deps);
     } else {
         // Dragging from an input - find all downstream output sockets
-        return traceDownstream(graph, nodeId, socketId);
+        return traceDownstream(graph, nodeId, socketId, deps);
     }
 }
 
@@ -33,7 +36,7 @@ export function computeForbiddenSockets<N>(graph: ArcaneGraph.GraphOf<N>, nodeId
  * Traces upstream from an output socket to find all input sockets in the dependency chain.
  * Uses dependsOn to traverse within nodes, and links to traverse between nodes.
  */
-function traceUpstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string): Set<SocketRef> {
+function traceUpstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string, deps: AllDeps): Set<SocketRef> {
     const visited = new Set<string>(); // "nodeId:socketId:direction" to avoid cycles in traversal
     const result = new Set<SocketRef>(); // input sockets that are upstream
 
@@ -55,7 +58,7 @@ function traceUpstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, st
             // At an output socket - use dependsOn to find which inputs it depends on
             const nodeType = NodeTypes.get(node.type);
             const dependsOn = nodeType.dependsOn as AnyDependsOn;
-            const dependentInputs = dependsOn(node, socketId);
+            const dependentInputs = dependsOn(node, socketId, deps);
 
             for (const inSocket of dependentInputs) {
                 // Add this input to the result set (it's upstream of our starting point)
@@ -83,7 +86,7 @@ function traceUpstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, st
  * Traces downstream from an input socket to find all output sockets in the contribution chain.
  * Uses contributesTo to traverse within nodes, and links to traverse between nodes.
  */
-function traceDownstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string): Set<SocketRef> {
+function traceDownstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string, deps: AllDeps): Set<SocketRef> {
     const visited = new Set<string>(); // "nodeId:socketId:direction" to avoid cycles in traversal
     const result = new Set<SocketRef>(); // output sockets that are downstream
 
@@ -104,7 +107,7 @@ function traceDownstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, 
             // At an input socket - use contributesTo to find which outputs it contributes to
             const nodeType = NodeTypes.get(node.type);
             const contributesTo = nodeType.contributesTo as AnyContributesTo;
-            const contributingOutputs = contributesTo(node, socketId);
+            const contributingOutputs = contributesTo(node, socketId, deps);
 
             for (const outSocket of contributingOutputs) {
                 // Add this output to the result set (it's downstream of our starting point)
@@ -140,4 +143,73 @@ export function socketRef(nodeId: string, socketId: string): SocketRef {
  */
 export function isForbidden(forbidden: Set<SocketRef>, nodeId: string, socketId: string): boolean {
     return forbidden.has(`${nodeId}:${socketId}`);
+}
+
+export type InterfaceKey = `in:${string}` | `out:${string}`;
+export type SubgraphDeps = {
+    [key: InterfaceKey]: string[];
+};
+
+/**
+ * Computes dependency relationships between interface nodes in a subgraph.
+ * For each output interface node, finds which input interface nodes it depends on.
+ * Returns a bidirectional map (out→in[] and in→out[]).
+ *
+ * @param graph - The subgraph to analyze
+ * @param interfaces - Array of interface entries like "in:nodeId" or "out:nodeId"
+ * @returns A map where keys are interface entries and values are arrays of dependent interface entries
+ */
+export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces: string[], deps: AllDeps): SubgraphDeps {
+    const result: SubgraphDeps = {};
+
+    // Early return if no interfaces
+    if (!interfaces || interfaces.length === 0) {
+        return result;
+    }
+
+    // Parse interfaces into sets for quick lookup
+    const inputNodes = new Set<string>();
+    const outputNodes = new Set<string>();
+
+    for (const entry of interfaces) {
+        if (entry.startsWith("in:")) {
+            inputNodes.add(entry.slice(3));
+        } else if (entry.startsWith("out:")) {
+            outputNodes.add(entry.slice(4));
+        }
+    }
+
+    // Initialize empty arrays for all interface entries
+    for (const entry of interfaces) {
+        result[entry as InterfaceKey] = [];
+    }
+
+    // For each output interface node, trace upstream and find which input interface nodes it depends on
+    for (const outNodeId of outputNodes) {
+        const node = graph.nodes[outNodeId];
+        if (!node) continue;
+
+        // Output interface nodes have an "input" socket - trace upstream from there
+        const upstreamSockets = traceUpstream(graph, outNodeId, "input", deps);
+
+        // Filter to only sockets belonging to input interface nodes
+        for (const socketRef of upstreamSockets) {
+            const [nodeId] = socketRef.split(":");
+            if (inputNodes.has(nodeId)) {
+                // This output depends on this input
+                const outKey: InterfaceKey = `out:${outNodeId}`;
+                const inKey: InterfaceKey = `in:${nodeId}`;
+
+                // Store just the nodeId, not the prefixed entry
+                if (!result[outKey].includes(nodeId)) {
+                    result[outKey].push(nodeId);
+                }
+                if (!result[inKey].includes(outNodeId)) {
+                    result[inKey].push(outNodeId);
+                }
+            }
+        }
+    }
+
+    return result;
 }
