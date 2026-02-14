@@ -5,6 +5,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -72,92 +73,11 @@ const evaluate = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _socket
 };
 
 const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    let newState: NodeTypes.HookState = {
-        ...state,
-        interfaces: {
-            ...state.interfaces,
-            [graphId]: [...(state.interfaces[graphId] ?? []), `out:${node.id}`],
-        },
-    };
-
-    // Propagate: add output socket to all Custom nodes referencing this subgraph
-    const users = newState.users[graphId] ?? [];
-    if (users.length > 0) {
-        let newNodes = newState.nodes;
-        for (const { node: customNodeId, scope } of users) {
-            const customNode = newNodes[scope]?.[customNodeId];
-            if (customNode?.type === "custom") {
-                newNodes = {
-                    ...newNodes,
-                    [scope]: {
-                        ...newNodes[scope],
-                        [customNodeId]: { ...customNode, out: { ...customNode.out, [node.id]: [] } },
-                    },
-                };
-            }
-        }
-        newState = { ...newState, nodes: newNodes };
-    }
-
-    return newState;
+    return addInterface(state, graphId, node.id, "out");
 };
 
 const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    let newNodes = state.nodes;
-    let newLinks = state.links;
-
-    // Propagate: remove output socket from all Custom nodes referencing this subgraph
-    const users = state.users[graphId] ?? [];
-    for (const { node: customNodeId, scope } of users) {
-        const customNode = newNodes[scope]?.[customNodeId];
-        if (customNode?.type === "custom") {
-            const linkIds = customNode.out[node.id] ?? [];
-
-            // Disconnect all links from this socket
-            for (const linkId of linkIds) {
-                if (newLinks[scope]?.[linkId]) {
-                    const link = newLinks[scope][linkId];
-                    const toNode = newNodes[scope][link.toNode];
-                    if (toNode) {
-                        newNodes = {
-                            ...newNodes,
-                            [scope]: {
-                                ...newNodes[scope],
-                                [link.toNode]: {
-                                    ...toNode,
-                                    in: { ...toNode.in, [link.toSocket]: null },
-                                },
-                            },
-                        };
-                    }
-                    const scopeLinks = { ...newLinks[scope] };
-                    delete scopeLinks[linkId];
-                    newLinks = { ...newLinks, [scope]: scopeLinks };
-                }
-            }
-
-            // Remove socket from Custom node's out map
-            const newOut = { ...(newNodes[scope][customNodeId] as typeof customNode).out };
-            delete newOut[node.id];
-            newNodes = {
-                ...newNodes,
-                [scope]: {
-                    ...newNodes[scope],
-                    [customNodeId]: { ...newNodes[scope][customNodeId], out: newOut },
-                },
-            };
-        }
-    }
-
-    return {
-        ...state,
-        nodes: newNodes,
-        links: newLinks,
-        interfaces: {
-            ...state.interfaces,
-            [graphId]: (state.interfaces[graphId] ?? []).filter((entry) => entry !== `out:${node.id}`),
-        },
-    };
+    return removeInterface(state, graphId, node.id, "out");
 };
 
 export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
