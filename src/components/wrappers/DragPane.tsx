@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
 import { createController } from "../../util/hooks/useController";
+import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 
 type XY = { x: number; y: number };
 type XYZ = { x: number; y: number; z: number };
@@ -300,6 +301,9 @@ const DragPaneBase = styled(
                 element.removeEventListener("focusin", handleFocusIn);
             };
         }, [methods, viewportRef]);
+
+        useResizeObserver(viewportRef, checkBreaches);
+        useResizeObserver(boundsRef, checkBreaches);
 
         // wheel zoom
         useEffect(() => {

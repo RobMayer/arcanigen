@@ -1,7 +1,7 @@
 import { Ref, useEffect } from "react";
 import { useStable } from "./useStable";
 
-export const useResizeObserver = (ref: Ref<HTMLElement>, cb: (entry: ResizeObserverEntry) => void) => {
+export const useResizeObserver = (ref: Ref<HTMLElement | null> | undefined, cb: (entry: ResizeObserverEntry) => void) => {
     const cbRef = useStable(cb);
 
     useEffect(() => {

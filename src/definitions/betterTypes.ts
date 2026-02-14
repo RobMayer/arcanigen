@@ -114,7 +114,6 @@ namespace Registries {
     };
 
     export const SOCKET_COMPAT = {
-        number: ["integer", "float", "angle"],
         layerOrShape: ["shape", "layer"],
     } as const satisfies Record<string, (keyof DATATYPES)[]>;
 
@@ -133,7 +132,6 @@ namespace Registries {
         layer: "confirm",
         distribution: "info",
         // compound
-        number: "accent",
         layerOrShape: "confirm",
     };
 

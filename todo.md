@@ -4,6 +4,7 @@
     - [ ] Consolidate ColorInput and ColorInputHex into one ColorInput namespace (add picker, too)
 - [ ] container/wrapper nodes for spacial organization
 - [ ] drag and drop from node drawer onto viewport
+- [ ] resize observer on viewport of drag-pane
 
 # code quality
 
