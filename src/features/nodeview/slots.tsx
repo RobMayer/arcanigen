@@ -1,4 +1,4 @@
-import { CSSProperties, ReactNode, useCallback, useMemo } from "react";
+import { CSSProperties, ReactNode, Ref, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { Socket } from "./socket";
 import { Icon, ICONS } from "../../components/Icon";
@@ -19,15 +19,17 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     type,
     label,
     children,
+    ref,
 }: {
     children?: ReactNode;
     label?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
     socketId: K;
     type: SocketTypes.ForDataType<D["inputs"][K]>;
+    ref?: Ref<HTMLDivElement>;
 }) => {
     return (
-        <SlotBase>
+        <SlotBase ref={ref}>
             <Socket side={"in"} socketId={socketId} nodeId={node.id} type={type} connected={node.in[socketId] !== null} />
             {label ? (
                 <LabelSmall label={label} align={"left"}>
@@ -46,15 +48,17 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
     type,
     label,
     children,
+    ref,
 }: {
     children?: ReactNode;
     label?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
     socketId: K;
     type: SocketTypes.ForDataType<D["outputs"][K]>;
+    ref?: Ref<HTMLDivElement>;
 }) => {
     return (
-        <SlotBase>
+        <SlotBase ref={ref}>
             {label ? (
                 <LabelSmall label={label} align={"right"}>
                     {children}

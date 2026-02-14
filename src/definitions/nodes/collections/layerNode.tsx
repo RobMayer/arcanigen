@@ -1,7 +1,8 @@
 import { nanoid } from "nanoid";
 import { NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
-import { ReactNode, useCallback } from "react";
+import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
+import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
@@ -106,6 +107,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
         [alterNode, removeLinks, node.id, node.in],
     );
 
+    const handleReorderLayer = useCallback(
+        (socketId: string, toIndex: number) => {
+            methods.update<NodeDefinitions.PayloadTypeOf<LayerDefinition>>({
+                layers: (() => {
+                    const layers = [...node.payload.layers];
+                    const fromIndex = layers.findIndex((l) => l.socket === socketId);
+                    if (fromIndex === -1 || fromIndex === toIndex) return layers;
+                    const [entry] = layers.splice(fromIndex, 1);
+                    layers.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, entry);
+                    return layers;
+                })(),
+            });
+        },
+        [methods, node.payload.layers],
+    );
+
     const supersocketConnected = node.in.layers !== null;
 
     return (
@@ -123,7 +140,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
                         Add Layer
                     </ActionButton>
                     {node.payload.layers.map((entry, idx) => (
-                        <LayerEntry entry={entry} node={node} key={entry.socket} handleRemoveLayer={handleRemoveLayer} handleLayerUpdate={handleLayerUpdate} />
+                        <LayerEntry
+                            entry={entry}
+                            node={node}
+                            key={entry.socket}
+                            index={idx}
+                            handleRemoveLayer={handleRemoveLayer}
+                            handleLayerUpdate={handleLayerUpdate}
+                            handleReorderLayer={handleReorderLayer}
+                        />
                     ))}
                 </>
             )}
@@ -142,11 +167,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
     );
 };
 
+const LAYER_MIME = "application/x-layer-socket";
+
 const LayerEntry = ({
     entry,
     node,
+    index,
     handleLayerUpdate,
     handleRemoveLayer,
+    handleReorderLayer,
 }: {
     entry: {
         socket: string;
@@ -154,6 +183,7 @@ const LayerEntry = ({
         blend: number;
     };
     node: NodeDefinitions.NodeFor<LayerDefinition>;
+    index: number;
     handleRemoveLayer: (socket: string) => void;
     handleLayerUpdate: (
         socket: string,
@@ -162,25 +192,108 @@ const LayerEntry = ({
             blend: number;
         }>,
     ) => void;
+    handleReorderLayer: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(node.in[entry.socket]);
+    const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const handleDragStart = useCallback(
+        (e: DragEvent) => {
+            e.dataTransfer.setDragImage(ref.current as Element, 0, 0);
+            e.dataTransfer.setData(LAYER_MIME, entry.socket);
+            e.dataTransfer.effectAllowed = "move";
+        },
+        [entry.socket],
+    );
+
+    const handleDragOver = useCallback((e: DragEvent) => {
+        if (!e.dataTransfer.types.includes(LAYER_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        const rect = ref.current?.getBoundingClientRect();
+        if (rect) {
+            setDropSide(e.clientY < rect.top + rect.height / 2 ? "above" : "below");
+        }
+    }, []);
+
+    const handleDragLeave = useCallback(() => {
+        setDropSide(null);
+    }, []);
+
+    const handleDrop = useCallback(
+        (e: DragEvent) => {
+            const socketId = e.dataTransfer.getData(LAYER_MIME);
+            if (socketId) {
+                e.preventDefault();
+                handleReorderLayer(socketId, dropSide === "below" ? index + 1 : index);
+            }
+            setDropSide(null);
+        },
+        [handleReorderLayer, index, dropSide],
+    );
+
+    const handleDragEnd = useCallback(() => {
+        setDropSide(null);
+    }, []);
 
     return (
-        <SocketIn key={entry.socket} node={node} socketId={entry.socket as `layer_${string}`} type={"layerOrShape"}>
-            <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
-            <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
-                {BLEND_MODE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </Dropdown>
-            <ActionButton.Lite onClick={() => handleRemoveLayer(entry.socket)} flavour={"danger"}>
-                <Icon shape={ICONS.Close} />
-            </ActionButton.Lite>
-        </SocketIn>
+        <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
+            <SocketIn node={node} socketId={entry.socket as `layer_${string}`} type={"layerOrShape"}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
+                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
+                    {BLEND_MODE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </Dropdown>
+                <DragGrip draggable onDragStart={handleDragStart}>
+                    <Icon shape={ICONS.Caret.Vertical} />
+                </DragGrip>
+                <ActionButton.Lite onClick={() => handleRemoveLayer(entry.socket)} flavour={"danger"}>
+                    <Icon shape={ICONS.Close} />
+                </ActionButton.Lite>
+            </SocketIn>
+        </LayerEntryWrapper>
     );
 };
+
+const LayerEntryWrapper = styled.div`
+    position: relative;
+
+    &[data-state="drop-above"]::before,
+    &[data-state="drop-below"]::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--flavour, #88f);
+        pointer-events: none;
+        z-index: 1;
+    }
+    &[data-state="drop-above"]::before {
+        top: -1px;
+    }
+    &[data-state="drop-below"]::after {
+        bottom: -1px;
+    }
+`;
+
+const DragGrip = styled.div`
+    cursor: grab;
+    opacity: 0.4;
+    display: grid;
+    place-items: center;
+
+    &:active {
+        cursor: grabbing;
+    }
+    &:hover {
+        opacity: 0.8;
+    }
+`;
 
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>, linkId: string, direction: "in" | "out", state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     if (direction !== "in") return state;
