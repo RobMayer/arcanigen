@@ -1,12 +1,10 @@
-import { createContext, ReactNode, SetStateAction, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
-import { FastContextMember, useFastContextMember } from "../util/hooks/useFastContext";
-import { ArcaneGraph } from "../util/structs/arcaneGraph";
-import { useGraphId } from "./graphId";
-import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../definitions/betterTypes";
-import { Resolver } from "../util/resolver";
-import { computeForbiddenSockets, computeSubgraphDeps, SubgraphDeps } from "../util/cycleDetection";
-
-// will eventually hold a container for node-type specific logic
+import { createContext, ReactNode, useMemo, useContext, useCallback, useSyncExternalStore, SetStateAction } from "react";
+import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { SubgraphDeps, computeSubgraphDeps, computeForbiddenSockets } from "../../util/cycleDetection";
+import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
+import { Resolver } from "../../util/resolver";
+import { ArcaneGraph } from "../../util/structs/arcaneGraph";
+import { useGraphId } from "../graphId";
 
 type GraphId = string;
 type SocketId = string;
