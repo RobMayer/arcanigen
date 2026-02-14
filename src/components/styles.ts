@@ -43,7 +43,7 @@ export namespace COMMON_STYLES {
     export const LITEBUTTON = `
         display: inline-flex;
         align-items: center;
-        justify-content: center;
+        justify-content: start;
         cursor: pointer;
         transition: outline-offset 0.1s ease;
         outline: 1px solid transparent;

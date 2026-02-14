@@ -516,4 +516,14 @@ export namespace Project {
 
         return useSyncExternalStore(ctx.interfaces.subscribe, selector);
     };
+
+    export const useMeta = () => {
+        const ctx = useContext(CTX)!;
+        return useSyncExternalStore(ctx.meta.subscribe, ctx.meta.get);
+    };
+
+    export const useUsers = () => {
+        const ctx = useContext(CTX)!;
+        return useSyncExternalStore(ctx.users.subscribe, ctx.users.get);
+    };
 }

@@ -50,7 +50,7 @@ const Primary = () => {
 
     return (
         <Layout ref={layoutRef} style={style} data-state={isDrawerOpen ? "drawer-open" : undefined}>
-            <div data-gridarea={"toolbar"}>Hi</div>
+            <div data-gridarea={"toolbar"}>I am the toolbar</div>
             <div data-gridarea={"nodegraph"}>
                 <GraphView graphId={"root"} paneControls={graphPaneControls} />
             </div>
@@ -95,7 +95,7 @@ const Layout = styled.div`
     inset: 0;
     display: grid;
     grid-template-columns: var(--ratio_L) 2px var(--ratio_R);
-    grid-template-rows: auto 1fr 2px auto;
+    grid-template-rows: min-content 1fr 2px auto;
     padding: 4px;
     gap: 2px;
     grid-template-areas:
@@ -104,7 +104,7 @@ const Layout = styled.div`
         "rowResize colResize canvas"
         "drawer colResize canvas";
     &[data-state~="drawer-open"] {
-        grid-template-rows: auto var(--ratio_T) 2px var(--ratio_B);
+        grid-template-rows: min-content auto 2px minmax(min-content, var(--ratio_B));
     }
     & > div {
         grid-area: attr(data-gridarea type(<custom-ident>));
@@ -125,7 +125,7 @@ const Layout = styled.div`
         display: grid;
         grid-template-rows: auto;
         grid-auto-rows: 1fr;
-        gap 2px;
+        gap: 2px;
     }
 `;
 

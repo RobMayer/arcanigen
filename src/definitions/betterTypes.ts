@@ -144,6 +144,7 @@ namespace Registries {
         shape: "confirm",
         meta: "emphasis",
         math: "accent",
+        custom: "emphasis",
     } as const satisfies { [key: string]: Flavour };
 }
 
