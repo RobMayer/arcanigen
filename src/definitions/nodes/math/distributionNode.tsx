@@ -98,7 +98,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
                 />
             </SocketIn>
             <SocketIn node={node} socketId={"intensity"} type={"float"} label={"Intensity"}>
-                <DecimalInput value={node.payload.intensity} onCommit={(intensity) => handleUpdate({ intensity })} disabled={node.in.intensity !== null} />
+                <DecimalInput.SliderInput
+                    value={node.payload.intensity}
+                    onCommit={(intensity) => handleUpdate({ intensity })}
+                    disabled={node.in.intensity !== null}
+                    min={"0"}
+                    max={"1"}
+                    step={"0.01"}
+                    snap={"0.01"}
+                />
             </SocketIn>
         </TypicalNode>
     );

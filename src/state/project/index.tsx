@@ -4,7 +4,7 @@ import { computeSubgraphDeps, computeForbiddenSockets } from "../../util/cycleDe
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { useGraphId } from "../graphId";
-import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType } from "./types";
+import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType } from "./types";
 import { invalidateDownstream, evaluateAndCacheNode, rebuildDownstream } from "./cache";
 import { INITIAL_STATE } from "./storage";
 
@@ -19,9 +19,9 @@ export namespace Project {
         positions: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: XY } };
         users: UsersType;
         interfaces: InterfacesType;
-        // we need graph-level properties, and possibly a stable list of subgraphs
         cache: CacheType;
         deps: DepsType;
+        meta: MetaType;
     };
 
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
@@ -40,10 +40,11 @@ export namespace Project {
         const interfaces = useFastContextMember<TheType["interfaces"]>(INITIAL_STATE.interfaces);
         const cache = useFastContextMember<TheType["cache"]>(INITIAL_STATE.cache);
         const deps = useFastContextMember<TheType["deps"]>(INITIAL_STATE.deps);
+        const meta = useFastContextMember<TheType["meta"]>(INITIAL_STATE.meta);
 
         const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: SocketTypes.Kind; scope: string; forbidden: Set<string> } | null>(null);
 
-        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, pendingConnection }), []);
+        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, meta, pendingConnection }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };

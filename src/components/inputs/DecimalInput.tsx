@@ -27,7 +27,7 @@ const BaseCombined = styled.div`
         flex: 1 1 auto;
     }
     & > [data-part="input"] {
-        flex: 0 0 7em;
+        flex: 0 0 5em;
         width: 0;
         min-width: 0;
     }

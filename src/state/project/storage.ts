@@ -1,11 +1,14 @@
 import { NodeTypes } from "../../definitions/betterTypes";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
-import type { NodesType, LinksType, InterfacesType, DepsType, UsersType } from "./types";
+import type { NodesType, LinksType, InterfacesType, DepsType, UsersType, MetaType } from "./types";
 import { buildInitialCache } from "./cache";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const STARTING_STATE = {
     root: {
+        meta: {
+            name: "Root",
+        },
         uses: [] as { node: string; target: string }[],
         nodes: {
             RESULT: {
@@ -22,6 +25,9 @@ const STARTING_STATE = {
 
 const TESTING_STATE = {
     root: {
+        meta: {
+            name: "Root",
+        },
         uses: [{ node: "CUSTOM_A", target: "testSubgraph" }],
         nodes: {
             CUSTOM_A: {
@@ -51,6 +57,9 @@ const TESTING_STATE = {
         interfaces: ["out:RESULT"],
     },
     testSubgraph: {
+        meta: {
+            name: "Test",
+        },
         uses: [] as { node: string; target: string }[],
         nodes: {
             inputA: {
@@ -186,7 +195,8 @@ const users: UsersType = (() => {
     return u;
 })();
 const interfaces = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.interfaces])) as InterfacesType;
+const meta = Object.fromEntries(Object.entries(TESTING_STATE).map(([graphId, g]) => [graphId, g.meta])) as MetaType;
 const cache = buildInitialCache(nodes, links, interfaces);
 const deps = buildInitialDeps(nodes, links, interfaces, users);
 
-export const INITIAL_STATE = { nodes, nodeList, links, linkList, positions, users, interfaces, cache, deps };
+export const INITIAL_STATE = { nodes, nodeList, links, linkList, positions, users, interfaces, meta, cache, deps };
