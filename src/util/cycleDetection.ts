@@ -25,7 +25,7 @@ type AllDeps = { [graphId: string]: SubgraphDeps };
 export function computeForbiddenSockets<N>(graph: ArcaneGraph.GraphOf<N>, nodeId: string, socketId: string, side: "in" | "out", deps: AllDeps): Set<SocketRef> {
     if (side === "out") {
         // Dragging from an output - find all upstream input sockets
-        return traceUpstream(graph, nodeId, socketId, deps);
+        return traceUpstream(graph, nodeId, socketId, "out", deps);
     } else {
         // Dragging from an input - find all downstream output sockets
         return traceDownstream(graph, nodeId, socketId, deps);
@@ -36,13 +36,13 @@ export function computeForbiddenSockets<N>(graph: ArcaneGraph.GraphOf<N>, nodeId
  * Traces upstream from an output socket to find all input sockets in the dependency chain.
  * Uses dependsOn to traverse within nodes, and links to traverse between nodes.
  */
-function traceUpstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string, deps: AllDeps): Set<SocketRef> {
+function traceUpstream<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string, startDirection: "in" | "out", deps: AllDeps): Set<SocketRef> {
     const visited = new Set<string>(); // "nodeId:socketId:direction" to avoid cycles in traversal
     const result = new Set<SocketRef>(); // input sockets that are upstream
 
     // Queue entries: [nodeId, socketId, direction]
     // direction: "out" means we're at an output socket, "in" means we're at an input socket
-    const queue: Array<[string, string, "in" | "out"]> = [[startNodeId, startSocketId, "out"]];
+    const queue: Array<[string, string, "in" | "out"]> = [[startNodeId, startSocketId, startDirection]];
 
     while (queue.length > 0) {
         const [nodeId, socketId, direction] = queue.shift()!;
@@ -151,6 +151,64 @@ export type SubgraphDeps = {
 };
 
 /**
+ * Traces upstream from an input socket to find all input interface nodes that are reachable.
+ * Input interface nodes are SOURCE nodes (no inputs, only outputs), so we detect them
+ * when we reach their output socket.
+ */
+function traceUpstreamToInputInterfaces<N>(
+    graph: ArcaneGraph.GraphOf<N>,
+    startNodeId: string,
+    startSocketId: string,
+    deps: AllDeps,
+    inputNodes: Set<string>,
+): Set<string> {
+    const visited = new Set<string>(); // "nodeId:socketId:direction"
+    const result = new Set<string>(); // input interface node IDs found
+
+    const queue: Array<[string, string, "in" | "out"]> = [[startNodeId, startSocketId, "in"]];
+
+    while (queue.length > 0) {
+        const [nodeId, socketId, direction] = queue.shift()!;
+        const visitKey = `${nodeId}:${socketId}:${direction}`;
+
+        if (visited.has(visitKey)) continue;
+        visited.add(visitKey);
+
+        const node = graph.nodes[nodeId];
+        if (!node) continue;
+
+        if (direction === "out") {
+            // At an output socket
+            // Check if this is an input interface node - if so, we found a dependency
+            if (inputNodes.has(nodeId)) {
+                result.add(nodeId);
+                continue; // Don't trace further - this is a source node
+            }
+
+            // Otherwise, use dependsOn to find which inputs it depends on
+            const nodeType = NodeTypes.get(node.type);
+            const dependsOn = nodeType.dependsOn as AnyDependsOn;
+            const dependentInputs = dependsOn(node, socketId, deps);
+
+            for (const inSocket of dependentInputs) {
+                queue.push([nodeId, inSocket, "in"]);
+            }
+        } else {
+            // At an input socket - follow the link to find the upstream output
+            const linkId = node.in[socketId];
+            if (linkId) {
+                const link = graph.links[linkId];
+                if (link) {
+                    queue.push([link.fromNode, link.fromSocket, "out"]);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
  * Computes dependency relationships between interface nodes in a subgraph.
  * For each output interface node, finds which input interface nodes it depends on.
  * Returns a bidirectional map (out→in[] and in→out[]).
@@ -190,23 +248,19 @@ export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces
         if (!node) continue;
 
         // Output interface nodes have an "input" socket - trace upstream from there
-        const upstreamSockets = traceUpstream(graph, outNodeId, "input", deps);
+        // We need to find input interface nodes, which are SOURCE nodes (no inputs, only outputs)
+        // So we trace upstream and detect when we reach an output socket of an input interface node
+        const foundInputNodes = traceUpstreamToInputInterfaces(graph, outNodeId, "input", deps, inputNodes);
 
-        // Filter to only sockets belonging to input interface nodes
-        for (const socketRef of upstreamSockets) {
-            const [nodeId] = socketRef.split(":");
-            if (inputNodes.has(nodeId)) {
-                // This output depends on this input
-                const outKey: InterfaceKey = `out:${outNodeId}`;
-                const inKey: InterfaceKey = `in:${nodeId}`;
+        for (const inputNodeId of foundInputNodes) {
+            const outKey: InterfaceKey = `out:${outNodeId}`;
+            const inKey: InterfaceKey = `in:${inputNodeId}`;
 
-                // Store just the nodeId, not the prefixed entry
-                if (!result[outKey].includes(nodeId)) {
-                    result[outKey].push(nodeId);
-                }
-                if (!result[inKey].includes(outNodeId)) {
-                    result[inKey].push(outNodeId);
-                }
+            if (!result[outKey].includes(inputNodeId)) {
+                result[outKey].push(inputNodeId);
+            }
+            if (!result[inKey].includes(outNodeId)) {
+                result[inKey].push(outNodeId);
             }
         }
     }
