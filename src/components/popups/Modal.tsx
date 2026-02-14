@@ -5,13 +5,12 @@ import { ReactNode } from "react";
 import { DivProps } from "../../types";
 
 const Base = styled(AbstractPopup.Modal)`
-    & > [data-part="content"] {
-        background: var(--flavour-plate-bg);
-        border: 1px solid var(--flavour-plate-border);
-        border-radius: 8px;
-        corner-shape: bevel;
+    & > [data-part="contents"] {
+        background: #111;
+        border: 1px solid var(--flavour);
+        border-radius: 4px;
     }
-    &[data-part="backdrop"] {
+    & > [data-part="backdrop"] {
         background: #0004;
         backdrop-filter: blur(4px);
     }

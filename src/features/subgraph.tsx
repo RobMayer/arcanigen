@@ -52,6 +52,8 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
     const [, modalControls] = Modal.useInternal();
     const paneControls = useDragPane();
 
+    const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+
     const meta = Project.useMeta();
     const name = meta[graphId]?.name ?? "";
 
@@ -91,7 +93,7 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
             <Modal.Title options={<CloseButton onClick={handleClose}>&times;</CloseButton>}>
                 <TitleInput value={name} onCommit={handleRename} placeholder="Subgraph name" />
             </Modal.Title>
-            <EditorLayout ref={layoutRef} style={style}>
+            <EditorLayout ref={layoutRef} style={style} data-state={isDrawerOpen ? "drawer-open" : undefined}>
                 <div data-area={"toolbar"}>
                     <Toolbar />
                 </div>
@@ -105,10 +107,10 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
                     <InterfaceList graphId={graphId} direction="out" />
                 </div>
                 <div data-area={"rowResize"}>
-                    <ResizeHandle value={rowRatio} containerRef={layoutRef} onValue={handleRowDrag} onCommit={setRowRatio} orientation={"vertical"} defaultValue={0.7} min={0.3} max={0.9} />
+                    <ResizeHandle value={rowRatio} containerRef={layoutRef} onValue={handleRowDrag} onCommit={setRowRatio} orientation={"vertical"} defaultValue={0.7} min={0.1} max={0.9} />
                 </div>
                 <div data-area={"drawer"}>
-                    <NodeDrawer graphId={graphId} paneControls={paneControls} isOpen={true} onOpenToggle={() => {}} />
+                    <NodeDrawer graphId={graphId} paneControls={paneControls} isOpen={isDrawerOpen} onOpenToggle={setIsDrawerOpen} />
                 </div>
             </EditorLayout>
         </GraphIdContext>
@@ -182,26 +184,39 @@ const EditorLayout = styled.div`
     flex: 1 1 auto;
     min-height: 0;
     display: grid;
+    padding: 4px;
+    gap: 2px;
     grid-template-columns: auto 1fr auto;
-    grid-template-rows: min-content var(--ratio_T, 1fr) 2px auto;
+    grid-template-rows: min-content 1fr 2px auto;
     grid-template-areas:
         "toolbar toolbar toolbar"
         "inputlist graphview outputlist"
         "rowResize rowResize rowResize"
         "drawer drawer drawer";
+    &[data-state~="drawer-open"] {
+        grid-template-rows: min-content auto 2px minmax(min-content, var(--ratio_B));
+    }
 
     & > div {
         grid-area: attr(data-area type(<custom-ident>));
     }
 
+    & > div[data-area="inputlist"],
+    & > div[data-area="outputlist"] {
+        background: #222;
+        border: 1px solid var(--flavour);
+    }
+
     & > div[data-area="graphview"] {
         contain: paint;
-        min-height: 0;
+        border: 1px solid var(--flavour);
     }
 
     & > div[data-area="drawer"] {
-        min-height: 0;
-        overflow: auto;
+        display: grid;
+        grid-template-rows: auto;
+        grid-auto-rows: 1fr;
+        gap: 2px;
     }
 
     & > div[data-area="rowResize"] {
@@ -218,8 +233,6 @@ const InterfaceListWrapper = styled.div`
     gap: 2px;
     padding: 4px;
     min-width: 120px;
-    background: #1a1a1a;
-    border-right: 1px solid #333;
 
     &:last-of-type {
         border-right: none;
