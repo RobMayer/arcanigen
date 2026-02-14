@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { Accordion } from "../components/containers/Accordion";
 import { GraphIdContext } from "../state/graphId";
 import { Icon, ICONS } from "../components/Icon";
-import { useCallback, useMemo } from "react";
+import { Dispatch, SetStateAction, useCallback, useMemo } from "react";
 import { Project } from "../state/project";
 import { DragPaneControls } from "../components/wrappers/DragPane";
 import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -13,13 +13,13 @@ const LocalAccordion = styled(Accordion)`
     font-variant: small-caps;
 `;
 
-export const NodeDrawer = ({ graphId, paneControls }: { graphId: string; paneControls: DragPaneControls }) => {
+export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { graphId: string; paneControls: DragPaneControls; isOpen: boolean; onOpenToggle: Dispatch<SetStateAction<boolean>> }) => {
     const nodeTypes = useMemo(() => {
         return NodeTypes.list().filter((each) => {
             if (each.type === "result" || (each.type as string) === "custom") {
                 return false;
             }
-            if (graphId === "root" && each.category === "interface") {
+            if (graphId === "root" && (each.category === "inputs" || each.category === "outputs")) {
                 return false;
             }
             return true;
@@ -28,7 +28,7 @@ export const NodeDrawer = ({ graphId, paneControls }: { graphId: string; paneCon
 
     return (
         <GraphIdContext value={graphId}>
-            <LocalAccordion title={"Add Nodes"} isOpen iconClosed={ICONS.Caret.Up}>
+            <LocalAccordion title={"Add Nodes"} isOpen={isOpen} onOpenChange={onOpenToggle} iconClosed={ICONS.Caret.Up}>
                 <Pane>
                     <CardGrid nodeTypes={nodeTypes} paneControls={paneControls} />
                 </Pane>
@@ -38,8 +38,6 @@ export const NodeDrawer = ({ graphId, paneControls }: { graphId: string; paneCon
 };
 
 const Pane = styled.div`
-    height: 300px;
-    max-height: 20vh;
     min-height: 0;
     overflow-y: scroll;
 `;

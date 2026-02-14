@@ -197,7 +197,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     defaultLabel: "Custom",
     iconNode: NODE_ICONS.customNode.Item,
     iconCard: NODE_ICONS.customNode.Card,
-    category: "interface",
+    category: "meta",
     evaluate,
     Controls,
     dependsOn,

@@ -137,7 +137,8 @@ namespace Registries {
 
     export const NODECAT_FLAVOURS = {
         result: "emphasis",
-        interface: "emphasis",
+        outputs: "emphasis",
+        inputs: "emphasis",
         primitive: "accent",
         collection: "danger",
         shape: "confirm",

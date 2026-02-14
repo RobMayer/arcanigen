@@ -97,7 +97,7 @@ export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinitio
     defaultLabel: "Output",
     iconNode: NODE_ICONS.numericValue.Item,
     iconCard: NODE_ICONS.numericValue.Card,
-    category: "interface",
+    category: "outputs",
     evaluate,
     Controls,
     dependsOn,
