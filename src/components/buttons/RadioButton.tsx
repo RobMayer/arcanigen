@@ -24,7 +24,7 @@ const GroupBase = styled.div`
     }
 `;
 
-export function RadioButton<T extends string = string>({ value, target, onValue, onClick, state, flavour, ...rest }: RadioButton.Props<T>) {
+export function RadioButton<T extends string = string>({ value, target, onValue, onClick, state, flavour = "accent", ...rest }: RadioButton.Props<T>) {
     const onValueRef = useStable(onValue);
     const onClickRef = useStable(onClick);
 

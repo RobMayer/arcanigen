@@ -10,7 +10,7 @@ const BaseLite = styled(AbstractButton)`
     ${COMMON_STYLES.LITEBUTTON}
 `;
 
-export function ActionButton({ flavour, ...props }: ActionButton.Props) {
+export function ActionButton({ flavour = "accent", ...props }: ActionButton.Props) {
     return <Base {...props} data-flavour={flavour} />;
 }
 

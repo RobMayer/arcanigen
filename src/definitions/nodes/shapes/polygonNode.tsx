@@ -17,13 +17,14 @@ import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
-import { deg2rad, getTrueRadius, range } from "../../../util/misc";
+import { deg2rad, delerp, distroInterpolator, getTrueRadius, lerp, range } from "../../../util/misc";
 
 export type PolygonDefinition = {
     inputs: {
         pointCount: DataTypes.Use<"integer">;
         radius: DataTypes.Use<"length">;
         rScribe: DataTypes.Use<"enum">;
+        pointDistro: DataTypes.Use<"distribution">;
         // distribution: DataTypes.Use<"distribution">;
 
         // stroke
@@ -83,6 +84,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
         id,
         in: {
             pointCount: null,
+            pointDistro: null,
             rScribe: null,
             radius: null,
 
@@ -169,7 +171,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-
+            <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
+                Distribution
+            </SocketIn>
             <NodeAccordion socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor"} label={"Styling"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"strokeColor"} type={"color"} label={"Stroke Color"}>
                     <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} nullable alpha />
@@ -255,7 +259,24 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"], _deps: AllDeps): (keyof PolygonDefinition["inputs"])[] => {
     if (outSocket === "output") {
         // output shape depends on all inputs
-        return ["pointCount", "radius", "rScribe", "strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+        return [
+            "pointCount",
+            "pointDistro",
+            "radius",
+            "rScribe",
+            "strokeWidth",
+            "strokeColor",
+            "strokeCap",
+            "strokeDash",
+            "strokeDashOffset",
+            "fillColor",
+            "positionMode",
+            "positionX",
+            "positionY",
+            "positionRadius",
+            "positionTheta",
+            "rotation",
+        ];
     }
     if (outSocket === "rInscribe" || outSocket === "rCircumscribe" || outSocket === "rMiddle") {
         // radius outputs depend on pointCount and radius only
@@ -290,12 +311,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             return null;
         }
 
+        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+
+        const distroLerper = distroInterpolator(
+            Enum.keyOf(Enum.Common.distroFunctions, distro.func),
+            Enum.keyOf(Enum.Common.distroEasing, distro.easing),
+            NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
+        );
+
         const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
 
         const trueRadius = getTrueRadius(radius, scribeMode, pointCount);
-
         const points = range(pointCount).map((_, i) => {
-            const coeff = (360 / pointCount) * i;
+            const coeff = lerp(delerp(i, 0, pointCount), 0, 360, distroLerper);
             return `${trueRadius * Math.cos(deg2rad(coeff - 90))},${trueRadius * Math.sin(deg2rad(coeff - 90))}`;
         });
 

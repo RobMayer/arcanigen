@@ -27,6 +27,7 @@ import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
 import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
 import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
+import { DistributionNodeType, DistributionNodeDefinition } from "./nodes/math/distributionNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -52,6 +53,7 @@ namespace Registries {
 
         // math
         addFloat: AddFloatDefinition;
+        distribution: DistributionNodeDefinition;
 
         // collections
         layerCompose: LayerComposeDefinition;
@@ -74,19 +76,23 @@ namespace Registries {
         custom: CustomNodeType,
 
         addFloat: AddFloatType,
+        distribution: DistributionNodeType,
     } as const;
 
     export type DATATYPES = {
-        length: EmptyOr<Length.Type>;
-        shape: SVGObject;
+        // primitives
         float: EmptyOr<NumericString.Type>;
         integer: EmptyOr<NumericString.Type>;
         string: string;
-        color: Color.Type;
         enum: number;
-        "tokens<length>": string;
         angle: EmptyOr<Angle.Type>;
         boolean: boolean;
+
+        length: EmptyOr<Length.Type>;
+        shape: SVGObject;
+        color: Color.Type;
+        "tokens<length>": string;
+        distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
         layer: { shape: SVGObject | null; enabled: boolean | null; blend: number | null };
         "array<layer>": { shape: SVGObject | null; enabled: boolean | null; blend: number | null }[];
     };
@@ -104,6 +110,7 @@ namespace Registries {
         "tokens<length>": "accent",
         layer: "danger",
         "array<layer>": "danger",
+        distribution: "info",
     };
 
     export const SOCKET_COMPAT = {
@@ -124,6 +131,7 @@ namespace Registries {
         "tokens<length>": "accent",
         "array<layer>": "danger",
         layer: "confirm",
+        distribution: "info",
         // compound
         number: "accent",
         layerOrShape: "confirm",
@@ -264,4 +272,3 @@ export namespace SocketTypes {
         [S in Kind]: DataTypes.KeyOf<K> extends (S extends keyof typeof Registries.SOCKET_COMPAT ? (typeof Registries.SOCKET_COMPAT)[S][number] : S) ? S : never;
     }[Kind];
 }
-

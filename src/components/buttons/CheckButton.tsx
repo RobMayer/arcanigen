@@ -9,7 +9,7 @@ const Base = styled(AbstractButton)`
     ${COMMON_STYLES.BUTTON}
 `;
 
-export function CheckButton({ checked, onCheck, onUncheck, onToggle, onClick, state, flavour, ...rest }: CheckButton.Props) {
+export function CheckButton({ checked, onCheck, onUncheck, onToggle, onClick, state, flavour = "accent", ...rest }: CheckButton.Props) {
     const onToggleRef = useStable(onToggle);
     const onClickRef = useStable(onClick);
     const checkedRef = useStable(checked);

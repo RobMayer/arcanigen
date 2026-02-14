@@ -53,6 +53,23 @@ export namespace Enum {
             // PlusDarker: 17, // not yet supported
         } as const;
 
+        export const distroFunctions = {
+            Linear: 0,
+            Quadratic: 1,
+            Cubic: 2,
+            Exponential: 3,
+            Sinusoidal: 4,
+            Rootic: 5,
+            Circular: 6,
+        };
+
+        export const distroEasing = {
+            In: 0,
+            Out: 1,
+            InOut: 2,
+            OutIn: 3,
+        };
+
         export const floatInputWidget = {
             None: 0,
             Input: 1,

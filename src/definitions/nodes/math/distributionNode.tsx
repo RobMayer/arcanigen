@@ -1,0 +1,146 @@
+import { nanoid } from "nanoid";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { ReactNode, useCallback } from "react";
+import { TypicalNode } from "../../../features/nodeview/node";
+import { Project } from "../../../state/project";
+import { Resolver } from "../../../util/resolver";
+import { NODE_ICONS } from "../../../components/Icon";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { Dropdown } from "../../../components/inputs/Dropdown";
+import { RadioButton } from "../../../components/buttons/RadioButton";
+
+export type DistributionNodeDefinition = {
+    inputs: {
+        func: DataTypes.Use<"enum">;
+        easing: DataTypes.Use<"enum">;
+        intensity: DataTypes.Use<"float">;
+    };
+    outputs: {
+        output: DataTypes.Use<"distribution">;
+    };
+    payload: {
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        func: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        easing: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        intensity: DataTypes.TypeOf<DataTypes.Use<"float">>;
+    };
+};
+
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DistributionNodeDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"distribution", DistributionNodeDefinition> => {
+    return {
+        id,
+        in: {
+            func: null,
+            easing: null,
+            intensity: null,
+        },
+        out: {
+            output: [],
+        },
+        payload: {
+            label: "",
+            func: input.func ?? 0,
+            easing: input.easing ?? 0,
+            intensity: input.intensity ?? "1",
+        },
+        type: "distribution",
+    };
+};
+
+const FUNCTION_OPTIONS = [
+    { label: "Linear (n)", value: 0 },
+    { label: "Quadratic (n²)", value: 1 },
+    { label: "Cubic (n³)", value: 2 },
+    { label: "Exponential (2ⁿ)", value: 3 },
+    { label: "Sinusoidal (sin(n))", value: 4 },
+    { label: "Rootic (√n)", value: 5 },
+    { label: "Circular (1-√(1-n²))", value: 6 },
+];
+
+const EASING_OPTIONS = [
+    { label: "In", value: "0" },
+    { label: "Out", value: "1" },
+    { label: "In-Out", value: "2" },
+    { label: "Out-In", value: "3" },
+];
+
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DistributionNodeDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<DistributionNodeDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
+
+    return (
+        <TypicalNode node={node} methods={methods}>
+            <SocketOut node={node} socketId={"output"} type={"distribution"}>
+                Output
+            </SocketOut>
+            <hr />
+            <SocketIn node={node} socketId={"func"} type={"enum"} label={"Function"}>
+                <Dropdown value={`${node.payload.func}`} onValue={(func) => handleUpdate({ func: Number(func) })} disabled={node.in.func !== null}>
+                    {FUNCTION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </Dropdown>
+            </SocketIn>
+            <SocketIn node={node} socketId={"easing"} type={"enum"} label={"Easing"}>
+                <RadioButton.Group
+                    orientation={"horizontal"}
+                    value={`${node.payload.easing}`}
+                    onValue={(easing) => handleUpdate({ easing: Number(easing) })}
+                    disabled={node.in.easing !== null}
+                    options={EASING_OPTIONS}
+                />
+            </SocketIn>
+            <SocketIn node={node} socketId={"intensity"} type={"float"} label={"Intensity"}>
+                <DecimalInput value={node.payload.intensity} onCommit={(intensity) => handleUpdate({ intensity })} disabled={node.in.intensity !== null} />
+            </SocketIn>
+        </TypicalNode>
+    );
+};
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, outSocket: "output", _deps: AllDeps): (keyof DistributionNodeDefinition["inputs"])[] => {
+    if (outSocket === "output") return ["func", "easing", "intensity"];
+    return [];
+};
+
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<DistributionNodeDefinition>,
+    _inSocket: keyof DistributionNodeDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof DistributionNodeDefinition["outputs"])[] => {
+    // Both a and b contribute to output
+    return ["output"];
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "output") {
+        const func = context.resolve<"enum">(node.id, "func")?.data ?? node.payload.func;
+        const easing = context.resolve<"enum">(node.id, "easing")?.data ?? node.payload.easing;
+        const intensity = context.resolve<"float">(node.id, "intensity")?.data ?? node.payload.intensity;
+        return {
+            kind: "distribution",
+            data: { func, easing, intensity },
+        };
+    }
+    return null;
+};
+
+export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNodeDefinition> = {
+    type: "distribution",
+    displayName: "Distribution",
+    defaultLabel: "Distribution",
+    iconNode: NODE_ICONS.curveValue.Item,
+    iconCard: NODE_ICONS.curveValue.Card,
+    category: "math",
+    evaluate,
+    Controls,
+    dependsOn,
+    contributesTo,
+    create,
+};
