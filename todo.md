@@ -4,7 +4,8 @@
     - [ ] Consolidate ColorInput and ColorInputHex into one ColorInput namespace (add picker, too)
 - [ ] container/wrapper nodes for spacial organization
 - [ ] drag and drop from node drawer onto viewport
-- [ ] resize observer on viewport of drag-pane
+- [x] resize observer on viewport of drag-pane
+- [ ] sliders for integer and float, already
 
 # code quality
 
@@ -19,6 +20,7 @@
     - [x] the initial state parser is rather hamfisted and should probably be properly re-written
         - [ ] load, save, merge
 - [ ] dependency resolver feels weird to pass in graph and deps seperately, and how the dependsOn and contributesTo of nodeTypes can have the deps, but not the graph.
+- [ ] figure out seeded "random" functionality (example: distribution node)
 
 # tasks that will get completed as the system gets fleshed out
 
