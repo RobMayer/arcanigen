@@ -105,7 +105,7 @@ export const Socket = styled(
                 return false;
             }
             return true;
-        }, [pendingConnection, side, type]);
+        }, [nodeId, pendingConnection, side, socketId, type]);
 
         const canConnectRef = useStable(canConnect);
 
