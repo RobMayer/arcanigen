@@ -1,14 +1,24 @@
-import { DetailedHTMLProps, HTMLAttributes, Ref } from "react";
+import { Ref } from "react";
 import { EmptyOr } from "../../util/misc";
 import styled from "styled-components";
 import { NumericString } from "../../definitions/datatypes/numericString";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
-import { Flavour } from "../types";
 import { AbstractSlider } from "../abstract/Slider";
+import { DivProps } from "../../types";
+import { COMMON_STYLES } from "../styles";
+import { Flavour } from "../types";
 
-export const SliderInput = (props: AbstractSlider.Linear.Props) => {
-    return <AbstractSlider.Linear {...props} />;
-};
+const BaseSlider = styled(AbstractSlider.Linear)`
+    ${COMMON_STYLES.SLIDER}
+`;
+
+export function SliderInput(props: AbstractSlider.Linear.Props) {
+    return <BaseSlider {...props} />;
+}
+
+export namespace SliderInput {
+    export type Props = AbstractSlider.Linear.Props & { flavour?: Flavour };
+}
 
 type WithDisplayProps = {
     value: EmptyOr<NumericString.Type>;
@@ -20,9 +30,8 @@ type WithDisplayProps = {
     sliderRef?: Ref<HTMLInputElement>;
     displayRef?: Ref<HTMLInputElement>;
     ref?: Ref<HTMLDivElement>;
+    flavour?: Flavour;
 };
-
-type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };
 
 const WithDisplay = styled(
     ({

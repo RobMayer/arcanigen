@@ -17,7 +17,7 @@ import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
-import { deg2rad, delerp, distroInterpolator, getTrueRadius, lerp, range } from "../../../util/misc";
+import { deg2rad, delerp, distroInterpolator, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
 
 export type PolygonDefinition = {
     inputs: {
@@ -157,7 +157,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
-                <IntegerInput value={node.payload.pointCount} onCommit={(pointCount) => handleUpdate({ pointCount })} disabled={node.in.pointCount !== null} min={"3"} max={"64"} required />
+                <IntegerInput.SliderInput
+                    value={node.payload.pointCount}
+                    onCommit={(pointCount) => handleUpdate({ pointCount })}
+                    disabled={node.in.pointCount !== null}
+                    min={"3"}
+                    max={"64"}
+                    required
+                />
             </SocketIn>
             <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
@@ -226,10 +233,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
                     />
                 </SocketIn>
                 <SocketIn node={node} socketId={"positionTheta"} type={"angle"} label={"Position Theta"}>
-                    <AngleInput.Combined value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
+                    <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"rotation"} type={"angle"} label={"Rotation"}>
-                    <AngleInput.Combined value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
+                    <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
             </NodeAccordion>
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"rInscribe|rCircumscribe|rMiddle|eInscribe|eCircumscribe|eMiddle"}>
@@ -451,15 +458,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
     const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
 
     if (socket === "eInscribe") {
-        const outputRadius = getTrueRadius(currentRadius, "Inscribe", pointCount);
+        const outputRadius = getDerivedRadius(currentRadius, "Inscribe", pointCount);
         return { kind: "length", data: `${outputRadius}${unit}` };
     }
     if (socket === "eCircumscribe") {
-        const outputRadius = getTrueRadius(currentRadius, "Circumscribe", pointCount);
+        const outputRadius = getDerivedRadius(currentRadius, "Circumscribe", pointCount);
         return { kind: "length", data: `${outputRadius}${unit}` };
     }
     if (socket === "eMiddle") {
-        const outputRadius = getTrueRadius(currentRadius, "Middle", pointCount);
+        const outputRadius = getDerivedRadius(currentRadius, "Middle", pointCount);
         return { kind: "length", data: `${outputRadius}${unit}` };
     }
 

@@ -398,7 +398,7 @@ const GraphLink = styled(({ className, linkId }: { linkId: string; className?: s
             const x2 = (toPoint.left - basis.left) / zoom;
             const y2 = (toPoint.top - basis.top) / zoom;
 
-            const dx = Math.max(200, Math.abs(x2 - x1) * 0.5);
+            const dx = Math.max(200, Math.abs(x2 - x1) * 0.1);
             pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
         }
     });

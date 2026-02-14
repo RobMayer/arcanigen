@@ -29,6 +29,17 @@ export const getTrueRadius = (r: number, scribe: keyof typeof Enum.Common.scribe
     }
 };
 
+export const getDerivedRadius = (r: number, scribe: keyof typeof Enum.Common.scribeMode, sides: number) => {
+    switch (scribe) {
+        case "Middle":
+            return (r + r * Math.cos(Math.PI / sides)) / 2;
+        case "Circumscribe":
+            return r;
+        case "Inscribe":
+            return r * Math.cos(Math.PI / sides);
+    }
+};
+
 export const range = (count: number) => Array.from({ length: Math.round(count) });
 
 export const deg2rad = (deg: number) => deg * (Math.PI / 180);

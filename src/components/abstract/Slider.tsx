@@ -19,6 +19,7 @@ export namespace AbstractSlider {
             max: maxProp = "1",
             step: stepProp = "0.01",
             snap: snapProp,
+            icon = ICONS.Blank,
             normalize,
             tooltip,
             disabled,
@@ -375,7 +376,9 @@ export namespace AbstractSlider {
                 >
                     <div data-part="track" ref={trackRef} />
                     <div data-part="bounds" style={style} ref={boundsRef}>
-                        <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef} />
+                        <div data-part="handle" data-flavour="inherit" ref={makeInnerHandleRef}>
+                            <Icon shape={icon} />
+                        </div>
                     </div>
                 </div>
             );
@@ -463,6 +466,7 @@ export namespace AbstractSlider {
             normalize?: (v: EmptyOr<NumericString.Type>) => EmptyOr<NumericString.Type>;
             disabled?: boolean;
             handleRef?: Ref<HTMLDivElement>;
+            icon?: IconDefinition;
         } & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
     }
 

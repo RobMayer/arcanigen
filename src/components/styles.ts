@@ -123,6 +123,9 @@ export namespace COMMON_STYLES {
             outline: 1px solid red;
         }
 
+        &[data-type="linear"] > div[data-part="track"] {
+            border-radius: 100vw;
+        }
         &[data-type="polar"] > div[data-part="track"] {
             border-radius: 100vw;
         }

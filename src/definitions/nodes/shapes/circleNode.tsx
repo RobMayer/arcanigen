@@ -184,10 +184,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
                     />
                 </SocketIn>
                 <SocketIn node={node} socketId={"positionTheta"} type={"angle"} label={"Position Theta"}>
-                    <AngleInput.Combined value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
+                    <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"rotation"} type={"angle"} label={"Rotation"}>
-                    <AngleInput.Combined value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
+                    <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
             </NodeAccordion>
         </TypicalNode>
@@ -196,7 +196,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _outSocket: keyof CircleDefinition["outputs"], _deps: AllDeps): (keyof CircleDefinition["inputs"])[] => {
     // output depends on all inputs
-    return ["radius", "strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+    return [
+        "radius",
+        "strokeWidth",
+        "strokeColor",
+        "strokeCap",
+        "strokeDash",
+        "strokeDashOffset",
+        "fillColor",
+        "positionMode",
+        "positionX",
+        "positionY",
+        "positionRadius",
+        "positionTheta",
+        "rotation",
+    ];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _inSocket: keyof CircleDefinition["inputs"], _deps: AllDeps): (keyof CircleDefinition["outputs"])[] => {

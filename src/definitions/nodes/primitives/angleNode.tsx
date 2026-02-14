@@ -62,7 +62,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"value"} type={"angle"} label={"Value"}>
-                <AngleInput.Combined value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
+                <AngleInput.SliderInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
             </SocketIn>
             <SocketIn node={node} socketId={"wraps"} type={"boolean"} label={"Wraps"}>
                 <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })} disabled={node.in.wraps !== null}>

@@ -1,13 +1,14 @@
 import styled from "styled-components";
 import { AbstractInput } from "../abstract/Inputs";
 import { AbstractSlider } from "../abstract/Slider";
-import { DetailedHTMLProps, HTMLAttributes, Ref, useCallback, useEffect, useState } from "react";
+import { Ref, useCallback, useEffect, useState } from "react";
 import { Flavour } from "../types";
 import { NumericString } from "../../definitions/datatypes/numericString";
 import { EmptyOr } from "../../util/misc";
 import { IconDefinition } from "../Icon";
 import { useStable } from "../../util/hooks/useStable";
 import { COMMON_STYLES } from "../styles";
+import { DivProps } from "../../types";
 
 const BaseInput = styled(AbstractInput.Numeric)`
     ${COMMON_STYLES.INPUT}
@@ -40,7 +41,14 @@ export function AngleInput({ min = 0, max = 360, unbound, flavour, ...props }: A
 export namespace AngleInput {
     export type Props = Omit<AbstractInput.Numeric.Props, "wrap"> & { unbound?: boolean; flavour?: Flavour };
 
-    export function Combined({
+    export function Slider({ min = 0, max = 360, unbound, flavour, ...props }: Slider.Props) {
+        return <BaseSlider {...props} wrap={unbound ? undefined : 360} min={min} max={max} data-flavour={flavour} />;
+    }
+    export namespace Slider {
+        export type Props = Omit<AbstractSlider.Radial.Props, "wrap"> & { unbound?: boolean; flavour?: Flavour };
+    }
+
+    export function SliderInput({
         value,
         onValue,
         onCommit,
@@ -59,7 +67,7 @@ export namespace AngleInput {
         icon,
         disabled,
         ...props
-    }: Combined.Props) {
+    }: SliderInput.Props) {
         const onValueRef = useStable(onValue);
         const onCommitRef = useStable(onCommit);
         const onConfirmRef = useStable(onConfirm);
@@ -100,6 +108,7 @@ export namespace AngleInput {
                     normalize={normalize}
                     step={step}
                     disabled={disabled}
+                    snap={snap}
                 />
                 <BaseInput
                     data-part={"input"}
@@ -116,12 +125,13 @@ export namespace AngleInput {
                     normalize={normalize}
                     step={step}
                     disabled={disabled}
+                    snap={snap}
                 />
             </BaseCombined>
         );
     }
 
-    export namespace Combined {
+    export namespace SliderInput {
         export type Props = DivProps & {
             value: EmptyOr<NumericString.Type>;
             onValue?: (n: EmptyOr<NumericString.Type>) => void;
@@ -143,5 +153,3 @@ export namespace AngleInput {
         };
     }
 }
-
-type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
