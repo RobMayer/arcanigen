@@ -9,6 +9,8 @@ import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
 import { TextInput } from "../components/inputs/TextInput";
 import { CheckBox } from "../components/buttons/CheckBox";
 import { UsersType } from "../state/project/types";
+import { nanoid } from "nanoid";
+import { useSubgraphEditor } from "./subgraph";
 
 const LocalAccordion = styled(Accordion)`
     padding: 0.25em;
@@ -172,6 +174,8 @@ const CardGrid = styled(
         showNewCustom: boolean;
     }) => {
         const { addNodeByType } = Project.useMethods();
+        const subgraphMethods = Project.useSubgraphMethods();
+        const subgraphEditor = useSubgraphEditor();
 
         const addNode = useCallback(
             (nodeType: NodeTypes.Any) => {
@@ -189,13 +193,27 @@ const CardGrid = styled(
             [addNodeByType, paneControls],
         );
 
+        const createSubgraph = useCallback(() => {
+            const graphId = nanoid();
+            subgraphMethods.create(graphId, "Untitled");
+            subgraphEditor.open(graphId);
+        }, [subgraphMethods, subgraphEditor]);
+
+        const editSubgraph = useCallback(
+            (e: { stopPropagation: () => void }, id: string) => {
+                e.stopPropagation();
+                subgraphEditor.open(id);
+            },
+            [subgraphEditor],
+        );
+
         return (
             <div className={className}>
                 {nodeTypes.map((each) => {
                     return <NodeCard nodeType={each} key={each.defaultLabel} handleAdd={addNode} />;
                 })}
                 {showNewCustom && (
-                    <NewCustomCard data-flavour={"info"}>
+                    <NewCustomCard data-flavour={"info"} onClick={createSubgraph}>
                         <div data-part={"title"}>New Custom</div>
                         <div data-part={"icon"}>
                             <Icon shape={ICONS.Plus} />
@@ -208,6 +226,9 @@ const CardGrid = styled(
                         <div data-part={"icon"}>
                             <Icon shape={ICONS.Cascade} />
                         </div>
+                        <EditButton onClick={(e) => editSubgraph(e, id)}>
+                            <Icon shape={ICONS.Wrench} />
+                        </EditButton>
                     </SubgraphCard>
                 ))}
             </div>
@@ -285,6 +306,7 @@ const NodeCard = styled(
 
 const SubgraphCard = styled.button`
     ${CARD_STYLES}
+    position: relative;
 `;
 
 const NewCustomCard = styled.button`
@@ -293,6 +315,23 @@ const NewCustomCard = styled.button`
     opacity: 0.8;
     &:hover {
         opacity: 1;
+        border-color: #888;
+    }
+`;
+
+const EditButton = styled.div`
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #333;
+    border: 1px solid #555;
+    color: #aaa;
+    cursor: pointer;
+    padding: 2px;
+    font-size: 10pt;
+    line-height: 1;
+    &:hover {
+        color: #fff;
         border-color: #888;
     }
 `;

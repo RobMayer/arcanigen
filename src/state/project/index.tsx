@@ -221,6 +221,7 @@ export namespace Project {
 
                 // Build initial state with the new node added
                 let currentNodes = { ...ctx.nodes.ref.current, [graphId]: nodes };
+                let currentLinks = ctx.links.ref.current;
                 let currentInterfaces = ctx.interfaces.ref.current;
                 let currentUsers = ctx.users.ref.current;
 
@@ -228,22 +229,31 @@ export namespace Project {
                 if (nodeType.onCreate) {
                     const hookState: NodeTypes.HookState = {
                         nodes: currentNodes,
-                        links: ctx.links.ref.current,
+                        links: currentLinks,
                         interfaces: currentInterfaces,
                         users: currentUsers,
                     };
                     const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, state: NodeTypes.HookState, graphId: string) => NodeTypes.HookState;
                     const newState = onCreate(newNode, hookState, graphId);
                     currentNodes = newState.nodes;
+                    currentLinks = newState.links;
                     currentInterfaces = newState.interfaces;
                     currentUsers = newState.users;
                 }
 
                 ctx.nodes.ref.current = currentNodes;
-                ctx.nodeList.ref.current = {
-                    ...ctx.nodeList.ref.current,
-                    [graphId]: Object.keys(currentNodes[graphId]),
-                };
+                ctx.links.ref.current = currentLinks;
+                // Rebuild nodeList/linkList for all graphs that may have been affected by the hook
+                const newNodeList = { ...ctx.nodeList.ref.current };
+                const newLinkList = { ...ctx.linkList.ref.current };
+                for (const gId of Object.keys(currentNodes)) {
+                    newNodeList[gId] = Object.keys(currentNodes[gId]);
+                }
+                for (const gId of Object.keys(currentLinks)) {
+                    newLinkList[gId] = Object.keys(currentLinks[gId]);
+                }
+                ctx.nodeList.ref.current = newNodeList;
+                ctx.linkList.ref.current = newLinkList;
                 ctx.positions.ref.current = {
                     ...ctx.positions.ref.current,
                     [graphId]: {
@@ -256,6 +266,8 @@ export namespace Project {
 
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
                 ctx.positions.notify();
                 ctx.interfaces.notify();
                 ctx.users.notify();
@@ -290,20 +302,24 @@ export namespace Project {
                 const node = oldGraph.nodes[nodeId];
                 if (!node) return;
 
-                // Call onDelete hook if defined
+                // Call onDelete hook if defined — hooks may modify nodes/links in OTHER graphs
+                let currentNodes = ctx.nodes.ref.current;
+                let currentLinks = ctx.links.ref.current;
                 let currentInterfaces = ctx.interfaces.ref.current;
                 let currentUsers = ctx.users.ref.current;
 
                 const nodeType = NodeTypes.get(node.type);
                 if (nodeType.onDelete) {
                     const hookState: NodeTypes.HookState = {
-                        nodes: ctx.nodes.ref.current,
-                        links: ctx.links.ref.current,
+                        nodes: currentNodes,
+                        links: currentLinks,
                         interfaces: currentInterfaces,
                         users: currentUsers,
                     };
                     const onDelete = nodeType.onDelete as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, state: NodeTypes.HookState, graphId: string) => NodeTypes.HookState;
                     const newState = onDelete(node, hookState, graphId);
+                    currentNodes = newState.nodes;
+                    currentLinks = newState.links;
                     currentInterfaces = newState.interfaces;
                     currentUsers = newState.users;
                 }
@@ -311,16 +327,31 @@ export namespace Project {
                 // Find downstream nodes BEFORE removing (they'll need cache rebuild)
                 const downstream = ArcaneGraph.wideDownstreamOf(oldGraph, nodeId);
 
-                const [{ nodes, links }] = ArcaneGraph.removeNodes(oldGraph, nodeId);
+                // Remove node from the current graph (use hook-updated state for this graph)
+                const currentGraphState = { nodes: currentNodes[graphId], links: currentLinks[graphId] };
+                const [{ nodes, links }] = ArcaneGraph.removeNodes(currentGraphState, nodeId);
 
                 const positions = { ...ctx.positions.ref.current[graphId] };
                 delete positions[nodeId];
 
-                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: nodes };
-                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(nodes) };
+                // Apply: merge current-graph removal with any cross-graph hook changes
+                currentNodes = { ...currentNodes, [graphId]: nodes };
+                currentLinks = { ...currentLinks, [graphId]: links };
+
+                ctx.nodes.ref.current = currentNodes;
+                ctx.links.ref.current = currentLinks;
+                // Rebuild nodeList/linkList for all graphs that may have been affected
+                const newNodeList = { ...ctx.nodeList.ref.current };
+                const newLinkList = { ...ctx.linkList.ref.current };
+                for (const gId of Object.keys(currentNodes)) {
+                    newNodeList[gId] = Object.keys(currentNodes[gId]);
+                }
+                for (const gId of Object.keys(currentLinks)) {
+                    newLinkList[gId] = Object.keys(currentLinks[gId]);
+                }
+                ctx.nodeList.ref.current = newNodeList;
+                ctx.linkList.ref.current = newLinkList;
                 ctx.positions.ref.current = { ...ctx.positions.ref.current, [graphId]: positions };
-                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
-                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
                 ctx.interfaces.ref.current = currentInterfaces;
                 ctx.users.ref.current = currentUsers;
 
@@ -333,7 +364,17 @@ export namespace Project {
                         newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, graphId, downstreamId);
                     }
                 }
+
+                // Rebuild cache for Custom nodes in parent graphs that reference this subgraph
+                const usersOfGraph = currentUsers[graphId] ?? [];
+                for (const { node: customNodeId, scope } of usersOfGraph) {
+                    newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, scope, customNodeId);
+                }
                 ctx.cache.ref.current = newCache;
+
+                // Rebuild deps for the current graph (interfaces may have changed)
+                const graphForDeps = { nodes: currentNodes[graphId], links: currentLinks[graphId] };
+                ctx.deps.ref.current = { ...ctx.deps.ref.current, [graphId]: computeSubgraphDeps(graphForDeps, currentInterfaces[graphId] ?? [], ctx.deps.ref.current) };
 
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
@@ -341,6 +382,7 @@ export namespace Project {
                 ctx.links.notify();
                 ctx.linkList.notify();
                 ctx.cache.notify();
+                ctx.deps.notify();
                 ctx.interfaces.notify();
                 ctx.users.notify();
             };
@@ -525,5 +567,40 @@ export namespace Project {
     export const useUsers = () => {
         const ctx = useContext(CTX)!;
         return useSyncExternalStore(ctx.users.subscribe, ctx.users.get);
+    };
+
+    export const useSubgraphMethods = () => {
+        const ctx = useContext(CTX)!;
+
+        return useMemo(() => {
+            const create = (graphId: string, name: string) => {
+                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: {} };
+                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: [] };
+                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: {} };
+                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: [] };
+                ctx.positions.ref.current = { ...ctx.positions.ref.current, [graphId]: {} };
+                ctx.users.ref.current = { ...ctx.users.ref.current, [graphId]: [] };
+                ctx.interfaces.ref.current = { ...ctx.interfaces.ref.current, [graphId]: [] };
+                ctx.cache.ref.current = { ...ctx.cache.ref.current, [graphId]: {} };
+                ctx.meta.ref.current = { ...ctx.meta.ref.current, [graphId]: { name } };
+
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+                ctx.positions.notify();
+                ctx.users.notify();
+                ctx.interfaces.notify();
+                ctx.cache.notify();
+                ctx.meta.notify();
+            };
+
+            const rename = (graphId: string, name: string) => {
+                ctx.meta.ref.current = { ...ctx.meta.ref.current, [graphId]: { ...ctx.meta.ref.current[graphId], name } };
+                ctx.meta.notify();
+            };
+
+            return { create, rename };
+        }, [ctx]);
     };
 }
