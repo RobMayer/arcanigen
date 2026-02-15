@@ -3,6 +3,7 @@ import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
 import { Color } from "../definitions/datatypes/color";
+import { InterfaceMember, flattenSockets, parseInterface } from "../state/project/types";
 
 export namespace Resolver {
     export namespace EnumMappings {
@@ -33,14 +34,7 @@ export namespace Resolver {
         nodes: { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
         links: { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
         users: { [graphId: GraphId]: { node: ArcaneGraph.NodeId; scope: GraphId }[] };
-        interfaces: { [graphId: GraphId]: string[] }; // prefixed with "in:" or "out:"
-    };
-
-    /** Parse an interface entry to get the direction and nodeId */
-    const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: string } | null => {
-        if (entry.startsWith("in:")) return { direction: "in", nodeId: entry.slice(3) };
-        if (entry.startsWith("out:")) return { direction: "out", nodeId: entry.slice(4) };
-        return null;
+        interfaces: { [graphId: GraphId]: InterfaceMember[] };
     };
 
     export type Context = {
@@ -162,12 +156,12 @@ export namespace Resolver {
         };
 
         // Get output node IDs by parsing interfaces with "out:" prefix
-        const subgraphInterfaces = state.interfaces[subgraphId] ?? [];
+        const subgraphSockets = flattenSockets(state.interfaces[subgraphId] ?? []);
         const results: { [key: string]: DataTypes.AnyEval | null } = {};
 
-        for (const entry of subgraphInterfaces) {
+        for (const entry of subgraphSockets) {
             const parsed = parseInterface(entry);
-            if (!parsed || parsed.direction !== "out") continue;
+            if (parsed.direction !== "out") continue;
 
             const outputNodeId = parsed.nodeId;
             const outputNode = subgraphNodes[outputNodeId];

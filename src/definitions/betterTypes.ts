@@ -8,6 +8,7 @@ import { IconDefinition } from "../components/Icon";
 import { Resolver } from "../util/resolver";
 import { SubgraphDeps } from "../util/cycleDetection";
 import { Flavour } from "../components/types";
+import { InterfaceMember } from "../state/project/types";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -208,7 +209,7 @@ export namespace NodeTypes {
     export type HookState = {
         nodes: { [graphId: string]: { [nodeId: string]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
         links: { [graphId: string]: { [linkId: string]: ArcaneGraph.Link } };
-        interfaces: { [graphId: string]: string[] }; // prefixed with "in:" or "out:"
+        interfaces: { [graphId: string]: InterfaceMember[] };
         users: { [graphId: string]: { node: string; scope: string }[] };
     };
 

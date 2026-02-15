@@ -116,8 +116,8 @@ const TESTING_STATE = {
         },
         positions: {
             inputA: { x: -400, y: 0 },
-            adder: { x: -200, y: 0 },
-            addResult: { x: 0, y: 0 },
+            adder: { x: 0, y: 0 },
+            addResult: { x: 400, y: 0 },
         },
         interfaces: ["out:addResult", "in:inputA"],
     },

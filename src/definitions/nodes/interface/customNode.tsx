@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
@@ -15,14 +15,8 @@ import { NumericString } from "../../datatypes/numericString";
 import { FloatOutputDefinition } from "./floatOutputNode";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
+import { flattenSockets, parseInterface, InterfaceMember } from "../../../state/project/types";
 type StoredValueKey = `value_${string}`;
-
-/** Parse an interface entry to get the direction and nodeId */
-const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: string } | null => {
-    if (entry.startsWith("in:")) return { direction: "in", nodeId: entry.slice(3) };
-    if (entry.startsWith("out:")) return { direction: "out", nodeId: entry.slice(4) };
-    return null;
-};
 
 export type CustomDefinition = {
     inputs: Record<string, DataTypes.Any>;
@@ -49,7 +43,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CustomDefinition>>,
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    // todo: for setting stored values?
     const handleValue = useCallback(
         (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => {
             methods.update(v);
@@ -57,19 +50,50 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefin
         [methods],
     );
 
-    // Get interface entries (prefixed with "in:" or "out:")
-    const interfaceEntries = Project.useGraphInterfaces(node.payload.graphId);
+    const interfaceEntries = Project.useGraphInterfaces(node.payload.graphId) ?? [];
 
     return (
         <TypicalNode node={node} methods={methods}>
-            {interfaceEntries.map((entry) => {
-                const parsed = parseInterface(entry);
-                if (!parsed) return null;
-                return <DynamicSlot key={entry} sourceNodeId={parsed.nodeId} graphId={node.payload.graphId} handleValue={handleValue} hostNode={node} />;
-            })}
+            <InterfaceMembers members={interfaceEntries} graphId={node.payload.graphId} hostNode={node} handleValue={handleValue} />
         </TypicalNode>
     );
 };
+
+const InterfaceMembers = ({
+    members,
+    graphId,
+    hostNode,
+    handleValue,
+}: {
+    members: InterfaceMember[];
+    graphId: string;
+    hostNode: NodeDefinitions.NodeFor<CustomDefinition>;
+    handleValue: SlotUpdateHandler;
+}): ReactNode => {
+    return members.map((entry, i) => {
+        if (typeof entry === "string") {
+            const parsed = parseInterface(entry);
+            return <DynamicSlot key={entry} sourceNodeId={parsed.nodeId} graphId={graphId} handleValue={handleValue} hostNode={hostNode} />;
+        }
+        if (entry.type === "separator") {
+            return <InterfaceSep key={`sep-${i}`} />;
+        }
+        if (entry.type === "accordion") {
+            return (
+                <NodeAccordion key={`acc-${entry.label}`} label={entry.label} nodeId={hostNode.id}>
+                    <InterfaceMembers members={entry.items as InterfaceMember[]} graphId={graphId} hostNode={hostNode} handleValue={handleValue} />
+                </NodeAccordion>
+            );
+        }
+        return null;
+    });
+};
+
+const InterfaceSep = styled.hr`
+    border: none;
+    border-top: 1px solid #555;
+    margin: 4px 0;
+`;
 
 const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, outSocket: string, deps: AllDeps): string[] => {
     const { graphId } = node.payload;
@@ -139,15 +163,14 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
     if (!targetGraphId) return state;
 
     // Read the subgraph's interface entries
-    const interfaceEntries = state.interfaces[targetGraphId] ?? [];
+    const interfaceSockets = flattenSockets(state.interfaces[targetGraphId] ?? []);
 
     // Build socket maps from Input/Output node labels
     const inSockets: { [key: string]: string | null } = {};
     const outSockets: { [key: string]: string[] } = {};
 
-    for (const entry of interfaceEntries) {
+    for (const entry of interfaceSockets) {
         const parsed = parseInterface(entry);
-        if (!parsed) continue;
         if (parsed.direction === "in") {
             inSockets[parsed.nodeId] = null;
         } else {

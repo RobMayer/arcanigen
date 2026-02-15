@@ -1,5 +1,6 @@
 import { ArcaneGraph } from "./structs/arcaneGraph";
 import { NodeTypes } from "../definitions/betterTypes";
+import { InterfaceMember, flattenSockets } from "../state/project/types";
 
 type SocketRef = `${string}:${string}`; // "nodeId:socketId"
 
@@ -217,7 +218,7 @@ function traceUpstreamToInputInterfaces<N>(
  * @param interfaces - Array of interface entries like "in:nodeId" or "out:nodeId"
  * @returns A map where keys are interface entries and values are arrays of dependent interface entries
  */
-export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces: string[], deps: AllDeps): SubgraphDeps {
+export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces: InterfaceMember[], deps: AllDeps): SubgraphDeps {
     const result: SubgraphDeps = {};
 
     // Early return if no interfaces
@@ -225,11 +226,13 @@ export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces
         return result;
     }
 
+    const sockets = flattenSockets(interfaces);
+
     // Parse interfaces into sets for quick lookup
     const inputNodes = new Set<string>();
     const outputNodes = new Set<string>();
 
-    for (const entry of interfaces) {
+    for (const entry of sockets) {
         if (entry.startsWith("in:")) {
             inputNodes.add(entry.slice(3));
         } else if (entry.startsWith("out:")) {
@@ -238,7 +241,7 @@ export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces
     }
 
     // Initialize empty arrays for all interface entries
-    for (const entry of interfaces) {
+    for (const entry of sockets) {
         result[entry as InterfaceKey] = [];
     }
 

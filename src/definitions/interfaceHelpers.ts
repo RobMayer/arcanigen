@@ -1,8 +1,15 @@
 import { NodeTypes } from "./betterTypes";
+import { InterfaceMember, InterfaceSocket } from "../state/project/types";
+
+/** Recursively removes an entry from an InterfaceMember array, including inside accordions. */
+const filterEntry = (members: InterfaceMember[], entry: InterfaceSocket): InterfaceMember[] =>
+    members
+        .map((m) => (typeof m !== "string" && m.type === "accordion" ? { ...m, items: filterEntry(m.items as InterfaceMember[], entry) as typeof m.items } : m))
+        .filter((m) => m !== entry);
 
 /** Adds an interface entry and propagates the new socket to all Custom nodes referencing this subgraph. */
 export const addInterface = (state: NodeTypes.HookState, graphId: string, nodeId: string, direction: "in" | "out"): NodeTypes.HookState => {
-    const entry = `${direction}:${nodeId}`;
+    const entry: InterfaceSocket = `${direction}:${nodeId}`;
     let newState: NodeTypes.HookState = {
         ...state,
         interfaces: {
@@ -35,7 +42,7 @@ export const addInterface = (state: NodeTypes.HookState, graphId: string, nodeId
 
 /** Removes an interface entry, disconnects any links on the socket, and removes it from all Custom nodes referencing this subgraph. */
 export const removeInterface = (state: NodeTypes.HookState, graphId: string, nodeId: string, direction: "in" | "out"): NodeTypes.HookState => {
-    const entry = `${direction}:${nodeId}`;
+    const entry: InterfaceSocket = `${direction}:${nodeId}`;
     let newNodes = state.nodes;
     let newLinks = state.links;
 
@@ -112,7 +119,7 @@ export const removeInterface = (state: NodeTypes.HookState, graphId: string, nod
         links: newLinks,
         interfaces: {
             ...state.interfaces,
-            [graphId]: (state.interfaces[graphId] ?? []).filter((e) => e !== entry),
+            [graphId]: filterEntry(state.interfaces[graphId] ?? [], entry),
         },
     };
 };

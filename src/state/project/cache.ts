@@ -2,13 +2,7 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { Resolver } from "../../util/resolver";
 import type { CacheType, GraphId, InterfacesType, LinksType, NodesType } from "./types";
-
-/** Parse an interface entry to get the direction and nodeId */
-const parseInterface = (entry: string): { direction: "in" | "out"; nodeId: string } | null => {
-    if (entry.startsWith("in:")) return { direction: "in", nodeId: entry.slice(3) };
-    if (entry.startsWith("out:")) return { direction: "out", nodeId: entry.slice(4) };
-    return null;
-};
+import { flattenSockets, parseInterface } from "./types";
 
 /** Invalidates cache for a node and all its downstream nodes */
 export const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
@@ -83,12 +77,12 @@ const evaluateSubgraphForCache = (
     };
 
     // Get output node IDs by parsing interfaces with "out:" prefix
-    const subgraphInterfaces = interfaces[subgraphId] ?? [];
+    const subgraphSockets = flattenSockets(interfaces[subgraphId] ?? []);
     const results: { [key: string]: DataTypes.AnyEval | null } = {};
 
-    for (const entry of subgraphInterfaces) {
+    for (const entry of subgraphSockets) {
         const parsed = parseInterface(entry);
-        if (!parsed || parsed.direction !== "out") continue;
+        if (parsed.direction !== "out") continue;
 
         const outputNodeId = parsed.nodeId;
         const outputNode = subgraphNodes[outputNodeId];

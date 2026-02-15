@@ -8,6 +8,7 @@ import { Project } from "../state/project";
 import { TextInput } from "../components/inputs/TextInput";
 import { useDragPane } from "../components/wrappers/DragPane";
 import { ResizeHandle } from "../components/containers/ResizeHandle";
+import { flattenSockets } from "../state/project/types";
 import { Session } from "../state/session";
 import { CheckBox } from "../components/buttons/CheckBox";
 
@@ -132,16 +133,16 @@ const Toolbar = () => {
 const InterfaceList = ({ graphId, direction }: { graphId: string; direction: "in" | "out" }) => {
     const interfaces = Project.useGraphInterfaces(graphId);
     const prefix = direction === "in" ? "in:" : "out:";
-    const entries = interfaces.filter((e) => e.startsWith(prefix));
+    const sockets = flattenSockets(interfaces ?? []).filter((e) => e.startsWith(prefix));
 
     return (
         <InterfaceListWrapper>
             <InterfaceListTitle>{direction === "in" ? "Inputs" : "Outputs"}</InterfaceListTitle>
-            {entries.map((entry) => {
+            {sockets.map((entry) => {
                 const nodeId = entry.slice(prefix.length);
                 return <InterfaceEntry key={nodeId} graphId={graphId} nodeId={nodeId} />;
             })}
-            {entries.length === 0 && <EmptyLabel>None</EmptyLabel>}
+            {sockets.length === 0 && <EmptyLabel>None</EmptyLabel>}
         </InterfaceListWrapper>
     );
 };
