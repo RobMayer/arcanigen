@@ -6,12 +6,13 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
 export type IntegerInputDefinition = {
     inputs: never;
@@ -26,6 +27,7 @@ export type IntegerInputDefinition = {
         max: DataTypes.TypeOf<DataTypes.Use<"integer">>;
         step: DataTypes.TypeOf<DataTypes.Use<"integer">>;
         snap: DataTypes.TypeOf<DataTypes.Use<"integer">>;
+        socketed: boolean;
     };
 };
 
@@ -44,6 +46,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<IntegerInputDefini
             step: "1",
             snap: "1",
             widget: Enum.Common.numberInputWidget.Input,
+            socketed: true,
         },
         type: "integerInput",
     };
@@ -78,6 +81,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerInpu
             </Slot>
             <Slot label={"Snap"}>
                 <IntegerInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
                 <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
@@ -135,4 +143,5 @@ export const IntegerInputType: NodeTypes.Type<"integerInput", IntegerInputDefini
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

@@ -6,12 +6,13 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
 export type LengthInputDefinition = {
     inputs: never;
@@ -26,6 +27,7 @@ export type LengthInputDefinition = {
         max: DataTypes.TypeOf<DataTypes.Use<"length">>;
         step: DataTypes.TypeOf<DataTypes.Use<"length">>;
         snap: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        socketed: boolean;
     };
 };
 
@@ -44,6 +46,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LengthInputDefinit
             step: "",
             snap: "",
             widget: Enum.Common.lengthInputWidget.Input,
+            socketed: true,
         },
         type: "lengthInput",
     };
@@ -78,6 +81,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthInput
             </Slot>
             <Slot label={"Snap"}>
                 <LengthInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
                 <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
@@ -135,4 +143,5 @@ export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinitio
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

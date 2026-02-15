@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
@@ -23,6 +23,7 @@ export type BooleanInputDefinition = {
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         text: DataTypes.TypeOf<DataTypes.Use<"string">>;
         initialValue: boolean;
+        socketed: boolean;
     };
 };
 
@@ -38,6 +39,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BooleanInputDefini
             initialValue: false,
             widget: 1,
             text: "Enabled",
+            socketed: true,
         },
         type: "booleanInput",
     };
@@ -65,6 +67,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BooleanInpu
             </Slot>
             <Slot label={"Text"}>
                 <TextInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} placeholder="Text" />
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
                 <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
@@ -122,4 +129,5 @@ export const BooleanInputType: NodeTypes.Type<"booleanInput", BooleanInputDefini
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

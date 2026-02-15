@@ -290,11 +290,60 @@ export namespace Project {
                     },
                 };
 
+                // Call onPayloadChange hook if defined — may modify nodes/links in other graphs
+                const node = ctx.nodes.ref.current[graphId][id];
+                const nodeType = NodeTypes.get(node.type);
+                let hookRan = false;
+                if (nodeType.onPayloadChange) {
+                    const hookState: NodeTypes.HookState = {
+                        nodes: ctx.nodes.ref.current,
+                        links: ctx.links.ref.current,
+                        interfaces: ctx.interfaces.ref.current,
+                        users: ctx.users.ref.current,
+                    };
+                    const onPayloadChange = nodeType.onPayloadChange as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, prev: Record<string, unknown>, state: NodeTypes.HookState, graphId: string) => NodeTypes.HookState | null;
+                    const newState = onPayloadChange(node, prev as Record<string, unknown>, hookState, graphId);
+                    if (newState) {
+                        hookRan = true;
+                        ctx.nodes.ref.current = newState.nodes;
+                        ctx.links.ref.current = newState.links;
+                        ctx.interfaces.ref.current = newState.interfaces;
+                        ctx.users.ref.current = newState.users;
+
+                        // Rebuild nodeList/linkList for all graphs that may have been affected
+                        const newNodeList = { ...ctx.nodeList.ref.current };
+                        const newLinkList = { ...ctx.linkList.ref.current };
+                        for (const gId of Object.keys(newState.nodes)) {
+                            newNodeList[gId] = Object.keys(newState.nodes[gId]);
+                        }
+                        for (const gId of Object.keys(newState.links)) {
+                            newLinkList[gId] = Object.keys(newState.links[gId]);
+                        }
+                        ctx.nodeList.ref.current = newNodeList;
+                        ctx.linkList.ref.current = newLinkList;
+                    }
+                }
+
                 // Rebuild cache for this node and all downstream nodes
                 ctx.cache.ref.current = rebuildDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, graphId, id);
 
+                // If hook ran, also rebuild cache for Custom nodes in parent graphs
+                if (hookRan) {
+                    const usersOfGraph = ctx.users.ref.current[graphId] ?? [];
+                    for (const { node: customNodeId, scope } of usersOfGraph) {
+                        ctx.cache.ref.current = rebuildDownstream(ctx.cache.ref.current, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, scope, customNodeId);
+                    }
+                }
+
                 ctx.nodes.notify();
                 ctx.cache.notify();
+                if (hookRan) {
+                    ctx.links.notify();
+                    ctx.linkList.notify();
+                    ctx.nodeList.notify();
+                    ctx.interfaces.notify();
+                    ctx.users.notify();
+                }
             };
 
             const removeNode = (nodeId: string) => {
@@ -609,7 +658,128 @@ export namespace Project {
                 }
             };
 
-            return { create, rename, alterInterface };
+            const remove = (graphId: string) => {
+                let currentNodes = ctx.nodes.ref.current;
+                let currentLinks = ctx.links.ref.current;
+                let currentInterfaces = ctx.interfaces.ref.current;
+                let currentUsers = ctx.users.ref.current;
+                let currentPositions = ctx.positions.ref.current;
+                let currentCache = ctx.cache.ref.current;
+
+                // Step 1: Remove all Custom nodes in other graphs that reference this subgraph
+                const usersOfGraph = currentUsers[graphId] ?? [];
+                const affectedScopes = new Set<string>();
+                const downstreamByScope: Record<string, Set<string>> = {};
+
+                for (const { node: customNodeId, scope } of usersOfGraph) {
+                    affectedScopes.add(scope);
+                    const scopeGraph = { nodes: currentNodes[scope], links: currentLinks[scope] };
+
+                    // Find downstream nodes before removal (they'll need cache rebuild)
+                    const downstream = ArcaneGraph.wideDownstreamOf(scopeGraph, customNodeId);
+                    if (!downstreamByScope[scope]) downstreamByScope[scope] = new Set();
+                    for (const d of downstream) downstreamByScope[scope].add(d);
+
+                    // Remove the Custom node and its links
+                    const [{ nodes, links }] = ArcaneGraph.removeNodes(scopeGraph, customNodeId);
+                    currentNodes = { ...currentNodes, [scope]: nodes };
+                    currentLinks = { ...currentLinks, [scope]: links };
+
+                    // Remove position
+                    const scopePositions = { ...currentPositions[scope] };
+                    delete scopePositions[customNodeId];
+                    currentPositions = { ...currentPositions, [scope]: scopePositions };
+
+                    // Invalidate cache for the removed node
+                    currentCache = invalidateDownstream(currentCache, currentNodes, currentLinks, scope, customNodeId);
+                }
+
+                // Rebuild cache for downstream nodes in affected scopes
+                for (const scope of affectedScopes) {
+                    for (const downstreamId of downstreamByScope[scope] ?? []) {
+                        if (currentNodes[scope]?.[downstreamId]) {
+                            currentCache = rebuildDownstream(currentCache, currentNodes, currentLinks, currentInterfaces, scope, downstreamId);
+                        }
+                    }
+                }
+
+                // Step 2: Clean up `users` entries for other subgraphs referenced by Custom nodes INSIDE the deleted graph
+                const nodesInGraph = currentNodes[graphId] ?? {};
+                for (const nodeId of Object.keys(nodesInGraph)) {
+                    const node = nodesInGraph[nodeId];
+                    if (node.type === "custom") {
+                        const targetGraphId = (node.payload as { graphId?: string }).graphId;
+                        if (targetGraphId && currentUsers[targetGraphId]) {
+                            currentUsers = {
+                                ...currentUsers,
+                                [targetGraphId]: currentUsers[targetGraphId].filter((u) => !(u.node === nodeId && u.scope === graphId)),
+                            };
+                        }
+                    }
+                }
+
+                // Step 3: Delete all state entries for the deleted graphId
+                const omit = <T extends Record<string, unknown>>(obj: T, key: string): T => {
+                    const copy = { ...obj };
+                    delete copy[key];
+                    return copy as T;
+                };
+
+                currentNodes = omit(currentNodes, graphId);
+                currentLinks = omit(currentLinks, graphId);
+                currentInterfaces = omit(currentInterfaces, graphId);
+                currentUsers = omit(currentUsers, graphId);
+                currentPositions = omit(currentPositions, graphId);
+                currentCache = omit(currentCache, graphId);
+
+                // Apply all state
+                ctx.nodes.ref.current = currentNodes;
+                ctx.links.ref.current = currentLinks;
+                ctx.interfaces.ref.current = currentInterfaces;
+                ctx.users.ref.current = currentUsers;
+                ctx.positions.ref.current = currentPositions;
+                ctx.cache.ref.current = currentCache;
+
+                // Rebuild nodeList/linkList: delete the graph's entries and rebuild affected scopes
+                const newNodeList = { ...ctx.nodeList.ref.current };
+                const newLinkList = { ...ctx.linkList.ref.current };
+                delete newNodeList[graphId];
+                delete newLinkList[graphId];
+                for (const scope of affectedScopes) {
+                    newNodeList[scope] = Object.keys(currentNodes[scope] ?? {});
+                    newLinkList[scope] = Object.keys(currentLinks[scope] ?? {});
+                }
+                ctx.nodeList.ref.current = newNodeList;
+                ctx.linkList.ref.current = newLinkList;
+
+                // Delete meta and deps
+                const newMeta = { ...ctx.meta.ref.current };
+                delete newMeta[graphId];
+                ctx.meta.ref.current = newMeta;
+
+                const newDeps = { ...ctx.deps.ref.current };
+                delete newDeps[graphId];
+                // Rebuild deps for affected scopes (they lost a Custom node)
+                for (const scope of affectedScopes) {
+                    const scopeGraph = { nodes: currentNodes[scope], links: currentLinks[scope] };
+                    newDeps[scope] = computeSubgraphDeps(scopeGraph, currentInterfaces[scope] ?? [], newDeps);
+                }
+                ctx.deps.ref.current = newDeps;
+
+                // Notify all slices
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+                ctx.positions.notify();
+                ctx.interfaces.notify();
+                ctx.users.notify();
+                ctx.cache.notify();
+                ctx.meta.notify();
+                ctx.deps.notify();
+            };
+
+            return { create, rename, remove, alterInterface };
         }, [ctx]);
     };
 }

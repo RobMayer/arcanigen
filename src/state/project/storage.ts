@@ -77,6 +77,7 @@ const TESTING_STATE = {
                     max: "3",
                     step: "0.01",
                     snap: "0.01",
+                    socketed: true,
                 },
             },
             adder: {

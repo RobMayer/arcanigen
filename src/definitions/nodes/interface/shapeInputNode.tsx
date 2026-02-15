@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 
@@ -17,6 +17,7 @@ export type ShapeInputDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        socketed: boolean;
     };
 };
 
@@ -29,6 +30,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ShapeInputDefiniti
         },
         payload: {
             label: "",
+            socketed: true,
         },
         type: "shapeInput",
     };
@@ -89,4 +91,5 @@ export const ShapeInputType: NodeTypes.Type<"shapeInput", ShapeInputDefinition> 
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

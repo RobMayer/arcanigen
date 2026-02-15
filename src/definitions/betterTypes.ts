@@ -275,6 +275,7 @@ export namespace NodeTypes {
         onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", state: HookState, graphId: string) => HookState;
+        onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], state: HookState, graphId: string) => HookState | null;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {

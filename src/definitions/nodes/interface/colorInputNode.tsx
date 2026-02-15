@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
@@ -26,6 +26,7 @@ export type ColorInputDefinition = {
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         alpha: boolean;
         nullable: boolean;
+        socketed: boolean;
     };
 };
 
@@ -42,6 +43,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorInputDefiniti
             widget: Enum.Common.colorInputWidget.Hex,
             alpha: true,
             nullable: true,
+            socketed: true,
         },
         type: "colorInput",
     };
@@ -73,6 +75,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorInputD
             <Slot>
                 <CheckBox checked={node.payload.nullable} onToggle={(nullable) => handleUpdate({ nullable })}>
                     Nullable
+                </CheckBox>
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
                 </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
@@ -131,4 +138,5 @@ export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> 
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

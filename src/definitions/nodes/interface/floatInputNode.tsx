@@ -6,12 +6,13 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
 export type FloatInputDefinition = {
     inputs: never;
@@ -26,6 +27,7 @@ export type FloatInputDefinition = {
         max: DataTypes.TypeOf<DataTypes.Use<"float">>;
         step: DataTypes.TypeOf<DataTypes.Use<"float">>;
         snap: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        socketed: boolean;
     };
 };
 
@@ -44,6 +46,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinitio
             step: "0.01",
             snap: "0.01",
             widget: Enum.Common.numberInputWidget.Input,
+            socketed: true,
         },
         type: "floatInput",
     };
@@ -78,6 +81,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
             </Slot>
             <Slot label={"Snap"}>
                 <DecimalInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
                 <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
@@ -136,4 +144,5 @@ export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> 
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

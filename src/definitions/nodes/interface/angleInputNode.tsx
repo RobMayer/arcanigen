@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -29,6 +29,7 @@ export type AngleInputDefinition = {
         step: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         snap: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         wraps: boolean;
+        socketed: boolean;
     };
 };
 
@@ -48,6 +49,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefiniti
             snap: "1",
             widget: Enum.Common.numberInputWidget.Input,
             wraps: false,
+            socketed: true,
         },
         type: "angleInput",
     };
@@ -86,6 +88,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleInputD
             <Slot label={"Wraps"}>
                 <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })}>
                     Wrap value between 0-360
+                </CheckBox>
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
                 </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
@@ -144,4 +151,5 @@ export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> 
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };

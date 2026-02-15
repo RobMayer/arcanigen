@@ -6,12 +6,13 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
-import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
 export type EnumInputDefinition = {
     inputs: never;
@@ -23,6 +24,7 @@ export type EnumInputDefinition = {
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         initialValue: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         options: string[];
+        socketed: boolean;
     };
 };
 
@@ -38,6 +40,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<EnumInputDefinitio
             initialValue: 0,
             widget: Enum.Common.enumInputWidget.Dropdown,
             options: ["Option A", "Option B"],
+            socketed: true,
         },
         type: "enumInput",
     };
@@ -100,6 +103,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
                     </ActionButton.Lite>
                 </Slot>
             ))}
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
+            </Slot>
             <Slot label={"Widget"}>
                 <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
                     {WIDGET_OPTIONS.map((each) => {
@@ -156,4 +164,5 @@ export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleInputSocketedChange,
 };
