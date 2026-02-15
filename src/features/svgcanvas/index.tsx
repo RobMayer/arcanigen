@@ -5,7 +5,7 @@ import { Resolver } from "../../util/resolver";
 import styled from "styled-components";
 import { DragPane, DragPaneControls } from "../../components/wrappers/DragPane";
 
-const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode => {
+export const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode => {
     const { tag, attributes, children, style } = obj;
     const childNodes = children.map((child, i) => renderSVGObject(child, i));
 

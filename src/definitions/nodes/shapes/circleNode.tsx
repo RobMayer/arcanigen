@@ -298,10 +298,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
             transforms.push(`rotate(${rotation})`);
         }
 
+        const pathPreview = { x: -radius, y: -radius, w: 2 * radius, h: 2 * radius };
+
         const pathElement = {
             tag: "path" as const,
             attributes,
             children: [],
+            preview: pathPreview,
         };
 
         // If we have transforms, wrap in a <g> element
@@ -314,6 +317,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
                         transform: transforms.join(" "),
                     },
                     children: [pathElement],
+                    preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
                 },
             };
         }

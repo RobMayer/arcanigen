@@ -7,6 +7,8 @@ import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, SocketTypes } from "../../definitions/betterTypes";
 import { Flavour } from "../../components/types";
+import { SVGObject } from "../../types";
+import { renderSVGObject } from "../svgcanvas";
 
 const SlotBase = styled.div`
     display: flex;
@@ -41,6 +43,37 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
         </SlotBase>
     );
 };
+
+export const ShapePreview = styled(({ shape, className }: { shape: SVGObject | null; className?: string }) => {
+    const contents = useMemo(() => {
+        if (shape) {
+            return renderSVGObject(shape, "preview");
+        }
+        return null;
+    }, [shape]);
+
+    if (!shape || !contents) return <div className={className} />;
+
+    const { x, y, w, h } = shape.preview;
+    const pad = Math.max(w, h) * 0.05;
+
+    return (
+        <div className={className}>
+            <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>{contents}</svg>
+        </div>
+    );
+})`
+    background: #222;
+    border: 1px solid #666;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    & > svg {
+        width: 100%;
+        height: 100%;
+    }
+`;
 
 export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["outputs"] & string>({
     node,

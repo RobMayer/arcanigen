@@ -410,10 +410,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             transforms.push(`rotate(${rotation})`);
         }
 
+        const pathPreview = { x: -trueRadius, y: -trueRadius, w: 2 * trueRadius, h: 2 * trueRadius };
+
         const pathElement = {
             tag: "path" as const,
             attributes,
             children: [],
+            preview: pathPreview,
         };
 
         // If we have transforms, wrap in a <g> element
@@ -426,6 +429,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                         transform: transforms.join(" "),
                     },
                     children: [pathElement],
+                    preview: { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius },
                 },
             };
         }

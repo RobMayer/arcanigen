@@ -7,6 +7,7 @@ export type SVGObject = {
     children: SVGObject[];
     attributes: { [key: string]: string | undefined };
     style?: { [key: string]: string };
+    preview: { x: number; y: number; w: number; h: number };
 };
 
 export type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };

@@ -403,10 +403,23 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
                     attributes: {},
                     style: { mixBlendMode: blendModeStr },
                     children: [layer.shape],
+                    preview: layer.shape.preview,
                 };
             }
             return layer.shape;
         });
+
+        // Compute union of children's previews
+        let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
+        for (const child of children) {
+            minX = Math.min(minX, child.preview.x);
+            minY = Math.min(minY, child.preview.y);
+            maxX = Math.max(maxX, child.preview.x + child.preview.w);
+            maxY = Math.max(maxY, child.preview.y + child.preview.h);
+        }
 
         return {
             kind: "shape",
@@ -415,6 +428,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
                 attributes: {},
                 style: { isolation: doBlendInternal ? "isolate" : "auto" },
                 children,
+                preview: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
             },
         };
     }
