@@ -12,7 +12,7 @@ export type MetaType = { [graphId: GraphId]: { name: string } };
 export type LinksType = { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };
 export type InterfaceSocket = `in:${string}` | `out:${string}`;
 export type InterfaceSeparator = { type: "separator" };
-export type InterfaceAccordion = { type: "accordion"; label: string; items: Exclude<InterfaceMember, InterfaceAccordion>[] };
+export type InterfaceAccordion = { type: "accordion"; id: string; label: string; items: Exclude<InterfaceMember, InterfaceAccordion>[] };
 export type InterfaceMember = InterfaceSocket | InterfaceSeparator | InterfaceAccordion;
 
 export const flattenSockets = (members: InterfaceMember[]): InterfaceSocket[] =>

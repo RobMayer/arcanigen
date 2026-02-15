@@ -82,6 +82,7 @@ export const NodeAccordion = styled(
         start,
         label,
         nodeId,
+        accordionId,
         socketsIn = "",
         socketsOut = "",
         flavour = "base",
@@ -90,6 +91,7 @@ export const NodeAccordion = styled(
         children?: ReactNode;
         start?: "open" | "closed";
         label: string;
+        accordionId?: string;
         nodeId: string;
         socketsIn?: string;
         socketsOut?: string;
@@ -119,7 +121,7 @@ export const NodeAccordion = styled(
         }, [nodeId, socketsIn, socketsOut]);
 
         const graphId = useGraphId();
-        const [isToggled, setIsToggled] = Session.useUiState<boolean>(`nodeSlot_accordion[${graphId}][${nodeId}][${label}]`);
+        const [isToggled, setIsToggled] = Session.useUiState<boolean>(`nodeSlot_accordion[${graphId}][${nodeId}][${accordionId ?? label}]`);
         const isOpen = start === "open" ? !isToggled : isToggled;
         const toggle = useCallback(() => {
             setIsToggled((p) => (p ? undefined : true));

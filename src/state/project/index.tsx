@@ -4,7 +4,7 @@ import { computeSubgraphDeps, computeForbiddenSockets } from "../../util/cycleDe
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { useGraphId } from "../graphId";
-import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType } from "./types";
+import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, InterfaceMember } from "./types";
 import { invalidateDownstream, evaluateAndCacheNode, rebuildDownstream } from "./cache";
 import { INITIAL_STATE } from "./storage";
 
@@ -600,7 +600,16 @@ export namespace Project {
                 ctx.meta.notify();
             };
 
-            return { create, rename };
+            const alterInterface = (graphId: string, fn: (members: InterfaceMember[]) => InterfaceMember[]) => {
+                const prev = ctx.interfaces.ref.current[graphId] ?? [];
+                const next = fn(prev);
+                if (next !== prev) {
+                    ctx.interfaces.ref.current = { ...ctx.interfaces.ref.current, [graphId]: next };
+                    ctx.interfaces.notify();
+                }
+            };
+
+            return { create, rename, alterInterface };
         }, [ctx]);
     };
 }

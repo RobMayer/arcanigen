@@ -80,7 +80,7 @@ const InterfaceMembers = ({
         }
         if (entry.type === "accordion") {
             return (
-                <NodeAccordion key={`acc-${entry.label}`} label={entry.label} nodeId={hostNode.id}>
+                <NodeAccordion key={`acc-${entry.label}`} label={entry.label} nodeId={hostNode.id} accordionId={entry.id}>
                     <InterfaceMembers members={entry.items as InterfaceMember[]} graphId={graphId} hostNode={hostNode} handleValue={handleValue} />
                 </NodeAccordion>
             );
