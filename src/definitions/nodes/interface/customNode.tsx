@@ -28,8 +28,13 @@ import { LengthOutputDefinition } from "./lengthOutputNode";
 import { ShapeOutputDefinition } from "./shapeOutputNode";
 import { ColorOutputDefinition } from "./colorOutputNode";
 import { BooleanOutputDefinition } from "./booleanOutputNode";
+import { EnumInputDefinition } from "./enumInputNode";
+import { EnumOutputDefinition } from "./enumOutputNode";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { Dropdown } from "../../../components/inputs/Dropdown";
 import { CheckButton } from "../../../components/buttons/CheckButton";
+import { RadioButton } from "../../../components/buttons/RadioButton";
+import { RadioBox } from "../../../components/buttons/RadioBox";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
 import { flattenSockets, parseInterface, InterfaceMember } from "../../../state/project/types";
@@ -177,6 +182,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
                     inputs[inSocket] = { kind: "color", data: storedValue as Color.Type };
                 } else if (inputNode?.type === "booleanInput") {
                     inputs[inSocket] = { kind: "boolean", data: storedValue as boolean };
+                } else if (inputNode?.type === "enumInput") {
+                    inputs[inSocket] = { kind: "enum", data: storedValue as number };
                 }
             }
         }
@@ -312,6 +319,10 @@ const DynamicSlot = ({
             return <OutputSlotBoolean host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<BooleanOutputDefinition>} />;
         case "booleanInput":
             return <InputSlotBoolean host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<BooleanInputDefinition>} handleValue={handleValue} />;
+        case "enumOutput":
+            return <OutputSlotEnum host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<EnumOutputDefinition>} />;
+        case "enumInput":
+            return <InputSlotEnum host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<EnumInputDefinition>} handleValue={handleValue} />;
     }
     return null;
 };
@@ -553,11 +564,7 @@ const InputSlotLength = ({ host, source, handleValue }: InputWidgetProps<LengthI
         case Enum.Common.lengthInputWidget.Input: {
             return (
                 <SocketIn node={host} socketId={source.id} type={"length" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
-                    <LengthInput
-                        value={host.payload[`value_${source.id}`] as Length.Type}
-                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
-                        disabled={host.in[source.id] !== null}
-                    />
+                    <LengthInput value={host.payload[`value_${source.id}`] as Length.Type} onCommit={(v) => handleValue({ [`value_${source.id}`]: v })} disabled={host.in[source.id] !== null} />
                 </SocketIn>
             );
         }
@@ -683,11 +690,7 @@ const InputSlotBoolean = ({ host, source, handleValue }: InputWidgetProps<Boolea
         case Enum.Common.booleanInputWidget.Checkbox: {
             return (
                 <SocketIn node={host} socketId={source.id} type={"boolean" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
-                    <CheckBox
-                        checked={host.payload[`value_${source.id}`] as boolean}
-                        onToggle={(v) => handleValue({ [`value_${source.id}`]: v })}
-                        disabled={host.in[source.id] !== null}
-                    >
+                    <CheckBox checked={host.payload[`value_${source.id}`] as boolean} onToggle={(v) => handleValue({ [`value_${source.id}`]: v })} disabled={host.in[source.id] !== null}>
                         {source.payload.text || "Enabled"}
                     </CheckBox>
                 </SocketIn>
@@ -696,17 +699,97 @@ const InputSlotBoolean = ({ host, source, handleValue }: InputWidgetProps<Boolea
         case Enum.Common.booleanInputWidget.Checkbutton: {
             return (
                 <SocketIn node={host} socketId={source.id} type={"boolean" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
-                    <CheckButton
-                        checked={host.payload[`value_${source.id}`] as boolean}
-                        onToggle={(v) => handleValue({ [`value_${source.id}`]: v })}
-                        disabled={host.in[source.id] !== null}
-                    >
+                    <CheckButton checked={host.payload[`value_${source.id}`] as boolean} onToggle={(v) => handleValue({ [`value_${source.id}`]: v })} disabled={host.in[source.id] !== null}>
                         {source.payload.text || "Enabled"}
                     </CheckButton>
                 </SocketIn>
             );
         }
     }
+};
+
+const OutputSlotEnum = ({ host, source }: OutputWidgetProps<EnumOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "enum" ? `${resolved.data}` : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"enum" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"enum" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotEnum = ({ host, source, handleValue }: InputWidgetProps<EnumInputDefinition>) => {
+    const options = source.payload.options ?? [];
+    const enumOptions = options.map((label, i) => ({ value: `${i}`, label }));
+    const label = (source.payload.label ?? "") === "" ? "Input" : source.payload.label;
+    const value = `${host.payload[`value_${source.id}`] as number}`;
+    const onValue = (v: string) => handleValue({ [`value_${source.id}`]: Number(v) });
+    const disabled = host.in[source.id] !== null;
+
+    switch (source.payload.widget) {
+        case Enum.Common.enumInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"enum" as never}>
+                    {label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.enumInputWidget.Dropdown: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"enum" as never} label={label}>
+                    <Dropdown value={value} onValue={onValue} disabled={disabled}>
+                        {options.map((opt, i) => (
+                            <option value={i} key={i}>
+                                {opt}
+                            </option>
+                        ))}
+                    </Dropdown>
+                </SocketIn>
+            );
+        }
+        case Enum.Common.enumInputWidget.HorizontalRadioButton:
+        case Enum.Common.enumInputWidget.VerticalRadioButton: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"enum" as never} label={label}>
+                    <RadioButton.Group
+                        value={value}
+                        onValue={onValue}
+                        options={enumOptions}
+                        orientation={source.payload.widget === Enum.Common.enumInputWidget.HorizontalRadioButton ? "horizontal" : "vertical"}
+                        disabled={disabled}
+                    />
+                </SocketIn>
+            );
+        }
+        case Enum.Common.enumInputWidget.HorizontalRadioBox:
+        case Enum.Common.enumInputWidget.VerticalRadioBox: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"enum" as never} label={label}>
+                    <RadioBox.Group
+                        value={value}
+                        onValue={onValue}
+                        options={enumOptions}
+                        orientation={source.payload.widget === Enum.Common.enumInputWidget.HorizontalRadioBox ? "horizontal" : "vertical"}
+                        disabled={disabled}
+                    />
+                </SocketIn>
+            );
+        }
+    }
+    return null;
 };
 
 const TextPreview = styled.div`

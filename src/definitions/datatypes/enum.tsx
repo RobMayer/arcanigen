@@ -92,6 +92,15 @@ export namespace Enum {
             Checkbutton: 2,
         } as const;
 
+        export const enumInputWidget = {
+            None: 0,
+            Dropdown: 1,
+            VerticalRadioButton: 2,
+            HorizontalRadioButton: 3,
+            VerticalRadioBox: 4,
+            HorizontalRadioBox: 5,
+        } as const;
+
         export const typicalInputWidget = {
             None: 0,
             Input: 1,

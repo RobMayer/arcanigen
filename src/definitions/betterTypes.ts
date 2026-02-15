@@ -42,6 +42,8 @@ import { ColorInputDefinition, ColorInputType } from "./nodes/interface/colorInp
 import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/colorOutputNode";
 import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/booleanInputNode";
 import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/booleanOutputNode";
+import { EnumInputDefinition, EnumInputType } from "./nodes/interface/enumInputNode";
+import { EnumOutputDefinition, EnumOutputType } from "./nodes/interface/enumOutputNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -76,6 +78,8 @@ namespace Registries {
         colorOutput: ColorOutputDefinition;
         booleanInput: BooleanInputDefinition;
         booleanOutput: BooleanOutputDefinition;
+        enumInput: EnumInputDefinition;
+        enumOutput: EnumOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -113,6 +117,8 @@ namespace Registries {
         colorOutput: ColorOutputType,
         booleanInput: BooleanInputType,
         booleanOutput: BooleanOutputType,
+        enumInput: EnumInputType,
+        enumOutput: EnumOutputType,
         custom: CustomNodeType,
 
         addFloat: AddFloatType,
