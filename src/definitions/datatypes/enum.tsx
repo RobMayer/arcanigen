@@ -70,10 +70,20 @@ export namespace Enum {
             OutIn: 3,
         };
 
-        export const floatInputWidget = {
+        export const numberInputWidget = {
             None: 0,
             Input: 1,
             Slider: 2,
+        } as const;
+
+        export const lengthInputWidget = {
+            None: 0,
+            Input: 1,
+        } as const;
+
+        export const colorInputWidget = {
+            None: 0,
+            Hex: 1,
         } as const;
 
         export const typicalOutputWidget = {

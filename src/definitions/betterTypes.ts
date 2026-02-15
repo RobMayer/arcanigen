@@ -30,6 +30,16 @@ import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
 import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
 import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
 import { DistributionNodeType, DistributionNodeDefinition } from "./nodes/math/distributionNode";
+import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/integerInputNode";
+import { IntegerOutputDefinition, IntegerOutputType } from "./nodes/interface/integerOutputNode";
+import { AngleInputDefinition, AngleInputType } from "./nodes/interface/angleInputNode";
+import { AngleOutputDefinition, AngleOutputType } from "./nodes/interface/angleOutputNode";
+import { LengthInputDefinition, LengthInputType } from "./nodes/interface/lengthInputNode";
+import { LengthOutputDefinition, LengthOutputType } from "./nodes/interface/lengthOutputNode";
+import { ShapeInputDefinition, ShapeInputType } from "./nodes/interface/shapeInputNode";
+import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/shapeOutputNode";
+import { ColorInputDefinition, ColorInputType } from "./nodes/interface/colorInputNode";
+import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/colorOutputNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -52,6 +62,16 @@ namespace Registries {
         // subgraph interfaces
         floatInput: FloatInputDefinition;
         floatOutput: FloatOutputDefinition;
+        integerInput: IntegerInputDefinition;
+        integerOutput: IntegerOutputDefinition;
+        angleInput: AngleInputDefinition;
+        angleOutput: AngleOutputDefinition;
+        lengthInput: LengthInputDefinition;
+        lengthOutput: LengthOutputDefinition;
+        shapeInput: ShapeInputDefinition;
+        shapeOutput: ShapeOutputDefinition;
+        colorInput: ColorInputDefinition;
+        colorOutput: ColorOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -77,6 +97,16 @@ namespace Registries {
 
         floatInput: FloatInputType,
         floatOutput: FloatOutputType,
+        integerInput: IntegerInputType,
+        integerOutput: IntegerOutputType,
+        angleInput: AngleInputType,
+        angleOutput: AngleOutputType,
+        lengthInput: LengthInputType,
+        lengthOutput: LengthOutputType,
+        shapeInput: ShapeInputType,
+        shapeOutput: ShapeOutputType,
+        colorInput: ColorInputType,
+        colorOutput: ColorOutputType,
         custom: CustomNodeType,
 
         addFloat: AddFloatType,

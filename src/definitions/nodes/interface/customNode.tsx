@@ -10,12 +10,29 @@ import { Project } from "../../../state/project";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
+import { IntegerInputDefinition } from "./integerInputNode";
+import { AngleInputDefinition } from "./angleInputNode";
+import { LengthInputDefinition } from "./lengthInputNode";
+import { ColorInputDefinition } from "./colorInputNode";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { IntegerInput } from "../../../components/inputs/IntegerInput";
+import { AngleInput } from "../../../components/inputs/AngleInput";
+import { LengthInput } from "../../../components/inputs/LengthInput";
+import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { NumericString } from "../../datatypes/numericString";
 import { FloatOutputDefinition } from "./floatOutputNode";
+import { IntegerOutputDefinition } from "./integerOutputNode";
+import { AngleOutputDefinition } from "./angleOutputNode";
+import { LengthOutputDefinition } from "./lengthOutputNode";
+import { ShapeOutputDefinition } from "./shapeOutputNode";
+import { ColorOutputDefinition } from "./colorOutputNode";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
 import { flattenSockets, parseInterface, InterfaceMember } from "../../../state/project/types";
+import { ShapePreview } from "../../../features/nodeview/slots";
+import { Color } from "../../datatypes/color";
+import { Angle } from "../../datatypes/angle";
+import { Length } from "../../datatypes/length";
 type StoredValueKey = `value_${string}`;
 
 export type CustomDefinition = {
@@ -146,8 +163,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
                 const inputNode = context.getNode(graphId, inSocket);
                 if (inputNode?.type === "floatInput") {
                     inputs[inSocket] = { kind: "float", data: storedValue as NumericString.Type };
+                } else if (inputNode?.type === "integerInput") {
+                    inputs[inSocket] = { kind: "integer", data: storedValue as NumericString.Type };
+                } else if (inputNode?.type === "angleInput") {
+                    inputs[inSocket] = { kind: "angle", data: storedValue as Angle.Type };
+                } else if (inputNode?.type === "lengthInput") {
+                    inputs[inSocket] = { kind: "length", data: storedValue as Length.Type };
+                } else if (inputNode?.type === "colorInput") {
+                    inputs[inSocket] = { kind: "color", data: storedValue as Color.Type };
                 }
-                // TODO: add other input types as they are created (integerInput, angleInput, etc.)
             }
         }
     }
@@ -251,6 +275,26 @@ const DynamicSlot = ({
             return <OutputSlotFloat host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<FloatOutputDefinition>} />;
         case "floatInput":
             return <InputSlotFloat host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<FloatInputDefinition>} handleValue={handleValue} />;
+        case "integerOutput":
+            return <OutputSlotInteger host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<IntegerOutputDefinition>} />;
+        case "integerInput":
+            return <InputSlotInteger host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<IntegerInputDefinition>} handleValue={handleValue} />;
+        case "angleOutput":
+            return <OutputSlotAngle host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<AngleOutputDefinition>} />;
+        case "angleInput":
+            return <InputSlotAngle host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<AngleInputDefinition>} handleValue={handleValue} />;
+        case "lengthOutput":
+            return <OutputSlotLength host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<LengthOutputDefinition>} />;
+        case "lengthInput":
+            return <InputSlotLength host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<LengthInputDefinition>} handleValue={handleValue} />;
+        case "shapeOutput":
+            return <OutputSlotShape host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ShapeOutputDefinition>} />;
+        case "shapeInput":
+            return <InputSlotShape host={hostNode} source={sourceNode} />;
+        case "colorOutput":
+            return <OutputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorOutputDefinition>} />;
+        case "colorInput":
+            return <InputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorInputDefinition>} handleValue={handleValue} />;
     }
     return null;
 };
@@ -283,14 +327,14 @@ const OutputSlotFloat = ({ host, source }: OutputWidgetProps<FloatOutputDefiniti
 
 const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInputDefinition>) => {
     switch (source.payload.widget) {
-        case Enum.Common.floatInputWidget.None: {
+        case Enum.Common.numberInputWidget.None: {
             return (
                 <SocketIn node={host} socketId={source.id} type={"float" as never}>
                     {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
                 </SocketIn>
             );
         }
-        case Enum.Common.floatInputWidget.Input: {
+        case Enum.Common.numberInputWidget.Input: {
             return (
                 <SocketIn node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <DecimalInput
@@ -306,7 +350,7 @@ const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInp
                 </SocketIn>
             );
         }
-        case Enum.Common.floatInputWidget.Slider: {
+        case Enum.Common.numberInputWidget.Slider: {
             return (
                 <SocketIn node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <DecimalInput.SliderInput
@@ -323,6 +367,267 @@ const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInp
         }
     }
 
+    return null;
+};
+
+const OutputSlotInteger = ({ host, source }: OutputWidgetProps<IntegerOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "integer" ? (NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(0) ?? "« none »") : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"integer" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"integer" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotInteger = ({ host, source, handleValue }: InputWidgetProps<IntegerInputDefinition>) => {
+    switch (source.payload.widget) {
+        case Enum.Common.numberInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"integer" as never}>
+                    {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.numberInputWidget.Input: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"integer" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <IntegerInput
+                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        min={source.payload.min}
+                        max={source.payload.max}
+                        step={source.payload.step}
+                        snap={source.payload.snap}
+                        required
+                    />
+                </SocketIn>
+            );
+        }
+        case Enum.Common.numberInputWidget.Slider: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"integer" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <IntegerInput.SliderInput
+                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        min={source.payload.min ?? "0"}
+                        max={source.payload.max ?? "100"}
+                        step={source.payload.step ?? "1"}
+                        snap={source.payload.snap}
+                    />
+                </SocketIn>
+            );
+        }
+    }
+    return null;
+};
+
+const OutputSlotAngle = ({ host, source }: OutputWidgetProps<AngleOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "angle" ? `${Number(NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(2))}°` : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"angle" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"angle" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotAngle = ({ host, source, handleValue }: InputWidgetProps<AngleInputDefinition>) => {
+    switch (source.payload.widget) {
+        case Enum.Common.numberInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"angle" as never}>
+                    {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.numberInputWidget.Input: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"angle" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <AngleInput
+                        value={(host.payload[`value_${source.id}`] as Angle.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        unbound={!source.payload.wraps}
+                    />
+                </SocketIn>
+            );
+        }
+        case Enum.Common.numberInputWidget.Slider: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"angle" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <AngleInput.SliderInput
+                        value={(host.payload[`value_${source.id}`] as Angle.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        min={source.payload.min}
+                        max={source.payload.max}
+                        step={source.payload.step}
+                        snap={source.payload.snap}
+                        unbound={!source.payload.wraps}
+                    />
+                </SocketIn>
+            );
+        }
+    }
+    return null;
+};
+
+const OutputSlotLength = ({ host, source }: OutputWidgetProps<LengthOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "length" ? resolved.data : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"length" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"length" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotLength = ({ host, source, handleValue }: InputWidgetProps<LengthInputDefinition>) => {
+    switch (source.payload.widget) {
+        case Enum.Common.lengthInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"length" as never}>
+                    {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.lengthInputWidget.Input: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"length" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <LengthInput
+                        value={(host.payload[`value_${source.id}`] as Length.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                    />
+                </SocketIn>
+            );
+        }
+    }
+    return null;
+};
+
+const OutputSlotShape = ({ host, source }: OutputWidgetProps<ShapeOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const svgObject = resolved?.kind === "shape" ? resolved.data : null;
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"shape" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <>
+                    <SocketOut node={host} socketId={source.id} type={"shape" as never}>
+                        {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                    </SocketOut>
+                    <ShapePreview shape={svgObject} color={Color.fromHex("#ffffffff")} />
+                </>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotShape = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketIn node={host} socketId={source.id} type={"shape" as never}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
+        </SocketIn>
+    );
+};
+
+const OutputSlotColor = ({ host, source }: OutputWidgetProps<ColorOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "color" ? Color.toHex(resolved.data) : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"color" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"color" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotColor = ({ host, source, handleValue }: InputWidgetProps<ColorInputDefinition>) => {
+    switch (source.payload.widget) {
+        case Enum.Common.colorInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"color" as never}>
+                    {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.colorInputWidget.Hex: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"color" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <ColorHexInput
+                        value={(host.payload[`value_${source.id}`] as Color.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        alpha={source.payload.alpha}
+                        nullable={source.payload.nullable}
+                    />
+                </SocketIn>
+            );
+        }
+    }
     return null;
 };
 

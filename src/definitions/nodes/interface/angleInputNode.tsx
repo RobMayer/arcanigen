@@ -7,29 +7,32 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
+import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
-export type FloatInputDefinition = {
+export type AngleInputDefinition = {
     inputs: never;
     outputs: {
-        output: DataTypes.Use<"float">;
+        output: DataTypes.Use<"angle">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        defaultValue: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        defaultValue: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        min: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        max: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        step: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        snap: DataTypes.TypeOf<DataTypes.Use<"float">>;
+        min: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        max: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        step: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        snap: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        wraps: boolean;
     };
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition> => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleInput", AngleInputDefinition> => {
     return {
         id,
         in: {},
@@ -40,20 +43,21 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinitio
             label: "",
             defaultValue: "0",
             min: "0",
-            max: "1",
-            step: "0.01",
-            snap: "0.01",
+            max: "360",
+            step: "1",
+            snap: "1",
             widget: Enum.Common.numberInputWidget.Input,
+            wraps: false,
         },
-        type: "floatInput",
+        type: "angleInput",
     };
 };
 
 const WIDGET_OPTIONS = Enum.options(Enum.Common.numberInputWidget);
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleInputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -61,11 +65,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"float"}>
+            <SocketOut node={node} socketId={"output"} type={"angle"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
             <Slot label={"Default Value"}>
-                <DecimalInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} />
+                <AngleInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} unbound={!node.payload.wraps} />
             </Slot>
             <Slot label={"Minimum"}>
                 <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
@@ -78,6 +82,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
             </Slot>
             <Slot label={"Snap"}>
                 <DecimalInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
+            </Slot>
+            <Slot label={"Wraps"}>
+                <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })}>
+                    Wrap value between 0-360
+                </CheckBox>
             </Slot>
             <Slot label={"Widget"}>
                 <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
@@ -94,40 +103,39 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, _outSocket: "output", _deps: AllDeps): (keyof FloatInputDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, _outSocket: "output", _deps: AllDeps): (keyof AngleInputDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, _inSocket: keyof FloatInputDefinition["inputs"], _deps: AllDeps): (keyof FloatInputDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, _inSocket: keyof AngleInputDefinition["inputs"], _deps: AllDeps): (keyof AngleInputDefinition["outputs"])[] => {
     return [];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<FloatInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<AngleInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        // When called from subgraph context, use provided input; otherwise use default
-        const providedInput = context.getInput?.<"float">(node.id);
+        const providedInput = context.getInput?.<"angle">(node.id);
         return {
-            kind: "float",
+            kind: "angle",
             data: providedInput?.data ?? node.payload.defaultValue,
         };
     }
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"angleInput", AngleInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return addInterface(state, graphId, node.id, "in");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"angleInput", AngleInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return removeInterface(state, graphId, node.id, "in");
 };
 
-export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> = {
-    type: "floatInput",
-    displayName: "Float Input",
+export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> = {
+    type: "angleInput",
+    displayName: "Angle Input",
     defaultLabel: "Input",
-    iconNode: NODE_ICONS.numericValue.Item,
-    iconCard: NODE_ICONS.numericValue.Card,
+    iconNode: NODE_ICONS.angleValue.Item,
+    iconCard: NODE_ICONS.angleValue.Card,
     category: "inputs",
     evaluate,
     Controls,

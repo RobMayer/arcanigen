@@ -10,9 +10,9 @@ import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 
-export type FloatOutputDefinition = {
+export type ColorOutputDefinition = {
     inputs: {
-        input: DataTypes.Use<"float">;
+        input: DataTypes.Use<"color">;
     };
     outputs: never;
     payload: {
@@ -21,7 +21,7 @@ export type FloatOutputDefinition = {
     };
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition> => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorOutputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorOutput", ColorOutputDefinition> => {
     return {
         id,
         in: {
@@ -32,15 +32,15 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefiniti
             label: "",
             widget: Enum.Common.typicalOutputWidget.None,
         },
-        type: "floatOutput",
+        type: "colorOutput",
     };
 };
 
 const WIDGET_OPTIONS = Enum.options(Enum.Common.typicalOutputWidget);
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorOutputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<ColorOutputDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -48,7 +48,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutput
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"} type={"float"}>
+            <SocketIn node={node} socketId={"input"} type={"color"}>
                 Output
             </SocketIn>
             <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
@@ -64,34 +64,32 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutput
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _outSocket: keyof FloatOutputDefinition["outputs"], _deps: AllDeps): (keyof FloatOutputDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<ColorOutputDefinition>, _outSocket: keyof ColorOutputDefinition["outputs"], _deps: AllDeps): (keyof ColorOutputDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _inSocket: keyof FloatOutputDefinition["inputs"], _deps: AllDeps): (keyof FloatOutputDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<ColorOutputDefinition>, _inSocket: keyof ColorOutputDefinition["inputs"], _deps: AllDeps): (keyof ColorOutputDefinition["outputs"])[] => {
     return [];
 };
 
-const evaluate = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, _socket: keyof FloatOutputDefinition["outputs"], _context: Resolver.Context): DataTypes.AnyEval | null => {
-    // Output nodes don't have output sockets - they're sinks
-    // The Custom node reads their input values via context.subgraph()
+const evaluate = (_node: NodeDefinitions.NodeFor<ColorOutputDefinition>, _socket: keyof ColorOutputDefinition["outputs"], _context: Resolver.Context): DataTypes.AnyEval | null => {
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"colorOutput", ColorOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return addInterface(state, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"colorOutput", ColorOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
     return removeInterface(state, graphId, node.id, "out");
 };
 
-export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
-    type: "floatOutput",
-    displayName: "Float Output",
+export const ColorOutputType: NodeTypes.Type<"colorOutput", ColorOutputDefinition> = {
+    type: "colorOutput",
+    displayName: "Color Output",
     defaultLabel: "Output",
-    iconNode: NODE_ICONS.numericValue.Item,
-    iconCard: NODE_ICONS.numericValue.Card,
+    iconNode: NODE_ICONS.colorValue.Item,
+    iconCard: NODE_ICONS.colorValue.Card,
     category: "outputs",
     evaluate,
     Controls,
