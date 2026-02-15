@@ -19,6 +19,7 @@ import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/inte
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import { Project } from "../state/project";
 import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
+import { ShapePreviewDefinition, ShapePreviewType } from "./nodes/debug/shapePreviewNode";
 import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInputNode";
 import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
@@ -46,6 +47,7 @@ namespace Registries {
 
         //debug
         debug: DebugDefinition;
+        shapePreview: ShapePreviewDefinition;
 
         // subgraph interfaces
         floatInput: FloatInputDefinition;
@@ -71,6 +73,7 @@ namespace Registries {
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
         debug: DebugType,
+        shapePreview: ShapePreviewType,
 
         floatInput: FloatInputType,
         floatOutput: FloatOutputType,

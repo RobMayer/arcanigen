@@ -518,8 +518,6 @@ const AccordionItemEntry = ({
 /* ==================== Styled Components ==================== */
 
 const TitleInput = styled(TextInput)`
-    background: transparent;
-    border: none;
     color: inherit;
     font: inherit;
 `;

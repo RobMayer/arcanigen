@@ -53,17 +53,17 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObj
         return null;
     }, [shape]);
 
-    if (!shape || !contents) return <div className={className} />;
-
-    const { x, y, w, h } = shape.preview;
-    const pad = Math.max(w, h) * 0.05;
-
     const style = useMemo(
         () => ({
             backgroundColor: Color.toHex(color ?? { r: 1, g: 1, b: 1, a: 1 }),
         }),
         [color],
     );
+
+    if (!shape || !contents) return <div className={className} />;
+
+    const { x, y, w, h } = shape.preview;
+    const pad = Math.max(w, h) * 0.05;
 
     return (
         <div className={className}>
@@ -80,8 +80,7 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObj
     align-items: center;
     justify-content: center;
     & > svg {
-        width: 100%;
-        height: 100%;
+        width: auto;
     }
 `;
 
