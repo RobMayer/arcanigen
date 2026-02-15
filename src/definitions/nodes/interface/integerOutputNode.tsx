@@ -9,6 +9,7 @@ import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { TextInput } from "../../../components/inputs/TextInput";
 
 export type IntegerOutputDefinition = {
     inputs: {
@@ -49,7 +50,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerOutp
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketIn node={node} socketId={"input"} type={"integer"}>
-                Output
+                <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Output name" />
             </SocketIn>
             <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
                 {WIDGET_OPTIONS.map((each) => {
@@ -90,7 +91,7 @@ export const IntegerOutputType: NodeTypes.Type<"integerOutput", IntegerOutputDef
     defaultLabel: "Output",
     iconNode: NODE_ICONS.numericValue.Item,
     iconCard: NODE_ICONS.numericValue.Card,
-    category: "outputs",
+    category: "Outputs",
     evaluate,
     Controls,
     dependsOn,

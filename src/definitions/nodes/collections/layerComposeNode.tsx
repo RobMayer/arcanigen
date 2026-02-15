@@ -119,7 +119,7 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     defaultLabel: "Compose Layer",
     iconNode: NODE_ICONS.layerCompose.Item,
     iconCard: NODE_ICONS.layerCompose.Card,
-    category: "collection",
+    category: "Collections",
     create,
     dependsOn,
     contributesTo,

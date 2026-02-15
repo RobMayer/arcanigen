@@ -107,7 +107,7 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     defaultLabel: "Result",
     iconNode: NODE_ICONS.result.Item,
     iconCard: NODE_ICONS.result.Card,
-    category: "result",
+    category: "Result",
     create,
     dependsOn,
     contributesTo,

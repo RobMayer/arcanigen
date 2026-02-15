@@ -65,7 +65,7 @@ export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {
     defaultLabel: "Debug",
     iconNode: ICONS.Bug,
     iconCard: ICONS.Bug,
-    category: "meta",
+    category: "Meta",
     evaluate,
     Controls,
     dependsOn,

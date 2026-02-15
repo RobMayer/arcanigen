@@ -451,7 +451,7 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     defaultLabel: "Layers",
     iconNode: NODE_ICONS.layers.Item,
     iconCard: NODE_ICONS.layers.Card,
-    category: "collection",
+    category: "Collections",
     create,
     dependsOn,
     contributesTo,

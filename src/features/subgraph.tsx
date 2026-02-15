@@ -108,7 +108,17 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
                     <InterfaceMemberList graphId={graphId} />
                 </div>
                 <div data-area={"rowResize"}>
-                    <ResizeHandle value={rowRatio} containerRef={layoutRef} onValue={handleRowDrag} onCommit={setRowRatio} orientation={"vertical"} defaultValue={0.7} min={0.1} max={0.9} />
+                    <ResizeHandle
+                        value={rowRatio}
+                        containerRef={layoutRef}
+                        onValue={handleRowDrag}
+                        onCommit={setRowRatio}
+                        orientation={"vertical"}
+                        defaultValue={0.7}
+                        min={0.1}
+                        max={0.9}
+                        mode={"single"}
+                    />
                 </div>
                 <div data-area={"drawer"}>
                     <NodeDrawer graphId={graphId} paneControls={paneControls} isOpen={isDrawerOpen} onOpenToggle={setIsDrawerOpen} />
@@ -557,7 +567,7 @@ const EditorLayout = styled.div`
         "rowResize rowResize"
         "drawer drawer";
     &[data-state~="drawer-open"] {
-        grid-template-rows: min-content auto 2px minmax(min-content, var(--ratio_B));
+        grid-template-rows: min-content 1fr 2px minmax(min-content, var(--ratio_B));
     }
 
     & > div {
@@ -572,6 +582,7 @@ const EditorLayout = styled.div`
         grid-auto-rows: auto;
         gap: 4px;
         padding: 4px;
+        min-height: 0;
     }
 
     & > div[data-area="graphview"] {

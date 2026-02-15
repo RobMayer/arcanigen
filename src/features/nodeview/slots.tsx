@@ -66,10 +66,8 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObj
     const pad = Math.max(w, h) * 0.05;
 
     return (
-        <div className={className}>
-            <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`} style={style}>
-                {contents}
-            </svg>
+        <div className={className} style={style}>
+            <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>{contents}</svg>
         </div>
     );
 })`
@@ -79,8 +77,10 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObj
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
     & > svg {
-        width: auto;
+        position: absolute;
+        inset: 0;
     }
 `;
 

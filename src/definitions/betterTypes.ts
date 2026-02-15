@@ -170,15 +170,15 @@ namespace Registries {
     };
 
     export const NODECAT_FLAVOURS = {
-        result: "emphasis",
-        outputs: "emphasis",
-        inputs: "emphasis",
-        primitive: "accent",
-        collection: "danger",
-        shape: "confirm",
-        meta: "emphasis",
-        math: "accent",
-        custom: "emphasis",
+        Result: "emphasis",
+        Outputs: "emphasis",
+        Inputs: "emphasis",
+        Primitives: "accent",
+        Collections: "danger",
+        Shapes: "confirm",
+        Meta: "emphasis",
+        Math: "accent",
+        Custom: "emphasis",
     } as const satisfies { [key: string]: Flavour };
 }
 

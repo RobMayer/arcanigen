@@ -13,12 +13,12 @@ import { GraphLink } from "./nodeview/link";
 export const GraphView = ({ graphId, paneControls }: { graphId: string; paneControls?: DragPaneControls }) => {
     return (
         <GraphIdContext value={graphId}>
-            <GraphMain paneControls={paneControls} />
+            <GraphMain paneControls={paneControls} graphId={graphId} />
         </GraphIdContext>
     );
 };
 
-const GraphMain = ({ paneControls }: { paneControls?: DragPaneControls }) => {
+const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls; graphId: string }) => {
     const nodes = Project.useNodeList();
 
     const boundsRef = useRef<HTMLDivElement>(null);
@@ -54,8 +54,8 @@ const GraphMain = ({ paneControls }: { paneControls?: DragPaneControls }) => {
     const [selectionAction, setSelectionAction] = useState<SelectionAction>("set");
 
     return (
-        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`} controls={paneControls}>
-            <GraphConnectionProvider>
+        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`} data-graph={graphId} controls={paneControls}>
+            <GraphConnectionProvider graphId={graphId}>
                 <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
                 <NodeWrapper>
                     <DragMove.Provider>
@@ -78,6 +78,12 @@ const GraphViewPane = styled(DragPane)`
     border: 3px solid transparent;
     background-position: calc(50% + attr(data-x px) * attr(data-z number)) calc(50% + attr(data-y px) * attr(data-z number));
     background-size: calc(attr(data-z number) * 83.14px) calc(attr(data-z number) * 48px);
+    &:not([data-graph="root"]) {
+        background-color: #090e13;
+        background-image: url("boxgrid.svg");
+        background-blend-mode: soft-light;
+        background-size: calc(attr(data-z number) * 48px) calc(attr(data-z number) * 48px);
+    }
     &[data-state~="breach_top"] {
         border-top-color: red;
     }

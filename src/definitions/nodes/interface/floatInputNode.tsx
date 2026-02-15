@@ -128,7 +128,7 @@ export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> 
     defaultLabel: "Input",
     iconNode: NODE_ICONS.numericValue.Item,
     iconCard: NODE_ICONS.numericValue.Card,
-    category: "inputs",
+    category: "Inputs",
     evaluate,
     Controls,
     dependsOn,

@@ -18,8 +18,8 @@ const LocalAccordion = styled(Accordion)`
     font-variant: small-caps;
 `;
 
-const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["shape", "primitive", "collection", "meta", "math", "custom"];
-const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["shape", "primitive", "collection", "meta", "math", "inputs", "outputs", "custom"];
+const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["Shapes", "Primitives", "Collections", "Meta", "Math", "Custom"];
+const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["Shapes", "Primitives", "Collections", "Meta", "Math", "Inputs", "Outputs", "Custom"];
 
 const getForbiddenSubgraphs = (currentGraphId: string, users: UsersType): Set<string> => {
     const forbidden = new Set([currentGraphId]);
@@ -50,7 +50,7 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
             if (each.type === "result" || (each.type as string) === "custom") {
                 return false;
             }
-            if (graphId === "root" && (each.category === "inputs" || each.category === "outputs")) {
+            if (graphId === "root" && (each.category === "Inputs" || each.category === "Outputs")) {
                 return false;
             }
             return true;
@@ -69,7 +69,7 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
         });
     }, [allNodeTypes, categoryFilter, searchFilter]);
 
-    const showCustomCategory = categoryFilter.size === 0 || categoryFilter.has("custom");
+    const showCustomCategory = categoryFilter.size === 0 || categoryFilter.has("Custom");
 
     const forbidden = useMemo(() => getForbiddenSubgraphs(graphId, users), [graphId, users]);
 
@@ -186,9 +186,9 @@ const CardGrid = styled(
         );
 
         const addSubgraph = useCallback(
-            (subgraphId: string) => {
+            (subgraphId: string, name: string) => {
                 const { x, y } = paneControls.get();
-                addNodeByType(NodeTypes.get("custom"), { graphId: subgraphId }, { x: -x, y: -y });
+                addNodeByType(NodeTypes.get("custom"), { graphId: subgraphId, label: name }, { x: -x, y: -y });
             },
             [addNodeByType, paneControls],
         );
@@ -210,7 +210,7 @@ const CardGrid = styled(
         return (
             <div className={className}>
                 {nodeTypes.map((each) => {
-                    return <NodeCard nodeType={each} key={each.defaultLabel} handleAdd={addNode} />;
+                    return <NodeCard nodeType={each} key={each.type} handleAdd={addNode} />;
                 })}
                 {showNewCustom && (
                     <NewCustomCard data-flavour={"info"} onClick={createSubgraph}>
@@ -221,7 +221,7 @@ const CardGrid = styled(
                     </NewCustomCard>
                 )}
                 {subgraphs.map(([id, { name }]) => (
-                    <SubgraphCard key={id} disabled={forbidden.has(id)} onClick={() => addSubgraph(id)} data-flavour={NodeTypes.CATEGORY_FLAVOURS.custom}>
+                    <SubgraphCard key={id} disabled={forbidden.has(id)} onClick={() => addSubgraph(id, name)} data-flavour={NodeTypes.CATEGORY_FLAVOURS.Custom}>
                         <div data-part={"title"}>{name || id}</div>
                         <div data-part={"icon"}>
                             <Icon shape={ICONS.Cascade} />
@@ -264,6 +264,9 @@ const CARD_STYLES = `
     & > div[data-part="title"] {
         text-align: center;
         font-variant: small-caps;
+        font-size: 1em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         background: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
         border: 1px solid oklch(from var(--flavour) calc(l - 0.05) c h);
     }

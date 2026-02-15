@@ -56,7 +56,7 @@ const Primary = () => {
                 <GraphView graphId={"root"} paneControls={graphPaneControls} />
             </div>
             <div data-gridarea={"colResize"}>
-                <ResizeHandle value={colRatio} containerRef={layoutRef} onValue={handleColDrag} onCommit={setColRatio} />
+                <ResizeHandle value={colRatio} containerRef={layoutRef} onValue={handleColDrag} onCommit={setColRatio} mode="dual" />
             </div>
             <div data-gridarea={"rowResize"}>
                 <ResizeHandle
@@ -66,6 +66,7 @@ const Primary = () => {
                     onCommit={setRowRatio}
                     orientation={"vertical"}
                     defaultValue={0.7}
+                    mode={"single"}
                     min={0.3}
                     max={0.9}
                     disabled={!isDrawerOpen}
@@ -107,7 +108,7 @@ const Layout = styled.div`
         "rowResize colResize canvas"
         "drawer colResize canvas";
     &[data-state~="drawer-open"] {
-        grid-template-rows: min-content auto 2px minmax(min-content, var(--ratio_B));
+        grid-template-rows: min-content 1fr 2px minmax(min-content, var(--ratio_B));
     }
     & > div {
         grid-area: attr(data-gridarea type(<custom-ident>));

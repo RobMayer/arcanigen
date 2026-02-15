@@ -80,7 +80,7 @@ export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefini
     defaultLabel: "Preview",
     iconNode: ICONS.Bug,
     iconCard: ICONS.Bug,
-    category: "meta",
+    category: "Meta",
     evaluate,
     Controls,
     dependsOn,

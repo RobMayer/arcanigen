@@ -95,7 +95,7 @@ export const AddFloatType: NodeTypes.Type<"addFloat", AddFloatDefinition> = {
     defaultLabel: "Add",
     iconNode: NODE_ICONS.addValue.Item,
     iconCard: NODE_ICONS.addValue.Card,
-    category: "math",
+    category: "Math",
     evaluate,
     Controls,
     dependsOn,

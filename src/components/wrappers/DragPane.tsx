@@ -152,7 +152,25 @@ const DragPaneBase = styled(
                 if (!xyChanged && !zChanged) {
                     return;
                 }
-                setPosition(next);
+                if (passive) {
+                    // Direct DOM update — bypass React reconciliation
+                    member.ref.current = next;
+                    const el = offsetRef.current;
+                    if (el) {
+                        el.style.top = `${next.y}px`;
+                        el.style.left = `${next.x}px`;
+                        el.style.zoom = `${next.z}`;
+                        el.style.setProperty("--dragpane_zoom", `${next.z}`);
+                    }
+                    const vp = viewportRef.current;
+                    if (vp) {
+                        vp.dataset.x = `${next.x}`;
+                        vp.dataset.y = `${next.y}`;
+                        vp.dataset.z = `${next.z}`;
+                    }
+                } else {
+                    setPosition(next);
+                }
                 const { z, ...xy } = next;
                 if (xyChanged) {
                     onPanRef.current?.(xy);
@@ -176,7 +194,10 @@ const DragPaneBase = styled(
             };
             const panOn = Object.assign((evt: MouseEvent | MouseEvent<unknown>) => panOnBase(evt, true), {
                 committed: (evt: MouseEvent | MouseEvent<unknown>) => panOnBase(evt, false),
-                commit: () => onFinishRef.current?.(member.ref.current),
+                commit: () => {
+                    setPosition(member.ref.current); // reconcile React state with DOM
+                    onFinishRef.current?.(member.ref.current);
+                },
             });
 
             return {
@@ -310,16 +331,24 @@ const DragPaneBase = styled(
             const element = viewportRef.current;
             if (!element) return;
 
+            let commitTimer: ReturnType<typeof setTimeout>;
+
             const wheel = (evt: globalThis.WheelEvent) => {
                 evt.preventDefault();
                 methods.zoomOnFocal(evt as unknown as WheelEvent);
+                clearTimeout(commitTimer);
+                commitTimer = setTimeout(() => {
+                    setPosition(member.ref.current); // reconcile React state after wheel settles
+                    onFinishRef.current?.(member.ref.current);
+                }, 150);
             };
 
             element.addEventListener("wheel", wheel, { passive: false });
             return () => {
                 element.removeEventListener("wheel", wheel);
+                clearTimeout(commitTimer);
             };
-        }, [methods, viewportRef]);
+        }, [methods, viewportRef, setPosition, member]);
 
         // middle-click pan
         useEffect(() => {

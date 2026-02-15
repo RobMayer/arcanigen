@@ -81,7 +81,7 @@ export const ShapeInputType: NodeTypes.Type<"shapeInput", ShapeInputDefinition> 
     defaultLabel: "Input",
     iconNode: NODE_ICONS.polygramShape.Item,
     iconCard: NODE_ICONS.polygramShape.Card,
-    category: "inputs",
+    category: "Inputs",
     evaluate,
     Controls,
     dependsOn,

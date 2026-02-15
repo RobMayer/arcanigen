@@ -145,7 +145,7 @@ export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNo
     defaultLabel: "Distribution",
     iconNode: NODE_ICONS.curveValue.Item,
     iconCard: NODE_ICONS.curveValue.Card,
-    category: "math",
+    category: "Math",
     evaluate,
     Controls,
     dependsOn,

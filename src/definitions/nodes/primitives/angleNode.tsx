@@ -98,7 +98,7 @@ export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     defaultLabel: "Angle",
     iconNode: NODE_ICONS.angleValue.Item,
     iconCard: NODE_ICONS.angleValue.Card,
-    category: "primitive",
+    category: "Primitives",
     evaluate,
     Controls,
     dependsOn,

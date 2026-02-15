@@ -1,8 +1,10 @@
-import { useMemo, CSSProperties, useRef, useState, useCallback } from "react";
+import { useMemo, CSSProperties, useRef, useCallback, KeyboardEvent } from "react";
 import styled, { keyframes } from "styled-components";
 import { SocketTypes } from "../../definitions/betterTypes";
 import { Project } from "../../state/project";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
+import { ActionButton } from "../../components/buttons/ActionButton";
+import { Icon, ICONS } from "../../components/Icon";
 
 const keyframesMarch = keyframes`
 to {
@@ -12,6 +14,7 @@ to {
 
 export const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
     const link = Project.useLink(linkId);
+    const { removeLinks } = Project.useMethods();
 
     const style = useMemo(() => {
         if (!link) {
@@ -47,15 +50,22 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         }
     });
 
-    const [isSelected, setIsSelected] = useState<boolean>(false);
+    const deleteMe = useCallback(() => {
+        removeLinks(linkId);
+    }, [removeLinks, linkId]);
 
-    const handleFocus = useCallback(() => {
-        setIsSelected(true);
-    }, []);
-
-    const handleBlur = useCallback(() => {
-        setIsSelected(false);
-    }, []);
+    const handleKeyDown = useCallback(
+        (evt: KeyboardEvent<unknown>) => {
+            if (evt.nativeEvent.handled) {
+                return;
+            }
+            if (evt.key === "Delete" || evt.key === "Backspace") {
+                evt.nativeEvent.handled = "active";
+                deleteMe();
+            }
+        },
+        [deleteMe],
+    );
 
     if (!link) {
         return null;
@@ -63,17 +73,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
     return (
         <>
-            <div
-                className={className}
-                style={style}
-                ref={ref}
-                tabIndex={-1}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                data-state={isSelected ? "selected" : undefined}
-                data-flavour={SocketTypes.FLAVOURS[link.type]}
-                data-linktype={link.type}
-            >
+            <div className={className} style={style} ref={ref} tabIndex={-1} data-flavour={SocketTypes.FLAVOURS[link.type]} data-linktype={link.type} onKeyDown={handleKeyDown}>
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
                         <path data-part={"target"} d="" />
@@ -84,6 +84,9 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 </svg>
                 <div data-part={"markerFrom"} ref={fromMarkerRef} />
                 <div data-part={"markerTo"} ref={toMarkerRef} />
+                <ActionButton onClick={deleteMe} data-part="deleteButton" flavour={"inherit"}>
+                    <Icon shape={ICONS.Close} />
+                </ActionButton>
             </div>
         </>
     );
@@ -127,8 +130,25 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     min-height: 1px;
     pointer-events: none;
 
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    place-items: center;
+
+    & > [data-part="deleteButton"] {
+        z-index: 1;
+        pointer-events: auto;
+        font-size: 1.25em;
+        border-radius: 100%;
+    }
+
+    &:not(:focus-within) > [data-part="deleteButton"] {
+        display: none;
+    }
+
     overflow: visible;
     & > svg {
+        z-index: 0;
         position: absolute;
         width: 100%;
         height: 100%;
@@ -180,7 +200,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         }
     }
 
-    &[data-state~="selected"] > svg > g > path[data-part="select"] {
+    &:focus-within > svg > g > path[data-part="select"] {
         stroke: #fff6;
     }
 `;

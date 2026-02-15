@@ -127,7 +127,7 @@ export const IntegerInputType: NodeTypes.Type<"integerInput", IntegerInputDefini
     defaultLabel: "Input",
     iconNode: NODE_ICONS.numericValue.Item,
     iconCard: NODE_ICONS.numericValue.Card,
-    category: "inputs",
+    category: "Inputs",
     evaluate,
     Controls,
     dependsOn,

@@ -84,7 +84,7 @@ export const FloatPrimitiveType: NodeTypes.Type<"float", FloatDefinition> = {
     defaultLabel: "Float",
     iconNode: NODE_ICONS.numericValue.Item,
     iconCard: NODE_ICONS.numericValue.Card,
-    category: "primitive",
+    category: "Primitives",
     evaluate,
     Controls,
     dependsOn,

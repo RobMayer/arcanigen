@@ -123,7 +123,7 @@ export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> 
     defaultLabel: "Input",
     iconNode: NODE_ICONS.colorValue.Item,
     iconCard: NODE_ICONS.colorValue.Card,
-    category: "inputs",
+    category: "Inputs",
     evaluate,
     Controls,
     dependsOn,

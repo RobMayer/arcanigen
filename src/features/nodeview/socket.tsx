@@ -40,7 +40,7 @@ const agreeOnDataType = (outType: SocketTypes.Kind, inType: SocketTypes.Kind): D
 
 const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
 
-export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) => {
+export const GraphConnectionProvider = ({ children, graphId }: { children?: ReactNode; graphId: string }) => {
     const [pendingConnection, setPendingConnection] = Project.usePendingConnection();
     const graphMethods = Project.useMethods();
 
@@ -49,7 +49,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
         return {
             start: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => {
                 // todo: parametize scope properly...
-                const p = { node: nodeId, socket: socketId, side, type, scope: "root" };
+                const p = { node: nodeId, socket: socketId, side, type, scope: graphId };
                 pending = setPendingConnection(p);
             },
             finish: (nodeId: string, socketId: string, side: "in" | "out", type: SocketTypes.Kind) => {
@@ -67,7 +67,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
                 pending = null;
             },
         };
-    }, [setPendingConnection, graphMethods]);
+    }, [setPendingConnection, graphMethods, graphId]);
 
     useEffect(() => {
         document.addEventListener("mouseup", connectionContextValue.clear);
@@ -79,7 +79,7 @@ export const GraphConnectionProvider = ({ children }: { children?: ReactNode }) 
     return (
         <GraphViewConnectionCTX value={connectionContextValue}>
             {children}
-            {pendingConnection ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={pendingConnection.type} /> : null}
+            {pendingConnection && pendingConnection.scope === graphId ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={pendingConnection.type} /> : null}
         </GraphViewConnectionCTX>
     );
 };

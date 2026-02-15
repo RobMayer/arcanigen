@@ -483,7 +483,7 @@ export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     defaultLabel: "Polygon",
     iconNode: NODE_ICONS.polygonShape.Item,
     iconCard: NODE_ICONS.polygonShape.Card,
-    category: "shape",
+    category: "Shapes",
     create,
     dependsOn,
     contributesTo,

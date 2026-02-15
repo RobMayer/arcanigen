@@ -136,7 +136,7 @@ export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> 
     defaultLabel: "Input",
     iconNode: NODE_ICONS.angleValue.Item,
     iconCard: NODE_ICONS.angleValue.Card,
-    category: "inputs",
+    category: "Inputs",
     evaluate,
     Controls,
     dependsOn,

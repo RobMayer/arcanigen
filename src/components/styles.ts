@@ -44,6 +44,7 @@ export namespace COMMON_STYLES {
         display: inline-flex;
         align-items: center;
         justify-content: start;
+        gap: 4px;
         cursor: pointer;
         transition: outline-offset 0.1s ease;
         outline: 1px solid transparent;

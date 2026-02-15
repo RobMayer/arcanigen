@@ -14,6 +14,7 @@ export const ResizeHandle = styled(
         defaultValue = 0.5,
         disabled,
         className,
+        mode = "dual",
     }: {
         value: number;
         containerRef: RefObject<HTMLElement | null>;
@@ -25,6 +26,7 @@ export const ResizeHandle = styled(
         defaultValue?: number;
         disabled?: boolean;
         className?: string;
+        mode?: "single" | "dual";
     }) => {
         const onValueRef = useStable(onValue);
         const onCommitRef = useStable(onCommit);
@@ -43,7 +45,7 @@ export const ResizeHandle = styled(
                 const getRatio = (evt: MouseEvent) => {
                     const rect = container.getBoundingClientRect();
                     const delta = horizontal ? (evt.clientX - startPos) / rect.width : (evt.clientY - startPos) / rect.height;
-                    return Math.max(min, Math.min(max, startRatio + delta));
+                    return Math.max(min, Math.min(max, startRatio + delta * (mode === "single" ? 2 : 1)));
                 };
 
                 const mouseMove = (evt: MouseEvent) => {
@@ -71,7 +73,7 @@ export const ResizeHandle = styled(
                     document.removeEventListener("mousemove", mouseMove);
                 };
             }
-        }, [containerRef, orientation, min, max]);
+        }, [containerRef, orientation, min, max, mode]);
 
         const reset = useCallback(() => {
             onCommitRef.current?.(defaultValue);

@@ -127,7 +127,7 @@ export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinitio
     defaultLabel: "Input",
     iconNode: NODE_ICONS.lengthValue.Item,
     iconCard: NODE_ICONS.lengthValue.Card,
-    category: "inputs",
+    category: "Inputs",
     evaluate,
     Controls,
     dependsOn,

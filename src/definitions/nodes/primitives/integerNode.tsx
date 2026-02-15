@@ -84,7 +84,7 @@ export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> 
     defaultLabel: "Integer",
     iconNode: NODE_ICONS.numericValue.Item,
     iconCard: NODE_ICONS.numericValue.Card,
-    category: "primitive",
+    category: "Primitives",
     evaluate,
     Controls,
     dependsOn,

@@ -9,6 +9,7 @@ import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { TextInput } from "../../../components/inputs/TextInput";
 
 export type ShapeOutputDefinition = {
     inputs: {
@@ -49,7 +50,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ShapeOutput
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketIn node={node} socketId={"input"} type={"shape"}>
-                Output
+                <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Output name" />
             </SocketIn>
             <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
                 {WIDGET_OPTIONS.map((each) => {
@@ -90,7 +91,7 @@ export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinitio
     defaultLabel: "Output",
     iconNode: NODE_ICONS.polygramShape.Item,
     iconCard: NODE_ICONS.polygramShape.Card,
-    category: "outputs",
+    category: "Outputs",
     evaluate,
     Controls,
     dependsOn,
