@@ -143,26 +143,19 @@ export const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: 
     // Evaluate all output sockets
     const outputSockets = Object.keys(node.out);
     const nodeResults: { [outSocket: string]: DataTypes.AnyEval } = {};
-    let hasResults = false;
 
     for (const outSocket of outputSockets) {
         const result = evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context);
         if (result !== null) {
             nodeResults[outSocket] = result;
-            hasResults = true;
         }
     }
-
-    if (!hasResults) return cache;
 
     return {
         ...cache,
         [graphId]: {
             ...cache[graphId],
-            [nodeId]: {
-                ...(cache[graphId]?.[nodeId] ?? {}),
-                ...nodeResults,
-            },
+            [nodeId]: nodeResults,
         },
     };
 };
