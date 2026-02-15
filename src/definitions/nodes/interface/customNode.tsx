@@ -260,7 +260,7 @@ type InputWidgetProps<T extends NodeDefinitions.Any> = { host: NodeDefinitions.N
 
 const OutputSlotFloat = ({ host, source }: OutputWidgetProps<FloatOutputDefinition>) => {
     const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
-    const output = resolved?.kind === "float" ? resolved?.data : "« none »";
+    const output = resolved?.kind === "float" ? Number(NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(10)) : "« none »";
 
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
@@ -297,10 +297,26 @@ const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInp
                         value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
-                        min={source.payload.hasMin ? source.payload.min : undefined}
-                        max={source.payload.hasMax ? source.payload.max : undefined}
-                        step={source.payload.hasStep ? source.payload.step : undefined}
+                        min={source.payload.min}
+                        max={source.payload.max}
+                        step={source.payload.step}
+                        snap={source.payload.snap}
                         required
+                    />
+                </SocketIn>
+            );
+        }
+        case Enum.Common.floatInputWidget.Slider: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <DecimalInput.SliderInput
+                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                        min={source.payload.min ?? "0"}
+                        max={source.payload.max ?? "1"}
+                        step={source.payload.step ?? "0.01"}
+                        snap={source.payload.snap}
                     />
                 </SocketIn>
             );

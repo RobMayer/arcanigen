@@ -421,26 +421,26 @@ const SocketEntry = ({ ref, entry, graphId, onDragStart }: { ref: React.Ref<HTML
 
     return (
         <ItemRow ref={ref}>
-            <DragGrip draggable onDragStart={onDragStart}>
-                <Icon shape={ICONS.Caret.Vertical} />
-            </DragGrip>
             <div data-part={"label"}>{label}</div>
             <div data-part={"badge"} data-direction={parsed.direction}>
                 {parsed.direction === "in" ? "IN" : "OUT"}
             </div>
+            <DragGrip draggable onDragStart={onDragStart}>
+                <Icon shape={ICONS.Caret.Vertical} />
+            </DragGrip>
         </ItemRow>
     );
 };
 
 const SeparatorEntry = ({ ref, onRemove, onDragStart }: { ref: React.Ref<HTMLDivElement>; onRemove: () => void; onDragStart: (e: DragEvent) => void }) => (
     <ItemRow ref={ref}>
-        <DragGrip draggable onDragStart={onDragStart}>
-            <Icon shape={ICONS.Caret.Vertical} />
-        </DragGrip>
         <hr />
         <ActionButton.Lite onClick={onRemove} tooltip="Remove separator">
             <Icon shape={ICONS.Close} />
         </ActionButton.Lite>
+        <DragGrip draggable onDragStart={onDragStart}>
+            <Icon shape={ICONS.Caret.Vertical} />
+        </DragGrip>
     </ItemRow>
 );
 
@@ -468,13 +468,13 @@ const AccordionEntry = ({
     return (
         <AccordionItem>
             <ItemRow ref={ref} data-kind="accordion">
-                <DragGrip draggable onDragStart={onDragStart}>
-                    <Icon shape={ICONS.Caret.Vertical} />
-                </DragGrip>
                 <AccordionLabelInput value={entry.label} onCommit={onRename} placeholder="Group name" />
                 <ActionButton.Lite onClick={onRemove} tooltip="Remove group (items promoted)">
                     <Icon shape={ICONS.Close} />
                 </ActionButton.Lite>
+                <DragGrip draggable onDragStart={onDragStart}>
+                    <Icon shape={ICONS.Caret.Vertical} />
+                </DragGrip>
             </ItemRow>
             <AccordionBody>
                 <DropZone targetPath={`${index}:0`} onDrop={onDrop} rejectAccordion>

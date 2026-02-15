@@ -74,11 +74,9 @@ const TESTING_STATE = {
                     defaultValue: "1",
                     widget: 1,
                     min: "1",
-                    hasMin: true,
                     max: "3",
-                    hasMax: false,
                     step: "0.01",
-                    hasStep: false,
+                    snap: "0.01",
                 },
             },
             adder: {

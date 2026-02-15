@@ -9,6 +9,7 @@ import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { RadioButton } from "../../../components/buttons/RadioButton";
+import { Dropdown } from "../../../components/inputs/Dropdown";
 
 export type FloatOutputDefinition = {
     inputs: {
@@ -51,9 +52,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatOutput
             <SocketIn node={node} socketId={"input"} type={"float"}>
                 Output
             </SocketIn>
-            <Slot label={"Widget"}>
-                <RadioButton.Group value={`${node.payload.widget}`} options={WIDGET_OPTIONS} onValue={(w) => handleUpdate({ widget: Number(w) })} />
-            </Slot>
+            <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
+                {WIDGET_OPTIONS.map((each) => {
+                    return (
+                        <option value={each.value} key={each.value}>
+                            {each.label}
+                        </option>
+                    );
+                })}
+            </Dropdown>
         </TypicalNode>
     );
 };

@@ -73,6 +73,7 @@ export namespace Enum {
         export const floatInputWidget = {
             None: 0,
             Input: 1,
+            Slider: 2,
         } as const;
 
         export const typicalOutputWidget = {

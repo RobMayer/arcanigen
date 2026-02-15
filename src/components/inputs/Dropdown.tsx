@@ -23,7 +23,7 @@ const BaseDropdown = <T extends string = string>({ onValue, tooltip, value, onCh
         onValueRef.current?.(v);
     }, []);
 
-    return <AbstractSelect {...props} onChange={handleChange} />;
+    return <AbstractSelect {...props} value={value} onChange={handleChange} />;
 };
 
 export const Dropdown = styled(BaseDropdown)``;

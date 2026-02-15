@@ -11,8 +11,7 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
-import { CheckBox } from "../../../components/buttons/CheckBox";
-import { RadioButton } from "../../../components/buttons/RadioButton";
+import { Dropdown } from "../../../components/inputs/Dropdown";
 
 export type FloatInputDefinition = {
     inputs: never;
@@ -24,11 +23,9 @@ export type FloatInputDefinition = {
         defaultValue: DataTypes.TypeOf<DataTypes.Use<"float">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         min: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hasMin: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
         max: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hasMax: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
         step: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hasStep: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        snap: DataTypes.TypeOf<DataTypes.Use<"float">>;
     };
 };
 
@@ -42,12 +39,10 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinitio
         payload: {
             label: "",
             defaultValue: "0",
-            hasMin: false,
             min: "0",
-            hasMax: false,
             max: "1",
-            hasStep: false,
             step: "0.01",
+            snap: "0.01",
             widget: Enum.Common.floatInputWidget.Input,
         },
         type: "floatInput",
@@ -73,19 +68,27 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
                 <DecimalInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} />
             </Slot>
             <Slot label={"Minimum"}>
-                <CheckBox checked={node.payload.hasMin} onToggle={(hasMin) => handleUpdate({ hasMin })} />
-                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} disabled={!node.payload.hasMin} />
+                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
             </Slot>
             <Slot label={"Maximum"}>
-                <CheckBox checked={node.payload.hasMax} onToggle={(hasMax) => handleUpdate({ hasMax })} />
-                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} disabled={!node.payload.hasMax} />
+                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} required={node.payload.widget === 2} />
             </Slot>
             <Slot label={"Step"}>
-                <CheckBox checked={node.payload.hasStep} onToggle={(hasStep) => handleUpdate({ hasStep })} />
-                <DecimalInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} disabled={!node.payload.hasStep} />
+                <DecimalInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} required={node.payload.widget === 2} />
+            </Slot>
+            <Slot label={"Snap"}>
+                <DecimalInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
             </Slot>
             <Slot label={"Widget"}>
-                <RadioButton.Group value={`${node.payload.widget}`} options={WIDGET_OPTIONS} onValue={(w) => handleUpdate({ widget: Number(w) })} />
+                <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
+                    {WIDGET_OPTIONS.map((each) => {
+                        return (
+                            <option value={each.value} key={each.value}>
+                                {each.label}
+                            </option>
+                        );
+                    })}
+                </Dropdown>
             </Slot>
         </TypicalNode>
     );

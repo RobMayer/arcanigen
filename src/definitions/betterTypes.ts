@@ -160,6 +160,8 @@ export namespace DataTypes {
 
     export type Kind = keyof Registries.DATATYPES & {};
     export type Use<K extends Kind> = REG[K];
+    export type Compat<C extends keyof typeof Registries.SOCKET_COMPAT> = Use<(typeof Registries.SOCKET_COMPAT)[C][number]>;
+
     export type Any = Use<Kind>;
 
     export type KeyOf<E extends Use<Kind>> = E[typeof KIND];
