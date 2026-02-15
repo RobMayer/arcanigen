@@ -40,6 +40,8 @@ import { ShapeInputDefinition, ShapeInputType } from "./nodes/interface/shapeInp
 import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/shapeOutputNode";
 import { ColorInputDefinition, ColorInputType } from "./nodes/interface/colorInputNode";
 import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/colorOutputNode";
+import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/booleanInputNode";
+import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/booleanOutputNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -72,6 +74,8 @@ namespace Registries {
         shapeOutput: ShapeOutputDefinition;
         colorInput: ColorInputDefinition;
         colorOutput: ColorOutputDefinition;
+        booleanInput: BooleanInputDefinition;
+        booleanOutput: BooleanOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -107,6 +111,8 @@ namespace Registries {
         shapeOutput: ShapeOutputType,
         colorInput: ColorInputType,
         colorOutput: ColorOutputType,
+        booleanInput: BooleanInputType,
+        booleanOutput: BooleanOutputType,
         custom: CustomNodeType,
 
         addFloat: AddFloatType,

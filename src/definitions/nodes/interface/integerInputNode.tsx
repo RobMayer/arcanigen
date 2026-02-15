@@ -20,7 +20,7 @@ export type IntegerInputDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        defaultValue: DataTypes.TypeOf<DataTypes.Use<"integer">>;
+        initialValue: DataTypes.TypeOf<DataTypes.Use<"integer">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         min: DataTypes.TypeOf<DataTypes.Use<"integer">>;
         max: DataTypes.TypeOf<DataTypes.Use<"integer">>;
@@ -38,7 +38,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<IntegerInputDefini
         },
         payload: {
             label: "",
-            defaultValue: "0",
+            initialValue: "0",
             min: "0",
             max: "100",
             step: "1",
@@ -64,8 +64,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerInpu
             <SocketOut node={node} socketId={"output"} type={"integer"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Default Value"}>
-                <IntegerInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} />
+            <Slot label={"Initial Value"}>
+                <IntegerInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
             </Slot>
             <Slot label={"Minimum"}>
                 <IntegerInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
@@ -107,7 +107,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerInputDefinition>, socket:
         const providedInput = context.getInput?.<"integer">(node.id);
         return {
             kind: "integer",
-            data: providedInput?.data ?? node.payload.defaultValue,
+            data: providedInput?.data ?? node.payload.initialValue,
         };
     }
     return null;

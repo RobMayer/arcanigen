@@ -20,7 +20,7 @@ export type LengthInputDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        defaultValue: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        initialValue: DataTypes.TypeOf<DataTypes.Use<"length">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         min: DataTypes.TypeOf<DataTypes.Use<"length">>;
         max: DataTypes.TypeOf<DataTypes.Use<"length">>;
@@ -38,7 +38,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LengthInputDefinit
         },
         payload: {
             label: "",
-            defaultValue: "0px",
+            initialValue: "0px",
             min: "",
             max: "",
             step: "",
@@ -64,8 +64,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthInput
             <SocketOut node={node} socketId={"output"} type={"length"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Default Value"}>
-                <LengthInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} />
+            <Slot label={"Initial Value"}>
+                <LengthInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
             </Slot>
             <Slot label={"Minimum"}>
                 <LengthInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} />
@@ -107,7 +107,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthInputDefinition>, socket: 
         const providedInput = context.getInput?.<"length">(node.id);
         return {
             kind: "length",
-            data: providedInput?.data ?? node.payload.defaultValue,
+            data: providedInput?.data ?? node.payload.initialValue,
         };
     }
     return null;

@@ -14,6 +14,7 @@ import { IntegerInputDefinition } from "./integerInputNode";
 import { AngleInputDefinition } from "./angleInputNode";
 import { LengthInputDefinition } from "./lengthInputNode";
 import { ColorInputDefinition } from "./colorInputNode";
+import { BooleanInputDefinition } from "./booleanInputNode";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -26,6 +27,9 @@ import { AngleOutputDefinition } from "./angleOutputNode";
 import { LengthOutputDefinition } from "./lengthOutputNode";
 import { ShapeOutputDefinition } from "./shapeOutputNode";
 import { ColorOutputDefinition } from "./colorOutputNode";
+import { BooleanOutputDefinition } from "./booleanOutputNode";
+import { CheckBox } from "../../../components/buttons/CheckBox";
+import { CheckButton } from "../../../components/buttons/CheckButton";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
 import { flattenSockets, parseInterface, InterfaceMember } from "../../../state/project/types";
@@ -171,6 +175,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
                     inputs[inSocket] = { kind: "length", data: storedValue as Length.Type };
                 } else if (inputNode?.type === "colorInput") {
                     inputs[inSocket] = { kind: "color", data: storedValue as Color.Type };
+                } else if (inputNode?.type === "booleanInput") {
+                    inputs[inSocket] = { kind: "boolean", data: storedValue as boolean };
                 }
             }
         }
@@ -189,24 +195,31 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
     // Read the subgraph's interface entries
     const interfaceSockets = flattenSockets(state.interfaces[targetGraphId] ?? []);
 
-    // Build socket maps from Input/Output node labels
+    // Build socket maps and default values from Input/Output nodes
     const inSockets: { [key: string]: string | null } = {};
     const outSockets: { [key: string]: string[] } = {};
+    const initialValues: { [key: StoredValueKey]: unknown } = {};
+    const subgraphNodes = state.nodes[targetGraphId] ?? {};
 
     for (const entry of interfaceSockets) {
         const parsed = parseInterface(entry);
         if (parsed.direction === "in") {
             inSockets[parsed.nodeId] = null;
+            const inputNode = subgraphNodes[parsed.nodeId];
+            if (inputNode && "initialValue" in inputNode.payload) {
+                initialValues[`value_${parsed.nodeId}`] = inputNode.payload.initialValue;
+            }
         } else {
             outSockets[parsed.nodeId] = [];
         }
     }
 
-    // Update the node with the built socket maps
+    // Update the node with the built socket maps and default values
     const updatedNode = {
         ...node,
         in: inSockets,
         out: outSockets,
+        payload: { ...node.payload, ...initialValues },
     };
 
     return {
@@ -295,6 +308,10 @@ const DynamicSlot = ({
             return <OutputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorOutputDefinition>} />;
         case "colorInput":
             return <InputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorInputDefinition>} handleValue={handleValue} />;
+        case "booleanOutput":
+            return <OutputSlotBoolean host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<BooleanOutputDefinition>} />;
+        case "booleanInput":
+            return <InputSlotBoolean host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<BooleanInputDefinition>} handleValue={handleValue} />;
     }
     return null;
 };
@@ -338,7 +355,7 @@ const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInp
             return (
                 <SocketIn node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <DecimalInput
-                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as NumericString.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         min={source.payload.min}
@@ -354,7 +371,7 @@ const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInp
             return (
                 <SocketIn node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <DecimalInput.SliderInput
-                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as NumericString.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         min={source.payload.min ?? "0"}
@@ -406,7 +423,7 @@ const InputSlotInteger = ({ host, source, handleValue }: InputWidgetProps<Intege
             return (
                 <SocketIn node={host} socketId={source.id} type={"integer" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <IntegerInput
-                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as NumericString.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         min={source.payload.min}
@@ -422,7 +439,7 @@ const InputSlotInteger = ({ host, source, handleValue }: InputWidgetProps<Intege
             return (
                 <SocketIn node={host} socketId={source.id} type={"integer" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <IntegerInput.SliderInput
-                        value={(host.payload[`value_${source.id}`] as NumericString.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as NumericString.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         min={source.payload.min ?? "0"}
@@ -473,7 +490,7 @@ const InputSlotAngle = ({ host, source, handleValue }: InputWidgetProps<AngleInp
             return (
                 <SocketIn node={host} socketId={source.id} type={"angle" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <AngleInput
-                        value={(host.payload[`value_${source.id}`] as Angle.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as Angle.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         unbound={!source.payload.wraps}
@@ -485,7 +502,7 @@ const InputSlotAngle = ({ host, source, handleValue }: InputWidgetProps<AngleInp
             return (
                 <SocketIn node={host} socketId={source.id} type={"angle" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <AngleInput.SliderInput
-                        value={(host.payload[`value_${source.id}`] as Angle.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as Angle.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         min={source.payload.min}
@@ -537,7 +554,7 @@ const InputSlotLength = ({ host, source, handleValue }: InputWidgetProps<LengthI
             return (
                 <SocketIn node={host} socketId={source.id} type={"length" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <LengthInput
-                        value={(host.payload[`value_${source.id}`] as Length.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as Length.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                     />
@@ -618,7 +635,7 @@ const InputSlotColor = ({ host, source, handleValue }: InputWidgetProps<ColorInp
             return (
                 <SocketIn node={host} socketId={source.id} type={"color" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
                     <ColorHexInput
-                        value={(host.payload[`value_${source.id}`] as Color.Type) ?? source.payload.defaultValue}
+                        value={host.payload[`value_${source.id}`] as Color.Type}
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={host.in[source.id] !== null}
                         alpha={source.payload.alpha}
@@ -629,6 +646,67 @@ const InputSlotColor = ({ host, source, handleValue }: InputWidgetProps<ColorInp
         }
     }
     return null;
+};
+
+const OutputSlotBoolean = ({ host, source }: OutputWidgetProps<BooleanOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "boolean" ? (resolved.data ? "True" : "False") : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"boolean" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"boolean" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotBoolean = ({ host, source, handleValue }: InputWidgetProps<BooleanInputDefinition>) => {
+    switch (source.payload.widget) {
+        case Enum.Common.booleanInputWidget.None: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"boolean" as never}>
+                    {(source.payload.label ?? "") === "" ? "Input" : source.payload.label}
+                </SocketIn>
+            );
+        }
+        case Enum.Common.booleanInputWidget.Checkbox: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"boolean" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <CheckBox
+                        checked={host.payload[`value_${source.id}`] as boolean}
+                        onToggle={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                    >
+                        {source.payload.text || "Enabled"}
+                    </CheckBox>
+                </SocketIn>
+            );
+        }
+        case Enum.Common.booleanInputWidget.Checkbutton: {
+            return (
+                <SocketIn node={host} socketId={source.id} type={"boolean" as never} label={(source.payload.label ?? "") === "" ? "Input" : source.payload.label}>
+                    <CheckButton
+                        checked={host.payload[`value_${source.id}`] as boolean}
+                        onToggle={(v) => handleValue({ [`value_${source.id}`]: v })}
+                        disabled={host.in[source.id] !== null}
+                    >
+                        {source.payload.text || "Enabled"}
+                    </CheckButton>
+                </SocketIn>
+            );
+        }
+    }
 };
 
 const TextPreview = styled.div`

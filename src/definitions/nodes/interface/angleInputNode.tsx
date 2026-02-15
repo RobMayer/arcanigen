@@ -22,7 +22,7 @@ export type AngleInputDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        defaultValue: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        initialValue: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         min: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         max: DataTypes.TypeOf<DataTypes.Use<"angle">>;
@@ -41,7 +41,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefiniti
         },
         payload: {
             label: "",
-            defaultValue: "0",
+            initialValue: "0",
             min: "0",
             max: "360",
             step: "1",
@@ -68,8 +68,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleInputD
             <SocketOut node={node} socketId={"output"} type={"angle"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Default Value"}>
-                <AngleInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} unbound={!node.payload.wraps} />
+            <Slot label={"Initial Value"}>
+                <AngleInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} unbound={!node.payload.wraps} />
             </Slot>
             <Slot label={"Minimum"}>
                 <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
@@ -116,7 +116,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleInputDefinition>, socket: "
         const providedInput = context.getInput?.<"angle">(node.id);
         return {
             kind: "angle",
-            data: providedInput?.data ?? node.payload.defaultValue,
+            data: providedInput?.data ?? node.payload.initialValue,
         };
     }
     return null;

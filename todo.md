@@ -6,12 +6,13 @@
 - [ ] drag and drop from node drawer onto viewport
 - [x] resize observer on viewport of drag-pane
 - [ ] sliders for integer and float, already
+- [ ] allow subgraphs to have a custom icon
 
 # code quality
 
-- [ ] Redesign the DragPane API
+- [x] Redesign the DragPane API
 - [ ] svgCanvas resolver should use cache - eventually
-- [ ] project state file is starting to get unwieldy - should we move cache into it's own file?
+- [x] project state file is starting to get unwieldy - should we move cache into it's own file?
 - [x] cyclical checks
     - [x] properly implement depemdsOn
     - [x] Custom Nodes needs special handling. we should not assume that all inputs rely on all outputs (or the inverse thereof). We need to cache the relationship between input-type nodes and output-type nodes on a per subgraph basis.

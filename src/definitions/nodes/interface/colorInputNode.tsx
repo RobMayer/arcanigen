@@ -22,7 +22,7 @@ export type ColorInputDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        defaultValue: DataTypes.TypeOf<DataTypes.Use<"color">>;
+        initialValue: DataTypes.TypeOf<DataTypes.Use<"color">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         alpha: boolean;
         nullable: boolean;
@@ -38,7 +38,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorInputDefiniti
         },
         payload: {
             label: "",
-            defaultValue: Color.fromHex("#ffffffff"),
+            initialValue: Color.fromHex("#ffffffff"),
             widget: Enum.Common.colorInputWidget.Hex,
             alpha: true,
             nullable: true,
@@ -62,8 +62,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorInputD
             <SocketOut node={node} socketId={"output"} type={"color"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Default Value"}>
-                <ColorHexInput value={node.payload.defaultValue} onCommit={(defaultValue) => handleUpdate({ defaultValue })} alpha={node.payload.alpha} nullable={node.payload.nullable} />
+            <Slot label={"Initial Value"}>
+                <ColorHexInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} alpha={node.payload.alpha} nullable={node.payload.nullable} />
             </Slot>
             <Slot>
                 <CheckBox checked={node.payload.alpha} onToggle={(alpha) => handleUpdate({ alpha })}>
@@ -103,7 +103,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorInputDefinition>, socket: "
         const providedInput = context.getInput?.<"color">(node.id);
         return {
             kind: "color",
-            data: providedInput?.data ?? node.payload.defaultValue,
+            data: providedInput?.data ?? node.payload.initialValue,
         };
     }
     return null;

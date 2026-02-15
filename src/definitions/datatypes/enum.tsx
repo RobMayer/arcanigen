@@ -86,6 +86,17 @@ export namespace Enum {
             Hex: 1,
         } as const;
 
+        export const booleanInputWidget = {
+            None: 0,
+            Checkbox: 1,
+            Checkbutton: 2,
+        } as const;
+
+        export const typicalInputWidget = {
+            None: 0,
+            Input: 1,
+        } as const;
+
         export const typicalOutputWidget = {
             None: 0,
             Preview: 1,

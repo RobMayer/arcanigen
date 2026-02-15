@@ -71,7 +71,7 @@ const TESTING_STATE = {
                 },
                 payload: {
                     label: "A",
-                    defaultValue: "1",
+                    initialValue: "1",
                     widget: 1,
                     min: "1",
                     max: "3",
