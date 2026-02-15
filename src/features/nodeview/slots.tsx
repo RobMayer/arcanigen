@@ -5,10 +5,11 @@ import { Icon, ICONS } from "../../components/Icon";
 import { Session } from "../../state/session";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
-import { NodeDefinitions, SocketTypes } from "../../definitions/betterTypes";
+import { DataTypes, NodeDefinitions, SocketTypes } from "../../definitions/betterTypes";
 import { Flavour } from "../../components/types";
 import { SVGObject } from "../../types";
 import { renderSVGObject } from "../svgcanvas";
+import { Color } from "../../definitions/datatypes/color";
 
 const SlotBase = styled.div`
     display: flex;
@@ -44,7 +45,7 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     );
 };
 
-export const ShapePreview = styled(({ shape, className }: { shape: SVGObject | null; className?: string }) => {
+export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObject | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Use<"color">> }) => {
     const contents = useMemo(() => {
         if (shape) {
             return renderSVGObject(shape, "preview");
@@ -57,9 +58,18 @@ export const ShapePreview = styled(({ shape, className }: { shape: SVGObject | n
     const { x, y, w, h } = shape.preview;
     const pad = Math.max(w, h) * 0.05;
 
+    const style = useMemo(
+        () => ({
+            backgroundColor: Color.toHex(color ?? { r: 1, g: 1, b: 1, a: 1 }),
+        }),
+        [color],
+    );
+
     return (
         <div className={className}>
-            <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>{contents}</svg>
+            <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`} style={style}>
+                {contents}
+            </svg>
         </div>
     );
 })`
