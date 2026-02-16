@@ -346,7 +346,12 @@ export namespace Project {
                         interfaces: ctx.interfaces.ref.current,
                         users: ctx.users.ref.current,
                     };
-                    const onPayloadChange = nodeType.onPayloadChange as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, prev: Record<string, unknown>, state: NodeTypes.HookState, graphId: string) => NodeTypes.HookState | null;
+                    const onPayloadChange = nodeType.onPayloadChange as (
+                        node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                        prev: Record<string, unknown>,
+                        state: NodeTypes.HookState,
+                        graphId: string,
+                    ) => NodeTypes.HookState | null;
                     const newState = onPayloadChange(node, prev as Record<string, unknown>, hookState, graphId);
                     if (newState) {
                         hookRan = true;
@@ -804,7 +809,7 @@ export namespace Project {
                 const omit = <T extends Record<string, unknown>>(obj: T, key: string): T => {
                     const copy = { ...obj };
                     delete copy[key];
-                    return copy as T;
+                    return copy;
                 };
 
                 currentNodes = omit(currentNodes, graphId);
