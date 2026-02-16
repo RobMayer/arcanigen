@@ -8,6 +8,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
+import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
@@ -31,6 +32,11 @@ import { ColorOutputDefinition } from "./colorOutputNode";
 import { BooleanOutputDefinition } from "./booleanOutputNode";
 import { EnumInputDefinition } from "./enumInputNode";
 import { EnumOutputDefinition } from "./enumOutputNode";
+import { TokensLengthInputDefinition } from "./tokensLengthInputNode";
+import { TokensLengthOutputDefinition } from "./tokensLengthOutputNode";
+import { StringInputDefinition } from "./stringInputNode";
+import { StringOutputDefinition } from "./stringOutputNode";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { CheckButton } from "../../../components/buttons/CheckButton";
@@ -136,12 +142,13 @@ const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, outSocket: s
     const outKey: InterfaceKey = `out:${outSocket}`;
     const rawDeps = subgraphDeps[outKey] ?? [];
 
-    // Expand layer groups: replace inputNodeId with all layer socket names from that group
+    // Expand layer groups: replace inputNodeId with supersocket + all layer socket names from that group
     const expanded: string[] = [];
     for (const dep of rawDeps) {
         const layersKey = `layers_${dep}`;
         if (layersKey in node.payload) {
             const entries = (node.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+            expanded.push(dep); // supersocket
             expanded.push(...entries.map((e) => e.socket));
         } else {
             expanded.push(dep);
@@ -193,6 +200,10 @@ const storedValueToEval = (storedValue: unknown, nodeType: string): DataTypes.An
             return { kind: "boolean", data: storedValue as boolean };
         case "enumInput":
             return { kind: "enum", data: storedValue as number };
+        case "tokensLengthInput":
+            return { kind: "tokens<length>", data: storedValue as string };
+        case "stringInput":
+            return { kind: "string", data: storedValue as string };
         default:
             return null;
     }
@@ -211,6 +222,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
         const inputNodeId = key.slice(7);
         const layerEntries = (node.payload as Record<string, unknown>)[key] as { socket: string; enabled: boolean; blend: number }[];
 
+        // Mark supersocket as handled so the normal loop skips it
+        layerSockets.add(inputNodeId);
+
+        // Check supersocket first — if connected, use its data directly
+        const supersocketEval = context.resolve<"array<layer>">(node.id, inputNodeId);
+        if (supersocketEval) {
+            inputs[inputNodeId] = supersocketEval;
+            for (const entry of layerEntries) {
+                layerSockets.add(entry.socket);
+            }
+            continue;
+        }
+
+        // Build from individual layer sockets
         const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
         for (const entry of layerEntries) {
             layerSockets.add(entry.socket);
@@ -228,7 +253,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
                 });
             } else if (resolved.kind === "shape") {
                 layerData.push({
-                    shape: resolved.data as DataTypes.TypeOf<DataTypes.Use<"shape">>,
+                    shape: resolved.data,
                     enabled: entry.enabled,
                     blend: entry.blend,
                 });
@@ -294,8 +319,9 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
         if (parsed.direction === "in") {
             const inputNode = subgraphNodes[parsed.nodeId];
             if (inputNode?.type === "arrayLayerInput") {
-                // Create initial layer group for array<layer> input
+                // Create supersocket + initial layer group for array<layer> input
                 const socketId = `layer_${nanoid()}`;
+                inSockets[parsed.nodeId] = null;
                 inSockets[socketId] = null;
                 initialValues[`layers_${parsed.nodeId}`] = [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }];
             } else {
@@ -349,6 +375,40 @@ const onDelete = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
     };
 };
 
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>, linkId: string, direction: "in" | "out", state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+    if (direction !== "in") return state;
+
+    const link = state.links[graphId][linkId];
+    if (!link) return state;
+
+    // Check if the connected socket is a supersocket for a layer group
+    const layersKey = `layers_${link.toSocket}`;
+    if (!(layersKey in node.payload)) return state;
+
+    // Collect all link IDs from layer_* sockets in this group
+    const nodeData = state.nodes[graphId][node.id];
+    const layerEntries = (nodeData.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+    const linkIdsToRemove: string[] = [];
+
+    for (const entry of layerEntries) {
+        const socketLinkId = nodeData.in[entry.socket];
+        if (socketLinkId !== null && socketLinkId !== undefined) {
+            linkIdsToRemove.push(socketLinkId);
+        }
+    }
+
+    if (linkIdsToRemove.length === 0) return state;
+
+    const graph = { nodes: state.nodes[graphId], links: state.links[graphId] };
+    const [{ nodes, links }] = ArcaneGraph.removeLinks(graph, linkIdsToRemove);
+
+    return {
+        ...state,
+        nodes: { ...state.nodes, [graphId]: nodes },
+        links: { ...state.links, [graphId]: links },
+    };
+};
+
 export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     type: "custom",
     displayName: "Custom",
@@ -363,6 +423,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     create,
     onCreate,
     onDelete,
+    onConnect,
 };
 
 type SlotUpdateHandler = (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => void;
@@ -416,6 +477,20 @@ const DynamicSlot = ({
             return <InputSlotEnum host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<EnumInputDefinition>} handleValue={handleValue} />;
         case "arrayLayerInput":
             return <InputSlotLayerGroup host={hostNode} source={sourceNode} />;
+        case "tokensLengthOutput":
+            return <OutputSlotTokensLength host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<TokensLengthOutputDefinition>} />;
+        case "tokensLengthInput":
+            return <InputSlotTokensLength host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<TokensLengthInputDefinition>} handleValue={handleValue} />;
+        case "stringOutput":
+            return <OutputSlotString host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<StringOutputDefinition>} />;
+        case "stringInput":
+            return <InputSlotString host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<StringInputDefinition>} handleValue={handleValue} />;
+        case "distributionOutput":
+            return <OutputSlotDistribution host={hostNode} source={sourceNode} />;
+        case "distributionInput":
+            return <InputSlotDistribution host={hostNode} source={sourceNode} />;
+        case "arrayLayerOutput":
+            return <OutputSlotArrayLayer host={hostNode} source={sourceNode} />;
     }
     return null;
 };
@@ -423,7 +498,21 @@ const DynamicSlot = ({
 type OutputWidgetProps<T extends NodeDefinitions.Any> = { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<T> };
 type InputWidgetProps<T extends NodeDefinitions.Any> = { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<T>; handleValue: SlotUpdateHandler };
 
-const InputSocketOrSlot = ({ socketed, node, socketId, type, label, children }: { socketed: boolean; node: NodeDefinitions.NodeFor<CustomDefinition>; socketId: string; type: string; label?: string; children?: ReactNode }) => {
+const InputSocketOrSlot = ({
+    socketed,
+    node,
+    socketId,
+    type,
+    label,
+    children,
+}: {
+    socketed: boolean;
+    node: NodeDefinitions.NodeFor<CustomDefinition>;
+    socketId: string;
+    type: string;
+    label?: string;
+    children?: ReactNode;
+}) => {
     if (socketed) {
         return (
             <SocketIn node={node} socketId={socketId} type={type as never} label={label}>
@@ -921,6 +1010,109 @@ const InputSlotEnum = ({ host, source, handleValue }: InputWidgetProps<EnumInput
     return null;
 };
 
+const OutputSlotTokensLength = ({ host, source }: OutputWidgetProps<TokensLengthOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "tokens<length>" ? resolved.data : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"tokens<length>" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"tokens<length>" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotTokensLength = ({ host, source, handleValue }: InputWidgetProps<TokensLengthInputDefinition>) => {
+    const socketed = source.payload.socketed !== false;
+    const label = (source.payload.label ?? "") === "" ? "Input" : source.payload.label;
+    const disabled = host.in[source.id] != null;
+
+    return (
+        <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} type="tokens<length>" label={label}>
+            <TextInput
+                value={host.payload[`value_${source.id}`] as string}
+                onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                disabled={disabled}
+                placeholder="e.g. 5px 10px"
+            />
+        </InputSocketOrSlot>
+    );
+};
+
+const OutputSlotString = ({ host, source }: OutputWidgetProps<StringOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const output = resolved?.kind === "string" ? resolved.data : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.None: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"string" as never}>
+                    {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.Preview: {
+            return (
+                <SocketOut node={host} socketId={source.id} type={"string" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotString = ({ host, source, handleValue }: InputWidgetProps<StringInputDefinition>) => {
+    const socketed = source.payload.socketed !== false;
+    const label = (source.payload.label ?? "") === "" ? "Input" : source.payload.label;
+    const disabled = host.in[source.id] != null;
+
+    return (
+        <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} type="string" label={label}>
+            <TextInput
+                value={host.payload[`value_${source.id}`] as string}
+                onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
+                disabled={disabled}
+            />
+        </InputSocketOrSlot>
+    );
+};
+
+const InputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketIn node={host} socketId={source.id} type={"distribution" as never}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
+        </SocketIn>
+    );
+};
+
+const OutputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketOut node={host} socketId={source.id} type={"distribution" as never}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
+        </SocketOut>
+    );
+};
+
+const OutputSlotArrayLayer = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketOut node={host} socketId={source.id} type={"array<layer>" as never}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
+        </SocketOut>
+    );
+};
+
 const BLEND_MODE_OPTIONS = Enum.options(Enum.Common.blendMode);
 const LAYER_MIME = "application/x-custom-layer-socket";
 
@@ -928,6 +1120,7 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
     const { alterNode, removeLinks } = Project.useMethods();
     const label = ((source.payload as { label?: string }).label ?? "") === "" ? "Layers" : (source.payload as { label?: string }).label;
     const layerEntries = ((host.payload as Record<string, unknown>)[`layers_${source.id}`] ?? []) as { socket: string; enabled: boolean; blend: number }[];
+    const supersocketConnected = host.in[source.id] !== null;
 
     const handleAddLayer = useCallback(() => {
         const socketId = `layer_${nanoid()}`;
@@ -936,7 +1129,10 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
             in: { ...n.in, [socketId]: null },
             payload: {
                 ...n.payload,
-                [`layers_${source.id}`]: [...((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]), { socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
+                [`layers_${source.id}`]: [
+                    ...((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]),
+                    { socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal },
+                ],
             },
         }));
     }, [alterNode, host.id, source.id]);
@@ -954,7 +1150,9 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        [`layers_${source.id}`]: ((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]).filter((l) => l.socket !== socket),
+                        [`layers_${source.id}`]: ((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]).filter(
+                            (l) => l.socket !== socket,
+                        ),
                     },
                 };
             });
@@ -968,7 +1166,9 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
                 ...n,
                 payload: {
                     ...n.payload,
-                    [`layers_${source.id}`]: ((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]).map((l) => (l.socket === socket ? { ...l, ...update } : l)),
+                    [`layers_${source.id}`]: ((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]).map((l) =>
+                        l.socket === socket ? { ...l, ...update } : l,
+                    ),
                 },
             }));
         },
@@ -994,22 +1194,27 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
 
     return (
         <>
-            <Slot label={label}>
-                <ActionButton onClick={handleAddLayer} flavour={"accent"}>
-                    Add Layer
-                </ActionButton>
-            </Slot>
-            {layerEntries.map((entry, idx) => (
-                <LayerGroupEntry
-                    key={entry.socket}
-                    entry={entry}
-                    host={host}
-                    index={idx}
-                    handleRemoveLayer={handleRemoveLayer}
-                    handleLayerUpdate={handleLayerUpdate}
-                    handleReorderLayer={handleReorderLayer}
-                />
-            ))}
+            <SocketIn node={host} socketId={source.id} type={"array<layer>" as never}>
+                {label}
+            </SocketIn>
+            {supersocketConnected ? null : (
+                <>
+                    <ActionButton onClick={handleAddLayer} flavour={"accent"}>
+                        Add Layer
+                    </ActionButton>
+                    {layerEntries.map((entry, idx) => (
+                        <LayerGroupEntry
+                            key={entry.socket}
+                            entry={entry}
+                            host={host}
+                            index={idx}
+                            handleRemoveLayer={handleRemoveLayer}
+                            handleLayerUpdate={handleLayerUpdate}
+                            handleReorderLayer={handleReorderLayer}
+                        />
+                    ))}
+                </>
+            )}
         </>
     );
 };

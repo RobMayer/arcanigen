@@ -49,6 +49,9 @@ import { StringOutputDefinition, StringOutputType } from "./nodes/interface/stri
 import { TokensLengthInputDefinition, TokensLengthInputType } from "./nodes/interface/tokensLengthInputNode";
 import { TokensLengthOutputDefinition, TokensLengthOutputType } from "./nodes/interface/tokensLengthOutputNode";
 import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interface/arrayLayerInputNode";
+import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
+import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
+import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -90,6 +93,9 @@ namespace Registries {
         tokensLengthInput: TokensLengthInputDefinition;
         tokensLengthOutput: TokensLengthOutputDefinition;
         arrayLayerInput: ArrayLayerInputDefinition;
+        arrayLayerOutput: ArrayLayerOutputDefinition;
+        distributionInput: DistributionInputDefinition;
+        distributionOutput: DistributionOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -134,6 +140,9 @@ namespace Registries {
         tokensLengthInput: TokensLengthInputType,
         tokensLengthOutput: TokensLengthOutputType,
         arrayLayerInput: ArrayLayerInputType,
+        arrayLayerOutput: ArrayLayerOutputType,
+        distributionInput: DistributionInputType,
+        distributionOutput: DistributionOutputType,
         custom: CustomNodeType,
 
         addFloat: AddFloatType,

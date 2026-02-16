@@ -33,7 +33,7 @@ export const addInterface = (state: NodeTypes.HookState, graphId: string, nodeId
                 if (isLayerGroup) {
                     const socketId = `layer_${nanoid()}`;
                     patch = {
-                        in: { ...customNode.in, [socketId]: null },
+                        in: { ...customNode.in, [nodeId]: null, [socketId]: null },
                         payload: {
                             ...customNode.payload,
                             [`layers_${nodeId}`]: [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
@@ -99,8 +99,31 @@ export const removeInterface = (state: NodeTypes.HookState, graphId: string, nod
                 }
             }
 
-            // Remove all layer sockets from in map and layers key from payload
+            // Disconnect the supersocket link
+            const superLinkId = customNode.in[nodeId];
+            if (superLinkId && newLinks[scope]?.[superLinkId]) {
+                const superLink = newLinks[scope][superLinkId];
+                const superFromNode = newNodes[scope][superLink.fromNode];
+                if (superFromNode) {
+                    newNodes = {
+                        ...newNodes,
+                        [scope]: {
+                            ...newNodes[scope],
+                            [superLink.fromNode]: {
+                                ...superFromNode,
+                                out: { ...superFromNode.out, [superLink.fromSocket]: (superFromNode.out[superLink.fromSocket] ?? []).filter((id) => id !== superLinkId) },
+                            },
+                        },
+                    };
+                }
+                const scopeLinks = { ...newLinks[scope] };
+                delete scopeLinks[superLinkId];
+                newLinks = { ...newLinks, [scope]: scopeLinks };
+            }
+
+            // Remove all layer sockets + supersocket from in map and layers key from payload
             const newIn = { ...newNodes[scope][customNodeId].in };
+            delete newIn[nodeId];
             for (const entry of layerEntries) {
                 delete newIn[entry.socket];
             }
