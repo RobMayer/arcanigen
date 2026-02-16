@@ -91,7 +91,7 @@ export const BooleanOutputType: NodeTypes.Type<"booleanOutput", BooleanOutputDef
     type: "booleanOutput",
     displayName: "Boolean Output",
     defaultLabel: "Output",
-    iconNode: <Icon shape={ICONS.Check} />,
+    iconNode: <Icon shape={ICONS.Check} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
     category: "Outputs",
     evaluate,
     Controls,

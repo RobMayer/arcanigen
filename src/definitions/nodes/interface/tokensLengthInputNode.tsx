@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -95,8 +95,8 @@ export const TokensLengthInputType: NodeTypes.Type<"tokensLengthInput", TokensLe
     type: "tokensLengthInput",
     displayName: "Tokens Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={NODE_ICONS.lengthValue.Item} />,
-    iconCard: <Icon shape={NODE_ICONS.lengthValue.Card} />,
+    iconNode: <Icon shape={NODE_ICONS.lengthValue.Item} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
+    iconCard: <Icon shape={NODE_ICONS.lengthValue.Card} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
     category: "Inputs",
     evaluate,
     Controls,

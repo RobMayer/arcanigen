@@ -120,7 +120,7 @@ export const BooleanInputType: NodeTypes.Type<"booleanInput", BooleanInputDefini
     type: "booleanInput",
     displayName: "Boolean Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={ICONS.Check} />,
+    iconNode: <Icon shape={ICONS.Check} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
     category: "Inputs",
     evaluate,
     Controls,

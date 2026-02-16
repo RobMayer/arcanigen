@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -91,8 +91,8 @@ export const StringOutputType: NodeTypes.Type<"stringOutput", StringOutputDefini
     type: "stringOutput",
     displayName: "String Output",
     defaultLabel: "Output",
-    iconNode: <Icon shape={NODE_ICONS.textShape.Item} />,
-    iconCard: <Icon shape={NODE_ICONS.textShape.Card} />,
+    iconNode: <Icon shape={NODE_ICONS.textShape.Item} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
+    iconCard: <Icon shape={NODE_ICONS.textShape.Card} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
     category: "Outputs",
     evaluate,
     Controls,

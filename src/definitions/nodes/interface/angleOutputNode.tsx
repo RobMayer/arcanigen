@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, Icon } from "../../../components/Icon";
+import { NODE_ICONS, Icon, ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -91,8 +91,8 @@ export const AngleOutputType: NodeTypes.Type<"angleOutput", AngleOutputDefinitio
     type: "angleOutput",
     displayName: "Angle Output",
     defaultLabel: "Output",
-    iconNode: <Icon shape={NODE_ICONS.angleValue.Item} />,
-    iconCard: <Icon shape={NODE_ICONS.angleValue.Card} />,
+    iconNode: <Icon shape={NODE_ICONS.angleValue.Item} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
+    iconCard: <Icon shape={NODE_ICONS.angleValue.Card} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
     category: "Outputs",
     evaluate,
     Controls,

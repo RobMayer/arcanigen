@@ -78,7 +78,7 @@ export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefini
     type: "shapePreview",
     displayName: "Preview",
     defaultLabel: "Preview",
-    iconNode: <Icon shape={ICONS.Bug} />,
+    iconNode: <Icon shape={ICONS.Zoom} color={"var(--icon-flavour)"} />,
     category: "Meta",
     evaluate,
     Controls,

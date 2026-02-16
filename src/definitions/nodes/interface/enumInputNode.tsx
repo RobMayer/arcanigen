@@ -163,7 +163,7 @@ export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     type: "enumInput",
     displayName: "Enum Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={ICONS.List.OL} />,
+    iconNode: <Icon shape={ICONS.List.OL} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
     category: "Inputs",
     evaluate,
     Controls,

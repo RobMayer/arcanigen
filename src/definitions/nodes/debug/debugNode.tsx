@@ -63,7 +63,7 @@ export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {
     type: "debug",
     displayName: "Debug",
     defaultLabel: "Debug",
-    iconNode: <Icon shape={ICONS.Bug} />,
+    iconNode: <Icon shape={ICONS.Bug} color={"var(--icon-flavour)"} />,
     category: "Meta",
     evaluate,
     Controls,

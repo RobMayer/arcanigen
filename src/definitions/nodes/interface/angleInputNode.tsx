@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, Icon } from "../../../components/Icon";
+import { NODE_ICONS, Icon, ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -142,8 +142,8 @@ export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> 
     type: "angleInput",
     displayName: "Angle Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={NODE_ICONS.angleValue.Item} />,
-    iconCard: <Icon shape={NODE_ICONS.angleValue.Card} />,
+    iconNode: <Icon shape={NODE_ICONS.angleValue.Item} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
+    iconCard: <Icon shape={NODE_ICONS.angleValue.Card} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
     category: "Inputs",
     evaluate,
     Controls,

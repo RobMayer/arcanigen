@@ -23,6 +23,14 @@ html {
     --flavour-help: hsl(280, 35%, 40%);
     --flavour-info: hsl(215, 44%, 40%);
 
+    --icon-base: oklch(from var(--flavour-base) 0.8 calc(c * 0.9) h);
+    --icon-accent: oklch(from var(--flavour-accent) 0.8 calc(c * 0.9) h);
+    --icon-danger: oklch(from var(--flavour-danger) 0.8 calc(c * 0.9) h);
+    --icon-emphasis: oklch(from var(--flavour-emphasis) 0.8 calc(c * 0.9) h);
+    --icon-confirm: oklch(from var(--flavour-confirm) 0.8 calc(c * 0.9) h);
+    --icon-help: oklch(from var(--flavour-help) 0.8 calc(c * 0.9) h);
+    --icon-info: oklch(from var(--flavour-info) 0.8 calc(c * 0.9) h);
+
     --icon: currentColor;
     --flavour: var(--flavour-base);
 }
@@ -30,37 +38,45 @@ html {
 [data-flavour="base"] {
     --flavour: var(--flavour-base);
     --scrollbar-flavour: var(--flavour-accemt);
+    --icon-flavour: var(--icon-base);
 }
 
 [data-flavour="inherit"] {
     --flavour: inherit;
     --scrollbar-flavour: inherit;
+    --icon-flavour: inherit;
 }
 
 [data-flavour="accent"] {
     --flavour: var(--flavour-accent);
     --scrollbar-flavour: var(--flavour);
+    --icon-flavour: var(--icon-accent);
 }
 
 [data-flavour="danger"] {
     --flavour: var(--flavour-danger);
     --scrollbar-flavour: var(--flavour);
+    --icon-flavour: var(--icon-danger);
 }
 [data-flavour="emphasis"] {
     --flavour: var(--flavour-emphasis);
     --scrollbar-flavour: var(--flavour);
+    --icon-flavour: var(--icon-emphasis);
 }
 [data-flavour="confirm"] {
     --flavour: var(--flavour-confirm);
     --scrollbar-flavour: var(--flavour);
+    --icon-flavour: var(--icon-confirm);
 }
 [data-flavour="help"] {
     --flavour: var(--flavour-help);
     --scrollbar-flavour: var(--flavour);
+    --icon-flavour: var(--icon-help);
 }
 [data-flavour="info"] {
     --flavour: var(--flavour-info);
     --scrollbar-flavour: var(--flavour);
+    --icon-flavour: var(--icon-help);
 }
 
 /* Scrollbar Styles */

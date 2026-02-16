@@ -259,10 +259,10 @@ const CardGrid = styled(
                     {showNewCustom && (
                         <NewCustomCard data-flavour={"info"} onClick={createSubgraph}>
                             <div data-part={"title"} title={"New Custom"}>
-                                New Custom
+                                Custom...
                             </div>
                             <div data-part={"icon"}>
-                                <Icon shape={ICONS.Plus} />
+                                <Icon shape={ICONS.User} />
                             </div>
                         </NewCustomCard>
                     )}
@@ -354,9 +354,7 @@ const NodeCard = styled(
                 <div data-part={"title"} title={nodeType.displayName}>
                     {nodeType.displayName}
                 </div>
-                <div data-part={"icon"}>
-                    {nodeType.iconCard ?? nodeType.iconNode}
-                </div>
+                <div data-part={"icon"}>{nodeType.iconCard ?? nodeType.iconNode}</div>
             </button>
         );
     },

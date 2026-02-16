@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -81,8 +81,8 @@ export const ShapeInputType: NodeTypes.Type<"shapeInput", ShapeInputDefinition> 
     type: "shapeInput",
     displayName: "Shape Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={NODE_ICONS.polygramShape.Item} />,
-    iconCard: <Icon shape={NODE_ICONS.polygramShape.Card} />,
+    iconNode: <Icon shape={NODE_ICONS.polygramShape.Item} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
+    iconCard: <Icon shape={NODE_ICONS.polygramShape.Card} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
     category: "Inputs",
     evaluate,
     Controls,

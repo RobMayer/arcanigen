@@ -91,7 +91,7 @@ export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> 
     type: "enumOutput",
     displayName: "Enum Output",
     defaultLabel: "Output",
-    iconNode: <Icon shape={ICONS.List.OL} />,
+    iconNode: <Icon shape={ICONS.List.OL} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
     category: "Outputs",
     evaluate,
     Controls,
