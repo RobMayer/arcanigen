@@ -1,5 +1,7 @@
+import { nanoid } from "nanoid";
 import { NodeDefinitions, NodeTypes } from "./betterTypes";
 import { InterfaceMember, InterfaceSocket } from "../state/project/types";
+import { Enum } from "./datatypes/enum";
 
 /** Recursively removes an entry from an InterfaceMember array, including inside accordions. */
 const filterEntry = (members: InterfaceMember[], entry: InterfaceSocket): InterfaceMember[] =>
@@ -20,16 +22,31 @@ export const addInterface = (state: NodeTypes.HookState, graphId: string, nodeId
 
     const users = newState.users[graphId] ?? [];
     if (users.length > 0) {
+        const sourceNode = newState.nodes[graphId]?.[nodeId];
+        const isLayerGroup = direction === "in" && sourceNode?.type === "arrayLayerInput";
+
         let newNodes = newState.nodes;
         for (const { node: customNodeId, scope } of users) {
             const customNode = newNodes[scope]?.[customNodeId];
             if (customNode?.type === "custom") {
-                const socketPatch = direction === "in" ? { in: { ...customNode.in, [nodeId]: null } } : { out: { ...customNode.out, [nodeId]: [] } };
+                let patch: Record<string, unknown>;
+                if (isLayerGroup) {
+                    const socketId = `layer_${nanoid()}`;
+                    patch = {
+                        in: { ...customNode.in, [socketId]: null },
+                        payload: {
+                            ...customNode.payload,
+                            [`layers_${nodeId}`]: [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
+                        },
+                    };
+                } else {
+                    patch = direction === "in" ? { in: { ...customNode.in, [nodeId]: null } } : { out: { ...customNode.out, [nodeId]: [] } };
+                }
                 newNodes = {
                     ...newNodes,
                     [scope]: {
                         ...newNodes[scope],
-                        [customNodeId]: { ...customNode, ...socketPatch },
+                        [customNodeId]: { ...customNode, ...patch },
                     },
                 };
             }
@@ -51,7 +68,49 @@ export const removeInterface = (state: NodeTypes.HookState, graphId: string, nod
         const customNode = newNodes[scope]?.[customNodeId];
         if (customNode?.type !== "custom") continue;
 
-        if (direction === "in") {
+        // Check if this is a layer group by looking for layers_${nodeId} in payload
+        const layersKey = `layers_${nodeId}`;
+        const isLayerGroup = direction === "in" && layersKey in customNode.payload;
+
+        if (isLayerGroup) {
+            const layerEntries = (customNode.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+
+            // Disconnect all links on layer sockets
+            for (const entry of layerEntries) {
+                const linkId = customNode.in[entry.socket];
+                if (linkId && newLinks[scope]?.[linkId]) {
+                    const link = newLinks[scope][linkId];
+                    const fromNode = newNodes[scope][link.fromNode];
+                    if (fromNode) {
+                        newNodes = {
+                            ...newNodes,
+                            [scope]: {
+                                ...newNodes[scope],
+                                [link.fromNode]: {
+                                    ...fromNode,
+                                    out: { ...fromNode.out, [link.fromSocket]: (fromNode.out[link.fromSocket] ?? []).filter((id) => id !== linkId) },
+                                },
+                            },
+                        };
+                    }
+                    const scopeLinks = { ...newLinks[scope] };
+                    delete scopeLinks[linkId];
+                    newLinks = { ...newLinks, [scope]: scopeLinks };
+                }
+            }
+
+            // Remove all layer sockets from in map and layers key from payload
+            const newIn = { ...newNodes[scope][customNodeId].in };
+            for (const entry of layerEntries) {
+                delete newIn[entry.socket];
+            }
+            const newPayload = { ...newNodes[scope][customNodeId].payload };
+            delete (newPayload as Record<string, unknown>)[layersKey];
+            newNodes = {
+                ...newNodes,
+                [scope]: { ...newNodes[scope], [customNodeId]: { ...newNodes[scope][customNodeId], in: newIn, payload: newPayload } },
+            };
+        } else if (direction === "in") {
             // Disconnect the single link on this input socket
             const linkId = customNode.in[nodeId];
             if (linkId && newLinks[scope]?.[linkId]) {

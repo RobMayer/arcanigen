@@ -48,6 +48,7 @@ import { StringInputDefinition, StringInputType } from "./nodes/interface/string
 import { StringOutputDefinition, StringOutputType } from "./nodes/interface/stringOutputNode";
 import { TokensLengthInputDefinition, TokensLengthInputType } from "./nodes/interface/tokensLengthInputNode";
 import { TokensLengthOutputDefinition, TokensLengthOutputType } from "./nodes/interface/tokensLengthOutputNode";
+import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interface/arrayLayerInputNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -88,6 +89,7 @@ namespace Registries {
         stringOutput: StringOutputDefinition;
         tokensLengthInput: TokensLengthInputDefinition;
         tokensLengthOutput: TokensLengthOutputDefinition;
+        arrayLayerInput: ArrayLayerInputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -131,6 +133,7 @@ namespace Registries {
         stringOutput: StringOutputType,
         tokensLengthInput: TokensLengthInputType,
         tokensLengthOutput: TokensLengthOutputType,
+        arrayLayerInput: ArrayLayerInputType,
         custom: CustomNodeType,
 
         addFloat: AddFloatType,

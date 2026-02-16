@@ -1,7 +1,8 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
+import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode, useCallback } from "react";
+import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
@@ -133,8 +134,20 @@ const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, outSocket: s
 
     // outSocket is the ID of an output interface node in the subgraph
     const outKey: InterfaceKey = `out:${outSocket}`;
-    // Values are already plain nodeIds (input interface node IDs = custom node's input sockets)
-    return subgraphDeps[outKey] ?? [];
+    const rawDeps = subgraphDeps[outKey] ?? [];
+
+    // Expand layer groups: replace inputNodeId with all layer socket names from that group
+    const expanded: string[] = [];
+    for (const dep of rawDeps) {
+        const layersKey = `layers_${dep}`;
+        if (layersKey in node.payload) {
+            const entries = (node.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+            expanded.push(...entries.map((e) => e.socket));
+        } else {
+            expanded.push(dep);
+        }
+    }
+    return expanded;
 };
 
 const contributesTo = (node: NodeDefinitions.NodeFor<CustomDefinition>, inSocket: string, deps: AllDeps): string[] => {
@@ -145,6 +158,17 @@ const contributesTo = (node: NodeDefinitions.NodeFor<CustomDefinition>, inSocket
     if (!subgraphDeps) {
         // Fallback: all inputs contribute to all outputs
         return Object.keys(node.out);
+    }
+
+    // Check if inSocket belongs to a layer group
+    for (const key of Object.keys(node.payload)) {
+        if (!key.startsWith("layers_")) continue;
+        const inputNodeId = key.slice(7);
+        const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
+        if (entries.some((e) => e.socket === inSocket)) {
+            const inKey: InterfaceKey = `in:${inputNodeId}`;
+            return subgraphDeps[inKey] ?? [];
+        }
     }
 
     // inSocket is the ID of an input interface node in the subgraph
@@ -178,9 +202,44 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     const { graphId } = node.payload;
     if (!graphId) return null;
 
-    // Build inputs by resolving each input socket, or using stored values when not connected
+    // Build array<layer> inputs from layer groups
     const inputs: { [key: string]: DataTypes.AnyEval | null } = {};
+    const layerSockets = new Set<string>();
+
+    for (const key of Object.keys(node.payload)) {
+        if (!key.startsWith("layers_")) continue;
+        const inputNodeId = key.slice(7);
+        const layerEntries = (node.payload as Record<string, unknown>)[key] as { socket: string; enabled: boolean; blend: number }[];
+
+        const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
+        for (const entry of layerEntries) {
+            layerSockets.add(entry.socket);
+            const resolved = context.resolve(node.id, entry.socket) as DataTypes.AnyEval | null;
+            if (!resolved) {
+                layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
+                continue;
+            }
+            if (resolved.kind === "layer") {
+                const data = resolved.data as { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null };
+                layerData.push({
+                    shape: data.shape,
+                    enabled: data.enabled ?? entry.enabled,
+                    blend: data.blend ?? entry.blend,
+                });
+            } else if (resolved.kind === "shape") {
+                layerData.push({
+                    shape: resolved.data as DataTypes.TypeOf<DataTypes.Use<"shape">>,
+                    enabled: entry.enabled,
+                    blend: entry.blend,
+                });
+            }
+        }
+        inputs[inputNodeId] = { kind: "array<layer>", data: layerData };
+    }
+
+    // Build inputs by resolving each input socket, or using stored values when not connected
     for (const inSocket of Object.keys(node.in)) {
+        if (layerSockets.has(inSocket)) continue;
         const resolved = context.resolve(node.id, inSocket);
         if (resolved) {
             inputs[inSocket] = resolved;
@@ -227,19 +286,26 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
     // Build socket maps and default values from Input/Output nodes
     const inSockets: { [key: string]: string | null } = {};
     const outSockets: { [key: string]: string[] } = {};
-    const initialValues: { [key: StoredValueKey]: unknown } = {};
+    const initialValues: { [key: string]: unknown } = {};
     const subgraphNodes = state.nodes[targetGraphId] ?? {};
 
     for (const entry of interfaceSockets) {
         const parsed = parseInterface(entry);
         if (parsed.direction === "in") {
             const inputNode = subgraphNodes[parsed.nodeId];
-            const socketed = (inputNode?.payload as { socketed?: boolean })?.socketed !== false;
-            if (socketed) {
-                inSockets[parsed.nodeId] = null;
-            }
-            if (inputNode && "initialValue" in inputNode.payload) {
-                initialValues[`value_${parsed.nodeId}`] = inputNode.payload.initialValue;
+            if (inputNode?.type === "arrayLayerInput") {
+                // Create initial layer group for array<layer> input
+                const socketId = `layer_${nanoid()}`;
+                inSockets[socketId] = null;
+                initialValues[`layers_${parsed.nodeId}`] = [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }];
+            } else {
+                const socketed = (inputNode?.payload as { socketed?: boolean })?.socketed !== false;
+                if (socketed) {
+                    inSockets[parsed.nodeId] = null;
+                }
+                if (inputNode && "initialValue" in inputNode.payload) {
+                    initialValues[`value_${parsed.nodeId}`] = inputNode.payload.initialValue;
+                }
             }
         } else {
             outSockets[parsed.nodeId] = [];
@@ -348,6 +414,8 @@ const DynamicSlot = ({
             return <OutputSlotEnum host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<EnumOutputDefinition>} />;
         case "enumInput":
             return <InputSlotEnum host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<EnumInputDefinition>} handleValue={handleValue} />;
+        case "arrayLayerInput":
+            return <InputSlotLayerGroup host={hostNode} source={sourceNode} />;
     }
     return null;
 };
@@ -852,6 +920,215 @@ const InputSlotEnum = ({ host, source, handleValue }: InputWidgetProps<EnumInput
     }
     return null;
 };
+
+const BLEND_MODE_OPTIONS = Enum.options(Enum.Common.blendMode);
+const LAYER_MIME = "application/x-custom-layer-socket";
+
+const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    const { alterNode, removeLinks } = Project.useMethods();
+    const label = ((source.payload as { label?: string }).label ?? "") === "" ? "Layers" : (source.payload as { label?: string }).label;
+    const layerEntries = ((host.payload as Record<string, unknown>)[`layers_${source.id}`] ?? []) as { socket: string; enabled: boolean; blend: number }[];
+
+    const handleAddLayer = useCallback(() => {
+        const socketId = `layer_${nanoid()}`;
+        alterNode(host.id, (n) => ({
+            ...n,
+            in: { ...n.in, [socketId]: null },
+            payload: {
+                ...n.payload,
+                [`layers_${source.id}`]: [...((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]), { socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
+            },
+        }));
+    }, [alterNode, host.id, source.id]);
+
+    const handleRemoveLayer = useCallback(
+        (socket: string) => {
+            const linkId = host.in[socket];
+            if (linkId) {
+                removeLinks(linkId);
+            }
+            alterNode(host.id, (n) => {
+                const { [socket]: _, ...restIn } = n.in;
+                return {
+                    ...n,
+                    in: restIn,
+                    payload: {
+                        ...n.payload,
+                        [`layers_${source.id}`]: ((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]).filter((l) => l.socket !== socket),
+                    },
+                };
+            });
+        },
+        [alterNode, removeLinks, host.id, host.in, source.id],
+    );
+
+    const handleLayerUpdate = useCallback(
+        (socket: string, update: Partial<{ enabled: boolean; blend: number }>) => {
+            alterNode(host.id, (n) => ({
+                ...n,
+                payload: {
+                    ...n.payload,
+                    [`layers_${source.id}`]: ((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[]).map((l) => (l.socket === socket ? { ...l, ...update } : l)),
+                },
+            }));
+        },
+        [alterNode, host.id, source.id],
+    );
+
+    const handleReorderLayer = useCallback(
+        (socketId: string, toIndex: number) => {
+            alterNode(host.id, (n) => {
+                const layers = [...((n.payload as Record<string, unknown>)[`layers_${source.id}`] as { socket: string; enabled: boolean; blend: number }[])];
+                const fromIndex = layers.findIndex((l) => l.socket === socketId);
+                if (fromIndex === -1 || fromIndex === toIndex) return n;
+                const [entry] = layers.splice(fromIndex, 1);
+                layers.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, entry);
+                return {
+                    ...n,
+                    payload: { ...n.payload, [`layers_${source.id}`]: layers },
+                };
+            });
+        },
+        [alterNode, host.id, source.id],
+    );
+
+    return (
+        <>
+            <Slot label={label}>
+                <ActionButton onClick={handleAddLayer} flavour={"accent"}>
+                    Add Layer
+                </ActionButton>
+            </Slot>
+            {layerEntries.map((entry, idx) => (
+                <LayerGroupEntry
+                    key={entry.socket}
+                    entry={entry}
+                    host={host}
+                    index={idx}
+                    handleRemoveLayer={handleRemoveLayer}
+                    handleLayerUpdate={handleLayerUpdate}
+                    handleReorderLayer={handleReorderLayer}
+                />
+            ))}
+        </>
+    );
+};
+
+const LayerGroupEntry = ({
+    entry,
+    host,
+    index,
+    handleLayerUpdate,
+    handleRemoveLayer,
+    handleReorderLayer,
+}: {
+    entry: { socket: string; enabled: boolean; blend: number };
+    host: NodeDefinitions.NodeFor<CustomDefinition>;
+    index: number;
+    handleRemoveLayer: (socket: string) => void;
+    handleLayerUpdate: (socket: string, update: Partial<{ enabled: boolean; blend: number }>) => void;
+    handleReorderLayer: (socketId: string, toIndex: number) => void;
+}) => {
+    const theLink = Project.useLink(host.in[entry.socket]);
+    const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const handleDragStart = useCallback(
+        (e: DragEvent) => {
+            e.dataTransfer.setDragImage(ref.current as Element, 0, 0);
+            e.dataTransfer.setData(LAYER_MIME, entry.socket);
+            e.dataTransfer.effectAllowed = "move";
+        },
+        [entry.socket],
+    );
+
+    const handleDragOver = useCallback((e: DragEvent) => {
+        if (!e.dataTransfer.types.includes(LAYER_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        const rect = ref.current?.getBoundingClientRect();
+        if (rect) {
+            setDropSide(e.clientY < rect.top + rect.height / 2 ? "above" : "below");
+        }
+    }, []);
+
+    const handleDragLeave = useCallback(() => {
+        setDropSide(null);
+    }, []);
+
+    const handleDrop = useCallback(
+        (e: DragEvent) => {
+            const socketId = e.dataTransfer.getData(LAYER_MIME);
+            if (socketId) {
+                e.preventDefault();
+                handleReorderLayer(socketId, dropSide === "below" ? index + 1 : index);
+            }
+            setDropSide(null);
+        },
+        [handleReorderLayer, index, dropSide],
+    );
+
+    const handleDragEnd = useCallback(() => {
+        setDropSide(null);
+    }, []);
+
+    return (
+        <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
+            <SocketIn node={host} socketId={entry.socket} type={"layerOrShape" as never}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
+                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
+                    {BLEND_MODE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </Dropdown>
+                <DragGrip draggable onDragStart={handleDragStart}>
+                    <Icon shape={ICONS.Caret.Vertical} />
+                </DragGrip>
+                <ActionButton.Lite onClick={() => handleRemoveLayer(entry.socket)} flavour={"danger"}>
+                    <Icon shape={ICONS.Close} />
+                </ActionButton.Lite>
+            </SocketIn>
+        </LayerEntryWrapper>
+    );
+};
+
+const LayerEntryWrapper = styled.div`
+    position: relative;
+
+    &[data-state="drop-above"]::before,
+    &[data-state="drop-below"]::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--flavour, #88f);
+        pointer-events: none;
+        z-index: 1;
+    }
+    &[data-state="drop-above"]::before {
+        top: -1px;
+    }
+    &[data-state="drop-below"]::after {
+        bottom: -1px;
+    }
+`;
+
+const DragGrip = styled.div`
+    cursor: grab;
+    opacity: 0.4;
+    display: grid;
+    place-items: center;
+
+    &:active {
+        cursor: grabbing;
+    }
+    &:hover {
+        opacity: 0.8;
+    }
+`;
 
 const TextPreview = styled.div`
     text-align: center;
