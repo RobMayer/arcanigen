@@ -11,7 +11,7 @@ import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -331,6 +331,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     return null;
 };
 
+const CIRCLE_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
+    radius: "length",
+    strokeWidth: "length",
+    strokeColor: "color",
+    strokeCap: "enum",
+    strokeDash: "tokens<length>",
+    strokeDashOffset: "length",
+    fillColor: "color",
+    positionMode: "enum",
+    positionX: "length",
+    positionY: "length",
+    positionRadius: "length",
+    positionTheta: "angle",
+    rotation: "angle",
+    output: "shape",
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => CIRCLE_SOCKET_TYPES[socketId] ?? "float";
+
 export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     type: "circle",
     displayName: "Circle",
@@ -343,4 +362,5 @@ export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     contributesTo,
     evaluate,
     Controls,
+    getSocketType,
 };

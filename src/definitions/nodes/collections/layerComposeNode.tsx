@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
@@ -113,6 +113,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket:
     return null;
 };
 
+const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+    switch (socketId) {
+        case "shape": return "shape";
+        case "enabled": return "boolean";
+        case "blend": return "enum";
+        case "output": return "layer";
+        default: return "shape";
+    }
+};
+
 export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDefinition> = {
     type: "layerCompose",
     displayName: "Compose Layer",
@@ -125,4 +135,5 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     contributesTo,
     evaluate,
     Controls,
+    getSocketType,
 };

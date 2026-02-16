@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NumericString } from "../../datatypes/numericString";
@@ -89,6 +89,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<AddFloatDefinition>, socket: "ou
     return null;
 };
 
+const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+    switch (socketId) {
+        case "a": return "float";
+        case "b": return "float";
+        case "output": return "float";
+        default: return "float";
+    }
+};
+
 export const AddFloatType: NodeTypes.Type<"addFloat", AddFloatDefinition> = {
     type: "addFloat",
     displayName: "Add",
@@ -101,4 +110,5 @@ export const AddFloatType: NodeTypes.Type<"addFloat", AddFloatDefinition> = {
     dependsOn,
     contributesTo,
     create,
+    getSocketType,
 };

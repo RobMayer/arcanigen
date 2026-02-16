@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -87,6 +87,8 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefi
     removeInterface(ctx, graphId, node.id, "out");
 };
 
+const getSocketType = (): SocketTypes.Kind => "enum";
+
 export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> = {
     type: "enumOutput",
     displayName: "Enum Output",
@@ -100,4 +102,5 @@ export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> 
     create,
     onCreate,
     onDelete,
+    getSocketType,
 };

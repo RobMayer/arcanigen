@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -125,6 +125,8 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"colorInput", ColorInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
+const getSocketType = (): SocketTypes.Kind => "color";
+
 export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> = {
     type: "colorInput",
     displayName: "Color Input",
@@ -140,4 +142,5 @@ export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> 
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
+    getSocketType,
 };

@@ -9,7 +9,7 @@ import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/s
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
@@ -438,6 +438,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     return null;
 };
 
+const getSocketType = (_node: NodeDefinitions.NodeFor<LayerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.Kind => {
+    if (side === "out") {
+        if (socketId === "output") return "shape";
+        if (socketId === "layerCount") return "integer";
+    }
+    if (socketId === "layers") return "array<layer>";
+    if (socketId === "isolate") return "boolean";
+    if (socketId.startsWith("layer_")) return "layerOrShape";
+    return "shape";
+};
+
 export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     type: "layers",
     displayName: "Layers",
@@ -451,4 +462,5 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     evaluate,
     Controls,
     onConnect,
+    getSocketType,
 };

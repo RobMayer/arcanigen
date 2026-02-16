@@ -5,7 +5,7 @@ import { Resolver } from "../../../util/resolver";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
@@ -353,7 +353,10 @@ const onDelete = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: stri
     const targetGraphId = node.payload.graphId;
     if (!targetGraphId) return;
 
-    ctx.setUsers(targetGraphId, ctx.getUsers(targetGraphId).filter((u) => !(u.node === node.id && u.scope === graphId)));
+    ctx.setUsers(
+        targetGraphId,
+        ctx.getUsers(targetGraphId).filter((u) => !(u.node === node.id && u.scope === graphId)),
+    );
 };
 
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
@@ -385,6 +388,51 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
+const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
+    floatInput: "float",
+    floatOutput: "float",
+    integerInput: "integer",
+    integerOutput: "integer",
+    angleInput: "angle",
+    angleOutput: "angle",
+    lengthInput: "length",
+    lengthOutput: "length",
+    colorInput: "color",
+    colorOutput: "color",
+    booleanInput: "boolean",
+    booleanOutput: "boolean",
+    enumInput: "enum",
+    enumOutput: "enum",
+    stringInput: "string",
+    stringOutput: "string",
+    tokensLengthInput: "tokens<length>",
+    tokensLengthOutput: "tokens<length>",
+    shapeInput: "shape",
+    shapeOutput: "shape",
+    arrayLayerInput: "array<layer>",
+    arrayLayerOutput: "array<layer>",
+    distributionInput: "distribution",
+    distributionOutput: "distribution",
+};
+
+const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): SocketTypes.Kind => {
+    const subgraphId = node.payload.graphId;
+    if (!subgraphId) return "any";
+
+    // Check if this socket belongs to a layer group
+    for (const key of Object.keys(node.payload)) {
+        if (!key.startsWith("layers_")) continue;
+        const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
+        if (entries.some((e) => e.socket === socketId)) return "layerOrShape";
+    }
+
+    // Look up the subgraph interface node and map its type
+    const subNode = ctx.getNode(subgraphId, socketId);
+    if (!subNode) return "any";
+
+    return INTERFACE_SOCKET_TYPES[subNode.type] ?? "any";
+};
+
 export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     type: "custom",
     displayName: "Custom",
@@ -400,6 +448,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     onCreate,
     onDelete,
     onConnect,
+    getSocketType,
 };
 
 type SlotUpdateHandler = (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => void;
@@ -1016,12 +1065,7 @@ const InputSlotTokensLength = ({ host, source, handleValue }: InputWidgetProps<T
 
     return (
         <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} type="tokens<length>" label={label}>
-            <TextInput
-                value={host.payload[`value_${source.id}`] as string}
-                onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
-                disabled={disabled}
-                placeholder="e.g. 5px 10px"
-            />
+            <TextInput value={host.payload[`value_${source.id}`] as string} onCommit={(v) => handleValue({ [`value_${source.id}`]: v })} disabled={disabled} placeholder="e.g. 5px 10px" />
         </InputSocketOrSlot>
     );
 };
@@ -1056,11 +1100,7 @@ const InputSlotString = ({ host, source, handleValue }: InputWidgetProps<StringI
 
     return (
         <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} type="string" label={label}>
-            <TextInput
-                value={host.payload[`value_${source.id}`] as string}
-                onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
-                disabled={disabled}
-            />
+            <TextInput value={host.payload[`value_${source.id}`] as string} onCommit={(v) => handleValue({ [`value_${source.id}`]: v })} disabled={disabled} />
         </InputSocketOrSlot>
     );
 };

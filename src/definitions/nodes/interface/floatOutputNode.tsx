@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -89,6 +89,8 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
+const getSocketType = (): SocketTypes.Kind => "float";
+
 export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
     type: "floatOutput",
     displayName: "Float Output",
@@ -103,4 +105,5 @@ export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinitio
     create,
     onCreate,
     onDelete,
+    getSocketType,
 };

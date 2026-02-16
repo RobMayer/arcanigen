@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, Slot, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
@@ -159,6 +159,8 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefini
     removeInterface(ctx, graphId, node.id, "in");
 };
 
+const getSocketType = (): SocketTypes.Kind => "enum";
+
 export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     type: "enumInput",
     displayName: "Enum Input",
@@ -173,4 +175,5 @@ export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
+    getSocketType,
 };

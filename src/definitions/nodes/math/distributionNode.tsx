@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Project } from "../../../state/project";
@@ -139,6 +139,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
     return null;
 };
 
+const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+    switch (socketId) {
+        case "func": return "enum";
+        case "easing": return "enum";
+        case "intensity": return "float";
+        case "output": return "distribution";
+        default: return "float";
+    }
+};
+
 export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNodeDefinition> = {
     type: "distribution",
     displayName: "Distribution",
@@ -151,4 +161,5 @@ export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNo
     dependsOn,
     contributesTo,
     create,
+    getSocketType,
 };

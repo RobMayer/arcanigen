@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { useGraphId } from "../../../state/graphId";
@@ -92,6 +92,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "outpu
     return null;
 };
 
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+    switch (socketId) {
+        case "value": return "angle";
+        case "wraps": return "boolean";
+        case "output": return "angle";
+        default: return "angle";
+    }
+};
+
 export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     type: "angle",
     displayName: "Angle",
@@ -104,4 +113,5 @@ export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     dependsOn,
     contributesTo,
     create,
+    getSocketType,
 };

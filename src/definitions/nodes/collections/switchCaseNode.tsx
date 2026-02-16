@@ -6,7 +6,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { TextInput } from "../../../components/inputs/TextInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
@@ -216,6 +216,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socket: k
     return null;
 };
 
+const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out"): SocketTypes.Kind => {
+    if (side === "in" && socketId === "switch") return "enum";
+    if (isPolymorphicSocket(socketId, node.payload.cases)) {
+        return node.payload.resolvedType ?? "any";
+    }
+    return "any";
+};
+
 export const SwitchCaseNodeType: NodeTypes.Type<"switchCase", SwitchCaseDefinition> = {
     type: "switchCase",
     displayName: "Switch Case",
@@ -229,4 +237,5 @@ export const SwitchCaseNodeType: NodeTypes.Type<"switchCase", SwitchCaseDefiniti
     Controls,
     onConnect,
     onDisconnect,
+    getSocketType,
 };

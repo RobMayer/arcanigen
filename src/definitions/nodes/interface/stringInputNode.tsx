@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
@@ -91,6 +91,8 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"stringInput", StringInputDe
     removeInterface(ctx, graphId, node.id, "in");
 };
 
+const getSocketType = (): SocketTypes.Kind => "string";
+
 export const StringInputType: NodeTypes.Type<"stringInput", StringInputDefinition> = {
     type: "stringInput",
     displayName: "String Input",
@@ -106,4 +108,5 @@ export const StringInputType: NodeTypes.Type<"stringInput", StringInputDefinitio
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
+    getSocketType,
 };

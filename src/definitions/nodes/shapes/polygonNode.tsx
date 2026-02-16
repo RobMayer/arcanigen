@@ -11,7 +11,7 @@ import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -477,6 +477,34 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
     return null;
 };
 
+const POLYGON_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
+    pointCount: "integer",
+    radius: "length",
+    rScribe: "enum",
+    pointDistro: "distribution",
+    strokeWidth: "length",
+    strokeColor: "color",
+    strokeCap: "enum",
+    strokeDash: "tokens<length>",
+    strokeDashOffset: "length",
+    fillColor: "color",
+    positionMode: "enum",
+    positionX: "length",
+    positionY: "length",
+    positionRadius: "length",
+    positionTheta: "angle",
+    rotation: "angle",
+    output: "shape",
+    rInscribe: "length",
+    rCircumscribe: "length",
+    rMiddle: "length",
+    eInscribe: "length",
+    eCircumscribe: "length",
+    eMiddle: "length",
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => POLYGON_SOCKET_TYPES[socketId] ?? "float";
+
 export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     type: "polygon",
     displayName: "Polygon",
@@ -489,4 +517,5 @@ export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     contributesTo,
     evaluate,
     Controls,
+    getSocketType,
 };
