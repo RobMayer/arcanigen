@@ -79,6 +79,46 @@ export namespace COMMON_STYLES {
         }
     `;
 
+    export const OPTIONBUTTON = `
+        text-align: left;
+        align-self: stretch;
+        justify-content: start;
+        padding: 0.125em 0.25em;
+        cursor: pointer;
+        transition: outline-offset 0.1s ease;
+        outline: 1px solid transparent;
+        outline-offset: 1px;
+        color: oklch(from var(--flavour) 0.9 calc(c * 0.9) h);
+        --icon: oklch(from var(--flavour) 0.8 calc(c * 0.9) h);
+
+        &:disabled {
+            opacity: 0.4;
+            filter: saturate(0);
+            cursor: auto;
+        }
+
+        &:focus-visible,
+        &:not(:disabled)[data-state~="active"] {
+            outline-color: #fffc;
+            outline-offset: -1px;
+        }
+
+        [data-state~="chosen"],
+        &:not(:disabled):hover {
+            --icon: #fff;
+            color: #fff;
+            background: var(--flavour);
+        }
+
+        &[data-state~="unchecked"] {
+            --icon: oklch(from var(--flavour) 0.5 calc(c * 0.6) h);
+            &[data-state~="chosen"],
+            &:not(:disabled)&:hover {
+                --icon: oklch(from var(--flavour) 0.65 calc(c * 0.5) h);
+            }
+        }
+    `;
+
     export const INPUT = `
         background: #111;
         padding: 0.25em 0.4em;

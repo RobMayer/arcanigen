@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { Slot, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -83,26 +83,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
             <SocketOut node={node} socketId={"output"} type={"enum"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Initial Value"}>
-                <Dropdown value={`${node.payload.initialValue}`} onValue={(v) => handleUpdate({ initialValue: Number(v) })}>
-                    {node.payload.options.map((opt, i) => (
-                        <option value={i} key={i}>
-                            {opt}
-                        </option>
-                    ))}
-                </Dropdown>
-            </Slot>
-            <ActionButton onClick={handleAddOption} flavour={"accent"}>
-                Add Option
-            </ActionButton>
-            {node.payload.options.map((opt, i) => (
-                <Slot key={i} label={`${i}`}>
-                    <TextInput value={opt} onCommit={(v) => handleOptionChange(i, v)} />
-                    <ActionButton.Lite onClick={() => handleRemoveOption(i)} flavour={"danger"}>
-                        <Icon shape={ICONS.Close} />
-                    </ActionButton.Lite>
-                </Slot>
-            ))}
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
                     Socketed
@@ -119,6 +99,35 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
                     })}
                 </Dropdown>
             </Slot>
+            <Slot label={"Initial Value"}>
+                <Dropdown value={`${node.payload.initialValue}`} onValue={(v) => handleUpdate({ initialValue: Number(v) })}>
+                    {node.payload.options.map((opt, i) => (
+                        <option value={i} key={i}>
+                            {opt}
+                        </option>
+                    ))}
+                </Dropdown>
+            </Slot>
+            <hr />
+            <ActionButton onClick={handleAddOption} flavour={"accent"}>
+                Add Option
+            </ActionButton>
+            {node.payload.options.map((opt, i) => (
+                <Slot key={i}>
+                    <TextInput value={opt} onCommit={(v) => handleOptionChange(i, v)} />
+                    <ActionButton.Lite onClick={() => handleRemoveOption(i)} flavour={"danger"}>
+                        <Icon shape={ICONS.Close} />
+                    </ActionButton.Lite>
+                </Slot>
+            ))}
+            <NodeAccordion label={"Presets"} nodeId={node.id}>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.blendMode) })}>Blend Modes</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.scribeMode) })}>Scribe Modes</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.positionMode) })}>Position Modes</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.strokeCap) })}>Stroke Cap</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.distroFunctions) })}>Distro Functions</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.distroEasing) })}>Distro Easing</ActionButton>
+            </NodeAccordion>
         </TypicalNode>
     );
 };

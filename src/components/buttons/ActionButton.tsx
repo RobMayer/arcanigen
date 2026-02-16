@@ -9,6 +9,9 @@ const Base = styled(AbstractButton)`
 const BaseLite = styled(AbstractButton)`
     ${COMMON_STYLES.LITEBUTTON}
 `;
+const BaseOption = styled(AbstractButton)`
+    ${COMMON_STYLES.OPTIONBUTTON}
+`;
 
 export function ActionButton({ flavour = "accent", ...props }: ActionButton.Props) {
     return <Base {...props} data-flavour={flavour} />;
@@ -20,5 +23,9 @@ export namespace ActionButton {
     };
     export function Lite({ flavour, ...props }: Props) {
         return <BaseLite {...props} data-flavour={flavour} />;
+    }
+
+    export function Option({ flavour, ...props }: Props) {
+        return <BaseOption {...props} data-flavour={flavour} />;
     }
 }

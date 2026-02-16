@@ -6,8 +6,8 @@ import { DivProps } from "../../types";
 
 const Base = styled(AbstractPopup.Modal)`
     & > [data-part="contents"] {
-        background: #111;
-        border: 1px solid var(--flavour);
+        background: oklch(from var(--flavour) 0.23 calc(c * 0.1) h);
+        border: 1px solid oklch(from var(--flavour) calc(l - 0.05) calc(c * 0.9) h);
         border-radius: 4px;
     }
     & > [data-part="backdrop"] {
@@ -30,7 +30,7 @@ const BaseTitle = styled.div`
     padding-left: 8px;
 `;
 
-export function Modal({ flavour, ...props }: Modal.Props) {
+export function Modal({ flavour = "base", ...props }: Modal.Props) {
     return <Base {...props} data-flavour={flavour} />;
 }
 

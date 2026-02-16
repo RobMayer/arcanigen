@@ -67,21 +67,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthInput
             <SocketOut node={node} socketId={"output"} type={"length"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Initial Value"}>
-                <LengthInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
-            </Slot>
-            <Slot label={"Minimum"}>
-                <LengthInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} />
-            </Slot>
-            <Slot label={"Maximum"}>
-                <LengthInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} />
-            </Slot>
-            <Slot label={"Step"}>
-                <LengthInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} />
-            </Slot>
-            <Slot label={"Snap"}>
-                <LengthInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
-            </Slot>
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
                     Socketed
@@ -97,6 +82,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthInput
                         );
                     })}
                 </Dropdown>
+            </Slot>
+            <hr />
+            <Slot label={"Initial Value"}>
+                <LengthInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
+            </Slot>
+            <Slot label={"Minimum"}>
+                <LengthInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} />
+            </Slot>
+            <Slot label={"Maximum"}>
+                <LengthInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} />
+            </Slot>
+            <Slot label={"Step"}>
+                <LengthInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} />
+            </Slot>
+            <Slot label={"Snap"}>
+                <LengthInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
             </Slot>
         </TypicalNode>
     );

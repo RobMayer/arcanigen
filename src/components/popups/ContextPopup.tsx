@@ -3,19 +3,20 @@ import { AbstractPopup } from "../abstract/Popup";
 import { Flavour } from "../types";
 
 const Base = styled(AbstractPopup.Context)`
-    & > [data-part="content"] {
+    & > [data-part="contents"] {
         display: flex;
         flex-direction: column;
-        background: var(--flavour-plate-bg);
-        border: 1px solid var(--flavour-plate-border);
+        background: oklch(from var(--flavour) 0.23 calc(c * 0.1) h);
+        border: 1px solid oklch(from var(--flavour) calc(l - 0.05) calc(c * 0.9) h);
         padding: 0.25em;
         border-radius: 6px;
         corner-shape: bevel;
         box-shadow: 0px 4px 8px #0004;
+        min-width: 192px;
     }
 `;
 
-export function ContextPopup({ flavour, ...props }: ContextPopup.Props) {
+export function ContextPopup({ flavour = "base", ...props }: ContextPopup.Props) {
     return <Base {...props} data-flavour={flavour} />;
 }
 

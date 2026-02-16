@@ -64,19 +64,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorInputD
             <SocketOut node={node} socketId={"output"} type={"color"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Initial Value"}>
-                <ColorHexInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} alpha={node.payload.alpha} nullable={node.payload.nullable} />
-            </Slot>
-            <Slot>
-                <CheckBox checked={node.payload.alpha} onToggle={(alpha) => handleUpdate({ alpha })}>
-                    Alpha
-                </CheckBox>
-            </Slot>
-            <Slot>
-                <CheckBox checked={node.payload.nullable} onToggle={(nullable) => handleUpdate({ nullable })}>
-                    Nullable
-                </CheckBox>
-            </Slot>
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
                     Socketed
@@ -92,6 +79,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorInputD
                         );
                     })}
                 </Dropdown>
+            </Slot>
+            <hr />
+            <Slot label={"Initial Value"}>
+                <ColorHexInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} alpha={node.payload.alpha} nullable={node.payload.nullable} />
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.alpha} onToggle={(alpha) => handleUpdate({ alpha })}>
+                    Alpha
+                </CheckBox>
+            </Slot>
+            <Slot>
+                <CheckBox checked={node.payload.nullable} onToggle={(nullable) => handleUpdate({ nullable })}>
+                    Nullable
+                </CheckBox>
             </Slot>
         </TypicalNode>
     );

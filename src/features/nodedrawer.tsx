@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { Accordion } from "../components/containers/Accordion";
 import { GraphIdContext } from "../state/graphId";
 import { Icon, ICONS } from "../components/Icon";
-import { Dispatch, SetStateAction, useCallback, useMemo, useState } from "react";
+import { Dispatch, MouseEvent, SetStateAction, useCallback, useMemo, useState } from "react";
 import { Project } from "../state/project";
 import { DragPaneControls } from "../components/wrappers/DragPane";
 import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -11,6 +11,8 @@ import { CheckBox } from "../components/buttons/CheckBox";
 import { UsersType } from "../state/project/types";
 import { nanoid } from "nanoid";
 import { useSubgraphEditor } from "./subgraph";
+import { ContextPopup } from "../components/popups/ContextPopup";
+import { ActionButton } from "../components/buttons/ActionButton";
 
 const LocalAccordion = styled(Accordion)`
     padding: 0.25em;
@@ -199,39 +201,85 @@ const CardGrid = styled(
             subgraphEditor.open(graphId);
         }, [subgraphMethods, subgraphEditor]);
 
-        const editSubgraph = useCallback(
-            (e: { stopPropagation: () => void }, id: string) => {
-                e.stopPropagation();
-                subgraphEditor.open(id);
+        const users = Project.useUsers();
+
+        const contextControls = ContextPopup.useControls();
+        const [menuTarget, setMenuTarget] = useState<{ kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | null>(null);
+
+        const openContextMenu = useCallback(
+            (evt: MouseEvent<HTMLElement>, target: NonNullable<typeof menuTarget>) => {
+                evt.preventDefault();
+                setMenuTarget(target);
+                contextControls.openOn(evt);
             },
-            [subgraphEditor],
+            [contextControls],
         );
 
+        const handleMenuAdd = useCallback(() => {
+            if (!menuTarget) return;
+            if (menuTarget.kind === "node") {
+                addNode(menuTarget.nodeType);
+            } else {
+                addSubgraph(menuTarget.id, menuTarget.name);
+            }
+            contextControls.close();
+        }, [menuTarget, addNode, addSubgraph, contextControls]);
+
+        const handleMenuEdit = useCallback(() => {
+            if (menuTarget?.kind === "subgraph") {
+                subgraphEditor.open(menuTarget.id);
+            }
+            contextControls.close();
+        }, [menuTarget, subgraphEditor, contextControls]);
+
+        const handleMenuDelete = useCallback(() => {
+            if (menuTarget?.kind === "subgraph") {
+                subgraphMethods.remove(menuTarget.id);
+            }
+            contextControls.close();
+        }, [menuTarget, subgraphMethods, contextControls]);
+
+        const hasUsers = menuTarget?.kind === "subgraph" && (users[menuTarget.id] ?? []).length > 0;
+
         return (
-            <div className={className}>
-                {nodeTypes.map((each) => {
-                    return <NodeCard nodeType={each} key={each.type} handleAdd={addNode} />;
-                })}
-                {showNewCustom && (
-                    <NewCustomCard data-flavour={"info"} onClick={createSubgraph}>
-                        <div data-part={"title"}>New Custom</div>
-                        <div data-part={"icon"}>
-                            <Icon shape={ICONS.Plus} />
-                        </div>
-                    </NewCustomCard>
-                )}
-                {subgraphs.map(([id, { name }]) => (
-                    <SubgraphCard key={id} disabled={forbidden.has(id)} onClick={() => addSubgraph(id, name)} data-flavour={NodeTypes.CATEGORY_FLAVOURS.Custom}>
-                        <div data-part={"title"}>{name || id}</div>
-                        <div data-part={"icon"}>
-                            <Icon shape={ICONS.Cascade} />
-                        </div>
-                        <EditButton onClick={(e) => editSubgraph(e, id)}>
-                            <Icon shape={ICONS.Wrench} />
-                        </EditButton>
-                    </SubgraphCard>
-                ))}
-            </div>
+            <>
+                <ContextPopup controls={contextControls}>
+                    <ActionButton.Option onClick={handleMenuAdd}>Add Node</ActionButton.Option>
+                    {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuEdit}>Edit Custom Node</ActionButton.Option>}
+                    {menuTarget?.kind === "subgraph" && (
+                        <ActionButton.Option flavour={"danger"} onClick={handleMenuDelete} disabled={hasUsers}>
+                            Delete Custom Node
+                        </ActionButton.Option>
+                    )}
+                </ContextPopup>
+                <div className={className}>
+                    {nodeTypes.map((each) => {
+                        return <NodeCard nodeType={each} key={each.type} handleAdd={addNode} onContextMenu={(e) => openContextMenu(e, { kind: "node", nodeType: each })} />;
+                    })}
+                    {showNewCustom && (
+                        <NewCustomCard data-flavour={"info"} onClick={createSubgraph}>
+                            <div data-part={"title"}>New Custom</div>
+                            <div data-part={"icon"}>
+                                <Icon shape={ICONS.Plus} />
+                            </div>
+                        </NewCustomCard>
+                    )}
+                    {subgraphs.map(([id, { name }]) => (
+                        <SubgraphCard
+                            key={id}
+                            disabled={forbidden.has(id)}
+                            onClick={() => addSubgraph(id, name)}
+                            onContextMenu={(e) => openContextMenu(e, { kind: "subgraph", id, name })}
+                            data-flavour={NodeTypes.CATEGORY_FLAVOURS.Custom}
+                        >
+                            <div data-part={"title"}>{name || id}</div>
+                            <div data-part={"icon"}>
+                                <Icon shape={ICONS.Cascade} />
+                            </div>
+                        </SubgraphCard>
+                    ))}
+                </div>
+            </>
         );
     },
 )`
@@ -285,17 +333,19 @@ const NodeCard = styled(
         className,
         disabled,
         handleAdd,
+        onContextMenu,
     }: {
         nodeType: NodeTypes.Any;
         className?: string;
         disabled?: boolean;
         handleAdd: (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>) => void;
+        onContextMenu?: (e: MouseEvent<HTMLElement>) => void;
     }) => {
         const doAdd = useCallback(() => {
             handleAdd(nodeType, {});
         }, [nodeType, handleAdd]);
         return (
-            <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd}>
+            <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu}>
                 <div data-part={"title"}>{nodeType.displayName}</div>
                 <div data-part={"icon"}>
                     <Icon shape={nodeType.iconCard} />
@@ -309,7 +359,6 @@ const NodeCard = styled(
 
 const SubgraphCard = styled.button`
     ${CARD_STYLES}
-    position: relative;
 `;
 
 const NewCustomCard = styled.button`
@@ -318,23 +367,6 @@ const NewCustomCard = styled.button`
     opacity: 0.8;
     &:hover {
         opacity: 1;
-        border-color: #888;
-    }
-`;
-
-const EditButton = styled.div`
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: #333;
-    border: 1px solid #555;
-    color: #aaa;
-    cursor: pointer;
-    padding: 2px;
-    font-size: 10pt;
-    line-height: 1;
-    &:hover {
-        color: #fff;
         border-color: #888;
     }
 `;

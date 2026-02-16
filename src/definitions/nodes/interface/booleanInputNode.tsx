@@ -60,14 +60,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BooleanInpu
             <SocketOut node={node} socketId={"output"} type={"boolean"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Initial Value"}>
-                <CheckBox checked={node.payload.initialValue} onToggle={(initialValue) => handleUpdate({ initialValue })}>
-                    {node.payload.initialValue ? "True" : "False"}
-                </CheckBox>
-            </Slot>
-            <Slot label={"Text"}>
-                <TextInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} placeholder="Text" />
-            </Slot>
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
                     Socketed
@@ -83,6 +75,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BooleanInpu
                         );
                     })}
                 </Dropdown>
+            </Slot>
+            <hr />
+            <Slot>
+                <CheckBox checked={node.payload.initialValue} onToggle={(initialValue) => handleUpdate({ initialValue })}>
+                    Initial Value
+                </CheckBox>
+            </Slot>
+            <Slot label={"Text"}>
+                <TextInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} placeholder="Text" />
             </Slot>
         </TypicalNode>
     );

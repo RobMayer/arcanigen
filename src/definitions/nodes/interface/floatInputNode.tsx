@@ -67,21 +67,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
             <SocketOut node={node} socketId={"output"} type={"float"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Initial Value"}>
-                <DecimalInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
-            </Slot>
-            <Slot label={"Minimum"}>
-                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
-            </Slot>
-            <Slot label={"Maximum"}>
-                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} required={node.payload.widget === 2} />
-            </Slot>
-            <Slot label={"Step"}>
-                <DecimalInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} required={node.payload.widget === 2} />
-            </Slot>
-            <Slot label={"Snap"}>
-                <DecimalInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
-            </Slot>
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
                     Socketed
@@ -97,6 +82,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatInputD
                         );
                     })}
                 </Dropdown>
+            </Slot>
+            <hr />
+            <Slot label={"Initial Value"}>
+                <DecimalInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
+            </Slot>
+            <Slot label={"Minimum"}>
+                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
+            </Slot>
+            <Slot label={"Maximum"}>
+                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} required={node.payload.widget === 2} />
+            </Slot>
+            <Slot label={"Step"}>
+                <DecimalInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} required={node.payload.widget === 2} />
+            </Slot>
+            <Slot label={"Snap"}>
+                <DecimalInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
             </Slot>
         </TypicalNode>
     );

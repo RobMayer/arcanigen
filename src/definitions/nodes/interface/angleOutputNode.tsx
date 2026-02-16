@@ -3,7 +3,7 @@ import { NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn } from "../../../features/nodeview/slots";
+import { Slot, SocketIn } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
@@ -52,15 +52,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleOutput
             <SocketIn node={node} socketId={"input"} type={"angle"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Output name" />
             </SocketIn>
-            <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
-                {WIDGET_OPTIONS.map((each) => {
-                    return (
-                        <option value={each.value} key={each.value}>
-                            {each.label}
-                        </option>
-                    );
-                })}
-            </Dropdown>
+            <Slot label={"Widget"}>
+                <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
+                    {WIDGET_OPTIONS.map((each) => {
+                        return (
+                            <option value={each.value} key={each.value}>
+                                {each.label}
+                            </option>
+                        );
+                    })}
+                </Dropdown>
+            </Slot>
         </TypicalNode>
     );
 };

@@ -70,6 +70,23 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleInputD
             <SocketOut node={node} socketId={"output"} type={"angle"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
+            </Slot>
+            <Slot label={"Widget"}>
+                <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
+                    {WIDGET_OPTIONS.map((each) => {
+                        return (
+                            <option value={each.value} key={each.value}>
+                                {each.label}
+                            </option>
+                        );
+                    })}
+                </Dropdown>
+            </Slot>
+            <hr />
             <Slot label={"Initial Value"}>
                 <AngleInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} unbound={!node.payload.wraps} />
             </Slot>
@@ -89,22 +106,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleInputD
                 <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })}>
                     Wrap value between 0-360
                 </CheckBox>
-            </Slot>
-            <Slot>
-                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
-                    Socketed
-                </CheckBox>
-            </Slot>
-            <Slot label={"Widget"}>
-                <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
-                    {WIDGET_OPTIONS.map((each) => {
-                        return (
-                            <option value={each.value} key={each.value}>
-                                {each.label}
-                            </option>
-                        );
-                    })}
-                </Dropdown>
             </Slot>
         </TypicalNode>
     );
