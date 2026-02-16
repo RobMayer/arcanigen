@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -93,8 +93,8 @@ export const AddFloatType: NodeTypes.Type<"addFloat", AddFloatDefinition> = {
     type: "addFloat",
     displayName: "Add",
     defaultLabel: "Add",
-    iconNode: NODE_ICONS.addValue.Item,
-    iconCard: NODE_ICONS.addValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.addValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.addValue.Card} />,
     category: "Math",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS } from "../../../components/Icon";
+import { ICONS, Icon } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -91,8 +91,7 @@ export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> 
     type: "enumOutput",
     displayName: "Enum Output",
     defaultLabel: "Output",
-    iconNode: ICONS.List.OL,
-    iconCard: ICONS.List.OL,
+    iconNode: <Icon shape={ICONS.List.OL} />,
     category: "Outputs",
     evaluate,
     Controls,

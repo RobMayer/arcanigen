@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS } from "../../../components/Icon";
+import { Icon, ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -78,8 +78,7 @@ export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefini
     type: "shapePreview",
     displayName: "Preview",
     defaultLabel: "Preview",
-    iconNode: ICONS.Bug,
-    iconCard: ICONS.Bug,
+    iconNode: <Icon shape={ICONS.Bug} />,
     category: "Meta",
     evaluate,
     Controls,

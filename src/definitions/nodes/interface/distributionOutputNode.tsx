@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -74,8 +74,8 @@ export const DistributionOutputType: NodeTypes.Type<"distributionOutput", Distri
     type: "distributionOutput",
     displayName: "Distribution Output",
     defaultLabel: "Output",
-    iconNode: NODE_ICONS.curveValue.Item,
-    iconCard: NODE_ICONS.curveValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.curveValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.curveValue.Card} />,
     category: "Outputs",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS } from "../../../components/Icon";
+import { Icon, ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -63,8 +63,7 @@ export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {
     type: "debug",
     displayName: "Debug",
     defaultLabel: "Debug",
-    iconNode: ICONS.Bug,
-    iconCard: ICONS.Bug,
+    iconNode: <Icon shape={ICONS.Bug} />,
     category: "Meta",
     evaluate,
     Controls,

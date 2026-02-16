@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -91,8 +91,8 @@ export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinitio
     type: "shapeOutput",
     displayName: "Shape Output",
     defaultLabel: "Output",
-    iconNode: NODE_ICONS.polygramShape.Item,
-    iconCard: NODE_ICONS.polygramShape.Card,
+    iconNode: <Icon shape={NODE_ICONS.polygramShape.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.polygramShape.Card} />,
     category: "Outputs",
     evaluate,
     Controls,

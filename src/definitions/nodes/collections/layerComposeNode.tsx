@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -117,8 +117,8 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     type: "layerCompose",
     displayName: "Compose Layer",
     defaultLabel: "Compose Layer",
-    iconNode: NODE_ICONS.layerCompose.Item,
-    iconCard: NODE_ICONS.layerCompose.Card,
+    iconNode: <Icon shape={NODE_ICONS.layerCompose.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.layerCompose.Card} />,
     category: "Collections",
     create,
     dependsOn,

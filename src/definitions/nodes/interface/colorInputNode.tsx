@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { NODE_ICONS, Icon } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -129,8 +129,8 @@ export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> 
     type: "colorInput",
     displayName: "Color Input",
     defaultLabel: "Input",
-    iconNode: NODE_ICONS.colorValue.Item,
-    iconCard: NODE_ICONS.colorValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.colorValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.colorValue.Card} />,
     category: "Inputs",
     evaluate,
     Controls,

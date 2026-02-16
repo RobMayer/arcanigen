@@ -4,7 +4,6 @@ import { EmptyOr } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
 import { Length } from "./datatypes/length";
-import { IconDefinition } from "../components/Icon";
 import { Resolver } from "../util/resolver";
 import { SubgraphDeps } from "../util/cycleDetection";
 import { Flavour } from "../components/types";
@@ -288,8 +287,8 @@ export namespace NodeTypes {
         type: T;
         displayName: string;
         defaultLabel: string;
-        iconNode: IconDefinition;
-        iconCard: IconDefinition;
+        iconNode: ReactNode;
+        iconCard?: ReactNode;
         category: Category;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;

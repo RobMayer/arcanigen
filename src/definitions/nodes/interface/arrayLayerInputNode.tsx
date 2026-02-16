@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -79,8 +79,8 @@ export const ArrayLayerInputType: NodeTypes.Type<"arrayLayerInput", ArrayLayerIn
     type: "arrayLayerInput",
     displayName: "Layers Input",
     defaultLabel: "Input",
-    iconNode: NODE_ICONS.layers.Item,
-    iconCard: NODE_ICONS.layers.Card,
+    iconNode: <Icon shape={NODE_ICONS.layers.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.layers.Card} />,
     category: "Inputs",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -481,8 +481,8 @@ export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     type: "polygon",
     displayName: "Polygon",
     defaultLabel: "Polygon",
-    iconNode: NODE_ICONS.polygonShape.Item,
-    iconCard: NODE_ICONS.polygonShape.Card,
+    iconNode: <Icon shape={NODE_ICONS.polygonShape.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.polygonShape.Card} />,
     category: "Shapes",
     create,
     dependsOn,

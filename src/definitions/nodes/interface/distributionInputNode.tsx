@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -79,8 +79,8 @@ export const DistributionInputType: NodeTypes.Type<"distributionInput", Distribu
     type: "distributionInput",
     displayName: "Distribution Input",
     defaultLabel: "Input",
-    iconNode: NODE_ICONS.curveValue.Item,
-    iconCard: NODE_ICONS.curveValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.curveValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.curveValue.Card} />,
     category: "Inputs",
     evaluate,
     Controls,

@@ -167,7 +167,7 @@ const NodeTitle = styled(
                 </ActionButton.Lite>
 
                 <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
-                    <Icon shape={nodeType.iconNode} />
+                    {nodeType.iconNode}
                     {isEditing ? (
                         <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={nodeType.defaultLabel} />
                     ) : (

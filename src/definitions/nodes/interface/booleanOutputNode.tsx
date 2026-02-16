@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS } from "../../../components/Icon";
+import { ICONS, Icon } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -91,8 +91,7 @@ export const BooleanOutputType: NodeTypes.Type<"booleanOutput", BooleanOutputDef
     type: "booleanOutput",
     displayName: "Boolean Output",
     defaultLabel: "Output",
-    iconNode: ICONS.Check,
-    iconCard: ICONS.Check,
+    iconNode: <Icon shape={ICONS.Check} />,
     category: "Outputs",
     evaluate,
     Controls,

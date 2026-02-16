@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -91,8 +91,8 @@ export const LengthOutputType: NodeTypes.Type<"lengthOutput", LengthOutputDefini
     type: "lengthOutput",
     displayName: "Length Output",
     defaultLabel: "Output",
-    iconNode: NODE_ICONS.lengthValue.Item,
-    iconCard: NODE_ICONS.lengthValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.lengthValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.lengthValue.Card} />,
     category: "Outputs",
     evaluate,
     Controls,

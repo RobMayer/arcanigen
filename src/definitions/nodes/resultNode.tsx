@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../components/Icon";
+import { Icon, NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -105,8 +105,8 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     type: "result",
     displayName: "Result",
     defaultLabel: "Result",
-    iconNode: NODE_ICONS.result.Item,
-    iconCard: NODE_ICONS.result.Card,
+    iconNode: <Icon shape={NODE_ICONS.result.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.result.Card} />,
     category: "Result",
     create,
     dependsOn,

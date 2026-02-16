@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { NODE_ICONS, Icon } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -134,8 +134,8 @@ export const IntegerInputType: NodeTypes.Type<"integerInput", IntegerInputDefini
     type: "integerInput",
     displayName: "Integer Input",
     defaultLabel: "Input",
-    iconNode: NODE_ICONS.numericValue.Item,
-    iconCard: NODE_ICONS.numericValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} />,
     category: "Inputs",
     evaluate,
     Controls,

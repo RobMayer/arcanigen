@@ -258,7 +258,9 @@ const CardGrid = styled(
                     })}
                     {showNewCustom && (
                         <NewCustomCard data-flavour={"info"} onClick={createSubgraph}>
-                            <div data-part={"title"}>New Custom</div>
+                            <div data-part={"title"} title={"New Custom"}>
+                                New Custom
+                            </div>
                             <div data-part={"icon"}>
                                 <Icon shape={ICONS.Plus} />
                             </div>
@@ -272,7 +274,9 @@ const CardGrid = styled(
                             onContextMenu={(e) => openContextMenu(e, { kind: "subgraph", id, name })}
                             data-flavour={NodeTypes.CATEGORY_FLAVOURS.Custom}
                         >
-                            <div data-part={"title"}>{name || id}</div>
+                            <div data-part={"title"} title={name || id}>
+                                {name || id}
+                            </div>
                             <div data-part={"icon"}>
                                 <Icon shape={ICONS.Cascade} />
                             </div>
@@ -314,6 +318,7 @@ const CARD_STYLES = `
         font-variant: small-caps;
         font-size: 1em;
         text-overflow: ellipsis;
+        overflow: hidden;
         white-space: nowrap;
         background: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
         border: 1px solid oklch(from var(--flavour) calc(l - 0.05) c h);
@@ -346,9 +351,11 @@ const NodeCard = styled(
         }, [nodeType, handleAdd]);
         return (
             <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu}>
-                <div data-part={"title"}>{nodeType.displayName}</div>
+                <div data-part={"title"} title={nodeType.displayName}>
+                    {nodeType.displayName}
+                </div>
                 <div data-part={"icon"}>
-                    <Icon shape={nodeType.iconCard} />
+                    {nodeType.iconCard ?? nodeType.iconNode}
                 </div>
             </button>
         );

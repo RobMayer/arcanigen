@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -82,8 +82,8 @@ export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> 
     type: "integer",
     displayName: "Integer",
     defaultLabel: "Integer",
-    iconNode: NODE_ICONS.numericValue.Item,
-    iconCard: NODE_ICONS.numericValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} />,
     category: "Primitives",
     evaluate,
     Controls,

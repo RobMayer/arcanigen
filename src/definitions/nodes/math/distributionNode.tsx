@@ -4,7 +4,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
@@ -143,8 +143,8 @@ export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNo
     type: "distribution",
     displayName: "Distribution",
     defaultLabel: "Distribution",
-    iconNode: NODE_ICONS.curveValue.Item,
-    iconCard: NODE_ICONS.curveValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.curveValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.curveValue.Card} />,
     category: "Math",
     evaluate,
     Controls,

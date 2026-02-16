@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { NODE_ICONS, Icon } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -93,8 +93,8 @@ export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinitio
     type: "floatOutput",
     displayName: "Float Output",
     defaultLabel: "Output",
-    iconNode: NODE_ICONS.numericValue.Item,
-    iconCard: NODE_ICONS.numericValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} />,
     category: "Outputs",
     evaluate,
     Controls,

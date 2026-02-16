@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -134,8 +134,8 @@ export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinitio
     type: "lengthInput",
     displayName: "Length Input",
     defaultLabel: "Input",
-    iconNode: NODE_ICONS.lengthValue.Item,
-    iconCard: NODE_ICONS.lengthValue.Card,
+    iconNode: <Icon shape={NODE_ICONS.lengthValue.Item} />,
+    iconCard: <Icon shape={NODE_ICONS.lengthValue.Card} />,
     category: "Inputs",
     evaluate,
     Controls,
