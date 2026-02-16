@@ -123,12 +123,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatInputDefinition>, socket: "
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "in");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "in");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "in");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "in");
 };
 
 export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> = {

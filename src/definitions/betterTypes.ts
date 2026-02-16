@@ -280,13 +280,22 @@ export namespace NodeTypes {
 
     export type Category = keyof typeof Registries.NODECAT_FLAVOURS;
 
-    /** State snapshot passed to lifecycle hooks */
-    export type HookState = {
-        nodes: { [graphId: string]: { [nodeId: string]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
-        links: { [graphId: string]: { [linkId: string]: ArcaneGraph.Link } };
-        interfaces: { [graphId: string]: InterfaceMember[] };
-        users: { [graphId: string]: { node: string; scope: string }[] };
-    };
+    /** Interface for lifecycle hook context — provides state access and mutation operations */
+    export interface MethodContext {
+        // State reads
+        getNode(graphId: string, nodeId: string): NodeDefinitions.NodeFor<NodeDefinitions.Any> | undefined;
+        getLink(graphId: string, linkId: string): ArcaneGraph.Link | undefined;
+        getNodesForGraph(graphId: string): { [nodeId: string]: NodeDefinitions.NodeFor<NodeDefinitions.Any> };
+        getLinksForGraph(graphId: string): { [linkId: string]: ArcaneGraph.Link };
+        getInterfaces(graphId: string): InterfaceMember[];
+        getUsers(graphId: string): { node: string; scope: string }[];
+        // Low-level mutations (no hooks fired)
+        setNode(graphId: string, nodeId: string, node: NodeDefinitions.NodeFor<NodeDefinitions.Any>): void;
+        setInterfaces(graphId: string, interfaces: InterfaceMember[]): void;
+        setUsers(graphId: string, users: { node: string; scope: string }[]): void;
+        // High-level operations (fire hooks, rebuild cache)
+        removeLinks(graphId: string, ...linkIds: string[]): void;
+    }
 
     export interface Type<T extends Key, D extends NodeDefinitions.Generic = NodeDefinitions.Generic> {
         type: T;
@@ -300,11 +309,11 @@ export namespace NodeTypes {
         evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;
         dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"], deps: AllDeps) => (keyof D["inputs"])[];
         contributesTo: (node: NodeDefinitions.NodeFor<D>, inSocket: keyof D["inputs"], deps: AllDeps) => (keyof D["outputs"])[];
-        onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
-        onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
-        onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", state: HookState, graphId: string) => HookState;
-        onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", state: HookState, graphId: string) => HookState;
-        onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], state: HookState, graphId: string) => HookState | null;
+        onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, graphId: string, ctx: MethodContext) => void;
+        onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, graphId: string, ctx: MethodContext) => void;
+        onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
+        onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
+        onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], graphId: string, ctx: MethodContext) => void;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {

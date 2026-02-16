@@ -79,12 +79,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<ShapeOutputDefinition>, _socket
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "out");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "out");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "out");
 };
 
 export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinition> = {

@@ -151,12 +151,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<EnumInputDefinition>, socket: "o
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "in");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "in");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "in");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "in");
 };
 
 export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {

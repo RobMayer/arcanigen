@@ -12,7 +12,6 @@ import { ActionButton } from "../../../components/buttons/ActionButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 
 export type LayerDefinition = {
     inputs: {
@@ -295,34 +294,28 @@ const DragGrip = styled.div`
     }
 `;
 
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>, linkId: string, direction: "in" | "out", state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    if (direction !== "in") return state;
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+    if (direction !== "in") return;
 
     // Check if the connected socket is the supersocket
-    const link = state.links[graphId][linkId];
-    if (!link || link.toSocket !== "layers") return state;
+    const link = ctx.getLink(graphId, linkId);
+    if (!link || link.toSocket !== "layers") return;
 
     // Collect all link IDs from layer_* sockets
-    const nodeData = state.nodes[graphId][node.id];
+    const currentNode = ctx.getNode(graphId, node.id);
+    if (!currentNode) return;
     const linkIdsToRemove: string[] = [];
 
-    for (const [socketKey, socketLinkId] of Object.entries(nodeData.in)) {
+    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
         if (socketKey.startsWith("layer_") && socketLinkId !== null) {
             linkIdsToRemove.push(socketLinkId);
         }
     }
 
-    if (linkIdsToRemove.length === 0) return state;
+    if (linkIdsToRemove.length === 0) return;
 
-    // Remove the links using ArcaneGraph
-    const graph = { nodes: state.nodes[graphId], links: state.links[graphId] };
-    const [{ nodes, links }] = ArcaneGraph.removeLinks(graph, linkIdsToRemove);
-
-    return {
-        ...state,
-        nodes: { ...state.nodes, [graphId]: nodes },
-        links: { ...state.links, [graphId]: links },
-    };
+    // Use high-level removeLinks which fires onDisconnect on endpoints
+    ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
 const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: keyof LayerDefinition["outputs"], _deps: AllDeps): (keyof LayerDefinition["inputs"])[] => {

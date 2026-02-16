@@ -8,7 +8,6 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
 import { FloatInputDefinition } from "./floatInputNode";
@@ -301,18 +300,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     return outputs[socket] ?? null;
 };
 
-const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const targetGraphId = node.payload.graphId;
-    if (!targetGraphId) return state;
+    if (!targetGraphId) return;
 
     // Read the subgraph's interface entries
-    const interfaceSockets = flattenSockets(state.interfaces[targetGraphId] ?? []);
+    const interfaceSockets = flattenSockets(ctx.getInterfaces(targetGraphId));
 
     // Build socket maps and default values from Input/Output nodes
     const inSockets: { [key: string]: string | null } = {};
     const outSockets: { [key: string]: string[] } = {};
     const initialValues: { [key: string]: unknown } = {};
-    const subgraphNodes = state.nodes[targetGraphId] ?? {};
+    const subgraphNodes = ctx.getNodesForGraph(targetGraphId);
 
     for (const entry of interfaceSockets) {
         const parsed = parseInterface(entry);
@@ -339,74 +338,51 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTy
     }
 
     // Update the node with the built socket maps and default values
-    const updatedNode = {
+    ctx.setNode(graphId, node.id, {
         ...node,
         in: inSockets,
         out: outSockets,
         payload: { ...node.payload, ...initialValues },
-    };
+    });
 
-    return {
-        ...state,
-        nodes: {
-            ...state.nodes,
-            [graphId]: {
-                ...state.nodes[graphId],
-                [node.id]: updatedNode,
-            },
-        },
-        users: {
-            ...state.users,
-            [targetGraphId]: [...(state.users[targetGraphId] ?? []), { node: node.id, scope: graphId }],
-        },
-    };
+    // Register this custom node as a user of the target subgraph
+    ctx.setUsers(targetGraphId, [...ctx.getUsers(targetGraphId), { node: node.id, scope: graphId }]);
 };
 
-const onDelete = (node: NodeDefinitions.NodeFor<CustomDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
+const onDelete = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const targetGraphId = node.payload.graphId;
-    if (!targetGraphId) return state;
+    if (!targetGraphId) return;
 
-    return {
-        ...state,
-        users: {
-            ...state.users,
-            [targetGraphId]: (state.users[targetGraphId] ?? []).filter((u) => !(u.node === node.id && u.scope === graphId)),
-        },
-    };
+    ctx.setUsers(targetGraphId, ctx.getUsers(targetGraphId).filter((u) => !(u.node === node.id && u.scope === graphId)));
 };
 
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>, linkId: string, direction: "in" | "out", state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    if (direction !== "in") return state;
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+    if (direction !== "in") return;
 
-    const link = state.links[graphId][linkId];
-    if (!link) return state;
+    const link = ctx.getLink(graphId, linkId);
+    if (!link) return;
 
     // Check if the connected socket is a supersocket for a layer group
     const layersKey = `layers_${link.toSocket}`;
-    if (!(layersKey in node.payload)) return state;
+    if (!(layersKey in node.payload)) return;
 
     // Collect all link IDs from layer_* sockets in this group
-    const nodeData = state.nodes[graphId][node.id];
-    const layerEntries = (nodeData.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+    const currentNode = ctx.getNode(graphId, node.id);
+    if (!currentNode) return;
+    const layerEntries = (currentNode.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
     const linkIdsToRemove: string[] = [];
 
     for (const entry of layerEntries) {
-        const socketLinkId = nodeData.in[entry.socket];
+        const socketLinkId = currentNode.in[entry.socket];
         if (socketLinkId !== null && socketLinkId !== undefined) {
             linkIdsToRemove.push(socketLinkId);
         }
     }
 
-    if (linkIdsToRemove.length === 0) return state;
+    if (linkIdsToRemove.length === 0) return;
 
-    const graph = { nodes: state.nodes[graphId], links: state.links[graphId] };
-    const [{ nodes, links }] = ArcaneGraph.removeLinks(graph, linkIdsToRemove);
-
-    return {
-        ...state,
-        nodes: { ...state.nodes, [graphId]: nodes },
-        links: { ...state.links, [graphId]: links },
-    };
+    // Use high-level removeLinks which fires onDisconnect on endpoints
+    ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
 export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {

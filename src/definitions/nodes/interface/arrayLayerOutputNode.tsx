@@ -62,12 +62,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<ArrayLayerOutputDefinition>, _s
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerOutput", ArrayLayerOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "out");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerOutput", ArrayLayerOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerOutput", ArrayLayerOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "out");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerOutput", ArrayLayerOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "out");
 };
 
 export const ArrayLayerOutputType: NodeTypes.Type<"arrayLayerOutput", ArrayLayerOutputDefinition> = {

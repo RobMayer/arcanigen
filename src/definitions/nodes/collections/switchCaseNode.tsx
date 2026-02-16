@@ -138,59 +138,46 @@ const onConnect = (
     node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
     linkId: string,
     direction: "in" | "out",
-    state: NodeTypes.HookState,
     graphId: string,
-): NodeTypes.HookState => {
-    const link = state.links[graphId][linkId];
-    if (!link) return state;
+    ctx: NodeTypes.MethodContext,
+): void => {
+    const link = ctx.getLink(graphId, linkId);
+    if (!link) return;
 
     const socket = direction === "out" ? link.fromSocket : link.toSocket;
-    if (!isPolymorphicSocket(socket, node.payload.cases)) return state;
+    if (!isPolymorphicSocket(socket, node.payload.cases)) return;
 
-    if (node.payload.resolvedType !== null) return state;
+    if (node.payload.resolvedType !== null) return;
 
     // Constrain to the link's agreed type
-    const currentNode = state.nodes[graphId][node.id];
-    const payload = { ...currentNode.payload, resolvedType: link.type } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"];
-    return {
-        ...state,
-        nodes: {
-            ...state.nodes,
-            [graphId]: { ...state.nodes[graphId], [node.id]: { ...currentNode, payload } },
-        },
-    };
+    const currentNode = ctx.getNode(graphId, node.id);
+    if (!currentNode) return;
+    ctx.setNode(graphId, node.id, { ...currentNode, payload: { ...currentNode.payload, resolvedType: link.type } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"] });
 };
 
 const onDisconnect = (
     node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
     link: ArcaneGraph.Link,
     direction: "in" | "out",
-    state: NodeTypes.HookState,
     graphId: string,
-): NodeTypes.HookState => {
+    ctx: NodeTypes.MethodContext,
+): void => {
     const socket = direction === "out" ? link.fromSocket : link.toSocket;
-    const currentNode = state.nodes[graphId][node.id] as NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>;
-    if (!currentNode) return state;
+    const currentNode = ctx.getNode(graphId, node.id) as NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition> | undefined;
+    if (!currentNode) return;
 
-    if (!isPolymorphicSocket(socket, currentNode.payload.cases)) return state;
-    if (currentNode.payload.resolvedType === null) return state;
+    if (!isPolymorphicSocket(socket, currentNode.payload.cases)) return;
+    if (currentNode.payload.resolvedType === null) return;
 
     // Check if any polymorphic socket still has a connection
-    if ((currentNode.out as Record<string, string[]>)["result"]?.length > 0) return state;
-    if ((currentNode.in as Record<string, string | null>)["default"] !== null) return state;
+    if ((currentNode.out as Record<string, string[]>)["result"]?.length > 0) return;
+    if ((currentNode.in as Record<string, string | null>)["default"] !== null) return;
     for (const c of currentNode.payload.cases) {
-        if ((currentNode.in as Record<string, string | null>)[c.socket] !== null) return state;
+        if ((currentNode.in as Record<string, string | null>)[c.socket] !== null) return;
     }
 
     // No polymorphic connections remain — unconstrain
-    const payload = { ...currentNode.payload, resolvedType: null } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"];
-    return {
-        ...state,
-        nodes: {
-            ...state.nodes,
-            [graphId]: { ...state.nodes[graphId], [node.id]: { ...currentNode, payload } },
-        },
-    };
+    ctx.setNode(graphId, node.id, { ...currentNode, payload: { ...currentNode.payload, resolvedType: null } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"] });
 };
 
 const dependsOn = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, outSocket: keyof SwitchCaseDefinition["outputs"], _deps: AllDeps): (keyof SwitchCaseDefinition["inputs"])[] => {

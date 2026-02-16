@@ -79,12 +79,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<AngleOutputDefinition>, _socket
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"angleOutput", AngleOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "out");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"angleOutput", AngleOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"angleOutput", AngleOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "out");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"angleOutput", AngleOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "out");
 };
 
 export const AngleOutputType: NodeTypes.Type<"angleOutput", AngleOutputDefinition> = {

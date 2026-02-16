@@ -79,12 +79,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<EnumOutputDefinition>, _socket:
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "out");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "out");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "out");
 };
 
 export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> = {

@@ -62,12 +62,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<DistributionOutputDefinition>, 
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", DistributionOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "out");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", DistributionOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", DistributionOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "out");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", DistributionOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "out");
 };
 
 export const DistributionOutputType: NodeTypes.Type<"distributionOutput", DistributionOutputDefinition> = {

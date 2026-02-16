@@ -10,29 +10,23 @@ const filterEntry = (members: InterfaceMember[], entry: InterfaceSocket): Interf
         .filter((m) => m !== entry);
 
 /** Adds an interface entry and propagates the new socket to all Custom nodes referencing this subgraph. */
-export const addInterface = (state: NodeTypes.HookState, graphId: string, nodeId: string, direction: "in" | "out"): NodeTypes.HookState => {
+export const addInterface = (ctx: NodeTypes.MethodContext, graphId: string, nodeId: string, direction: "in" | "out"): void => {
     const entry: InterfaceSocket = `${direction}:${nodeId}`;
-    let newState: NodeTypes.HookState = {
-        ...state,
-        interfaces: {
-            ...state.interfaces,
-            [graphId]: [...(state.interfaces[graphId] ?? []), entry],
-        },
-    };
+    ctx.setInterfaces(graphId, [...ctx.getInterfaces(graphId), entry]);
 
-    const users = newState.users[graphId] ?? [];
+    const users = ctx.getUsers(graphId);
     if (users.length > 0) {
-        const sourceNode = newState.nodes[graphId]?.[nodeId];
+        const sourceNode = ctx.getNode(graphId, nodeId);
         const isLayerGroup = direction === "in" && sourceNode?.type === "arrayLayerInput";
 
-        let newNodes = newState.nodes;
         for (const { node: customNodeId, scope } of users) {
-            const customNode = newNodes[scope]?.[customNodeId];
+            const customNode = ctx.getNode(scope, customNodeId);
             if (customNode?.type === "custom") {
-                let patch: Record<string, unknown>;
+                let updatedNode: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
                 if (isLayerGroup) {
                     const socketId = `layer_${nanoid()}`;
-                    patch = {
+                    updatedNode = {
+                        ...customNode,
                         in: { ...customNode.in, [nodeId]: null, [socketId]: null },
                         payload: {
                             ...customNode.payload,
@@ -40,32 +34,21 @@ export const addInterface = (state: NodeTypes.HookState, graphId: string, nodeId
                         },
                     };
                 } else {
-                    patch = direction === "in" ? { in: { ...customNode.in, [nodeId]: null } } : { out: { ...customNode.out, [nodeId]: [] } };
+                    updatedNode = direction === "in" ? { ...customNode, in: { ...customNode.in, [nodeId]: null } } : { ...customNode, out: { ...customNode.out, [nodeId]: [] } };
                 }
-                newNodes = {
-                    ...newNodes,
-                    [scope]: {
-                        ...newNodes[scope],
-                        [customNodeId]: { ...customNode, ...patch },
-                    },
-                };
+                ctx.setNode(scope, customNodeId, updatedNode);
             }
         }
-        newState = { ...newState, nodes: newNodes };
     }
-
-    return newState;
 };
 
 /** Removes an interface entry, disconnects any links on the socket, and removes it from all Custom nodes referencing this subgraph. */
-export const removeInterface = (state: NodeTypes.HookState, graphId: string, nodeId: string, direction: "in" | "out"): NodeTypes.HookState => {
+export const removeInterface = (ctx: NodeTypes.MethodContext, graphId: string, nodeId: string, direction: "in" | "out"): void => {
     const entry: InterfaceSocket = `${direction}:${nodeId}`;
-    let newNodes = state.nodes;
-    let newLinks = state.links;
 
-    const users = state.users[graphId] ?? [];
+    const users = ctx.getUsers(graphId);
     for (const { node: customNodeId, scope } of users) {
-        const customNode = newNodes[scope]?.[customNodeId];
+        const customNode = ctx.getNode(scope, customNodeId);
         if (customNode?.type !== "custom") continue;
 
         // Check if this is a layer group by looking for layers_${nodeId} in payload
@@ -75,219 +58,120 @@ export const removeInterface = (state: NodeTypes.HookState, graphId: string, nod
         if (isLayerGroup) {
             const layerEntries = (customNode.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
 
-            // Disconnect all links on layer sockets
-            for (const entry of layerEntries) {
-                const linkId = customNode.in[entry.socket];
-                if (linkId && newLinks[scope]?.[linkId]) {
-                    const link = newLinks[scope][linkId];
-                    const fromNode = newNodes[scope][link.fromNode];
-                    if (fromNode) {
-                        newNodes = {
-                            ...newNodes,
-                            [scope]: {
-                                ...newNodes[scope],
-                                [link.fromNode]: {
-                                    ...fromNode,
-                                    out: { ...fromNode.out, [link.fromSocket]: (fromNode.out[link.fromSocket] ?? []).filter((id) => id !== linkId) },
-                                },
-                            },
-                        };
-                    }
-                    const scopeLinks = { ...newLinks[scope] };
-                    delete scopeLinks[linkId];
-                    newLinks = { ...newLinks, [scope]: scopeLinks };
-                }
+            // Collect all link IDs to remove (layer sockets + supersocket)
+            const linksToRemove: string[] = [];
+            for (const le of layerEntries) {
+                const linkId = customNode.in[le.socket];
+                if (linkId) linksToRemove.push(linkId);
             }
-
-            // Disconnect the supersocket link
             const superLinkId = customNode.in[nodeId];
-            if (superLinkId && newLinks[scope]?.[superLinkId]) {
-                const superLink = newLinks[scope][superLinkId];
-                const superFromNode = newNodes[scope][superLink.fromNode];
-                if (superFromNode) {
-                    newNodes = {
-                        ...newNodes,
-                        [scope]: {
-                            ...newNodes[scope],
-                            [superLink.fromNode]: {
-                                ...superFromNode,
-                                out: { ...superFromNode.out, [superLink.fromSocket]: (superFromNode.out[superLink.fromSocket] ?? []).filter((id) => id !== superLinkId) },
-                            },
-                        },
-                    };
-                }
-                const scopeLinks = { ...newLinks[scope] };
-                delete scopeLinks[superLinkId];
-                newLinks = { ...newLinks, [scope]: scopeLinks };
+            if (superLinkId) linksToRemove.push(superLinkId);
+
+            // Remove links through the high-level operation (fires onDisconnect)
+            if (linksToRemove.length > 0) {
+                ctx.removeLinks(scope, ...linksToRemove);
             }
 
             // Remove all layer sockets + supersocket from in map and layers key from payload
-            const newIn = { ...newNodes[scope][customNodeId].in };
-            delete newIn[nodeId];
-            for (const entry of layerEntries) {
-                delete newIn[entry.socket];
+            // Re-read the node since removeLinks may have modified it
+            const freshNode = ctx.getNode(scope, customNodeId);
+            if (freshNode) {
+                const newIn = { ...freshNode.in };
+                delete newIn[nodeId];
+                for (const le of layerEntries) {
+                    delete newIn[le.socket];
+                }
+                const newPayload = { ...freshNode.payload };
+                delete (newPayload as Record<string, unknown>)[layersKey];
+                ctx.setNode(scope, customNodeId, { ...freshNode, in: newIn, payload: newPayload });
             }
-            const newPayload = { ...newNodes[scope][customNodeId].payload };
-            delete (newPayload as Record<string, unknown>)[layersKey];
-            newNodes = {
-                ...newNodes,
-                [scope]: { ...newNodes[scope], [customNodeId]: { ...newNodes[scope][customNodeId], in: newIn, payload: newPayload } },
-            };
         } else if (direction === "in") {
             // Disconnect the single link on this input socket
             const linkId = customNode.in[nodeId];
-            if (linkId && newLinks[scope]?.[linkId]) {
-                const link = newLinks[scope][linkId];
-                const fromNode = newNodes[scope][link.fromNode];
-                if (fromNode) {
-                    newNodes = {
-                        ...newNodes,
-                        [scope]: {
-                            ...newNodes[scope],
-                            [link.fromNode]: {
-                                ...fromNode,
-                                out: { ...fromNode.out, [link.fromSocket]: (fromNode.out[link.fromSocket] ?? []).filter((id) => id !== linkId) },
-                            },
-                        },
-                    };
-                }
-                const scopeLinks = { ...newLinks[scope] };
-                delete scopeLinks[linkId];
-                newLinks = { ...newLinks, [scope]: scopeLinks };
+            if (linkId) {
+                ctx.removeLinks(scope, linkId);
             }
 
-            // Remove socket from in map
-            const newIn = { ...newNodes[scope][customNodeId].in };
-            delete newIn[nodeId];
-            newNodes = {
-                ...newNodes,
-                [scope]: { ...newNodes[scope], [customNodeId]: { ...newNodes[scope][customNodeId], in: newIn } },
-            };
+            // Remove socket from in map (re-read node since removeLinks may have modified it)
+            const freshNode = ctx.getNode(scope, customNodeId);
+            if (freshNode) {
+                const newIn = { ...freshNode.in };
+                delete newIn[nodeId];
+                ctx.setNode(scope, customNodeId, { ...freshNode, in: newIn });
+            }
         } else {
             // Disconnect all links from this output socket
             const linkIds = customNode.out[nodeId] ?? [];
-            for (const linkId of linkIds) {
-                if (newLinks[scope]?.[linkId]) {
-                    const link = newLinks[scope][linkId];
-                    const toNode = newNodes[scope][link.toNode];
-                    if (toNode) {
-                        newNodes = {
-                            ...newNodes,
-                            [scope]: {
-                                ...newNodes[scope],
-                                [link.toNode]: { ...toNode, in: { ...toNode.in, [link.toSocket]: null } },
-                            },
-                        };
-                    }
-                    const scopeLinks = { ...newLinks[scope] };
-                    delete scopeLinks[linkId];
-                    newLinks = { ...newLinks, [scope]: scopeLinks };
-                }
+            if (linkIds.length > 0) {
+                ctx.removeLinks(scope, ...linkIds);
             }
 
-            // Remove socket from out map
-            const newOut = { ...newNodes[scope][customNodeId].out };
-            delete newOut[nodeId];
-            newNodes = {
-                ...newNodes,
-                [scope]: { ...newNodes[scope], [customNodeId]: { ...newNodes[scope][customNodeId], out: newOut } },
-            };
+            // Remove socket from out map (re-read node since removeLinks may have modified it)
+            const freshNode = ctx.getNode(scope, customNodeId);
+            if (freshNode) {
+                const newOut = { ...freshNode.out };
+                delete newOut[nodeId];
+                ctx.setNode(scope, customNodeId, { ...freshNode, out: newOut });
+            }
         }
     }
 
-    return {
-        ...state,
-        nodes: newNodes,
-        links: newLinks,
-        interfaces: {
-            ...state.interfaces,
-            [graphId]: filterEntry(state.interfaces[graphId] ?? [], entry),
-        },
-    };
+    ctx.setInterfaces(graphId, filterEntry(ctx.getInterfaces(graphId), entry));
 };
 
 /** Adds an input socket to all Custom nodes referencing this subgraph (without modifying interface entries). */
-export const addInputSocket = (state: NodeTypes.HookState, graphId: string, nodeId: string): NodeTypes.HookState => {
-    const users = state.users[graphId] ?? [];
-    if (users.length === 0) return state;
+export const addInputSocket = (ctx: NodeTypes.MethodContext, graphId: string, nodeId: string): void => {
+    const users = ctx.getUsers(graphId);
+    if (users.length === 0) return;
 
-    let newNodes = state.nodes;
     for (const { node: customNodeId, scope } of users) {
-        const customNode = newNodes[scope]?.[customNodeId];
+        const customNode = ctx.getNode(scope, customNodeId);
         if (customNode?.type === "custom") {
-            newNodes = {
-                ...newNodes,
-                [scope]: {
-                    ...newNodes[scope],
-                    [customNodeId]: { ...customNode, in: { ...customNode.in, [nodeId]: null } },
-                },
-            };
+            ctx.setNode(scope, customNodeId, { ...customNode, in: { ...customNode.in, [nodeId]: null } });
         }
     }
-    return { ...state, nodes: newNodes };
 };
 
 /** Removes an input socket from all Custom nodes referencing this subgraph, disconnecting any links (without modifying interface entries). */
-export const removeInputSocket = (state: NodeTypes.HookState, graphId: string, nodeId: string): NodeTypes.HookState => {
-    const users = state.users[graphId] ?? [];
-    if (users.length === 0) return state;
-
-    let newNodes = state.nodes;
-    let newLinks = state.links;
+export const removeInputSocket = (ctx: NodeTypes.MethodContext, graphId: string, nodeId: string): void => {
+    const users = ctx.getUsers(graphId);
+    if (users.length === 0) return;
 
     for (const { node: customNodeId, scope } of users) {
-        const customNode = newNodes[scope]?.[customNodeId];
+        const customNode = ctx.getNode(scope, customNodeId);
         if (customNode?.type !== "custom") continue;
 
         // Disconnect the single link on this input socket
         const linkId = customNode.in[nodeId];
-        if (linkId && newLinks[scope]?.[linkId]) {
-            const link = newLinks[scope][linkId];
-            const fromNode = newNodes[scope][link.fromNode];
-            if (fromNode) {
-                newNodes = {
-                    ...newNodes,
-                    [scope]: {
-                        ...newNodes[scope],
-                        [link.fromNode]: {
-                            ...fromNode,
-                            out: { ...fromNode.out, [link.fromSocket]: (fromNode.out[link.fromSocket] ?? []).filter((id) => id !== linkId) },
-                        },
-                    },
-                };
-            }
-            const scopeLinks = { ...newLinks[scope] };
-            delete scopeLinks[linkId];
-            newLinks = { ...newLinks, [scope]: scopeLinks };
+        if (linkId) {
+            ctx.removeLinks(scope, linkId);
         }
 
-        // Remove socket from in map
-        const newIn = { ...newNodes[scope][customNodeId].in };
-        delete newIn[nodeId];
-        newNodes = {
-            ...newNodes,
-            [scope]: { ...newNodes[scope], [customNodeId]: { ...newNodes[scope][customNodeId], in: newIn } },
-        };
+        // Remove socket from in map (re-read node since removeLinks may have modified it)
+        const freshNode = ctx.getNode(scope, customNodeId);
+        if (freshNode) {
+            const newIn = { ...freshNode.in };
+            delete newIn[nodeId];
+            ctx.setNode(scope, customNodeId, { ...freshNode, in: newIn });
+        }
     }
-
-    return { ...state, nodes: newNodes, links: newLinks };
 };
 
 /** Shared onPayloadChange handler for all input node types. Propagates socketed toggle to Custom nodes. */
 export const handleInputSocketedChange = (
     node: NodeDefinitions.NodeFor<NodeDefinitions.Generic>,
     prev: NodeDefinitions.Generic["payload"],
-    state: NodeTypes.HookState,
     graphId: string,
-): NodeTypes.HookState | null => {
+    ctx: NodeTypes.MethodContext,
+): void => {
     const prevSocketed = (prev as { socketed?: boolean }).socketed !== false;
     const newSocketed = (node.payload as { socketed?: boolean }).socketed !== false;
 
-    if (prevSocketed === newSocketed) return null;
+    if (prevSocketed === newSocketed) return;
 
     if (newSocketed) {
-        return addInputSocket(state, graphId, node.id);
+        addInputSocket(ctx, graphId, node.id);
     } else {
-        return removeInputSocket(state, graphId, node.id);
+        removeInputSocket(ctx, graphId, node.id);
     }
 };

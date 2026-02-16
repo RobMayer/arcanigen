@@ -79,12 +79,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<IntegerOutputDefinition>, _sock
     return null;
 };
 
-const onCreate = (node: NodeDefinitions.BuiltNodeOf<"integerOutput", IntegerOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return addInterface(state, graphId, node.id, "out");
+const onCreate = (node: NodeDefinitions.BuiltNodeOf<"integerOutput", IntegerOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    addInterface(ctx, graphId, node.id, "out");
 };
 
-const onDelete = (node: NodeDefinitions.BuiltNodeOf<"integerOutput", IntegerOutputDefinition>, state: NodeTypes.HookState, graphId: string): NodeTypes.HookState => {
-    return removeInterface(state, graphId, node.id, "out");
+const onDelete = (node: NodeDefinitions.BuiltNodeOf<"integerOutput", IntegerOutputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    removeInterface(ctx, graphId, node.id, "out");
 };
 
 export const IntegerOutputType: NodeTypes.Type<"integerOutput", IntegerOutputDefinition> = {
