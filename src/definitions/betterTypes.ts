@@ -44,6 +44,10 @@ import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/bool
 import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/booleanOutputNode";
 import { EnumInputDefinition, EnumInputType } from "./nodes/interface/enumInputNode";
 import { EnumOutputDefinition, EnumOutputType } from "./nodes/interface/enumOutputNode";
+import { StringInputDefinition, StringInputType } from "./nodes/interface/stringInputNode";
+import { StringOutputDefinition, StringOutputType } from "./nodes/interface/stringOutputNode";
+import { TokensLengthInputDefinition, TokensLengthInputType } from "./nodes/interface/tokensLengthInputNode";
+import { TokensLengthOutputDefinition, TokensLengthOutputType } from "./nodes/interface/tokensLengthOutputNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -80,6 +84,10 @@ namespace Registries {
         booleanOutput: BooleanOutputDefinition;
         enumInput: EnumInputDefinition;
         enumOutput: EnumOutputDefinition;
+        stringInput: StringInputDefinition;
+        stringOutput: StringOutputDefinition;
+        tokensLengthInput: TokensLengthInputDefinition;
+        tokensLengthOutput: TokensLengthOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -119,6 +127,10 @@ namespace Registries {
         booleanOutput: BooleanOutputType,
         enumInput: EnumInputType,
         enumOutput: EnumOutputType,
+        stringInput: StringInputType,
+        stringOutput: StringOutputType,
+        tokensLengthInput: TokensLengthInputType,
+        tokensLengthOutput: TokensLengthOutputType,
         custom: CustomNodeType,
 
         addFloat: AddFloatType,
