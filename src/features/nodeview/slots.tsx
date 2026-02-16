@@ -205,6 +205,7 @@ const LabelBig = styled(({ className, align = "left", children }: { className?: 
     flex: 1 1 auto;
     display: flex;
     gap: 4px;
+    align-items: center;
     &.align_right {
         justify-content: right;
     }
@@ -221,6 +222,7 @@ const LabelSmall = styled(({ children, className, label, align }: { children: Re
     display: grid;
     grid-template-rows: auto 1fr;
     flex: 1 1;
+    align-items: center;
 
     &.align_right {
         text-align: right;

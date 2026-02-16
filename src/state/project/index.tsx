@@ -135,54 +135,99 @@ export namespace Project {
         const ctx = useContext(CTX)!;
 
         return useMemo(() => {
+            const fireOnDisconnect = (hookState: NodeTypes.HookState, removedLinks: ArcaneGraph.Link[], gId: string, skipNodeId?: string): NodeTypes.HookState => {
+                for (const link of removedLinks) {
+                    // Fire for "from" endpoint (out direction)
+                    if (link.fromNode !== skipNodeId) {
+                        const fromNode = hookState.nodes[gId]?.[link.fromNode];
+                        if (fromNode) {
+                            const fromType = NodeTypes.get(fromNode.type);
+                            if (fromType.onDisconnect) {
+                                const onDisconnect = fromType.onDisconnect as (
+                                    node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                                    link: ArcaneGraph.Link,
+                                    direction: "in" | "out",
+                                    state: NodeTypes.HookState,
+                                    graphId: string,
+                                ) => NodeTypes.HookState;
+                                hookState = onDisconnect(fromNode, link, "out", hookState, gId);
+                            }
+                        }
+                    }
+                    // Fire for "to" endpoint (in direction)
+                    if (link.toNode !== skipNodeId) {
+                        const toNode = hookState.nodes[gId]?.[link.toNode];
+                        if (toNode) {
+                            const toType = NodeTypes.get(toNode.type);
+                            if (toType.onDisconnect) {
+                                const onDisconnect = toType.onDisconnect as (
+                                    node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                                    link: ArcaneGraph.Link,
+                                    direction: "in" | "out",
+                                    state: NodeTypes.HookState,
+                                    graphId: string,
+                                ) => NodeTypes.HookState;
+                                hookState = onDisconnect(toNode, link, "in", hookState, gId);
+                            }
+                        }
+                    }
+                }
+                return hookState;
+            };
+
             // ! Important: this assumes that 'from' and 'to' have already been normalized
             const connect = (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Kind) => {
                 const oldGraph = { nodes: ctx.nodes.get()[graphId], links: ctx.links.get()[graphId] };
-                const [{ nodes, links }, newLink] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
+                const [{ nodes, links }, newLink, removed] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
                 if (newLink) {
                     let currentNodes = { ...ctx.nodes.ref.current, [graphId]: nodes };
                     let currentLinks = { ...ctx.links.ref.current, [graphId]: links };
                     let currentInterfaces = ctx.interfaces.ref.current;
                     let currentUsers = ctx.users.ref.current;
 
+                    let hookState: NodeTypes.HookState = {
+                        nodes: currentNodes,
+                        links: currentLinks,
+                        interfaces: currentInterfaces,
+                        users: currentUsers,
+                    };
+
+                    // Fire onDisconnect for displaced links BEFORE onConnect for the new link
+                    if (removed.links.length > 0) {
+                        hookState = fireOnDisconnect(hookState, removed.links, graphId);
+                    }
+
                     // Fire onConnect hooks for both endpoints
-                    const fromNodeObj = nodes[fromNode];
-                    const toNodeObj = nodes[toNode];
+                    const fromNodeObj = hookState.nodes[graphId][fromNode];
+                    const toNodeObj = hookState.nodes[graphId][toNode];
                     const fromType = NodeTypes.get(fromNodeObj.type);
                     const toType = NodeTypes.get(toNodeObj.type);
 
-                    if (fromType.onConnect || toType.onConnect) {
-                        let hookState: NodeTypes.HookState = {
-                            nodes: currentNodes,
-                            links: currentLinks,
-                            interfaces: currentInterfaces,
-                            users: currentUsers,
-                        };
-                        if (fromType.onConnect) {
-                            const onConnect = fromType.onConnect as (
-                                node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
-                                linkId: string,
-                                direction: "in" | "out",
-                                state: NodeTypes.HookState,
-                                graphId: string,
-                            ) => NodeTypes.HookState;
-                            hookState = onConnect(fromNodeObj, newLink, "out", hookState, graphId);
-                        }
-                        if (toType.onConnect) {
-                            const onConnect = toType.onConnect as (
-                                node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
-                                linkId: string,
-                                direction: "in" | "out",
-                                state: NodeTypes.HookState,
-                                graphId: string,
-                            ) => NodeTypes.HookState;
-                            hookState = onConnect(toNodeObj, newLink, "in", hookState, graphId);
-                        }
-                        currentNodes = hookState.nodes;
-                        currentLinks = hookState.links;
-                        currentInterfaces = hookState.interfaces;
-                        currentUsers = hookState.users;
+                    if (fromType.onConnect) {
+                        const onConnect = fromType.onConnect as (
+                            node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                            linkId: string,
+                            direction: "in" | "out",
+                            state: NodeTypes.HookState,
+                            graphId: string,
+                        ) => NodeTypes.HookState;
+                        hookState = onConnect(fromNodeObj, newLink, "out", hookState, graphId);
                     }
+                    if (toType.onConnect) {
+                        const onConnect = toType.onConnect as (
+                            node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                            linkId: string,
+                            direction: "in" | "out",
+                            state: NodeTypes.HookState,
+                            graphId: string,
+                        ) => NodeTypes.HookState;
+                        hookState = onConnect(toNodeObj, newLink, "in", hookState, graphId);
+                    }
+
+                    currentNodes = hookState.nodes;
+                    currentLinks = hookState.links;
+                    currentInterfaces = hookState.interfaces;
+                    currentUsers = hookState.users;
 
                     // Apply state
                     ctx.nodes.ref.current = currentNodes;
@@ -378,7 +423,7 @@ export namespace Project {
 
                 // Remove node from the current graph (use hook-updated state for this graph)
                 const currentGraphState = { nodes: currentNodes[graphId], links: currentLinks[graphId] };
-                const [{ nodes, links }] = ArcaneGraph.removeNodes(currentGraphState, nodeId);
+                const [{ nodes, links }, removedFromDelete] = ArcaneGraph.removeNodes(currentGraphState, nodeId);
 
                 const positions = { ...ctx.positions.ref.current[graphId] };
                 delete positions[nodeId];
@@ -386,6 +431,21 @@ export namespace Project {
                 // Apply: merge current-graph removal with any cross-graph hook changes
                 currentNodes = { ...currentNodes, [graphId]: nodes };
                 currentLinks = { ...currentLinks, [graphId]: links };
+
+                // Fire onDisconnect on surviving endpoints (skip the deleted node)
+                if (removedFromDelete.links.length > 0) {
+                    let hookState: NodeTypes.HookState = {
+                        nodes: currentNodes,
+                        links: currentLinks,
+                        interfaces: currentInterfaces,
+                        users: currentUsers,
+                    };
+                    hookState = fireOnDisconnect(hookState, removedFromDelete.links, graphId, nodeId);
+                    currentNodes = hookState.nodes;
+                    currentLinks = hookState.links;
+                    currentInterfaces = hookState.interfaces;
+                    currentUsers = hookState.users;
+                }
 
                 ctx.nodes.ref.current = currentNodes;
                 ctx.links.ref.current = currentLinks;
@@ -441,24 +501,44 @@ export namespace Project {
                 const [{ nodes, links }, removed] = ArcaneGraph.removeLinks(oldGraph, linkIds);
                 if (removed.links.length === 0) return;
 
+                // Fire onDisconnect hooks
+                let currentNodes = nodes;
+                let currentLinks = links;
+                let currentInterfaces = ctx.interfaces.ref.current;
+                let currentUsers = ctx.users.ref.current;
+
+                let hookState: NodeTypes.HookState = {
+                    nodes: { ...ctx.nodes.ref.current, [graphId]: nodes },
+                    links: { ...ctx.links.ref.current, [graphId]: links },
+                    interfaces: currentInterfaces,
+                    users: currentUsers,
+                };
+                hookState = fireOnDisconnect(hookState, removed.links, graphId);
+                currentNodes = hookState.nodes[graphId];
+                currentLinks = hookState.links[graphId];
+                currentInterfaces = hookState.interfaces;
+                currentUsers = hookState.users;
+
                 // Find affected toNodes for cache rebuild
                 const affectedNodes = new Set(removed.links.map((l) => l.toNode));
 
-                ctx.nodes.ref.current = { ...ctx.nodes.ref.current, [graphId]: nodes };
-                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(nodes) };
-                ctx.links.ref.current = { ...ctx.links.ref.current, [graphId]: links };
-                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(links) };
+                ctx.nodes.ref.current = { ...hookState.nodes, [graphId]: currentNodes };
+                ctx.nodeList.ref.current = { ...ctx.nodeList.ref.current, [graphId]: Object.keys(currentNodes) };
+                ctx.links.ref.current = { ...hookState.links, [graphId]: currentLinks };
+                ctx.linkList.ref.current = { ...ctx.linkList.ref.current, [graphId]: Object.keys(currentLinks) };
+                ctx.interfaces.ref.current = currentInterfaces;
+                ctx.users.ref.current = currentUsers;
 
                 let newCache = ctx.cache.ref.current;
                 for (const nodeId of affectedNodes) {
-                    if (nodes[nodeId]) {
+                    if (currentNodes[nodeId]) {
                         newCache = rebuildDownstream(newCache, ctx.nodes.ref.current, ctx.links.ref.current, ctx.interfaces.ref.current, graphId, nodeId);
                     }
                 }
                 ctx.cache.ref.current = newCache;
 
                 // Update deps for this graph
-                const graph = { nodes, links };
+                const graph = { nodes: currentNodes, links: currentLinks };
                 const newDeps = computeSubgraphDeps(graph, ctx.interfaces.ref.current[graphId] ?? [], ctx.deps.ref.current);
                 ctx.deps.ref.current = { ...ctx.deps.ref.current, [graphId]: newDeps };
 
@@ -468,6 +548,8 @@ export namespace Project {
                 ctx.linkList.notify();
                 ctx.cache.notify();
                 ctx.deps.notify();
+                ctx.interfaces.notify();
+                ctx.users.notify();
             };
 
             const alterNode = (id: ArcaneGraph.NodeId, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) => {

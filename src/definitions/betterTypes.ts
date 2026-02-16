@@ -51,6 +51,7 @@ import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interfac
 import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
 import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
+import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/collections/switchCaseNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -104,6 +105,7 @@ namespace Registries {
         // collections
         layerCompose: LayerComposeDefinition;
         layers: LayerDefinition;
+        switchCase: SwitchCaseDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -146,6 +148,7 @@ namespace Registries {
 
         addFloat: AddFloatType,
         distribution: DistributionNodeType,
+        switchCase: SwitchCaseNodeType,
     } as const;
 
     export type DATATYPES = {
@@ -183,6 +186,7 @@ namespace Registries {
     };
 
     export const SOCKET_COMPAT = {
+        any: Object.keys(DATATYPE_FLAVOURS) as (keyof typeof DATATYPE_FLAVOURS)[],
         layerOrShape: ["shape", "layer"],
     } as const satisfies Record<string, (keyof DATATYPES)[]>;
 
@@ -202,6 +206,7 @@ namespace Registries {
         distribution: "info",
         // compound
         layerOrShape: "confirm",
+        any: "base",
     };
 
     export const NODECAT_FLAVOURS = {
@@ -298,6 +303,7 @@ export namespace NodeTypes {
         onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onDelete?: (node: NodeDefinitions.BuiltNodeOf<T, D>, state: HookState, graphId: string) => HookState;
         onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", state: HookState, graphId: string) => HookState;
+        onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", state: HookState, graphId: string) => HookState;
         onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], state: HookState, graphId: string) => HookState | null;
     }
 
