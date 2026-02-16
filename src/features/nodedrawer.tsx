@@ -288,7 +288,7 @@ const CardGrid = styled(
     },
 )`
     display: grid;
-    grid-template-columns: repeat(auto-fill, 128px);
+    grid-template-columns: repeat(auto-fill, 148px);
     gap: 4px;
     padding: 4px;
     justify-content: center;
