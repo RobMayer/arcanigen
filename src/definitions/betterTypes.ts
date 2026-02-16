@@ -280,6 +280,8 @@ export namespace NodeTypes {
 
     export type Category = keyof typeof Registries.NODECAT_FLAVOURS;
 
+    export type RefreshReason = "constraintAdded" | "constraintRemoved";
+
     /** Interface for lifecycle hook context — provides state access and mutation operations */
     export interface MethodContext {
         // State reads
@@ -295,6 +297,7 @@ export namespace NodeTypes {
         setUsers(graphId: string, users: { node: string; scope: string }[]): void;
         // High-level operations (fire hooks, rebuild cache)
         removeLinks(graphId: string, ...linkIds: string[]): void;
+        requestRefresh(graphId: string, nodeId: string, socketId: string, side: "in" | "out", reason: RefreshReason): void;
     }
 
     export interface Type<T extends Key, D extends NodeDefinitions.Generic = NodeDefinitions.Generic> {
@@ -314,6 +317,7 @@ export namespace NodeTypes {
         onConnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, linkId: string, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
         onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
         onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], graphId: string, ctx: MethodContext) => void;
+        onRefreshRequest?: (node: NodeDefinitions.BuiltNodeOf<T, D>, socketId: string, side: "in" | "out", reason: RefreshReason, graphId: string, ctx: MethodContext) => void;
         getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => SocketTypes.Kind;
     }
 

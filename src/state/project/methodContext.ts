@@ -360,6 +360,41 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         }
     }
 
+    requestRefresh(graphId: string, nodeId: string, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason): void {
+        const node = this.getNode(graphId, nodeId);
+        if (!node) return;
+
+        if (side === "in") {
+            // Socket is an input — traverse the link to find the upstream neighbor
+            const linkId = (node.in as Record<string, string | null>)[socketId];
+            if (!linkId) return;
+            const link = this.getLink(graphId, linkId);
+            if (!link) return;
+            const neighbor = this.getNode(graphId, link.fromNode);
+            if (!neighbor) return;
+            const neighborType = NodeTypes.get(neighbor.type);
+            if (neighborType.onRefreshRequest) {
+                const onRefresh = neighborType.onRefreshRequest as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                onRefresh(neighbor, link.fromSocket, "out", reason, graphId, this);
+            }
+        } else {
+            // Socket is an output — traverse all links to find downstream neighbors
+            const linkIds = (node.out as Record<string, string[]>)[socketId];
+            if (!linkIds) return;
+            for (const linkId of linkIds) {
+                const link = this.getLink(graphId, linkId);
+                if (!link) return;
+                const neighbor = this.getNode(graphId, link.toNode);
+                if (!neighbor) continue;
+                const neighborType = NodeTypes.get(neighbor.type);
+                if (neighborType.onRefreshRequest) {
+                    const onRefresh = neighborType.onRefreshRequest as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                    onRefresh(neighbor, link.toSocket, "in", reason, graphId, this);
+                }
+            }
+        }
+    }
+
     private recomputeDeps(graphId: string): void {
         const graph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
         const newDeps = computeSubgraphDeps(graph, this.refs.interfaces.ref.current[graphId] ?? [], this.refs.deps.ref.current);

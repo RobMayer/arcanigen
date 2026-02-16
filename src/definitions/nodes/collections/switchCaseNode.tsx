@@ -22,7 +22,7 @@ export type SwitchCaseDefinition = {
     };
     payload: {
         label: string;
-        resolvedType: DataTypes.Kind | null;
+        resolvedType: SocketTypes.Kind | null;
         cases: { label: string; socket: string }[];
     };
 };
@@ -134,6 +134,91 @@ const isPolymorphicSocket = (socket: string, cases: SwitchCaseDefinition["payloa
     return cases.some((c) => c.socket === socket);
 };
 
+const queryNeighborType = (
+    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
+    socketId: string,
+    side: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): SocketTypes.Kind | null => {
+    if (side === "in") {
+        const linkId = (node.in as Record<string, string | null>)[socketId];
+        if (!linkId) return null;
+        const link = ctx.getLink(graphId, linkId);
+        if (!link) return null;
+        const neighbor = ctx.getNode(graphId, link.fromNode);
+        if (!neighbor) return null;
+        const neighborType = NodeTypes.get(neighbor.type);
+        const st = (neighborType.getSocketType as (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => SocketTypes.Kind)(neighbor, link.fromSocket, "out", ctx);
+        return st !== "any" ? st : null;
+    } else {
+        const linkIds = (node.out as Record<string, string[]>)[socketId];
+        if (!linkIds) return null;
+        for (const linkId of linkIds) {
+            const link = ctx.getLink(graphId, linkId);
+            if (!link) continue;
+            const neighbor = ctx.getNode(graphId, link.toNode);
+            if (!neighbor) continue;
+            const neighborType = NodeTypes.get(neighbor.type);
+            const st = (neighborType.getSocketType as (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => SocketTypes.Kind)(neighbor, link.toSocket, "in", ctx);
+            if (st !== "any") return st;
+        }
+        return null;
+    }
+};
+
+const scanAllPolymorphicNeighbors = (
+    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
+    excludeSocket: string | null,
+    excludeSide: "in" | "out" | null,
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): SocketTypes.Kind | null => {
+    if (!(excludeSocket === "result" && excludeSide === "out")) {
+        const t = queryNeighborType(node, "result", "out", graphId, ctx);
+        if (t) return t;
+    }
+    if (!(excludeSocket === "default" && excludeSide === "in")) {
+        const t = queryNeighborType(node, "default", "in", graphId, ctx);
+        if (t) return t;
+    }
+    for (const c of node.payload.cases) {
+        if (!(excludeSocket === c.socket && excludeSide === "in")) {
+            const t = queryNeighborType(node, c.socket, "in", graphId, ctx);
+            if (t) return t;
+        }
+    }
+    return null;
+};
+
+const propagateRefresh = (
+    nodeId: string,
+    cases: SwitchCaseDefinition["payload"]["cases"],
+    excludeSocket: string,
+    excludeSide: "in" | "out",
+    reason: NodeTypes.RefreshReason,
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
+    if (!(excludeSocket === "result" && excludeSide === "out")) {
+        ctx.requestRefresh(graphId, nodeId, "result", "out", reason);
+    }
+    if (!(excludeSocket === "default" && excludeSide === "in")) {
+        ctx.requestRefresh(graphId, nodeId, "default", "in", reason);
+    }
+    for (const c of cases) {
+        if (!(excludeSocket === c.socket && excludeSide === "in")) {
+            ctx.requestRefresh(graphId, nodeId, c.socket, "in", reason);
+        }
+    }
+};
+
+const setResolvedType = (nodeId: string, resolvedType: SocketTypes.Kind | null, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const n = ctx.getNode(graphId, nodeId);
+    if (!n) return;
+    ctx.setNode(graphId, nodeId, { ...n, payload: { ...n.payload, resolvedType } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"] });
+};
+
 const onConnect = (
     node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
     linkId: string,
@@ -146,13 +231,15 @@ const onConnect = (
 
     const socket = direction === "out" ? link.fromSocket : link.toSocket;
     if (!isPolymorphicSocket(socket, node.payload.cases)) return;
-
     if (node.payload.resolvedType !== null) return;
 
-    // Constrain to the link's agreed type
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    ctx.setNode(graphId, node.id, { ...currentNode, payload: { ...currentNode.payload, resolvedType: link.type } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"] });
+    // Query the new neighbor's type
+    const neighborType = queryNeighborType(node, socket, direction, graphId, ctx);
+    if (!neighborType) return; // both "any" — no false constraint
+
+    // Constrain and propagate
+    setResolvedType(node.id, neighborType, graphId, ctx);
+    propagateRefresh(node.id, node.payload.cases, socket, direction, "constraintAdded", graphId, ctx);
 };
 
 const onDisconnect = (
@@ -163,21 +250,48 @@ const onDisconnect = (
     ctx: NodeTypes.MethodContext,
 ): void => {
     const socket = direction === "out" ? link.fromSocket : link.toSocket;
+    if (!isPolymorphicSocket(socket, node.payload.cases)) return;
+    if (node.payload.resolvedType === null) return;
+
+    // Phase 1: propagate "constraintRemoved" on other polymorphic sockets
+    propagateRefresh(node.id, node.payload.cases, socket, direction, "constraintRemoved", graphId, ctx);
+
+    // Phase 2: self-evaluate — query all remaining polymorphic neighbors (already settled from phase 1)
+    const refreshedNode = ctx.getNode(graphId, node.id) as NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition> | undefined;
+    if (!refreshedNode) return;
+    const foundType = scanAllPolymorphicNeighbors(refreshedNode, null, null, graphId, ctx);
+    setResolvedType(node.id, foundType, graphId, ctx);
+
+    // Phase 3: propagate "constraintAdded" on other polymorphic sockets (always runs)
+    propagateRefresh(node.id, node.payload.cases, socket, direction, "constraintAdded", graphId, ctx);
+};
+
+const onRefreshRequest = (
+    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
+    socketId: string,
+    side: "in" | "out",
+    reason: NodeTypes.RefreshReason,
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     const currentNode = ctx.getNode(graphId, node.id) as NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition> | undefined;
     if (!currentNode) return;
 
-    if (!isPolymorphicSocket(socket, currentNode.payload.cases)) return;
-    if (currentNode.payload.resolvedType === null) return;
-
-    // Check if any polymorphic socket still has a connection
-    if ((currentNode.out as Record<string, string[]>)["result"]?.length > 0) return;
-    if ((currentNode.in as Record<string, string | null>)["default"] !== null) return;
-    for (const c of currentNode.payload.cases) {
-        if ((currentNode.in as Record<string, string | null>)[c.socket] !== null) return;
+    if (reason === "constraintRemoved") {
+        // Check all sockets EXCEPT the one the request came in on
+        const foundType = scanAllPolymorphicNeighbors(currentNode, socketId, side, graphId, ctx);
+        setResolvedType(node.id, foundType, graphId, ctx);
+        // Propagate same reason on other polymorphic sockets
+        propagateRefresh(node.id, currentNode.payload.cases, socketId, side, "constraintRemoved", graphId, ctx);
+    } else {
+        // "constraintAdded" — query ONLY the socket the request came in on
+        const neighborType = queryNeighborType(currentNode, socketId, side, graphId, ctx);
+        if (neighborType) {
+            setResolvedType(node.id, neighborType, graphId, ctx);
+        }
+        // Propagate on other polymorphic sockets
+        propagateRefresh(node.id, currentNode.payload.cases, socketId, side, "constraintAdded", graphId, ctx);
     }
-
-    // No polymorphic connections remain — unconstrain
-    ctx.setNode(graphId, node.id, { ...currentNode, payload: { ...currentNode.payload, resolvedType: null } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"] });
 };
 
 const dependsOn = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, outSocket: keyof SwitchCaseDefinition["outputs"], _deps: AllDeps): (keyof SwitchCaseDefinition["inputs"])[] => {
@@ -216,7 +330,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socket: k
     return null;
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.Kind => {
     if (side === "in" && socketId === "switch") return "enum";
     if (isPolymorphicSocket(socketId, node.payload.cases)) {
         return node.payload.resolvedType ?? "any";
@@ -237,5 +351,6 @@ export const SwitchCaseNodeType: NodeTypes.Type<"switchCase", SwitchCaseDefiniti
     Controls,
     onConnect,
     onDisconnect,
+    onRefreshRequest,
     getSocketType,
 };
