@@ -70,7 +70,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerOutput", ArrayLay
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "array<layer>";
+const getSocketType = (): string => "array<layer>";
 
 export const ArrayLayerOutputType: NodeTypes.Type<"arrayLayerOutput", ArrayLayerOutputDefinition> = {
     type: "arrayLayerOutput",

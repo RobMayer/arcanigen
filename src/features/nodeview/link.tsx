@@ -73,7 +73,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
     return (
         <>
-            <div className={className} style={style} ref={ref} tabIndex={-1} data-flavour={SocketTypes.FLAVOURS[link.type]} data-linktype={link.type} onKeyDown={handleKeyDown}>
+            <div className={className} style={style} ref={ref} tabIndex={-1} data-flavour={SocketTypes.flavourOf(link.type)} data-linktype={link.type} onKeyDown={handleKeyDown}>
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
                         <path data-part={"target"} d="" />

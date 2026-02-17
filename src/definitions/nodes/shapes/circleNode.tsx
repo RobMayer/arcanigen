@@ -331,7 +331,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     return null;
 };
 
-const CIRCLE_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
+const CIRCLE_SOCKET_TYPES: Record<string, string> = {
     radius: "length",
     strokeWidth: "length",
     strokeColor: "color",
@@ -348,7 +348,7 @@ const CIRCLE_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
     output: "shape",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => CIRCLE_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, _side: "in" | "out"): string => CIRCLE_SOCKET_TYPES[socketId] ?? "float";
 
 export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     type: "circle",

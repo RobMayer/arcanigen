@@ -59,7 +59,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<DebugDefinition>, socket: keyof 
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<DebugDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<DebugDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
         case "input": return "float";
         default: return "float";

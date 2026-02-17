@@ -5,7 +5,7 @@ import { Icon, ICONS } from "../../components/Icon";
 import { Session } from "../../state/session";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
-import { DataTypes, NodeDefinitions, SocketTypes } from "../../definitions/betterTypes";
+import { DataTypes, NodeDefinitions } from "../../definitions/betterTypes";
 import { Flavour } from "../../components/types";
 import { SVGObject } from "../../types";
 import { renderSVGObject } from "../svgcanvas";
@@ -28,7 +28,7 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     label?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
     socketId: K;
-    type: SocketTypes.ForDataType<D["inputs"][K]>;
+    type: string;
     ref?: Ref<HTMLDivElement>;
 }) => {
     return (
@@ -96,7 +96,7 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
     label?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
     socketId: K;
-    type: SocketTypes.ForDataType<D["outputs"][K]>;
+    type: string;
     ref?: Ref<HTMLDivElement>;
 }) => {
     return (

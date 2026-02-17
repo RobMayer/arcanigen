@@ -87,7 +87,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"booleanOutput", BooleanOutp
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "boolean";
+const getSocketType = (): string => "boolean";
 
 export const BooleanOutputType: NodeTypes.Type<"booleanOutput", BooleanOutputDefinition> = {
     type: "booleanOutput",

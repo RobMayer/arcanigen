@@ -89,7 +89,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AddFloatDefinition>, socket: "ou
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
         case "a": return "float";
         case "b": return "float";

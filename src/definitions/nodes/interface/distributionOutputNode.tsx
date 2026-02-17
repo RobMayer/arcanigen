@@ -70,7 +70,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", Distri
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "distribution";
+const getSocketType = (): string => "distribution";
 
 export const DistributionOutputType: NodeTypes.Type<"distributionOutput", DistributionOutputDefinition> = {
     type: "distributionOutput",

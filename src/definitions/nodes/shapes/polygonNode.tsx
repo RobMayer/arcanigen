@@ -477,7 +477,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
     return null;
 };
 
-const POLYGON_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
+const POLYGON_SOCKET_TYPES: Record<string, string> = {
     pointCount: "integer",
     radius: "length",
     rScribe: "enum",
@@ -503,7 +503,7 @@ const POLYGON_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
     eMiddle: "length",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => POLYGON_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, socketId: string, _side: "in" | "out"): string => POLYGON_SOCKET_TYPES[socketId] ?? "float";
 
 export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     type: "polygon",

@@ -87,7 +87,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "shape";
+const getSocketType = (): string => "shape";
 
 export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinition> = {
     type: "shapeOutput",

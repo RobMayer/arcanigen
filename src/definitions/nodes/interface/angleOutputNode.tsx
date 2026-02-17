@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -87,7 +87,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"angleOutput", AngleOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "angle";
+const getSocketType = (): string => "angle";
 
 export const AngleOutputType: NodeTypes.Type<"angleOutput", AngleOutputDefinition> = {
     type: "angleOutput",

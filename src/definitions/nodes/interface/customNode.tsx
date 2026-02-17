@@ -388,7 +388,7 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
+const INTERFACE_SOCKET_TYPES: Record<string, string> = {
     floatInput: "float",
     floatOutput: "float",
     integerInput: "integer",
@@ -415,22 +415,22 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Kind> = {
     distributionOutput: "distribution",
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): SocketTypes.Kind => {
+const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): string => {
     const subgraphId = node.payload.graphId;
-    if (!subgraphId) return "any";
+    if (!subgraphId) return SocketTypes.ANY;
 
     // Check if this socket belongs to a layer group
     for (const key of Object.keys(node.payload)) {
         if (!key.startsWith("layers_")) continue;
         const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
-        if (entries.some((e) => e.socket === socketId)) return "layerOrShape";
+        if (entries.some((e) => e.socket === socketId)) return SocketTypes.LAYER_OR_SHAPE;
     }
 
     // Look up the subgraph interface node and map its type
     const subNode = ctx.getNode(subgraphId, socketId);
-    if (!subNode) return "any";
+    if (!subNode) return SocketTypes.ANY;
 
-    return INTERFACE_SOCKET_TYPES[subNode.type] ?? "any";
+    return INTERFACE_SOCKET_TYPES[subNode.type] ?? SocketTypes.ANY;
 };
 
 export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
@@ -540,7 +540,7 @@ const InputSocketOrSlot = ({
 }) => {
     if (socketed) {
         return (
-            <SocketIn node={node} socketId={socketId} type={type as never} label={label}>
+            <SocketIn node={node} socketId={socketId} type={type} label={label}>
                 {children}
             </SocketIn>
         );
@@ -555,14 +555,14 @@ const OutputSlotFloat = ({ host, source }: OutputWidgetProps<FloatOutputDefiniti
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"float" as never}>
+                <SocketOut node={host} socketId={source.id} type={"float"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"float" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"float"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -627,14 +627,14 @@ const OutputSlotInteger = ({ host, source }: OutputWidgetProps<IntegerOutputDefi
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"integer" as never}>
+                <SocketOut node={host} socketId={source.id} type={"integer"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"integer" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"integer"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -698,14 +698,14 @@ const OutputSlotAngle = ({ host, source }: OutputWidgetProps<AngleOutputDefiniti
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"angle" as never}>
+                <SocketOut node={host} socketId={source.id} type={"angle"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"angle" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"angle"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -766,14 +766,14 @@ const OutputSlotLength = ({ host, source }: OutputWidgetProps<LengthOutputDefini
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"length" as never}>
+                <SocketOut node={host} socketId={source.id} type={"length"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"length" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"length"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -813,7 +813,7 @@ const OutputSlotShape = ({ host, source }: OutputWidgetProps<ShapeOutputDefiniti
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"shape" as never}>
+                <SocketOut node={host} socketId={source.id} type={"shape"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
@@ -821,7 +821,7 @@ const OutputSlotShape = ({ host, source }: OutputWidgetProps<ShapeOutputDefiniti
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
                 <>
-                    <SocketOut node={host} socketId={source.id} type={"shape" as never}>
+                    <SocketOut node={host} socketId={source.id} type={"shape"}>
                         {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                     </SocketOut>
                     <ShapePreview shape={svgObject} color={Color.fromHex("#ffffffff")} />
@@ -834,7 +834,7 @@ const OutputSlotShape = ({ host, source }: OutputWidgetProps<ShapeOutputDefiniti
 
 const InputSlotShape = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
-        <SocketIn node={host} socketId={source.id} type={"shape" as never}>
+        <SocketIn node={host} socketId={source.id} type={"shape"}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
         </SocketIn>
     );
@@ -847,14 +847,14 @@ const OutputSlotColor = ({ host, source }: OutputWidgetProps<ColorOutputDefiniti
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"color" as never}>
+                <SocketOut node={host} socketId={source.id} type={"color"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"color" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"color"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -900,14 +900,14 @@ const OutputSlotBoolean = ({ host, source }: OutputWidgetProps<BooleanOutputDefi
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"boolean" as never}>
+                <SocketOut node={host} socketId={source.id} type={"boolean"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"boolean" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"boolean"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -957,14 +957,14 @@ const OutputSlotEnum = ({ host, source }: OutputWidgetProps<EnumOutputDefinition
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"enum" as never}>
+                <SocketOut node={host} socketId={source.id} type={"enum"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"enum" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"enum"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -1042,14 +1042,14 @@ const OutputSlotTokensLength = ({ host, source }: OutputWidgetProps<TokensLength
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"tokens<length>" as never}>
+                <SocketOut node={host} socketId={source.id} type={"tokens<length>"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"tokens<length>" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"tokens<length>"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -1077,14 +1077,14 @@ const OutputSlotString = ({ host, source }: OutputWidgetProps<StringOutputDefini
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.None: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"string" as never}>
+                <SocketOut node={host} socketId={source.id} type={"string"}>
                     {(source.payload.label ?? "") === "" ? "Output" : source.payload.label}
                 </SocketOut>
             );
         }
         case Enum.Common.typicalOutputWidget.Preview: {
             return (
-                <SocketOut node={host} socketId={source.id} type={"string" as never} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
+                <SocketOut node={host} socketId={source.id} type={"string"} label={(source.payload.label ?? "") === "" ? "Output" : source.payload.label}>
                     <TextPreview>{output}</TextPreview>
                 </SocketOut>
             );
@@ -1107,7 +1107,7 @@ const InputSlotString = ({ host, source, handleValue }: InputWidgetProps<StringI
 
 const InputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
-        <SocketIn node={host} socketId={source.id} type={"distribution" as never}>
+        <SocketIn node={host} socketId={source.id} type={"distribution"}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
         </SocketIn>
     );
@@ -1115,7 +1115,7 @@ const InputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFor
 
 const OutputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
-        <SocketOut node={host} socketId={source.id} type={"distribution" as never}>
+        <SocketOut node={host} socketId={source.id} type={"distribution"}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
         </SocketOut>
     );
@@ -1123,7 +1123,7 @@ const OutputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFo
 
 const OutputSlotArrayLayer = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
-        <SocketOut node={host} socketId={source.id} type={"array<layer>" as never}>
+        <SocketOut node={host} socketId={source.id} type={"array<layer>"}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
         </SocketOut>
     );
@@ -1210,7 +1210,7 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
 
     return (
         <>
-            <SocketIn node={host} socketId={source.id} type={"array<layer>" as never}>
+            <SocketIn node={host} socketId={source.id} type={"array<layer>"}>
                 {label}
             </SocketIn>
             {supersocketConnected ? null : (
@@ -1295,7 +1295,7 @@ const LayerGroupEntry = ({
 
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
-            <SocketIn node={host} socketId={entry.socket} type={"layerOrShape" as never}>
+            <SocketIn node={host} socketId={entry.socket} type={SocketTypes.LAYER_OR_SHAPE}>
                 <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
                 <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
                     {BLEND_MODE_OPTIONS.map((opt) => (

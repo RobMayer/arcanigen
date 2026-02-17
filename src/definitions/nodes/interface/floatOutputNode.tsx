@@ -89,7 +89,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "float";
+const getSocketType = (): string => "float";
 
 export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
     type: "floatOutput",

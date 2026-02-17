@@ -116,7 +116,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"booleanInput", BooleanInput
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "boolean";
+const getSocketType = (): string => "boolean";
 
 export const BooleanInputType: NodeTypes.Type<"booleanInput", BooleanInputDefinition> = {
     type: "booleanInput",

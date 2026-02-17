@@ -22,7 +22,8 @@ export type SwitchCaseDefinition = {
     };
     payload: {
         label: string;
-        resolvedType: SocketTypes.Kind | null;
+        resolvedOutTypes: string; // union of upstream OUT types on case INs. "" = unconstrained
+        resolvedInTypes: string; // intersection of downstream IN types on result OUT. ANY = unconstrained
         cases: { label: string; socket: string }[];
     };
 };
@@ -43,7 +44,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SwitchCaseDefiniti
         },
         payload: {
             label: "",
-            resolvedType: null,
+            resolvedOutTypes: SocketTypes.NONE,
+            resolvedInTypes: SocketTypes.ANY,
             cases: [
                 { label: "", socket: s0 },
                 { label: "", socket: s1 },
@@ -56,7 +58,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SwitchCaseDefiniti
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
-    const socketType = (node.payload.resolvedType ?? "any") as never;
+    const outType = node.payload.resolvedOutTypes;
+    const inType = node.payload.resolvedInTypes;
 
     const handleCaseLabelUpdate = useCallback(
         (socket: string, label: string) => {
@@ -102,10 +105,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"result"} type={socketType}>
+            <SocketOut node={node} socketId={"result"} type={outType}>
                 Result
             </SocketOut>
-            <SocketIn node={node} socketId={"switch"} type={"enum" as never}>
+            <SocketIn node={node} socketId={"switch"} type={"enum"}>
                 Switch
             </SocketIn>
             <hr />
@@ -113,7 +116,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
                 Add Case
             </ActionButton>
             {node.payload.cases.map((entry, idx) => (
-                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `case_${string}`} type={socketType}>
+                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `case_${string}`} type={inType}>
                     {idx}
                     <TextInput value={entry.label} onCommit={(label) => handleCaseLabelUpdate(entry.socket, label)} placeholder={`Case ${idx}`} />
                     <ActionButton.Lite onClick={() => handleRemoveCase(entry.socket)} flavour={"danger"}>
@@ -122,177 +125,184 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
                 </SocketIn>
             ))}
             <hr />
-            <SocketIn node={node} socketId={"default"} type={socketType}>
+            <SocketIn node={node} socketId={"default"} type={inType}>
                 Default
             </SocketIn>
         </TypicalNode>
     );
 };
 
-const isPolymorphicSocket = (socket: string, cases: SwitchCaseDefinition["payload"]["cases"]): boolean => {
-    if (socket === "default" || socket === "result") return true;
+// --- Helpers ---
+
+/** Is this socket a case IN (default or case_*)? */
+const isCaseInSocket = (socket: string, cases: SwitchCaseDefinition["payload"]["cases"]): boolean => {
+    if (socket === "default") return true;
     return cases.some((c) => c.socket === socket);
 };
 
-const queryNeighborType = (
-    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
-    socketId: string,
-    side: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): SocketTypes.Kind | null => {
-    if (side === "in") {
-        const linkId = (node.in as Record<string, string | null>)[socketId];
-        if (!linkId) return null;
-        const link = ctx.getLink(graphId, linkId);
-        if (!link) return null;
-        const neighbor = ctx.getNode(graphId, link.fromNode);
-        if (!neighbor) return null;
-        const neighborType = NodeTypes.get(neighbor.type);
-        const st = (neighborType.getSocketType as (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => SocketTypes.Kind)(neighbor, link.fromSocket, "out", ctx);
-        return st !== "any" ? st : null;
-    } else {
-        const linkIds = (node.out as Record<string, string[]>)[socketId];
-        if (!linkIds) return null;
-        for (const linkId of linkIds) {
-            const link = ctx.getLink(graphId, linkId);
-            if (!link) continue;
-            const neighbor = ctx.getNode(graphId, link.toNode);
-            if (!neighbor) continue;
-            const neighborType = NodeTypes.get(neighbor.type);
-            const st = (neighborType.getSocketType as (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => SocketTypes.Kind)(neighbor, link.toSocket, "in", ctx);
-            if (st !== "any") return st;
-        }
-        return null;
-    }
+type SCNode = NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>;
+type GetSocketType = (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => string;
+
+/** Query the type string of the upstream neighbor connected to one of our IN sockets */
+const queryUpstreamType = (node: SCNode, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): string | null => {
+    const linkId = (node.in as Record<string, string | null>)[socketId];
+    if (!linkId) return null;
+    const link = ctx.getLink(graphId, linkId);
+    if (!link) return null;
+    const neighbor = ctx.getNode(graphId, link.fromNode);
+    if (!neighbor) return null;
+    const neighborType = NodeTypes.get(neighbor.type);
+    return (neighborType.getSocketType as GetSocketType)(neighbor, link.fromSocket, "out", ctx);
 };
 
-const scanAllPolymorphicNeighbors = (
-    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
-    excludeSocket: string | null,
-    excludeSide: "in" | "out" | null,
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): SocketTypes.Kind | null => {
-    if (!(excludeSocket === "result" && excludeSide === "out")) {
-        const t = queryNeighborType(node, "result", "out", graphId, ctx);
-        if (t) return t;
+/** Query the intersection of all downstream neighbors' IN types connected to our result OUT */
+const queryDownstreamTypes = (node: SCNode, graphId: string, ctx: NodeTypes.MethodContext): string | null => {
+    const linkIds = (node.out as Record<string, string[]>)["result"];
+    if (!linkIds || linkIds.length === 0) return null;
+    let result: string | null = null;
+    for (const linkId of linkIds) {
+        const link = ctx.getLink(graphId, linkId);
+        if (!link) continue;
+        const neighbor = ctx.getNode(graphId, link.toNode);
+        if (!neighbor) continue;
+        const neighborType = NodeTypes.get(neighbor.type);
+        const st = (neighborType.getSocketType as GetSocketType)(neighbor, link.toSocket, "in", ctx);
+        result = result === null ? st : SocketTypes.intersect(result, st);
     }
-    if (!(excludeSocket === "default" && excludeSide === "in")) {
-        const t = queryNeighborType(node, "default", "in", graphId, ctx);
-        if (t) return t;
+    return result;
+};
+
+/** Recompute resolvedOutTypes: union of all upstream OUT types on case INs */
+const recomputeOutTypes = (node: SCNode, excludeSocket: string | null, graphId: string, ctx: NodeTypes.MethodContext): string => {
+    let result = SocketTypes.NONE;
+    if (excludeSocket !== "default") {
+        const t = queryUpstreamType(node, "default", graphId, ctx);
+        if (t !== null) result = SocketTypes.union(result, t);
     }
     for (const c of node.payload.cases) {
-        if (!(excludeSocket === c.socket && excludeSide === "in")) {
-            const t = queryNeighborType(node, c.socket, "in", graphId, ctx);
-            if (t) return t;
+        if (c.socket !== excludeSocket) {
+            const t = queryUpstreamType(node, c.socket, graphId, ctx);
+            if (t !== null) result = SocketTypes.union(result, t);
         }
     }
-    return null;
+    return result;
 };
 
-const propagateRefresh = (
-    nodeId: string,
-    cases: SwitchCaseDefinition["payload"]["cases"],
-    excludeSocket: string,
-    excludeSide: "in" | "out",
-    reason: NodeTypes.RefreshReason,
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    if (!(excludeSocket === "result" && excludeSide === "out")) {
-        ctx.requestRefresh(graphId, nodeId, "result", "out", reason);
-    }
-    if (!(excludeSocket === "default" && excludeSide === "in")) {
-        ctx.requestRefresh(graphId, nodeId, "default", "in", reason);
-    }
-    for (const c of cases) {
-        if (!(excludeSocket === c.socket && excludeSide === "in")) {
-            ctx.requestRefresh(graphId, nodeId, c.socket, "in", reason);
-        }
-    }
+/** Recompute resolvedInTypes: intersection of all downstream IN types on result OUT */
+const recomputeInTypes = (node: SCNode, graphId: string, ctx: NodeTypes.MethodContext): string => {
+    const result = queryDownstreamTypes(node, graphId, ctx);
+    return result ?? SocketTypes.ANY;
 };
 
-const setResolvedType = (nodeId: string, resolvedType: SocketTypes.Kind | null, graphId: string, ctx: NodeTypes.MethodContext): void => {
+/** Write both constraint strings into the node's payload */
+const setPayloadTypes = (nodeId: string, resolvedOutTypes: string, resolvedInTypes: string, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const n = ctx.getNode(graphId, nodeId);
     if (!n) return;
-    ctx.setNode(graphId, nodeId, { ...n, payload: { ...n.payload, resolvedType } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"] });
+    ctx.setNode(graphId, nodeId, {
+        ...n,
+        payload: { ...n.payload, resolvedOutTypes, resolvedInTypes } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"],
+    });
 };
 
-const onConnect = (
-    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
-    linkId: string,
-    direction: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-
-    const socket = direction === "out" ? link.fromSocket : link.toSocket;
-    if (!isPolymorphicSocket(socket, node.payload.cases)) return;
-    if (node.payload.resolvedType !== null) return;
-
-    // Query the new neighbor's type
-    const neighborType = queryNeighborType(node, socket, direction, graphId, ctx);
-    if (!neighborType) return; // both "any" — no false constraint
-
-    // Constrain and propagate
-    setResolvedType(node.id, neighborType, graphId, ctx);
-    propagateRefresh(node.id, node.payload.cases, socket, direction, "constraintAdded", graphId, ctx);
-};
-
-const onDisconnect = (
-    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
-    link: ArcaneGraph.Link,
-    direction: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    const socket = direction === "out" ? link.fromSocket : link.toSocket;
-    if (!isPolymorphicSocket(socket, node.payload.cases)) return;
-    if (node.payload.resolvedType === null) return;
-
-    // Phase 1: propagate "constraintRemoved" on other polymorphic sockets
-    propagateRefresh(node.id, node.payload.cases, socket, direction, "constraintRemoved", graphId, ctx);
-
-    // Phase 2: self-evaluate — query all remaining polymorphic neighbors (already settled from phase 1)
-    const refreshedNode = ctx.getNode(graphId, node.id) as NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition> | undefined;
-    if (!refreshedNode) return;
-    const foundType = scanAllPolymorphicNeighbors(refreshedNode, null, null, graphId, ctx);
-    setResolvedType(node.id, foundType, graphId, ctx);
-
-    // Phase 3: propagate "constraintAdded" on other polymorphic sockets (always runs)
-    propagateRefresh(node.id, node.payload.cases, socket, direction, "constraintAdded", graphId, ctx);
-};
-
-const onRefreshRequest = (
-    node: NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>,
-    socketId: string,
-    side: "in" | "out",
-    reason: NodeTypes.RefreshReason,
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    const currentNode = ctx.getNode(graphId, node.id) as NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition> | undefined;
-    if (!currentNode) return;
-
-    if (reason === "constraintRemoved") {
-        // Check all sockets EXCEPT the one the request came in on
-        const foundType = scanAllPolymorphicNeighbors(currentNode, socketId, side, graphId, ctx);
-        setResolvedType(node.id, foundType, graphId, ctx);
-        // Propagate same reason on other polymorphic sockets
-        propagateRefresh(node.id, currentNode.payload.cases, socketId, side, "constraintRemoved", graphId, ctx);
-    } else {
-        // "constraintAdded" — query ONLY the socket the request came in on
-        const neighborType = queryNeighborType(currentNode, socketId, side, graphId, ctx);
-        if (neighborType) {
-            setResolvedType(node.id, neighborType, graphId, ctx);
-        }
-        // Propagate on other polymorphic sockets
-        propagateRefresh(node.id, currentNode.payload.cases, socketId, side, "constraintAdded", graphId, ctx);
+/** Propagate a refresh request to all case IN upstreams (default + case_*) */
+const propagateToCaseIns = (nodeId: string, cases: SwitchCaseDefinition["payload"]["cases"], reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    ctx.requestRefresh(graphId, nodeId, "default", "in", reason);
+    for (const c of cases) {
+        ctx.requestRefresh(graphId, nodeId, c.socket, "in", reason);
     }
 };
+
+// --- Lifecycle hooks ---
+
+const onConnect = (node: SCNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const link = ctx.getLink(graphId, linkId);
+    if (!link) return;
+    const socket = direction === "out" ? link.fromSocket : link.toSocket;
+
+    if (direction === "in" && isCaseInSocket(socket, node.payload.cases)) {
+        // A case IN got connected — update resolvedOutTypes (union in upstream's OUT type)
+        const upstreamType = queryUpstreamType(node, socket, graphId, ctx);
+        if (upstreamType !== null && upstreamType !== SocketTypes.NONE) {
+            const newOutTypes = SocketTypes.union(node.payload.resolvedOutTypes, upstreamType);
+            if (newOutTypes !== node.payload.resolvedOutTypes) {
+                setPayloadTypes(node.id, newOutTypes, node.payload.resolvedInTypes, graphId, ctx);
+                ctx.requestRefresh(graphId, node.id, "result", "out", "constraintAdded");
+            }
+        }
+    } else if (direction === "out" && socket === "result") {
+        // Result OUT got connected — update resolvedInTypes (intersect with downstream's IN type)
+        const downstreamTypes = queryDownstreamTypes(node, graphId, ctx);
+        if (downstreamTypes !== null) {
+            const newInTypes = SocketTypes.intersect(node.payload.resolvedInTypes, downstreamTypes);
+            if (newInTypes !== node.payload.resolvedInTypes) {
+                setPayloadTypes(node.id, node.payload.resolvedOutTypes, newInTypes, graphId, ctx);
+                propagateToCaseIns(node.id, node.payload.cases, "constraintAdded", graphId, ctx);
+            }
+        }
+    }
+};
+
+const onDisconnect = (node: SCNode, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const socket = direction === "out" ? link.fromSocket : link.toSocket;
+
+    if (direction === "in" && isCaseInSocket(socket, node.payload.cases)) {
+        // A case IN got disconnected — recompute resolvedOutTypes
+
+        // Phase 1: propagate constraintRemoved downstream
+        ctx.requestRefresh(graphId, node.id, "result", "out", "constraintRemoved");
+
+        // Phase 2: recompute from remaining case INs (neighbors have settled from phase 1)
+        const refreshedNode = ctx.getNode(graphId, node.id) as SCNode | undefined;
+        if (!refreshedNode) return;
+        const newOutTypes = recomputeOutTypes(refreshedNode, null, graphId, ctx);
+        setPayloadTypes(node.id, newOutTypes, refreshedNode.payload.resolvedInTypes, graphId, ctx);
+
+        // Phase 3: propagate constraintAdded downstream
+        ctx.requestRefresh(graphId, node.id, "result", "out", "constraintAdded");
+    } else if (direction === "out" && socket === "result") {
+        // Result OUT got disconnected — recompute resolvedInTypes
+
+        // Phase 1: propagate constraintRemoved to case IN upstreams
+        propagateToCaseIns(node.id, node.payload.cases, "constraintRemoved", graphId, ctx);
+
+        // Phase 2: recompute from remaining downstreams
+        const refreshedNode = ctx.getNode(graphId, node.id) as SCNode | undefined;
+        if (!refreshedNode) return;
+        const newInTypes = recomputeInTypes(refreshedNode, graphId, ctx);
+        setPayloadTypes(node.id, refreshedNode.payload.resolvedOutTypes, newInTypes, graphId, ctx);
+
+        // Phase 3: propagate constraintAdded to case IN upstreams
+        propagateToCaseIns(node.id, refreshedNode.payload.cases, "constraintAdded", graphId, ctx);
+    }
+};
+
+const onRefreshRequest = (node: SCNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const currentNode = ctx.getNode(graphId, node.id) as SCNode | undefined;
+    if (!currentNode) return;
+
+    if (side === "in" && isCaseInSocket(socketId, currentNode.payload.cases)) {
+        // Signal from upstream of a case IN — affects resolvedOutTypes
+        if (reason === "constraintRemoved") {
+            // Don't query back on socketId — recompute from all OTHER case INs
+            const newOutTypes = recomputeOutTypes(currentNode, socketId, graphId, ctx);
+            setPayloadTypes(node.id, newOutTypes, currentNode.payload.resolvedInTypes, graphId, ctx);
+        } else {
+            // constraintAdded — recompute from ALL case INs (sender has settled)
+            const newOutTypes = recomputeOutTypes(currentNode, null, graphId, ctx);
+            setPayloadTypes(node.id, newOutTypes, currentNode.payload.resolvedInTypes, graphId, ctx);
+        }
+        // Propagate to downstream (result OUT)
+        ctx.requestRefresh(graphId, node.id, "result", "out", reason);
+    } else if (side === "out" && socketId === "result") {
+        // Signal from downstream of result OUT — affects resolvedInTypes
+        const newInTypes = recomputeInTypes(currentNode, graphId, ctx);
+        setPayloadTypes(node.id, currentNode.payload.resolvedOutTypes, newInTypes, graphId, ctx);
+        // Propagate to case IN upstreams
+        propagateToCaseIns(node.id, currentNode.payload.cases, reason, graphId, ctx);
+    }
+};
+
+// --- Evaluation ---
 
 const dependsOn = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, outSocket: keyof SwitchCaseDefinition["outputs"], _deps: AllDeps): (keyof SwitchCaseDefinition["inputs"])[] => {
     if (outSocket === "result") {
@@ -330,12 +340,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socket: k
     return null;
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.Kind => {
-    if (side === "in" && socketId === "switch") return "enum";
-    if (isPolymorphicSocket(socketId, node.payload.cases)) {
-        return node.payload.resolvedType ?? "any";
-    }
-    return "any";
+const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): string => {
+    if (socketId === "switch" && side === "in") return "enum";
+    if (socketId === "result" && side === "out") return node.payload.resolvedOutTypes;
+    if (isCaseInSocket(socketId, node.payload.cases) && side === "in") return node.payload.resolvedInTypes;
+    return SocketTypes.ANY;
 };
 
 export const SwitchCaseNodeType: NodeTypes.Type<"switchCase", SwitchCaseDefinition> = {

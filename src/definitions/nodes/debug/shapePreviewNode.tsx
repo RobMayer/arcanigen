@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { ShapePreview, SocketIn, Slot } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
@@ -74,10 +74,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, _socke
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
-        case "input": return "shape";
-        default: return "shape";
+        case "input":
+            return "shape";
+        default:
+            return "shape";
     }
 };
 

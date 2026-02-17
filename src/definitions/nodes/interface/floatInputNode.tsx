@@ -131,7 +131,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "float";
+const getSocketType = (): string => "float";
 
 export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> = {
     type: "floatInput",

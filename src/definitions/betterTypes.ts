@@ -180,33 +180,9 @@ namespace Registries {
         angle: "accent",
         boolean: "accent",
         "tokens<length>": "accent",
-        layer: "danger",
-        "array<layer>": "danger",
-        distribution: "info",
-    };
-
-    export const SOCKET_COMPAT = {
-        any: Object.keys(DATATYPE_FLAVOURS) as (keyof typeof DATATYPE_FLAVOURS)[],
-        layerOrShape: ["shape", "layer"],
-    } as const satisfies Record<string, (keyof DATATYPES)[]>;
-
-    export const SOCKETTYPE_FLAVOURS: { [key in keyof typeof SOCKET_COMPAT | keyof DATATYPES]: Flavour } = {
-        string: "accent",
-        length: "accent",
-        shape: "confirm",
-        float: "accent",
-        integer: "accent",
-        color: "accent",
-        enum: "accent",
-        angle: "accent",
-        boolean: "accent",
-        "tokens<length>": "accent",
-        "array<layer>": "danger",
         layer: "confirm",
+        "array<layer>": "danger",
         distribution: "info",
-        // compound
-        layerOrShape: "confirm",
-        any: "base",
     };
 
     export const NODECAT_FLAVOURS = {
@@ -230,7 +206,6 @@ export namespace DataTypes {
 
     export type Kind = keyof Registries.DATATYPES & {};
     export type Use<K extends Kind> = REG[K];
-    export type Compat<C extends keyof typeof Registries.SOCKET_COMPAT> = Use<(typeof Registries.SOCKET_COMPAT)[C][number]>;
 
     export type Any = Use<Kind>;
 
@@ -318,7 +293,7 @@ export namespace NodeTypes {
         onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
         onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], graphId: string, ctx: MethodContext) => void;
         onRefreshRequest?: (node: NodeDefinitions.BuiltNodeOf<T, D>, socketId: string, side: "in" | "out", reason: RefreshReason, graphId: string, ctx: MethodContext) => void;
-        getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => SocketTypes.Kind;
+        getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => string;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {
@@ -340,27 +315,71 @@ export namespace NodeTypes {
 }
 
 export namespace SocketTypes {
-    export const FLAVOURS = Registries.SOCKETTYPE_FLAVOURS;
+    // --- New set-based socket type system ---
 
-    export const COMPAT = {
-        ...(Object.keys(Registries.DATATYPE_FLAVOURS) as DataTypes.Kind[]).reduce<{ [key in DataTypes.Kind]: DataTypes.Kind[] }>(
-            (acc, each) => {
-                acc[each] = [each];
-                return acc;
-            },
-            {} as { [key in DataTypes.Kind]: DataTypes.Kind[] },
-        ),
-        ...Registries.SOCKET_COMPAT,
+    /** All concrete data types, sorted alphabetically for canonical ordering */
+    export const ALL_TYPES: readonly DataTypes.Kind[] = (Object.keys(Registries.DATATYPE_FLAVOURS) as DataTypes.Kind[]).sort();
+
+    /** Empty set — unconstrained OUT ("no type yet"). ∅ ⊆ anything. */
+    export const NONE = "";
+
+    /** Full set — unconstrained IN (accepts everything). Auto-expands with new DataTypes. */
+    export const ANY = ALL_TYPES.join(" ");
+
+    /** Named presets */
+    export const LAYER_OR_SHAPE = "layer shape";
+
+    /** Parse a type string into an array of concrete DataTypes.Kind */
+    export const parseSocketType = (type: string): readonly DataTypes.Kind[] => {
+        if (type === "") return [];
+        return type.split(" ") as DataTypes.Kind[];
     };
 
-    export type Kind = (DataTypes.Kind | keyof typeof Registries.SOCKET_COMPAT) & {};
-    export type DataTypeOf<K extends Kind> = K extends keyof typeof Registries.SOCKET_COMPAT
-        ? DataTypes.Use<(typeof Registries.SOCKET_COMPAT)[K][number]>
-        : K extends DataTypes.Kind
-          ? DataTypes.Use<K>
-          : never;
+    /** Resolve a type string to a UI flavour */
+    export const flavourOf = (typeStr: string): Flavour => {
+        const types = parseSocketType(typeStr);
+        if (types.length === 0) return "base";
+        const flavours = new Set(types.map((t) => Registries.DATATYPE_FLAVOURS[t]));
+        if (flavours.size === 1) return [...flavours][0];
+        return "base";
+    };
 
-    export type ForDataType<K extends DataTypes.Any> = {
-        [S in Kind]: DataTypes.KeyOf<K> extends (S extends keyof typeof Registries.SOCKET_COMPAT ? (typeof Registries.SOCKET_COMPAT)[S][number] : S) ? S : never;
-    }[Kind];
+    /** Directional subset check: can this OUT connect to this IN? */
+    export const canFlow = (outType: string, inType: string): boolean => {
+        if (outType === "") return true;
+        if (outType === inType) return true;
+        const outTypes = parseSocketType(outType);
+        const inTypes = parseSocketType(inType);
+        return outTypes.every((t) => inTypes.includes(t));
+    };
+
+    /** Pick a representative DataTypes.Kind for link.type from the OUT/IN type strings */
+    export const representativeType = (outType: string, inType: string): DataTypes.Kind | null => {
+        const outTypes = parseSocketType(outType);
+        if (outTypes.length > 0) return outTypes[0];
+        const inTypes = parseSocketType(inType);
+        if (inTypes.length > 0) return inTypes[0];
+        return null;
+    };
+
+    /** Union two type strings (A ∪ B), maintaining canonical sort order */
+    export const union = (a: string, b: string): string => {
+        if (a === "") return b;
+        if (b === "") return a;
+        if (a === b) return a;
+        const set = new Set([...a.split(" "), ...b.split(" ")]);
+        return [...set].sort().join(" ");
+    };
+
+    /** Intersect two type strings (A ∩ B), maintaining canonical sort order */
+    export const intersect = (a: string, b: string): string => {
+        if (a === "" || b === "") return "";
+        if (a === b) return a;
+        const aSet = new Set(a.split(" "));
+        return b
+            .split(" ")
+            .filter((t) => aSet.has(t))
+            .sort()
+            .join(" ");
+    };
 }

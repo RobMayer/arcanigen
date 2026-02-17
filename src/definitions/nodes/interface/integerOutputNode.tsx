@@ -87,7 +87,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"integerOutput", IntegerOutp
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "integer";
+const getSocketType = (): string => "integer";
 
 export const IntegerOutputType: NodeTypes.Type<"integerOutput", IntegerOutputDefinition> = {
     type: "integerOutput",

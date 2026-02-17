@@ -130,7 +130,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"lengthInput", LengthInputDe
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "length";
+const getSocketType = (): string => "length";
 
 export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinition> = {
     type: "lengthInput",

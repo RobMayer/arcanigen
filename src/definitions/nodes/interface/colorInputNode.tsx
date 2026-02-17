@@ -125,7 +125,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"colorInput", ColorInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "color";
+const getSocketType = (): string => "color";
 
 export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> = {
     type: "colorInput",

@@ -78,7 +78,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "out
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
         case "value": return "integer";
         case "output": return "integer";

@@ -87,7 +87,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefi
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.Kind => "enum";
+const getSocketType = (): string => "enum";
 
 export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> = {
     type: "enumOutput",

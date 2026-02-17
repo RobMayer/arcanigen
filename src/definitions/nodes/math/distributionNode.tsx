@@ -139,7 +139,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
         case "func": return "enum";
         case "easing": return "enum";

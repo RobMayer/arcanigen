@@ -238,7 +238,7 @@ const LayerEntry = ({
 
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
-            <SocketIn node={node} socketId={entry.socket as `layer_${string}`} type={"layerOrShape"}>
+            <SocketIn node={node} socketId={entry.socket as `layer_${string}`} type={SocketTypes.LAYER_OR_SHAPE}>
                 <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
                 <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
                     {BLEND_MODE_OPTIONS.map((opt) => (
@@ -438,14 +438,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LayerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<LayerDefinition>, socketId: string, side: "in" | "out"): string => {
     if (side === "out") {
         if (socketId === "output") return "shape";
         if (socketId === "layerCount") return "integer";
     }
     if (socketId === "layers") return "array<layer>";
     if (socketId === "isolate") return "boolean";
-    if (socketId.startsWith("layer_")) return "layerOrShape";
+    if (socketId.startsWith("layer_")) return SocketTypes.LAYER_OR_SHAPE;
     return "shape";
 };
 

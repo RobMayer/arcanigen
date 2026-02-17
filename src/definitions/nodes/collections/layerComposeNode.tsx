@@ -113,7 +113,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket:
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
         case "shape": return "shape";
         case "enabled": return "boolean";

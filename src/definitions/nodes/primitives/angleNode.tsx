@@ -92,7 +92,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "outpu
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.Kind => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, _side: "in" | "out"): string => {
     switch (socketId) {
         case "value": return "angle";
         case "wraps": return "boolean";

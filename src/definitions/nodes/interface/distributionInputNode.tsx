@@ -75,7 +75,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionInput", Distrib
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "distribution";
+const getSocketType = (): string => "distribution";
 
 export const DistributionInputType: NodeTypes.Type<"distributionInput", DistributionInputDefinition> = {
     type: "distributionInput",

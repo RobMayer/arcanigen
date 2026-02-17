@@ -91,7 +91,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"tokensLengthInput", TokensL
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "tokens<length>";
+const getSocketType = (): string => "tokens<length>";
 
 export const TokensLengthInputType: NodeTypes.Type<"tokensLengthInput", TokensLengthInputDefinition> = {
     type: "tokensLengthInput",

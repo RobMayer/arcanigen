@@ -75,7 +75,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerInput", ArrayLaye
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.Kind => "array<layer>";
+const getSocketType = (): string => "array<layer>";
 
 export const ArrayLayerInputType: NodeTypes.Type<"arrayLayerInput", ArrayLayerInputDefinition> = {
     type: "arrayLayerInput",
