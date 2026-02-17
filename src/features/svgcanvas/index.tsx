@@ -24,6 +24,18 @@ export const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode
                     {childNodes}
                 </svg>
             );
+        case "defs":
+            return (
+                <defs key={key} {...attributes} style={style}>
+                    {childNodes}
+                </defs>
+            );
+        case "marker":
+            return (
+                <marker key={key} {...attributes} style={style}>
+                    {childNodes}
+                </marker>
+            );
     }
 };
 

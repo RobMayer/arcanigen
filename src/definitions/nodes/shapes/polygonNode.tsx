@@ -15,6 +15,8 @@ import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
 import { Stylings, Transforms } from "./abstract";
+import { SVGObject } from "../../../types";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 
 export type PolygonDefinition = {
     inputs: {
@@ -22,7 +24,10 @@ export type PolygonDefinition = {
         radius: DataTypes.Use<"length">;
         rScribe: DataTypes.Use<"enum">;
         pointDistro: DataTypes.Use<"distribution">;
-        // distribution: DataTypes.Use<"distribution">;
+        cornerRadius: DataTypes.Use<"length">;
+        cornerShape: DataTypes.Use<"enum">;
+        markerShape: DataTypes.Use<"shape">;
+        markerAlign: DataTypes.Use<"boolean">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
@@ -40,6 +45,9 @@ export type PolygonDefinition = {
         pointCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
         rScribe: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        cornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        cornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     } & Stylings.Definition["payload"] &
         Transforms.Definition["payload"];
 };
@@ -52,6 +60,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
             pointDistro: null,
             rScribe: null,
             radius: null,
+            cornerRadius: null,
+            cornerShape: null,
+
+            markerShape: null,
+            markerAlign: null,
 
             strokeWidth: null,
             strokeColor: null,
@@ -81,6 +94,10 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
             pointCount: "3",
             rScribe: Enum.Common.scribeMode.Inscribe,
             radius: "100px",
+            cornerRadius: "0px",
+            cornerShape: 0,
+
+            markerAlign: false,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
@@ -102,6 +119,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
 };
 
 const SCRIBE_MODE_OPTIONS = Enum.options(Enum.Common.scribeMode);
+const CORNER_SHAPE_OPTIONS = Enum.options(Enum.Common.cornerShape);
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -129,18 +147,40 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
             <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"rScribe"} type={"enum"} label={"Scribe Mode"}>
-                <RadioButton.Group
-                    orientation={"vertical"}
-                    value={`${node.payload.rScribe}`}
-                    onValue={(v) => handleUpdate({ rScribe: Number(v) })}
-                    disabled={node.in.rScribe !== null}
-                    options={SCRIBE_MODE_OPTIONS}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
-                Distribution
-            </SocketIn>
+            <NodeAccordion label={"More"} socketsIn={"rScribe|cornerRadius|cornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"rScribe"} type={"enum"} label={"Scribe Mode"}>
+                    <RadioButton.Group
+                        orientation={"vertical"}
+                        value={`${node.payload.rScribe}`}
+                        onValue={(v) => handleUpdate({ rScribe: Number(v) })}
+                        disabled={node.in.rScribe !== null}
+                        options={SCRIBE_MODE_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"cornerRadius"} type={"length"} label={"Corner Radius"}>
+                    <LengthInput value={node.payload.cornerRadius} onCommit={(cornerRadius) => handleUpdate({ cornerRadius })} disabled={node.in.cornerRadius !== null} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"cornerShape"} type={"enum"} label={"Corner Shape"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.cornerShape}`}
+                        options={CORNER_SHAPE_OPTIONS}
+                        onValue={(v) => handleUpdate({ cornerShape: Number(v) })}
+                        disabled={node.in.cornerShape !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
+                    Distribution
+                </SocketIn>
+                <SocketIn node={node} socketId={"markerShape"} type={"shape"}>
+                    Marker
+                </SocketIn>
+                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                    <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
+                        Align Markers
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"rInscribe|rCircumscribe|rMiddle|eInscribe|eCircumscribe|eMiddle"}>
@@ -172,10 +212,14 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket:
     if (outSocket === "output") {
         // output shape depends on all inputs
         return [
+            "markerShape",
+            "markerAlign",
             "pointCount",
             "pointDistro",
             "radius",
             "rScribe",
+            "cornerRadius",
+            "cornerShape",
             "strokeWidth",
             "strokeColor",
             "strokeCap",
@@ -211,6 +255,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSock
     if (inSocket === "rScribe") {
         return ["output", "eInscribe", "eCircumscribe", "eMiddle"];
     }
+    if (inSocket === "cornerRadius" || inSocket === "cornerShape") {
+        return ["output"];
+    }
     // all other inputs only affect the shape output
     return ["output"];
 };
@@ -223,6 +270,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             return null;
         }
 
+        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
+        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+
         const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
 
         const distroLerper = distroInterpolator(
@@ -234,44 +284,151 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
         const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
 
         const trueRadius = getTrueRadius(radius, scribeMode, pointCount);
-        const points = range(pointCount).map((_, i) => {
-            const coeff = lerp(delerp(i, 0, pointCount), 0, 360, distroLerper);
-            return `${trueRadius * Math.cos(deg2rad(coeff - 90))},${trueRadius * Math.sin(deg2rad(coeff - 90))}`;
+        const N = pointCount;
+        const vertices = range(N).map((_, i) => {
+            const coeff = lerp(delerp(i, 0, N), 0, 360, distroLerper);
+            const angle = deg2rad(coeff - 90);
+            return [trueRadius * Math.cos(angle), trueRadius * Math.sin(angle)] as const;
         });
 
-        const attributes: Record<string, string> = {
-            d: `M ${points[0]} ${points
+        const cornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
+        const cornerShape = context.resolve<"enum">(node.id, "cornerShape")?.data ?? node.payload.cornerShape ?? 0;
+
+        let d: string;
+        if (cornerR <= 0) {
+            d = `M ${vertices[0][0]},${vertices[0][1]} ${vertices
                 .slice(1)
-                .map((e) => `L ${e}`)
-                .join(" ")} Z`,
+                .map(([x, y]) => `L ${x},${y}`)
+                .join(" ")} Z`;
+        } else {
+            // Compute edge lengths
+            const edgeLengths = vertices.map((v, i) => {
+                const next = vertices[(i + 1) % N];
+                return Math.hypot(next[0] - v[0], next[1] - v[1]);
+            });
+
+            // Per-vertex: vectors to prev/next, half interior angle
+            const vertexData = vertices.map((curr, i) => {
+                const prev = vertices[(i - 1 + N) % N];
+                const next = vertices[(i + 1) % N];
+                const ax = prev[0] - curr[0],
+                    ay = prev[1] - curr[1];
+                const bx = next[0] - curr[0],
+                    by = next[1] - curr[1];
+                const lenA = edgeLengths[(i - 1 + N) % N];
+                const lenB = edgeLengths[i];
+                const cosAlpha = Math.max(-1, Math.min(1, (ax * bx + ay * by) / (lenA * lenB)));
+                const halfAlpha = Math.acos(cosAlpha) / 2;
+                return { ax, ay, bx, by, lenA, lenB, halfAlpha };
+            });
+
+            // Global clamp: find max R such that all tangent distances fit within half-edges
+            let r = cornerR;
+            for (let i = 0; i < N; i++) {
+                const { halfAlpha } = vertexData[i];
+                const tanHalf = Math.tan(halfAlpha);
+                if (tanHalf > 1e-10) {
+                    const halfPrev = edgeLengths[(i - 1 + N) % N] / 2;
+                    const halfNext = edgeLengths[i] / 2;
+                    r = Math.min(r, Math.min(halfPrev, halfNext) * tanHalf);
+                } else {
+                    r = 0;
+                }
+            }
+
+            if (r <= 0) {
+                d = `M ${vertices[0][0]},${vertices[0][1]} ${vertices
+                    .slice(1)
+                    .map(([x, y]) => `L ${x},${y}`)
+                    .join(" ")} Z`;
+            } else {
+                const parts: string[] = [];
+                for (let i = 0; i < N; i++) {
+                    const { ax, ay, bx, by, lenA, lenB, halfAlpha } = vertexData[i];
+                    const curr = vertices[i];
+                    const t = r / Math.tan(halfAlpha);
+
+                    // Approach point (r back along incoming edge)
+                    const apX = curr[0] + (ax / lenA) * t;
+                    const apY = curr[1] + (ay / lenA) * t;
+                    // Leave point (r forward along outgoing edge)
+                    const lpX = curr[0] + (bx / lenB) * t;
+                    const lpY = curr[1] + (by / lenB) * t;
+
+                    parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
+
+                    switch (cornerShape) {
+                        case 0: // Round
+                            parts.push(`A ${r},${r} 0 0,1 ${lpX},${lpY}`);
+                            break;
+                        case 2: // Scoop
+                            parts.push(`A ${r},${r} 0 0,0 ${lpX},${lpY}`);
+                            break;
+                        case 3: {
+                            // Notch
+                            const nX = apX + (bx / lenB) * t;
+                            const nY = apY + (by / lenB) * t;
+                            parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
+                            break;
+                        }
+                        default: // Bevel
+                            parts.push(`L ${lpX},${lpY}`);
+                            break;
+                    }
+                }
+                parts.push("Z");
+                d = parts.join(" ");
+            }
+        }
+
+        const attributes: Record<string, string | undefined> = {
+            d,
             ...Stylings.evaluate(node, context),
+            markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
+            markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
         };
 
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const pathPreview = { x: -trueRadius, y: -trueRadius, w: 2 * trueRadius, h: 2 * trueRadius };
+        const pathPreview = { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius };
 
-        const pathElement = {
-            tag: "path" as const,
-            attributes,
-            children: [],
+        const pathElement: SVGObject = {
+            tag: "g",
+            attributes: {
+                transform: transforms.join(" "),
+            },
+            children: [
+                {
+                    tag: "defs",
+                    attributes: {},
+                    children: markerShape
+                        ? [
+                              {
+                                  tag: "marker",
+                                  attributes: {
+                                      id: `marker_${node.id}`,
+                                      markerUnits: "userSpaceOnUse",
+                                      markerWidth: "100%",
+                                      markerHeight: "100%",
+                                      overflow: "visible",
+                                      orient: markerAlign ? "auto-start-reverse" : undefined,
+                                  },
+                                  children: [markerShape],
+                                  preview: pathPreview,
+                              },
+                          ]
+                        : [],
+                    preview: pathPreview,
+                },
+                {
+                    tag: "path",
+                    attributes,
+                    children: [],
+                    preview: pathPreview,
+                },
+            ],
             preview: pathPreview,
         };
-
-        // If we have transforms, wrap in a <g> element
-        if (transforms.length > 0) {
-            return {
-                kind: "shape",
-                data: {
-                    tag: "g",
-                    attributes: {
-                        transform: transforms.join(" "),
-                    },
-                    children: [pathElement],
-                    preview: { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius },
-                },
-            };
-        }
 
         return {
             kind: "shape",
@@ -321,6 +478,8 @@ const POLYGON_SOCKET_TYPES: Record<string, string> = {
     radius: "length",
     rScribe: "enum",
     pointDistro: "distribution",
+    cornerRadius: "length",
+    cornerShape: "enum",
     strokeWidth: "length",
     strokeColor: "color",
     strokeCap: "enum",
