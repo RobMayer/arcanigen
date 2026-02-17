@@ -117,9 +117,20 @@ export const Socket = styled(
             return r.length > 0 ? r.join(" ") : undefined;
         }, [pendingConnection, canConnect, nodeId, socketId, connected]);
 
-        const titleType = useMemo(() => (type === "" ? "« none »" : type === SocketTypes.ANY ? "« any »" : type.split(" ").join(" | ")), [type]);
+        const titleType = useMemo(() => (type === "" ? "« unknown »" : type === SocketTypes.ANY ? "« any »" : type.split(" ").join(" | ")), [type]);
 
-        return <div ref={socketRef} className={className} data-socketid={`--socket_${nodeId}_${socketId}`} data-socketside={side} data-sockettype={type} data-typeany={type === SocketTypes.ANY ? "" : undefined} data-state={state} title={titleType} />;
+        return (
+            <div
+                ref={socketRef}
+                className={className}
+                data-socketid={`--socket_${nodeId}_${socketId}`}
+                data-socketside={side}
+                data-sockettype={type}
+                data-typeany={type === SocketTypes.ANY ? "" : undefined}
+                data-state={state}
+                title={titleType}
+            />
+        );
     },
 )`
     height: calc(1lh - (1lh - 1em) / 2);

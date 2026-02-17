@@ -52,6 +52,7 @@ import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interf
 import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
 import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/collections/switchCaseNode";
+import { ConditionDefinition, ConditionNodeType } from "./nodes/collections/conditionNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -106,6 +107,7 @@ namespace Registries {
         layerCompose: LayerComposeDefinition;
         layers: LayerDefinition;
         switchCase: SwitchCaseDefinition;
+        condition: ConditionDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -149,6 +151,7 @@ namespace Registries {
         addFloat: AddFloatType,
         distribution: DistributionNodeType,
         switchCase: SwitchCaseNodeType,
+        condition: ConditionNodeType,
     } as const;
 
     export type DATATYPES = {
