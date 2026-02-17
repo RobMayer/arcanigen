@@ -70,6 +70,19 @@ export namespace Enum {
             OutIn: 3,
         };
 
+        export const spanMode = {
+            InnerOuter: 0,
+            Spread: 1,
+        };
+
+        export const spreadAlign = {
+            Center: 0,
+            Inward: 1,
+            Outward: 2,
+        };
+
+        //#region Input and Outpput Widgets
+
         export const numberInputWidget = {
             None: 0,
             Input: 1,
@@ -110,5 +123,7 @@ export namespace Enum {
             None: 0,
             Preview: 1,
         } as const;
+
+        //#endregion
     }
 }

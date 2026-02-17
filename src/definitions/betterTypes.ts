@@ -60,6 +60,7 @@ import { LogicalNandDefinition, LogicalNandNodeType } from "./nodes/logic/logica
 import { LogicalNorDefinition, LogicalNorNodeType } from "./nodes/logic/logicalNorNode";
 import { LogicalXorDefinition, LogicalXorNodeType } from "./nodes/logic/logicalXorNode";
 import { LogicalXnorDefinition, LogicalXnorNodeType } from "./nodes/logic/logicalXnorNode";
+import { RingDefinition, RingNodeType } from "./nodes/shapes/ringNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -69,8 +70,11 @@ namespace Registries {
     // will eventually replace NodeRegistry
     export type NODEDEFINITIONS = {
         result: ResultDefinition;
+
         circle: CircleDefinition;
         polygon: PolygonDefinition;
+        ring: RingDefinition;
+
         angle: AngleDefinition;
         float: FloatDefinition;
         integer: IntegerDefinition;
@@ -128,6 +132,8 @@ namespace Registries {
         result: ResultNodeType,
         circle: CircleNodeType,
         polygon: PolygonNodeType,
+        ring: RingNodeType,
+
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
         float: FloatPrimitiveType,
