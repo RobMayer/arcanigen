@@ -127,6 +127,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
                 <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.strokeCap) })}>Stroke Cap</ActionButton>
                 <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.distroFunctions) })}>Distro Functions</ActionButton>
                 <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.distroEasing) })}>Distro Easing</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.spanMode) })}>Span Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.spreadAlign) })}>Spread Align</ActionButton>
             </NodeAccordion>
         </TypicalNode>
     );

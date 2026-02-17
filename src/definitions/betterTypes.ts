@@ -61,6 +61,7 @@ import { LogicalNorDefinition, LogicalNorNodeType } from "./nodes/logic/logicalN
 import { LogicalXorDefinition, LogicalXorNodeType } from "./nodes/logic/logicalXorNode";
 import { LogicalXnorDefinition, LogicalXnorNodeType } from "./nodes/logic/logicalXnorNode";
 import { RingDefinition, RingNodeType } from "./nodes/shapes/ringNode";
+import { RectangleDefinition, RectangleNodeType } from "./nodes/shapes/rectangleNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -74,6 +75,7 @@ namespace Registries {
         circle: CircleDefinition;
         polygon: PolygonDefinition;
         ring: RingDefinition;
+        rectangle: RectangleDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -133,6 +135,7 @@ namespace Registries {
         circle: CircleNodeType,
         polygon: PolygonNodeType,
         ring: RingNodeType,
+        rectangle: RectangleNodeType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,

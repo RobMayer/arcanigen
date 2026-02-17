@@ -81,6 +81,13 @@ export namespace Enum {
             Outward: 2,
         };
 
+        export const cornerShape = {
+            Round: 0,
+            Bevel: 1,
+            Scoop: 2,
+            Notch: 3,
+        };
+
         //#region Input and Outpput Widgets
 
         export const numberInputWidget = {
