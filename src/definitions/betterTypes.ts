@@ -51,8 +51,15 @@ import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interfac
 import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
 import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
-import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/collections/switchCaseNode";
-import { ConditionDefinition, ConditionNodeType } from "./nodes/collections/conditionNode";
+import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/logic/switchCaseNode";
+import { ConditionDefinition, ConditionNodeType } from "./nodes/logic/conditionNode";
+import { LogicalNotDefinition, LogicalNotNodeType } from "./nodes/logic/logicalNotNode";
+import { LogicalAndDefinition, LogicalAndNodeType } from "./nodes/logic/logicalAndNode";
+import { LogicalOrDefinition, LogicalOrNodeType } from "./nodes/logic/logicalOrNode";
+import { LogicalNandDefinition, LogicalNandNodeType } from "./nodes/logic/logicalNandNode";
+import { LogicalNorDefinition, LogicalNorNodeType } from "./nodes/logic/logicalNorNode";
+import { LogicalXorDefinition, LogicalXorNodeType } from "./nodes/logic/logicalXorNode";
+import { LogicalXnorDefinition, LogicalXnorNodeType } from "./nodes/logic/logicalXnorNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -108,6 +115,13 @@ namespace Registries {
         layers: LayerDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
+        logicalNot: LogicalNotDefinition;
+        logicalAnd: LogicalAndDefinition;
+        logicalOr: LogicalOrDefinition;
+        logicalNand: LogicalNandDefinition;
+        logicalNor: LogicalNorDefinition;
+        logicalXor: LogicalXorDefinition;
+        logicalXnor: LogicalXnorDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -152,6 +166,13 @@ namespace Registries {
         distribution: DistributionNodeType,
         switchCase: SwitchCaseNodeType,
         condition: ConditionNodeType,
+        logicalNot: LogicalNotNodeType,
+        logicalAnd: LogicalAndNodeType,
+        logicalOr: LogicalOrNodeType,
+        logicalNand: LogicalNandNodeType,
+        logicalNor: LogicalNorNodeType,
+        logicalXor: LogicalXorNodeType,
+        logicalXnor: LogicalXnorNodeType,
     } as const;
 
     export type DATATYPES = {
@@ -191,6 +212,7 @@ namespace Registries {
     export const NODECAT_FLAVOURS = {
         Result: "emphasis",
         Outputs: "emphasis",
+        Logic: "help",
         Inputs: "emphasis",
         Primitives: "accent",
         Collections: "danger",

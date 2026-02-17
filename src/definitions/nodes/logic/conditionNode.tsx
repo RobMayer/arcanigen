@@ -279,7 +279,7 @@ export const ConditionNodeType: NodeTypes.Type<"condition", ConditionDefinition>
     displayName: "Condition",
     defaultLabel: "Condition",
     iconNode: <Icon shape={ICONS.Option} color={"var(--icon-flavour)"} />,
-    category: "Collections",
+    category: "Logic",
     create,
     dependsOn,
     contributesTo,

@@ -2,14 +2,14 @@ import { nanoid } from "nanoid";
 import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
-
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { Length } from "../../datatypes/length";
 
 export type TokensLengthInputDefinition = {
     inputs: never;
@@ -53,7 +53,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokensLengt
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
             <Slot label={"Initial Value"}>
-                <TextInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} placeholder="e.g. 5px 10px" />
+                <TextInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} pattern={Length.TOKENS_REGEX} />
             </Slot>
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
@@ -68,7 +68,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>, 
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>, _inSocket: keyof TokensLengthInputDefinition["inputs"], _deps: AllDeps): (keyof TokensLengthInputDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>,
+    _inSocket: keyof TokensLengthInputDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof TokensLengthInputDefinition["outputs"])[] => {
     return [];
 };
 

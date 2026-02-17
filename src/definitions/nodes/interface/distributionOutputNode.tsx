@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -19,7 +19,10 @@ export type DistributionOutputDefinition = {
     };
 };
 
-const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<DistributionOutputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"distributionOutput", DistributionOutputDefinition> => {
+const create = (
+    _input: Partial<NodeDefinitions.PayloadTypeOf<DistributionOutputDefinition>>,
+    id: string = nanoid(),
+): NodeDefinitions.BuiltNodeOf<"distributionOutput", DistributionOutputDefinition> => {
     return {
         id,
         in: {
@@ -50,11 +53,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<DistributionOutputDefinition>, _outSocket: keyof DistributionOutputDefinition["outputs"], _deps: AllDeps): (keyof DistributionOutputDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<DistributionOutputDefinition>,
+    _outSocket: keyof DistributionOutputDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof DistributionOutputDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<DistributionOutputDefinition>, _inSocket: keyof DistributionOutputDefinition["inputs"], _deps: AllDeps): (keyof DistributionOutputDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<DistributionOutputDefinition>,
+    _inSocket: keyof DistributionOutputDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof DistributionOutputDefinition["outputs"])[] => {
     return [];
 };
 

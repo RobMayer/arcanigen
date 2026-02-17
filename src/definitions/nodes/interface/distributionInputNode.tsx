@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
@@ -55,7 +55,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<DistributionInputDefinition>, 
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<DistributionInputDefinition>, _inSocket: keyof DistributionInputDefinition["inputs"], _deps: AllDeps): (keyof DistributionInputDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<DistributionInputDefinition>,
+    _inSocket: keyof DistributionInputDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof DistributionInputDefinition["outputs"])[] => {
     return [];
 };
 

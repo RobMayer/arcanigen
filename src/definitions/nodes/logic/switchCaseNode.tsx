@@ -352,7 +352,7 @@ export const SwitchCaseNodeType: NodeTypes.Type<"switchCase", SwitchCaseDefiniti
     displayName: "Switch Case",
     defaultLabel: "Switch Case",
     iconNode: <Icon shape={ICONS.Option} color={"var(--icon-flavour)"} />,
-    category: "Collections",
+    category: "Logic",
     create,
     dependsOn,
     contributesTo,

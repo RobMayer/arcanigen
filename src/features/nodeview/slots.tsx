@@ -206,6 +206,7 @@ const LabelBig = styled(({ className, align = "left", children }: { className?: 
     display: flex;
     gap: 4px;
     align-items: center;
+    justify-content: space-between;
     &.align_right {
         justify-content: right;
     }
@@ -233,5 +234,7 @@ const LabelSmall = styled(({ children, className, label, align }: { children: Re
     }
     & > [data-part="contents"] {
         display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 `;

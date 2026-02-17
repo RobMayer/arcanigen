@@ -9,6 +9,8 @@ export namespace Length {
 
     export const REGEX = new RegExp(`^(${NUMBER_REGEX})(${UNITS.join("|")})$`);
 
+    export const TOKENS_REGEX = "[+-]?\\d*\\.?\\d+(px|pt|in|mm|cm)(\\s+[+-]?\\d*\\.?\\d+(px|pt|in|mm|cm))*";
+
     export const is = (value: string): value is Type => REGEX.test(value);
 
     export const parse = (value: string): [number, Unit] | null => {

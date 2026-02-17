@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -22,7 +22,10 @@ export type TokensLengthOutputDefinition = {
     };
 };
 
-const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TokensLengthOutputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"tokensLengthOutput", TokensLengthOutputDefinition> => {
+const create = (
+    _input: Partial<NodeDefinitions.PayloadTypeOf<TokensLengthOutputDefinition>>,
+    id: string = nanoid(),
+): NodeDefinitions.BuiltNodeOf<"tokensLengthOutput", TokensLengthOutputDefinition> => {
     return {
         id,
         in: {
@@ -67,11 +70,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokensLengt
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<TokensLengthOutputDefinition>, _outSocket: keyof TokensLengthOutputDefinition["outputs"], _deps: AllDeps): (keyof TokensLengthOutputDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<TokensLengthOutputDefinition>,
+    _outSocket: keyof TokensLengthOutputDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof TokensLengthOutputDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<TokensLengthOutputDefinition>, _inSocket: keyof TokensLengthOutputDefinition["inputs"], _deps: AllDeps): (keyof TokensLengthOutputDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<TokensLengthOutputDefinition>,
+    _inSocket: keyof TokensLengthOutputDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof TokensLengthOutputDefinition["outputs"])[] => {
     return [];
 };
 

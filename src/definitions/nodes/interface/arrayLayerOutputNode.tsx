@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -50,11 +50,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArrayLayerO
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<ArrayLayerOutputDefinition>, _outSocket: keyof ArrayLayerOutputDefinition["outputs"], _deps: AllDeps): (keyof ArrayLayerOutputDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<ArrayLayerOutputDefinition>,
+    _outSocket: keyof ArrayLayerOutputDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof ArrayLayerOutputDefinition["inputs"])[] => {
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<ArrayLayerOutputDefinition>, _inSocket: keyof ArrayLayerOutputDefinition["inputs"], _deps: AllDeps): (keyof ArrayLayerOutputDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<ArrayLayerOutputDefinition>,
+    _inSocket: keyof ArrayLayerOutputDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof ArrayLayerOutputDefinition["outputs"])[] => {
     return [];
 };
 
