@@ -1,5 +1,5 @@
 import { FastContextMember } from "../../util/hooks/useFastContext";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
 import { evaluateAndCacheNode, rebuildDownstream, invalidateDownstream } from "./cache";
@@ -131,7 +131,7 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
 
     // ─── High-level operations ───────────────────────────────────────────
 
-    connect(graphId: string, fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Kind): void {
+    connect(graphId: string, fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string): void {
         const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
         const [{ nodes, links }, newLink, removed] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
 

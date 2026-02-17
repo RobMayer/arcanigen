@@ -31,10 +31,7 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
                     const [fromNode, toNode, fromSocket, toSocket, outType, inType] =
                         pending.side === "out" ? [pending.node, nodeId, pending.socket, socketId, pending.type, type] : [nodeId, pending.node, socketId, pending.socket, type, pending.type];
                     if (SocketTypes.canFlow(outType, inType)) {
-                        const theType = SocketTypes.representativeType(outType, inType);
-                        if (theType !== null) {
-                            graphMethods.connect(fromNode, toNode, fromSocket, toSocket, theType);
-                        }
+                        graphMethods.connect(fromNode, toNode, fromSocket, toSocket, outType || inType);
                     }
                 }
             },
@@ -122,18 +119,7 @@ export const Socket = styled(
 
         const titleType = useMemo(() => (type === "" ? "« none »" : type === SocketTypes.ANY ? "« any »" : type.split(" ").join(" | ")), [type]);
 
-        return (
-            <div
-                ref={socketRef}
-                className={className}
-                data-socketid={`--socket_${nodeId}_${socketId}`}
-                data-socketside={side}
-                data-sockettype={type}
-                data-state={state}
-                data-flavour={SocketTypes.flavourOf(type)}
-                title={titleType}
-            />
-        );
+        return <div ref={socketRef} className={className} data-socketid={`--socket_${nodeId}_${socketId}`} data-socketside={side} data-sockettype={type} data-typeany={type === SocketTypes.ANY ? "" : undefined} data-state={state} title={titleType} />;
     },
 )`
     height: calc(1lh - (1lh - 1em) / 2);
@@ -155,6 +141,34 @@ export const Socket = styled(
     }
     &[data-socketside="out"] {
         margin-right: calc(-1lh + 6px);
+    }
+
+    --flavour: var(--flavour-base);
+
+    &[data-sockettype~="float"],
+    &[data-sockettype~="integer"],
+    &[data-sockettype~="string"],
+    &[data-sockettype~="length"],
+    &[data-sockettype~="color"],
+    &[data-sockettype~="enum"],
+    &[data-sockettype~="angle"],
+    &[data-sockettype~="boolean"],
+    &[data-sockettype~="tokens<length>"] {
+        --flavour: var(--flavour-accent);
+    }
+    &[data-sockettype~="distribution"] {
+        --flavour: var(--flavour-info);
+    }
+    &[data-sockettype~="array<layer>"] {
+        --flavour: var(--flavour-danger);
+    }
+    &[data-sockettype~="shape"],
+    &[data-sockettype~="layer"] {
+        --flavour: var(--flavour-confirm);
+    }
+
+    &[data-typeany] {
+        --flavour: var(--flavour-base);
     }
 
     &[data-state~="invalid"] {
@@ -221,7 +235,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} data-flavour={SocketTypes.flavourOf(type)} />
+                <path ref={pathRef} data-sockettype={type} data-typeany={type === SocketTypes.ANY ? "" : undefined} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>
@@ -262,7 +276,35 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             stroke-width: 1.5px;
             stroke-dasharray: 6 4;
             pointer-events: none;
+            --flavour: var(--flavour-base);
+
             stroke: oklch(from var(--flavour) calc(l + 0.3) c h);
+
+            &[data-sockettype~="float"],
+            &[data-sockettype~="integer"],
+            &[data-sockettype~="string"],
+            &[data-sockettype~="length"],
+            &[data-sockettype~="color"],
+            &[data-sockettype~="enum"],
+            &[data-sockettype~="angle"],
+            &[data-sockettype~="boolean"],
+            &[data-sockettype~="tokens<length>"] {
+                --flavour: var(--flavour-accent);
+            }
+            &[data-sockettype~="distribution"] {
+                --flavour: var(--flavour-info);
+            }
+            &[data-sockettype~="array<layer>"] {
+                --flavour: var(--flavour-danger);
+            }
+            &[data-sockettype~="shape"],
+            &[data-sockettype~="layer"] {
+                --flavour: var(--flavour-confirm);
+            }
+
+            &[data-typeany] {
+                --flavour: var(--flavour-base);
+            }
         }
     }
 `;

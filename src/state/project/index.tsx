@@ -139,7 +139,7 @@ export namespace Project {
 
         return useMemo(
             () => ({
-                connect: (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: DataTypes.Kind) =>
+                connect: (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string) =>
                     ctx.mc.run(() => ctx.mc.connect(graphId, fromNode, toNode, fromSocket, toSocket, type)),
                 removeNode: (nodeId: string) => ctx.mc.run(() => ctx.mc.removeNode(graphId, nodeId)),
                 removeLinks: (...linkIds: string[]) => ctx.mc.run(() => ctx.mc.removeLinks(graphId, ...linkIds)),

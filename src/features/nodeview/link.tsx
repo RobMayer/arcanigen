@@ -1,10 +1,10 @@
 import { useMemo, CSSProperties, useRef, useCallback, KeyboardEvent } from "react";
 import styled, { keyframes } from "styled-components";
-import { SocketTypes } from "../../definitions/betterTypes";
 import { Project } from "../../state/project";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { Icon, ICONS } from "../../components/Icon";
+import { SocketTypes } from "../../definitions/betterTypes";
 
 const keyframesMarch = keyframes`
 to {
@@ -73,7 +73,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
     return (
         <>
-            <div className={className} style={style} ref={ref} tabIndex={-1} data-flavour={SocketTypes.flavourOf(link.type)} data-linktype={link.type} onKeyDown={handleKeyDown}>
+            <div className={className} style={style} ref={ref} tabIndex={-1} data-linktype={link.type} data-typeany={link.type === SocketTypes.ANY ? "" : undefined} onKeyDown={handleKeyDown}>
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
                         <path data-part={"target"} d="" />
@@ -181,7 +181,10 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         }
     }
 
-    &[data-linktype="shape"] > svg > g > path {
+    &[data-linktype="shape"] > svg > g > path,
+    &[data-linktype="layer"] > svg > g > path,
+    &[data-linktype="shape layer"] > svg > g > path,
+    &[data-linktype="layer shape"] > svg > g > path {
         &[data-part="display"] {
             stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
             stroke-width: 6px;
@@ -202,5 +205,33 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
     &:focus-within > svg > g > path[data-part="select"] {
         stroke: #fff6;
+    }
+
+    --flavour: var(--flavour-base);
+
+    &[data-linktype~="float"],
+    &[data-linktype~="integer"],
+    &[data-linktype~="string"],
+    &[data-linktype~="length"],
+    &[data-linktype~="color"],
+    &[data-linktype~="enum"],
+    &[data-linktype~="angle"],
+    &[data-linktype~="boolean"],
+    &[data-linktype~="tokens<length>"] {
+        --flavour: var(--flavour-accent);
+    }
+    &[data-linktype~="distribution"] {
+        --flavour: var(--flavour-info);
+    }
+    &[data-linktype~="array<layer>"] {
+        --flavour: var(--flavour-danger);
+    }
+    &[data-linktype~="shape"],
+    &[data-linktype~="layer"] {
+        --flavour: var(--flavour-confirm);
+    }
+
+    &[data-typeany] {
+        --flavour: var(--flavour-base);
     }
 `;

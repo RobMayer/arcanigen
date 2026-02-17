@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { DataTypes, NodeTypes } from "../../definitions/betterTypes";
+import { NodeTypes } from "../../definitions/betterTypes";
 
 export namespace ArcaneGraph {
     // aliases just for clarity of purpose when used
@@ -26,7 +26,7 @@ export namespace ArcaneGraph {
 
     export type Link = {
         id: LinkId;
-        type: DataTypes.Kind;
+        type: string;
         fromNode: NodeId;
         toNode: NodeId;
         fromSocket: SocketId;
@@ -541,7 +541,7 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: DataTypes.Kind,
+        type: string,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null] => {
         const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
@@ -553,7 +553,7 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: DataTypes.Kind,
+        type: string,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null, removed: RemovedOf<N>] => {
         const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });

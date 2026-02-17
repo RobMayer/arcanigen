@@ -16,7 +16,7 @@ import { AngleDefinition, AnglePrimitiveType } from "./nodes/primitives/angleNod
 import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNode";
 import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/integerNode";
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
-import { Project } from "../state/project";
+import type { Project } from "../state/project";
 import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
 import { ShapePreviewDefinition, ShapePreviewType } from "./nodes/debug/shapePreviewNode";
 import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInputNode";
@@ -169,20 +169,20 @@ namespace Registries {
         "array<layer>": { shape: SVGObject | null; enabled: boolean | null; blend: number | null }[];
     };
 
-    export const DATATYPE_FLAVOURS: { [key in keyof DATATYPES]: Flavour } = {
-        string: "accent",
-        length: "accent",
-        shape: "confirm",
-        float: "accent",
-        integer: "accent",
-        color: "accent",
-        enum: "accent",
-        angle: "accent",
-        boolean: "accent",
-        "tokens<length>": "accent",
-        layer: "confirm",
-        "array<layer>": "danger",
-        distribution: "info",
+    export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {
+        string: "String",
+        length: "Length",
+        shape: "Shape",
+        float: "Float",
+        integer: "Integer",
+        color: "Color",
+        enum: "Enum",
+        angle: "Angle",
+        boolean: "Boolean",
+        "tokens<length>": "Lengths",
+        layer: "Layer",
+        "array<layer>": "Layer Array",
+        distribution: "Distribution",
     };
 
     export const NODECAT_FLAVOURS = {
@@ -318,7 +318,7 @@ export namespace SocketTypes {
     // --- New set-based socket type system ---
 
     /** All concrete data types, sorted alphabetically for canonical ordering */
-    export const ALL_TYPES: readonly DataTypes.Kind[] = (Object.keys(Registries.DATATYPE_FLAVOURS) as DataTypes.Kind[]).sort();
+    export const ALL_TYPES: readonly DataTypes.Kind[] = (Object.keys(Registries.DATATYPE_LABELS) as DataTypes.Kind[]).sort();
 
     /** Empty set — unconstrained OUT ("no type yet"). ∅ ⊆ anything. */
     export const NONE = "";
@@ -335,15 +335,6 @@ export namespace SocketTypes {
         return type.split(" ") as DataTypes.Kind[];
     };
 
-    /** Resolve a type string to a UI flavour */
-    export const flavourOf = (typeStr: string): Flavour => {
-        const types = parseSocketType(typeStr);
-        if (types.length === 0) return "base";
-        const flavours = new Set(types.map((t) => Registries.DATATYPE_FLAVOURS[t]));
-        if (flavours.size === 1) return [...flavours][0];
-        return "base";
-    };
-
     /** Directional subset check: can this OUT connect to this IN? */
     export const canFlow = (outType: string, inType: string): boolean => {
         if (outType === "") return true;
@@ -351,15 +342,6 @@ export namespace SocketTypes {
         const outTypes = parseSocketType(outType);
         const inTypes = parseSocketType(inType);
         return outTypes.every((t) => inTypes.includes(t));
-    };
-
-    /** Pick a representative DataTypes.Kind for link.type from the OUT/IN type strings */
-    export const representativeType = (outType: string, inType: string): DataTypes.Kind | null => {
-        const outTypes = parseSocketType(outType);
-        if (outTypes.length > 0) return outTypes[0];
-        const inTypes = parseSocketType(inType);
-        if (inTypes.length > 0) return inTypes[0];
-        return null;
     };
 
     /** Union two type strings (A ∪ B), maintaining canonical sort order */
