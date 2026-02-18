@@ -34,7 +34,7 @@ const BaseCombined = styled.div`
     }
 `;
 
-export function AngleInput({ min = 0, max = 360, unbound, flavour, ...props }: AngleInput.Props) {
+export function AngleInput({ unbound, min = unbound ? undefined : 0, max = unbound ? undefined : 360, flavour, ...props }: AngleInput.Props) {
     return <BaseInput {...props} wrap={unbound ? undefined : 360} min={min} max={max} data-flavour={flavour} />;
 }
 
@@ -59,8 +59,8 @@ export namespace AngleInput {
         inputRef,
         flavour = "accent",
         unbound,
-        min = 0,
-        max = 360,
+        min = unbound ? undefined : 0,
+        max = unbound ? undefined : 360,
         snap,
         required,
         ref,

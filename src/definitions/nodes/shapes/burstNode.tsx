@@ -160,14 +160,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"spurCount"} type={"integer"} label={"Spurs"}>
-                <IntegerInput.SliderInput
-                    value={node.payload.spurCount}
-                    onCommit={(spurCount) => handleUpdate({ spurCount })}
-                    disabled={node.in.spurCount !== null}
-                    min={"0"}
-                    max={"64"}
-                    required
-                />
+                <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null} min={"0"} required />
             </SocketIn>
 
             <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Radial Mode"}>
@@ -211,19 +204,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                     disabled={node.in.thetaMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaSteps"} type={"angle"} label={"Step Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaSteps} onCommit={(thetaSteps) => handleUpdate({ thetaSteps })} disabled={node.in.thetaSteps !== null || isStartStop} />
-            </SocketIn>
+
             <SocketIn node={node} socketId={"thetaStart"} type={"angle"} label={"Start Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isIncremental} />
+                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isIncremental} unbound />
             </SocketIn>
             <SocketIn node={node} socketId={"thetaEnd"} type={"angle"} label={"End Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaEnd} onCommit={(thetaEnd) => handleUpdate({ thetaEnd })} disabled={node.in.thetaEnd !== null || isIncremental} />
+                <AngleInput.SliderInput value={node.payload.thetaEnd} onCommit={(thetaEnd) => handleUpdate({ thetaEnd })} disabled={node.in.thetaEnd !== null || isIncremental} unbound />
             </SocketIn>
             <SocketIn node={node} socketId={"thetaInclusive"} type={"boolean"}>
                 <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isIncremental}>
                     Inclusive End
                 </CheckBox>
+            </SocketIn>
+            <SocketIn node={node} socketId={"thetaSteps"} type={"angle"} label={"Step Theta"}>
+                <AngleInput.SliderInput value={node.payload.thetaSteps} onCommit={(thetaSteps) => handleUpdate({ thetaSteps })} disabled={node.in.thetaSteps !== null || isStartStop} unbound />
             </SocketIn>
             <SocketIn node={node} socketId={"thetaCurve"} type={"distribution"}>
                 Angular Distribution
@@ -342,10 +336,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const lines: SVGObject[] = [];
         for (let i = 0; i < N; i++) {
             const coeff = delerp(i, 0, denominator);
-            const angle =
-                thetaMode === Enum.Common.thetaMode.StartStop
-                    ? lerp(coeff, thetaStart, thetaEnd, distroLerper)
-                    : lerp(coeff, 0, N * thetaSteps, distroLerper);
+            const angle = thetaMode === Enum.Common.thetaMode.StartStop ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
             const c = Math.cos(deg2rad(angle - 90));
             const s = Math.sin(deg2rad(angle - 90));
             lines.push({
