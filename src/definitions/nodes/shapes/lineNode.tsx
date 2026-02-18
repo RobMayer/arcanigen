@@ -247,13 +247,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LineDefinition>, _inSocket
 /** Convert angle convention (0deg = top, CW positive) to radians for Math.cos/sin */
 const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 
-const resolvePoint = (
-    mode: number,
-    x: number,
-    y: number,
-    radius: number,
-    theta: number,
-): [number, number] => {
+const resolvePoint = (mode: number, x: number, y: number, radius: number, theta: number): [number, number] => {
     if (mode === Enum.Common.positionMode.Polar) {
         const thetaRad = toRad(theta);
         return [radius * Math.cos(thetaRad), radius * Math.sin(thetaRad)];

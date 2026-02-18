@@ -81,10 +81,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloodFillDefinition>, socket: ke
             data: {
                 tag: "rect",
                 attributes: {
-                    x: "-50%",
-                    y: "-50%",
-                    width: "200%",
-                    height: "200%",
+                    x: "-5000%",
+                    y: "-5000%",
+                    width: "10000%",
+                    height: "10000%",
                     fill: Color.toHex(fillColor),
                 },
                 children: [],

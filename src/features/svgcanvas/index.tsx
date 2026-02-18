@@ -7,7 +7,7 @@ import { DragPane, DragPaneControls } from "../../components/wrappers/DragPane";
 
 export const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode => {
     const { tag, attributes, children, style } = obj;
-    const childNodes = children.flatMap((child, i) => child ? [renderSVGObject(child, i)] : []);
+    const childNodes = children.flatMap((child, i) => (child ? [renderSVGObject(child, i)] : []));
 
     switch (tag) {
         case "g":
