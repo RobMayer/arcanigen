@@ -41,13 +41,10 @@ export type PolyringDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
-        rInscribe: DataTypes.Use<"length">;
-        rCircumscribe: DataTypes.Use<"length">;
-        rMiddle: DataTypes.Use<"length">;
-
-        eInscribe: DataTypes.Use<"length">;
-        eCircumscribe: DataTypes.Use<"length">;
-        eMiddle: DataTypes.Use<"length">;
+        eOuterCircumradius: DataTypes.Use<"length">;
+        eOuterApothem: DataTypes.Use<"length">;
+        eInnerCircumradius: DataTypes.Use<"length">;
+        eInnerApothem: DataTypes.Use<"length">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -113,12 +110,10 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
         },
         out: {
             output: [],
-            rInscribe: [],
-            rCircumscribe: [],
-            rMiddle: [],
-            eInscribe: [],
-            eCircumscribe: [],
-            eMiddle: [],
+            eOuterCircumradius: [],
+            eOuterApothem: [],
+            eInnerCircumradius: [],
+            eInnerApothem: [],
         },
         payload: {
             label: "",
@@ -313,25 +308,18 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolyringDef
             </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"rInscribe|rCircumscribe|rMiddle|eInscribe|eCircumscribe|eMiddle"}>
-                <SocketOut node={node} socketId={"rInscribe"} type={"length"}>
-                    Inscribe Radius
+            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
+                <SocketOut node={node} socketId={"eOuterCircumradius"} type={"length"}>
+                    Outer Circumradius
                 </SocketOut>
-                <SocketOut node={node} socketId={"rMiddle"} type={"length"}>
-                    Middle Radius
+                <SocketOut node={node} socketId={"eOuterApothem"} type={"length"}>
+                    Outer Apothem
                 </SocketOut>
-                <SocketOut node={node} socketId={"rCircumscribe"} type={"length"}>
-                    Circumscribe Radius
+                <SocketOut node={node} socketId={"eInnerCircumradius"} type={"length"}>
+                    Inner Circumradius
                 </SocketOut>
-                <hr />
-                <SocketOut node={node} socketId={"eInscribe"} type={"length"}>
-                    Inscribe Effective
-                </SocketOut>
-                <SocketOut node={node} socketId={"eMiddle"} type={"length"}>
-                    Middle Effective
-                </SocketOut>
-                <SocketOut node={node} socketId={"eCircumscribe"} type={"length"}>
-                    Circumscribe Effective
+                <SocketOut node={node} socketId={"eInnerApothem"} type={"length"}>
+                    Inner Apothem
                 </SocketOut>
             </NodeAccordion>
         </TypicalNode>
@@ -375,24 +363,16 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, outSocket
             "rotation",
         ];
     }
-    if (outSocket === "rInscribe" || outSocket === "rCircumscribe" || outSocket === "rMiddle") {
-        return ["pointCount", "radius"];
-    }
-    if (outSocket === "eInscribe" || outSocket === "eCircumscribe" || outSocket === "eMiddle") {
-        return ["pointCount", "radius", "rScribe"];
+    if (outSocket === "eOuterCircumradius" || outSocket === "eOuterApothem" || outSocket === "eInnerCircumradius" || outSocket === "eInnerApothem") {
+        return ["pointCount", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign", "rScribe", "iScribe", "oScribe", "expandMode"];
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, inSocket: keyof PolyringDefinition["inputs"], _deps: AllDeps): (keyof PolyringDefinition["outputs"])[] => {
-    if (inSocket === "pointCount") {
-        return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
-    }
-    if (inSocket === "radius") {
-        return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
-    }
-    if (inSocket === "rScribe") {
-        return ["output", "eInscribe", "eCircumscribe", "eMiddle"];
+    const extras: (keyof PolyringDefinition["outputs"])[] = ["eOuterCircumradius", "eOuterApothem", "eInnerCircumradius", "eInnerApothem"];
+    if (inSocket === "pointCount" || inSocket === "radius" || inSocket === "spread" || inSocket === "innerRadius" || inSocket === "outerRadius" || inSocket === "spanMode" || inSocket === "spreadAlign" || inSocket === "rScribe" || inSocket === "iScribe" || inSocket === "oScribe" || inSocket === "expandMode") {
+        return ["output", ...extras];
     }
     return ["output"];
 };
@@ -609,38 +589,50 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         };
     }
 
-    const [radius, unit] = Length.Emptyable.parse(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? [null, null];
     const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount);
-    if (radius === null || unit == null || pointCount === null) {
-        return null;
-    }
-    if (socket === "rInscribe") {
-        const outputRadius = getTrueRadius(radius, "Inscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
-    }
-    if (socket === "rCircumscribe") {
-        const outputRadius = getTrueRadius(radius, "Circumscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
-    }
-    if (socket === "rMiddle") {
-        const outputRadius = getTrueRadius(radius, "Middle", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
+    if (pointCount === null) return null;
+
+    const N = pointCount;
+    const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+    const expandMode = context.resolve<"enum">(node.id, "expandMode")?.data ?? node.payload.expandMode ?? 0;
+
+    let tI: number;
+    let tO: number;
+
+    if (spanMode === Enum.Common.spanMode.InnerOuter) {
+        const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+        const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+        const iScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "iScribe")?.data ?? node.payload.iScribe ?? Enum.Common.scribeMode.Inscribe);
+        const oScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "oScribe")?.data ?? node.payload.oScribe ?? Enum.Common.scribeMode.Inscribe);
+        tI = getTrueRadius(innerRadius, iScribeMode, N);
+        tO = getTrueRadius(outerRadius, oScribeMode, N);
+    } else {
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+        const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
+        const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
+        const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
+        const base = getTrueRadius(radius, rScribeMode, N);
+        const theSpread = expandMode === Enum.Common.expandMode.Point ? spread : spread / Math.cos(Math.PI / N);
+        const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? theSpread : 0;
+        const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? theSpread : 0;
+        tI = base - tIMod;
+        tO = base + tOMod;
     }
 
-    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
-    const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
+    tI = Math.max(0, tI);
+    tO = Math.max(0, tO);
 
-    if (socket === "eInscribe") {
-        const outputRadius = getDerivedRadius(currentRadius, "Inscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
+    if (socket === "eOuterCircumradius") {
+        return { kind: "length", data: `${getDerivedRadius(tO, "Circumscribe", N)}px` };
     }
-    if (socket === "eCircumscribe") {
-        const outputRadius = getDerivedRadius(currentRadius, "Circumscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
+    if (socket === "eOuterApothem") {
+        return { kind: "length", data: `${getDerivedRadius(tO, "Inscribe", N)}px` };
     }
-    if (socket === "eMiddle") {
-        const outputRadius = getDerivedRadius(currentRadius, "Middle", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
+    if (socket === "eInnerCircumradius") {
+        return { kind: "length", data: `${getDerivedRadius(tI, "Circumscribe", N)}px` };
+    }
+    if (socket === "eInnerApothem") {
+        return { kind: "length", data: `${getDerivedRadius(tI, "Inscribe", N)}px` };
     }
 
     return null;
@@ -680,12 +672,10 @@ const POLYRING_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
-    rInscribe: "length",
-    rCircumscribe: "length",
-    rMiddle: "length",
-    eInscribe: "length",
-    eCircumscribe: "length",
-    eMiddle: "length",
+    eOuterCircumradius: "length",
+    eOuterApothem: "length",
+    eInnerCircumradius: "length",
+    eInnerApothem: "length",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, socketId: string, _side: "in" | "out"): string => POLYRING_SOCKET_TYPES[socketId] ?? "float";

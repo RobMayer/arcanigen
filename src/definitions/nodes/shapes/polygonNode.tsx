@@ -31,13 +31,8 @@ export type PolygonDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
-        rInscribe: DataTypes.Use<"length">;
-        rCircumscribe: DataTypes.Use<"length">;
-        rMiddle: DataTypes.Use<"length">;
-
-        eInscribe: DataTypes.Use<"length">;
-        eCircumscribe: DataTypes.Use<"length">;
-        eMiddle: DataTypes.Use<"length">;
+        eCircumradius: DataTypes.Use<"length">;
+        eApothem: DataTypes.Use<"length">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -83,12 +78,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
         },
         out: {
             output: [],
-            rInscribe: [],
-            rCircumscribe: [],
-            rMiddle: [],
-            eInscribe: [],
-            eCircumscribe: [],
-            eMiddle: [],
+            eCircumradius: [],
+            eApothem: [],
         },
         payload: {
             label: "",
@@ -186,25 +177,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
             </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"rInscribe|rCircumscribe|rMiddle|eInscribe|eCircumscribe|eMiddle"}>
-                <SocketOut node={node} socketId={"rInscribe"} type={"length"}>
-                    Inscribe Radius
+            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eCircumradius|eApothem"}>
+                <SocketOut node={node} socketId={"eCircumradius"} type={"length"}>
+                    Circumradius
                 </SocketOut>
-                <SocketOut node={node} socketId={"rMiddle"} type={"length"}>
-                    Middle Radius
-                </SocketOut>
-                <SocketOut node={node} socketId={"rCircumscribe"} type={"length"}>
-                    Circumscribe Radius
-                </SocketOut>
-                <hr />
-                <SocketOut node={node} socketId={"eInscribe"} type={"length"}>
-                    Inscribe Effective
-                </SocketOut>
-                <SocketOut node={node} socketId={"eMiddle"} type={"length"}>
-                    Middle Effective
-                </SocketOut>
-                <SocketOut node={node} socketId={"eCircumscribe"} type={"length"}>
-                    Circumscribe Effective
+                <SocketOut node={node} socketId={"eApothem"} type={"length"}>
+                    Apothem
                 </SocketOut>
             </NodeAccordion>
         </TypicalNode>
@@ -239,12 +217,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket:
             "rotation",
         ];
     }
-    if (outSocket === "rInscribe" || outSocket === "rCircumscribe" || outSocket === "rMiddle") {
-        // radius outputs depend on pointCount and radius only
-        return ["pointCount", "radius"];
-    }
-    if (outSocket === "eInscribe" || outSocket === "eCircumscribe" || outSocket === "eMiddle") {
-        // effective radius outputs depend on pointCount, radius, and rScribe
+    if (outSocket === "eCircumradius" || outSocket === "eApothem") {
         return ["pointCount", "radius", "rScribe"];
     }
     return [];
@@ -252,13 +225,13 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket:
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSocket: keyof PolygonDefinition["inputs"], _deps: AllDeps): (keyof PolygonDefinition["outputs"])[] => {
     if (inSocket === "pointCount") {
-        return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
+        return ["output", "eCircumradius", "eApothem"];
     }
     if (inSocket === "radius") {
-        return ["output", "rInscribe", "rCircumscribe", "rMiddle", "eInscribe", "eCircumscribe", "eMiddle"];
+        return ["output", "eCircumradius", "eApothem"];
     }
     if (inSocket === "rScribe") {
-        return ["output", "eInscribe", "eCircumscribe", "eMiddle"];
+        return ["output", "eCircumradius", "eApothem"];
     }
     if (inSocket === "cornerRadius" || inSocket === "cornerShape") {
         return ["output"];
@@ -439,32 +412,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
     if (radius === null || unit == null || pointCount === null) {
         return null;
     }
-    if (socket === "rInscribe") {
-        const outputRadius = getTrueRadius(radius, "Inscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
-    }
-    if (socket === "rCircumscribe") {
-        const outputRadius = getTrueRadius(radius, "Circumscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
-    }
-    if (socket === "rMiddle") {
-        const outputRadius = getTrueRadius(radius, "Middle", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
-    }
 
     const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
     const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
 
-    if (socket === "eInscribe") {
-        const outputRadius = getDerivedRadius(currentRadius, "Inscribe", pointCount);
-        return { kind: "length", data: `${outputRadius}${unit}` };
-    }
-    if (socket === "eCircumscribe") {
+    if (socket === "eCircumradius") {
         const outputRadius = getDerivedRadius(currentRadius, "Circumscribe", pointCount);
         return { kind: "length", data: `${outputRadius}${unit}` };
     }
-    if (socket === "eMiddle") {
-        const outputRadius = getDerivedRadius(currentRadius, "Middle", pointCount);
+    if (socket === "eApothem") {
+        const outputRadius = getDerivedRadius(currentRadius, "Inscribe", pointCount);
         return { kind: "length", data: `${outputRadius}${unit}` };
     }
 
@@ -495,12 +452,8 @@ const POLYGON_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
-    rInscribe: "length",
-    rCircumscribe: "length",
-    rMiddle: "length",
-    eInscribe: "length",
-    eCircumscribe: "length",
-    eMiddle: "length",
+    eCircumradius: "length",
+    eApothem: "length",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, socketId: string, _side: "in" | "out"): string => POLYGON_SOCKET_TYPES[socketId] ?? "float";

@@ -106,6 +106,11 @@ export namespace Enum {
             Incremental: 1,
         };
 
+        export const arcMode = {
+            StartSweep: 0,
+            FromTo: 1,
+        };
+
         export const cornerShape = {
             Round: 0,
             Bevel: 1,

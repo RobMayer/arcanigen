@@ -27,9 +27,23 @@
 # tasks that will get completed as the system gets fleshed out
 
 - [x] more input/output node types
-- [ ] more shapes
+- [ ] more shapes (to convert from previous app)
+    - [ ] Arc (has a bug in the old implementation)
+    - [ ] Spiral
+    - [ ] Line
+    - [ ] Flood Fill
+    - [ ] Custom Glyph
+    - [ ] Text Path (ugh)
+- [ ] more shapes (new)
     - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
     - [ ] Banded Burst (circle, polygon, and polygram are to ring, polyring, and knot as burst is to this)
+    - [ ] Banded Arc
+    - [ ] Banded Spiral
+    - [ ] Banded Line
+    - [ ] Merged Knot (like knot but without overlap - complex as fuck)
+- [ ] Figure out Random Seed mechanism
+- [ ] Figure out Style Overrides
+- [ ] Figure out Conformal Paths
 
 # componnet improvements
 

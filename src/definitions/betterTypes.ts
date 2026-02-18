@@ -67,6 +67,8 @@ import { PolyringDefinition, PolyringNodeType } from "./nodes/shapes/polyringNod
 import { KnotDefinition, KnotNodeType } from "./nodes/shapes/knotNode";
 import { StarDefinition, StarNodeType } from "./nodes/shapes/starNode";
 import { BurstDefinition, BurstNodeType } from "./nodes/shapes/burstNode";
+import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
+import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -86,6 +88,8 @@ namespace Registries {
         knot: KnotDefinition;
         star: StarDefinition;
         burst: BurstDefinition;
+        arc: ArcDefinition;
+        spiral: SpiralDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -151,6 +155,8 @@ namespace Registries {
         star: StarNodeType,
         burst: BurstNodeType,
         rectangle: RectangleNodeType,
+        arc: ArcNodeType,
+        spiral: SpiralNodeType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,

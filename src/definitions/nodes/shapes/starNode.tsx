@@ -13,7 +13,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterType
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
-import { deg2rad, delerp, distroInterpolator, getTrueRadius, lerp, range } from "../../../util/misc";
+import { deg2rad, delerp, distroInterpolator, getTrueRadius, lerp } from "../../../util/misc";
 import { Stylings, Transforms } from "./abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 
@@ -331,13 +331,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<StarDefinition>, _inSocket
 };
 
 /** Build a star path with per-vertex corner params (alternating outer tips and inner valleys) */
-const buildStarPath = (
-    vertices: (readonly [number, number])[],
-    outerCornerR: number,
-    outerCornerShape: number,
-    innerCornerR: number,
-    innerCornerShape: number,
-): string => {
+const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: number, outerCornerShape: number, innerCornerR: number, innerCornerShape: number): string => {
     const N = vertices.length; // 2 * pointCount
 
     if (outerCornerR <= 0 && innerCornerR <= 0) {
@@ -368,7 +362,7 @@ const buildStarPath = (
 
     // Per-vertex clamped radius: clamp each to half adjacent edge lengths
     const clampedR = vertices.map((_, i) => {
-        let r = i % 2 === 0 ? outerCornerR : innerCornerR;
+        const r = i % 2 === 0 ? outerCornerR : innerCornerR;
         if (r <= 0) return 0;
         const { halfAlpha } = vertexData[i];
         const tanHalf = Math.tan(halfAlpha);
