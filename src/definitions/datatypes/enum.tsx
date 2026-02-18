@@ -101,6 +101,11 @@ export namespace Enum {
             Outward: 2,
         };
 
+        export const thetaMode = {
+            StartStop: 0,
+            Incremental: 1,
+        };
+
         export const cornerShape = {
             Round: 0,
             Bevel: 1,

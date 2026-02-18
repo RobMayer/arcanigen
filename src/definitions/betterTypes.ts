@@ -66,6 +66,7 @@ import { PolygramDefinition, PolygramNodeType } from "./nodes/shapes/polygramNod
 import { PolyringDefinition, PolyringNodeType } from "./nodes/shapes/polyringNode";
 import { KnotDefinition, KnotNodeType } from "./nodes/shapes/knotNode";
 import { StarDefinition, StarNodeType } from "./nodes/shapes/starNode";
+import { BurstDefinition, BurstNodeType } from "./nodes/shapes/burstNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -84,6 +85,7 @@ namespace Registries {
         polyring: PolyringDefinition;
         knot: KnotDefinition;
         star: StarDefinition;
+        burst: BurstDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -147,6 +149,7 @@ namespace Registries {
         polyring: PolyringNodeType,
         knot: KnotNodeType,
         star: StarNodeType,
+        burst: BurstNodeType,
         rectangle: RectangleNodeType,
 
         layerCompose: LayerComposeNodeType,
