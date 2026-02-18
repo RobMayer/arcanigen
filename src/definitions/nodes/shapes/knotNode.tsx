@@ -399,7 +399,20 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<KnotDefinition>, outSocket: ke
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<KnotDefinition>, inSocket: keyof KnotDefinition["inputs"], _deps: AllDeps): (keyof KnotDefinition["outputs"])[] => {
     const extras: (keyof KnotDefinition["outputs"])[] = ["eOuterCircumradius", "eOuterApothem", "eInnerCircumradius", "eInnerApothem"];
-    if (inSocket === "pointCount" || inSocket === "skipCount" || inSocket === "radius" || inSocket === "spread" || inSocket === "innerRadius" || inSocket === "outerRadius" || inSocket === "spanMode" || inSocket === "spreadAlign" || inSocket === "rScribe" || inSocket === "iScribe" || inSocket === "oScribe" || inSocket === "expandMode") {
+    if (
+        inSocket === "pointCount" ||
+        inSocket === "skipCount" ||
+        inSocket === "radius" ||
+        inSocket === "spread" ||
+        inSocket === "innerRadius" ||
+        inSocket === "outerRadius" ||
+        inSocket === "spanMode" ||
+        inSocket === "spreadAlign" ||
+        inSocket === "rScribe" ||
+        inSocket === "iScribe" ||
+        inSocket === "oScribe" ||
+        inSocket === "expandMode"
+    ) {
         return ["output", ...extras];
     }
     return ["output"];
@@ -606,36 +619,24 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
+                tag: "path",
+                transform: transforms.join(" "),
+                attributes,
+                definitions: [
                     !markerShape
                         ? null
                         : {
-                              tag: "defs",
-                              attributes: {},
-                              children: [
-                                  {
-                                      tag: "marker",
-                                      attributes: {
-                                          id: `marker_${node.id}`,
-                                          markerUnits: "userSpaceOnUse",
-                                          markerWidth: "100%",
-                                          markerHeight: "100%",
-                                          overflow: "visible",
-                                          orient: markerAlign ? "auto-start-reverse" : undefined,
-                                      },
-                                      children: [markerShape],
-                                  },
-                              ],
+                              tag: "marker",
+                              attributes: {
+                                  id: `marker_${node.id}`,
+                                  markerUnits: "userSpaceOnUse",
+                                  markerWidth: "100%",
+                                  markerHeight: "100%",
+                                  overflow: "visible",
+                                  orient: markerAlign ? "auto-start-reverse" : undefined,
+                              },
+                              children: [markerShape],
                           },
-                    {
-                        tag: "path",
-                        attributes,
-                        children: [],
-                    },
                 ],
                 preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO },
             },

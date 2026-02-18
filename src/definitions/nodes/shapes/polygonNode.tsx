@@ -371,36 +371,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
-                    !markerShape
-                        ? null
-                        : {
-                              tag: "defs",
-                              attributes: {},
-                              children: [
-                                  {
-                                      tag: "marker",
-                                      attributes: {
-                                          id: `marker_${node.id}`,
-                                          markerUnits: "userSpaceOnUse",
-                                          markerWidth: "100%",
-                                          markerHeight: "100%",
-                                          overflow: "visible",
-                                          orient: markerAlign ? "auto-start-reverse" : undefined,
-                                      },
-                                      children: [markerShape],
-                                  },
-                              ],
-                          },
-                    {
-                        tag: "path",
-                        attributes,
-                        children: [],
-                    },
+                tag: "path",
+                attributes,
+                transform: transforms.join(" "),
+                children: [],
+                definitions: [
+                    markerShape
+                        ? {
+                              tag: "marker",
+                              attributes: {
+                                  id: `marker_${node.id}`,
+                                  markerUnits: "userSpaceOnUse",
+                                  markerWidth: "100%",
+                                  markerHeight: "100%",
+                                  overflow: "visible",
+                                  orient: markerAlign ? "auto-start-reverse" : undefined,
+                              },
+                              children: [markerShape],
+                          }
+                        : null,
                 ],
                 preview: { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius },
             },

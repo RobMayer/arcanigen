@@ -51,7 +51,6 @@ const evaluateSubgraphForCache = (
 
         const subContext: Resolver.Context = {
             graphId: subgraphId,
-            define: () => {},
             getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
             getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
                 return inputValues[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
@@ -132,7 +131,6 @@ export const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: 
 
     const context: Resolver.Context = {
         graphId,
-        define: () => {}, // definitions are handled at render time
         resolve,
         subgraph: (subgraphId: string, inputValues: { [key: string]: DataTypes.AnyEval | null }) => {
             return evaluateSubgraphForCache(nodes, links, interfaces, subgraphId, inputValues);

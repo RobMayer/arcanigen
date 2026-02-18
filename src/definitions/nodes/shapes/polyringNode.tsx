@@ -371,7 +371,19 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, outSocket
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, inSocket: keyof PolyringDefinition["inputs"], _deps: AllDeps): (keyof PolyringDefinition["outputs"])[] => {
     const extras: (keyof PolyringDefinition["outputs"])[] = ["eOuterCircumradius", "eOuterApothem", "eInnerCircumradius", "eInnerApothem"];
-    if (inSocket === "pointCount" || inSocket === "radius" || inSocket === "spread" || inSocket === "innerRadius" || inSocket === "outerRadius" || inSocket === "spanMode" || inSocket === "spreadAlign" || inSocket === "rScribe" || inSocket === "iScribe" || inSocket === "oScribe" || inSocket === "expandMode") {
+    if (
+        inSocket === "pointCount" ||
+        inSocket === "radius" ||
+        inSocket === "spread" ||
+        inSocket === "innerRadius" ||
+        inSocket === "outerRadius" ||
+        inSocket === "spanMode" ||
+        inSocket === "spreadAlign" ||
+        inSocket === "rScribe" ||
+        inSocket === "iScribe" ||
+        inSocket === "oScribe" ||
+        inSocket === "expandMode"
+    ) {
         return ["output", ...extras];
     }
     return ["output"];
@@ -553,36 +565,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
-                    !markerShape
-                        ? null
-                        : {
-                              tag: "defs",
-                              attributes: {},
-                              children: [
-                                  {
-                                      tag: "marker",
-                                      attributes: {
-                                          id: `marker_${node.id}`,
-                                          markerUnits: "userSpaceOnUse",
-                                          markerWidth: "100%",
-                                          markerHeight: "100%",
-                                          overflow: "visible",
-                                          orient: markerAlign ? "auto-start-reverse" : undefined,
-                                      },
-                                      children: [markerShape],
-                                  },
-                              ],
-                          },
-                    {
-                        tag: "path",
-                        attributes,
-                        children: [],
-                    },
+                tag: "path",
+                attributes,
+                children: [],
+                transform: transforms.join(" "),
+                definitions: [
+                    markerShape
+                        ? {
+                              tag: "marker",
+                              attributes: {
+                                  id: `marker_${node.id}`,
+                                  markerUnits: "userSpaceOnUse",
+                                  markerWidth: "100%",
+                                  markerHeight: "100%",
+                                  overflow: "visible",
+                                  orient: markerAlign ? "auto-start-reverse" : undefined,
+                              },
+                              children: [markerShape],
+                          }
+                        : null,
                 ],
                 preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO },
             },

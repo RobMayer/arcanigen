@@ -80,6 +80,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloodFillDefinition>, socket: ke
             kind: "shape",
             data: {
                 tag: "rect",
+                transform: "",
+                preview: { x: 0, y: 0, w: 100, h: 100 },
                 attributes: {
                     x: "-5000%",
                     y: "-5000%",

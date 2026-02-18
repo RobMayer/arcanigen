@@ -15,7 +15,7 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
-import { SVGObject } from "../../../types";
+import { SVGDefinition } from "../../../types";
 import { delerp, lerp } from "../../../util/misc";
 
 export type SpiralDefinition = {
@@ -348,7 +348,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
 
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const markerDefs: SVGObject[] = [];
+        const markerDefs: SVGDefinition[] = [];
         if (markerStartShape) {
             markerDefs.push({
                 tag: "marker",
@@ -380,31 +380,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
 
         const maxR = Math.max(Math.abs(rI), Math.abs(rO));
 
-        const pathElement: SVGObject = {
-            tag: "g",
-            attributes: {
-                transform: transforms.join(" "),
-            },
-            children: [
-                markerDefs.length === 0
-                    ? null
-                    : {
-                          tag: "defs",
-                          attributes: {},
-                          children: markerDefs,
-                      },
-                {
-                    tag: "path",
-                    attributes,
-                    children: [],
-                },
-            ],
-            preview: { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR },
-        };
-
         return {
             kind: "shape",
-            data: pathElement,
+            data: {
+                tag: "path",
+                transform: transforms.join(" "),
+                attributes,
+                children: [],
+                definitions: markerDefs,
+                preview: { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR },
+            },
         };
     }
 

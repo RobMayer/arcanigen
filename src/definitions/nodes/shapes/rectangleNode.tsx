@@ -13,7 +13,6 @@ import { Project } from "../../../state/project";
 import { Stylings, Transforms } from "./abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { SVGObject } from "../../../types";
 
 export type RectangleDefinition = {
     inputs: {
@@ -245,44 +244,30 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         const diag = Math.sqrt(width * width + height * height);
         const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
 
-        const pathElement: SVGObject = {
-            tag: "g",
-            attributes: {
-                transform: transforms.join(" "),
-            },
-            children: [
-                !markerShape
-                    ? null
-                    : {
-                          tag: "defs",
-                          attributes: {},
-                          children: [
-                              {
-                                  tag: "marker",
-                                  attributes: {
-                                      id: `marker_${node.id}`,
-                                      markerUnits: "userSpaceOnUse",
-                                      markerWidth: "100%",
-                                      markerHeight: "100%",
-                                      overflow: "visible",
-                                      orient: markerAlign ? "auto-start-reverse" : undefined,
-                                  },
-                                  children: [markerShape],
-                              },
-                          ],
-                      },
-                {
-                    tag: "path",
-                    attributes,
-                    children: [],
-                },
-            ],
-            preview: pathPreview,
-        };
-
         return {
             kind: "shape",
-            data: pathElement,
+            data: {
+                tag: "path",
+                transform: transforms.join(" "),
+                definitions: [
+                    markerShape
+                        ? {
+                              tag: "marker",
+                              attributes: {
+                                  id: `marker_${node.id}`,
+                                  markerUnits: "userSpaceOnUse",
+                                  markerWidth: "100%",
+                                  markerHeight: "100%",
+                                  overflow: "visible",
+                                  orient: markerAlign ? "auto-start-reverse" : undefined,
+                              },
+                              children: [markerShape],
+                          }
+                        : null,
+                ],
+                attributes,
+                preview: pathPreview,
+            },
         };
     }
 

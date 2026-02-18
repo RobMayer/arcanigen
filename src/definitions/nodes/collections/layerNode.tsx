@@ -421,6 +421,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
                 attributes: {},
                 style: { isolation: doBlendInternal ? "isolate" : "auto" },
                 children,
+                transform: "",
                 preview: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
             },
         };

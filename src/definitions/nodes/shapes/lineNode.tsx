@@ -15,7 +15,7 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
-import { SVGObject } from "../../../types";
+import { SVGDefinition, SVGShape } from "../../../types";
 
 export type LineDefinition = {
     inputs: {
@@ -297,7 +297,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
 
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const markerDefs: SVGObject[] = [];
+        const markerDefs: SVGDefinition[] = [];
         if (markerStartShape) {
             markerDefs.push({
                 tag: "marker",
@@ -332,25 +332,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
         const maxX = Math.max(sx, ex);
         const maxY = Math.max(sy, ey);
 
-        const pathElement: SVGObject = {
-            tag: "g",
-            attributes: {
-                transform: transforms.join(" "),
-            },
-            children: [
-                markerDefs.length === 0
-                    ? null
-                    : {
-                          tag: "defs",
-                          attributes: {},
-                          children: markerDefs,
-                      },
-                {
-                    tag: "path",
-                    attributes,
-                    children: [],
-                },
-            ],
+        const pathElement: SVGShape = {
+            tag: "path",
+            attributes,
+            children: [],
+            transform: transforms.join(" "),
+            definitions: markerDefs,
             preview: { x: minX + translateX, y: minY + translateY, w: maxX - minX, h: maxY - minY },
         };
 

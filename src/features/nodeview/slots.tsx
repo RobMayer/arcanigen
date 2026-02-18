@@ -7,7 +7,7 @@ import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { DataTypes, NodeDefinitions } from "../../definitions/betterTypes";
 import { Flavour } from "../../components/types";
-import { SVGObject } from "../../types";
+import { SVGShape } from "../../types";
 import { renderSVGObject } from "../svgcanvas";
 import { Color } from "../../definitions/datatypes/color";
 
@@ -45,7 +45,7 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     );
 };
 
-export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObject | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Use<"color">> }) => {
+export const ShapePreview = styled(({ shape, className, color }: { shape: SVGShape | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Use<"color">> }) => {
     const contents = useMemo(() => {
         if (shape) {
             return renderSVGObject(shape, "preview");

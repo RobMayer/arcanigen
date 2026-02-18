@@ -503,36 +503,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
-                    !markerShape
-                        ? null
-                        : {
-                              tag: "defs",
-                              attributes: {},
-                              children: [
-                                  {
-                                      tag: "marker",
-                                      attributes: {
-                                          id: `marker_${node.id}`,
-                                          markerUnits: "userSpaceOnUse",
-                                          markerWidth: "100%",
-                                          markerHeight: "100%",
-                                          overflow: "visible",
-                                          orient: markerAlign ? "auto-start-reverse" : undefined,
-                                      },
-                                      children: [markerShape],
-                                  },
-                              ],
-                          },
-                    {
-                        tag: "path",
-                        attributes,
-                        children: [],
-                    },
+                tag: "path",
+                attributes,
+                children: [],
+                transform: transforms.join(" "),
+                definitions: [
+                    markerShape
+                        ? {
+                              tag: "marker",
+                              attributes: {
+                                  id: `marker_${node.id}`,
+                                  markerUnits: "userSpaceOnUse",
+                                  markerWidth: "100%",
+                                  markerHeight: "100%",
+                                  overflow: "visible",
+                                  orient: markerAlign ? "auto-start-reverse" : undefined,
+                              },
+                              children: [markerShape],
+                          }
+                        : null,
                 ],
                 preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO },
             },

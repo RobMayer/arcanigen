@@ -15,7 +15,7 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
-import { SVGObject } from "../../../types";
+import { SVGDefinition } from "../../../types";
 
 export type ArcDefinition = {
     inputs: {
@@ -304,7 +304,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
 
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const markerDefs: SVGObject[] = [];
+        const markerDefs: SVGDefinition[] = [];
         if (useStartMarker) {
             markerDefs.push({
                 tag: "marker",
@@ -334,31 +334,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
             });
         }
 
-        const pathElement: SVGObject = {
-            tag: "g",
-            attributes: {
-                transform: transforms.join(" "),
-            },
-            children: [
-                markerDefs.length === 0
-                    ? null
-                    : {
-                          tag: "defs",
-                          attributes: {},
-                          children: markerDefs,
-                      },
-                {
-                    tag: "path",
-                    attributes,
-                    children: [],
-                },
-            ],
-            preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
-        };
-
         return {
             kind: "shape",
-            data: pathElement,
+            data: {
+                tag: "path",
+                transform: transforms.join(" "),
+                attributes,
+                definitions: markerDefs,
+                preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
+            },
         };
     }
 

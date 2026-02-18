@@ -141,17 +141,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
-                    {
-                        tag: "path",
-                        attributes,
-                        children: [],
-                    },
-                ],
+                transform: transforms.join(" "),
+                tag: "path",
+                attributes,
+                children: [],
                 preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
             },
         };

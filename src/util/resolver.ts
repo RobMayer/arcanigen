@@ -1,4 +1,4 @@
-import { SVGObject } from "../types";
+import { SVGShape } from "../types";
 import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -41,7 +41,6 @@ export namespace Resolver {
 
     export type Context = {
         graphId: string;
-        define: (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => void;
         resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
         subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
@@ -58,20 +57,12 @@ export namespace Resolver {
             originY: number;
             background: string;
         };
-        definitions: SVGObject[];
-        contents: SVGObject | null;
+        contents: SVGShape | null;
     };
 
     export const evaluateRootResult = (state: State): RootResult => {
-        const definitions: SVGObject[] = [];
-
-        const define = (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => {
-            definitions.push(def.data);
-        };
-
         const context: Context = {
             graphId: "root",
-            define,
             getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
             resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const links = ArcaneGraph.linksTo({ nodes: state.nodes["root"], links: state.links["root"] }, nodeId, inSocket);
@@ -86,7 +77,7 @@ export namespace Resolver {
                 return evaluateNodeOutput<K>(state, "root", theLink.fromNode, theLink.fromSocket, context);
             },
             subgraph: (subgraphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
-                return evaluateSubgraph(state, subgraphId, inputs, define);
+                return evaluateSubgraph(state, subgraphId, inputs);
             },
         };
 
@@ -95,7 +86,6 @@ export namespace Resolver {
         if (!resultNode) {
             return {
                 canvas: { width: 800, height: 800, originX: 0, originY: 0, background: Color.toHex({ r: 1, g: 1, b: 1, a: 1 }) },
-                definitions: [],
                 contents: null,
             };
         }
@@ -115,7 +105,6 @@ export namespace Resolver {
 
         return {
             canvas: { width, height, originX: width / 2 + originX, originY: height / 2 + originY, background },
-            definitions,
             contents,
         };
     };
@@ -124,7 +113,6 @@ export namespace Resolver {
         state: State,
         subgraphId: GraphId,
         inputs: { [key: string]: DataTypes.AnyEval | null },
-        define: (def: DataTypes.EvalOf<DataTypes.Use<"shape">>) => void,
     ): { [key: string]: DataTypes.AnyEval | null } => {
         const subgraphNodes = state.nodes[subgraphId];
         const subgraphLinks = state.links[subgraphId];
@@ -135,7 +123,6 @@ export namespace Resolver {
         // Create a context for evaluating within the subgraph
         const subContext: Context = {
             graphId: subgraphId,
-            define,
             getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
             getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
                 return inputs[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
@@ -153,7 +140,7 @@ export namespace Resolver {
             },
             subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
                 // Recursively evaluate nested subgraphs
-                return evaluateSubgraph(state, nestedGraphId, nestedInputs, define);
+                return evaluateSubgraph(state, nestedGraphId, nestedInputs);
             },
         };
 

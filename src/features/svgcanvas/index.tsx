@@ -1,42 +1,46 @@
 import { ReactNode, useMemo, useRef } from "react";
 import { Project } from "../../state/project";
-import { SVGObject } from "../../types";
+import { SVGDefinition, SVGMember, SVGShape } from "../../types";
 import { Resolver } from "../../util/resolver";
 import styled from "styled-components";
 import { DragPane, DragPaneControls } from "../../components/wrappers/DragPane";
 
-export const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode => {
-    const { tag, attributes, children, style } = obj;
-    const childNodes = children.flatMap((child, i) => (child ? [renderSVGObject(child, i)] : []));
+type SVGRenderable = SVGShape | SVGMember | SVGDefinition;
+
+export const renderSVGObject = (obj: SVGRenderable, key: string | number): ReactNode => {
+    const { tag, attributes, style } = obj;
+    const childNodes = (obj.children ?? []).flatMap((child, i) => (child ? [renderSVGObject(child, i)] : []));
+
+    // Render inline definitions from SVGShape
+    let defsNode: ReactNode = null;
+    if ("definitions" in obj && obj.definitions) {
+        const defChildren = obj.definitions.flatMap((def, i) => (def ? [renderSVGObject(def, `def-${i}`)] : []));
+        if (defChildren.length > 0) {
+            defsNode = <defs key="defs">{defChildren}</defs>;
+        }
+    }
+
+    // Apply transform from SVGShape
+    const transform = "transform" in obj ? obj.transform : undefined;
+    const allAttrs = transform ? { ...attributes, transform } : attributes;
 
     switch (tag) {
         case "g":
             return (
-                <g key={key} {...attributes} style={style}>
+                <g key={key} {...allAttrs} style={style}>
+                    {defsNode}
                     {childNodes}
                 </g>
             );
         case "path":
-            return <path key={key} {...attributes} style={style} />;
+            return <path key={key} {...allAttrs} style={style} />;
         case "line":
-            return <line key={key} {...attributes} style={style} />;
+            return <line key={key} {...allAttrs} style={style} />;
         case "rect":
-            return <rect key={key} {...attributes} style={style} />;
-        case "svg":
-            return (
-                <svg key={key} {...attributes} style={style}>
-                    {childNodes}
-                </svg>
-            );
-        case "defs":
-            return (
-                <defs key={key} {...attributes} style={style}>
-                    {childNodes}
-                </defs>
-            );
+            return <rect key={key} {...allAttrs} style={style} />;
         case "marker":
             return (
-                <marker key={key} {...attributes} style={style}>
+                <marker key={key} {...allAttrs} style={style}>
                     {childNodes}
                 </marker>
             );

@@ -265,17 +265,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
-                    {
-                        tag: "path" as const,
-                        attributes,
-                        children: [],
-                    },
-                ],
+                transform: transforms.join(" "),
+                tag: "path",
+                attributes,
+                children: [],
                 preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
         };

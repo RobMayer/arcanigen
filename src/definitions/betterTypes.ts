@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { SVGObject } from "../types";
+import { SVGPath, SVGShape } from "../types";
 import { EmptyOr } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
@@ -8,9 +8,6 @@ import { Resolver } from "../util/resolver";
 import { SubgraphDeps } from "../util/cycleDetection";
 import { Flavour } from "../components/types";
 import { InterfaceMember } from "../state/project/types";
-
-export type { SubgraphDeps };
-export type AllDeps = { [graphId: string]: SubgraphDeps };
 import { ResultDefinition, ResultNodeType } from "./nodes/resultNode";
 import { AngleDefinition, AnglePrimitiveType } from "./nodes/primitives/angleNode";
 import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNode";
@@ -71,6 +68,9 @@ import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
 import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
 import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
 import { FloodFillDefinition, FloodFillNodeType } from "./nodes/shapes/floodFillNode";
+
+export type { SubgraphDeps };
+export type AllDeps = { [graphId: string]: SubgraphDeps };
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -221,18 +221,20 @@ namespace Registries {
         boolean: boolean;
 
         length: EmptyOr<Length.Type>;
-        shape: SVGObject;
+        shape: SVGShape;
+        path: SVGPath;
         color: Color.Type;
         "tokens<length>": string;
         distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
-        layer: { shape: SVGObject | null; enabled: boolean | null; blend: number | null };
-        "array<layer>": { shape: SVGObject | null; enabled: boolean | null; blend: number | null }[];
+        layer: { shape: SVGShape | null; enabled: boolean | null; blend: number | null };
+        "array<layer>": { shape: SVGShape | null; enabled: boolean | null; blend: number | null }[];
     };
 
     export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {
         string: "String",
         length: "Length",
         shape: "Shape",
+        path: "Path",
         float: "Float",
         integer: "Integer",
         color: "Color",

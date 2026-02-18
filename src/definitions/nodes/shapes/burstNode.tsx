@@ -17,7 +17,7 @@ import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
 import { Stylings, Transforms } from "./abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { SVGObject } from "../../../types";
+import { SVGDefinition, SVGMember } from "../../../types";
 
 export type BurstDefinition = {
     inputs: {
@@ -333,7 +333,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
 
         // Generate line elements
         const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
-        const lines: SVGObject[] = [];
+        const lines: SVGMember[] = [];
         for (let i = 0; i < N; i++) {
             const coeff = delerp(i, 0, denominator);
             const angle = thetaMode === Enum.Common.thetaMode.StartStop ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
@@ -347,12 +347,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
                     x2: `${rO * c}`,
                     y2: `${rO * s}`,
                 },
-                children: [],
             });
         }
 
         // Stroke + marker attributes go on the parent <g>, inherited by each <line>
-        const groupAttributes: Record<string, string | undefined> = {
+        const attributes: Record<string, string | undefined> = {
             ...Stylings.evaluate(node, context),
             markerStart: markerStartShape ? `url('#marker_start_${node.id}')` : undefined,
             markerEnd: markerEndShape ? `url('#marker_end_${node.id}')` : undefined,
@@ -360,59 +359,45 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
 
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const hasAnyMarker = !!markerStartShape || !!markerEndShape;
-        const markerDefs: SVGObject | null = hasAnyMarker
-            ? {
-                  tag: "defs",
-                  attributes: {},
-                  children: [
-                      markerStartShape
-                          ? {
-                                tag: "marker" as const,
-                                attributes: {
-                                    id: `marker_start_${node.id}`,
-                                    markerUnits: "userSpaceOnUse",
-                                    markerWidth: "100%",
-                                    markerHeight: "100%",
-                                    overflow: "visible",
-                                    orient: markerAlign ? "auto-start-reverse" : undefined,
-                                },
-                                children: [markerStartShape],
-                            }
-                          : null,
-                      markerEndShape
-                          ? {
-                                tag: "marker" as const,
-                                attributes: {
-                                    id: `marker_end_${node.id}`,
-                                    markerUnits: "userSpaceOnUse",
-                                    markerWidth: "100%",
-                                    markerHeight: "100%",
-                                    overflow: "visible",
-                                    orient: markerAlign ? "auto-start-reverse" : undefined,
-                                },
-                                children: [markerEndShape],
-                            }
-                          : null,
-                  ],
-              }
-            : null;
+        const markerDefs: (SVGDefinition | null)[] = [
+            markerStartShape
+                ? {
+                      tag: "marker" as const,
+                      attributes: {
+                          id: `marker_start_${node.id}`,
+                          markerUnits: "userSpaceOnUse",
+                          markerWidth: "100%",
+                          markerHeight: "100%",
+                          overflow: "visible",
+                          orient: markerAlign ? "auto-start-reverse" : undefined,
+                      },
+                      children: [markerStartShape],
+                  }
+                : null,
+            markerEndShape
+                ? {
+                      tag: "marker" as const,
+                      attributes: {
+                          id: `marker_end_${node.id}`,
+                          markerUnits: "userSpaceOnUse",
+                          markerWidth: "100%",
+                          markerHeight: "100%",
+                          overflow: "visible",
+                          orient: markerAlign ? "auto-start-reverse" : undefined,
+                      },
+                      children: [markerEndShape],
+                  }
+                : null,
+        ];
 
         return {
             kind: "shape",
             data: {
                 tag: "g",
-                attributes: {
-                    transform: transforms.join(" "),
-                },
-                children: [
-                    markerDefs,
-                    {
-                        tag: "g",
-                        attributes: groupAttributes,
-                        children: lines,
-                    },
-                ],
+                transform: transforms.join(" "),
+                attributes,
+                definitions: markerDefs,
+                children: lines,
                 preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
         };
