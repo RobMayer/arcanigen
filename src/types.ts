@@ -27,9 +27,10 @@ type SVGDefinition = {
 };
 
 // top-level element out of a node's output socket - note the forced inclusion of preview, transform, and type.
-type SVGShape = {
+export type SVGShape = {
     tag: "g" | "path" | "line" | "rect";
-    children: (SVGElement | SVGShape | null)[];
+    children?: (SVGElement | SVGShape | null)[];
+    attributes: { [key: string]: string | undefined };
     style?: { [key: string]: string };
     preview: { x: number; y: number; w: number; h: number };
     transform: string; // maybe a string[] instead?
@@ -37,7 +38,7 @@ type SVGShape = {
 };
 
 // will be used in new datatype: path. used in eventual textPath node, alongPath node, etc.
-type SVGPath = {
+export type SVGPath = {
     d: string;
     transform: string;
     id: string;
