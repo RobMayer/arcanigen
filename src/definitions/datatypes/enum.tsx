@@ -42,6 +42,11 @@ export namespace Enum {
             Circumscribe: 2,
         } as const;
 
+        export const expandMode = {
+            Point: 0,
+            Edge: 1,
+        } as const;
+
         export const positionMode = {
             Cartesian: 0,
             Polar: 1,

@@ -63,6 +63,8 @@ import { LogicalXnorDefinition, LogicalXnorNodeType } from "./nodes/logic/logica
 import { RingDefinition, RingNodeType } from "./nodes/shapes/ringNode";
 import { RectangleDefinition, RectangleNodeType } from "./nodes/shapes/rectangleNode";
 import { PolygramDefinition, PolygramNodeType } from "./nodes/shapes/polygramNode";
+import { PolyringDefinition, PolyringNodeType } from "./nodes/shapes/polyringNode";
+import { KnotDefinition, KnotNodeType } from "./nodes/shapes/knotNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -78,6 +80,8 @@ namespace Registries {
         polygram: PolygramDefinition;
         ring: RingDefinition;
         rectangle: RectangleDefinition;
+        polyring: PolyringDefinition;
+        knot: KnotDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -138,6 +142,8 @@ namespace Registries {
         polygon: PolygonNodeType,
         polygram: PolygramNodeType,
         ring: RingNodeType,
+        polyring: PolyringNodeType,
+        knot: KnotNodeType,
         rectangle: RectangleNodeType,
 
         layerCompose: LayerComposeNodeType,

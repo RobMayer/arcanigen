@@ -16,7 +16,7 @@ const GroupBase = styled.div`
     padding: 1px;
     border: 1px solid var(--flavour);
     display: grid;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: auto;
     grid-auto-rows: 1fr;
     grid-auto-flow: row;
     &[data-orientation="horizontal"] {
