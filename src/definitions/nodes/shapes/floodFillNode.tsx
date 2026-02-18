@@ -1,0 +1,118 @@
+import { nanoid } from "nanoid";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { Resolver } from "../../../util/resolver";
+import { ReactNode, useCallback } from "react";
+
+import { TypicalNode } from "../../../features/nodeview/node";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { Project } from "../../../state/project";
+import { Color } from "../../datatypes/color";
+import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
+
+export type FloodFillDefinition = {
+    inputs: {
+        fillColor: DataTypes.Use<"color">;
+    };
+    outputs: {
+        output: DataTypes.Use<"shape">;
+    };
+    payload: {
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        fillColor: DataTypes.TypeOf<DataTypes.Use<"color">>;
+    };
+};
+
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<FloodFillDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floodFill", FloodFillDefinition> => {
+    return {
+        id,
+        in: {
+            fillColor: null,
+        },
+        out: {
+            output: [],
+        },
+        payload: {
+            label: "",
+            fillColor: { r: 1, g: 1, b: 1, a: 1 },
+        },
+        type: "floodFill",
+    };
+};
+
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloodFillDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<FloodFillDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
+
+    return (
+        <TypicalNode node={node} methods={methods}>
+            <SocketOut node={node} socketId={"output"} type={"shape"}>
+                Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"fillColor"} type={"color"} label={"Color"}>
+                <ColorHexInput value={node.payload.fillColor} onCommit={(fillColor) => handleUpdate({ fillColor })} disabled={node.in.fillColor !== null} nullable alpha />
+            </SocketIn>
+        </TypicalNode>
+    );
+};
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, _outSocket: keyof FloodFillDefinition["outputs"], _deps: AllDeps): (keyof FloodFillDefinition["inputs"])[] => {
+    return ["fillColor"];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, _inSocket: keyof FloodFillDefinition["inputs"], _deps: AllDeps): (keyof FloodFillDefinition["outputs"])[] => {
+    return ["output"];
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<FloodFillDefinition>, socket: keyof FloodFillDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "output") {
+        const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
+
+        if (fillColor === null) {
+            return null;
+        }
+
+        return {
+            kind: "shape",
+            data: {
+                tag: "rect",
+                attributes: {
+                    x: "-50%",
+                    y: "-50%",
+                    width: "200%",
+                    height: "200%",
+                    fill: Color.toHex(fillColor),
+                },
+                children: [],
+            },
+        };
+    }
+
+    return null;
+};
+
+const FLOOD_FILL_SOCKET_TYPES: Record<string, string> = {
+    fillColor: "color",
+    output: "shape",
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, socketId: string, _side: "in" | "out"): string => FLOOD_FILL_SOCKET_TYPES[socketId] ?? "float";
+
+export const FloodFillNodeType: NodeTypes.Type<"floodFill", FloodFillDefinition> = {
+    type: "floodFill",
+    displayName: "Flood Fill",
+    defaultLabel: "Flood Fill",
+    iconNode: <Icon shape={NODE_ICONS.floodFill.Item} color={"var(--icon-flavour)"} />,
+    iconCard: <Icon shape={NODE_ICONS.floodFill.Card} color={"var(--icon-flavour)"} />,
+    category: "Shapes",
+    create,
+    dependsOn,
+    contributesTo,
+    evaluate,
+    Controls,
+    getSocketType,
+};

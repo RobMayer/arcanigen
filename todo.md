@@ -28,9 +28,9 @@
 
 - [x] more input/output node types
 - [ ] more shapes (to convert from previous app)
-    - [ ] Arc (has a bug in the old implementation)
-    - [ ] Spiral
-    - [ ] Line
+    - [x] Arc (has a bug in the old implementation)
+    - [x] Spiral
+    - [x] Line
     - [ ] Flood Fill
     - [ ] Custom Glyph
     - [ ] Text Path (ugh)

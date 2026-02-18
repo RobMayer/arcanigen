@@ -69,6 +69,8 @@ import { StarDefinition, StarNodeType } from "./nodes/shapes/starNode";
 import { BurstDefinition, BurstNodeType } from "./nodes/shapes/burstNode";
 import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
 import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
+import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
+import { FloodFillDefinition, FloodFillNodeType } from "./nodes/shapes/floodFillNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -90,6 +92,8 @@ namespace Registries {
         burst: BurstDefinition;
         arc: ArcDefinition;
         spiral: SpiralDefinition;
+        line: LineDefinition;
+        floodFill: FloodFillDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -157,6 +161,8 @@ namespace Registries {
         rectangle: RectangleNodeType,
         arc: ArcNodeType,
         spiral: SpiralNodeType,
+        line: LineNodeType,
+        floodFill: FloodFillNodeType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
