@@ -65,6 +65,7 @@ import { RectangleDefinition, RectangleNodeType } from "./nodes/shapes/rectangle
 import { PolygramDefinition, PolygramNodeType } from "./nodes/shapes/polygramNode";
 import { PolyringDefinition, PolyringNodeType } from "./nodes/shapes/polyringNode";
 import { KnotDefinition, KnotNodeType } from "./nodes/shapes/knotNode";
+import { StarDefinition, StarNodeType } from "./nodes/shapes/starNode";
 
 /* ============================================================================
    INTERNAL - Shared across namespaces but not exported
@@ -82,6 +83,7 @@ namespace Registries {
         rectangle: RectangleDefinition;
         polyring: PolyringDefinition;
         knot: KnotDefinition;
+        star: StarDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -144,6 +146,7 @@ namespace Registries {
         ring: RingNodeType,
         polyring: PolyringNodeType,
         knot: KnotNodeType,
+        star: StarNodeType,
         rectangle: RectangleNodeType,
 
         layerCompose: LayerComposeNodeType,
