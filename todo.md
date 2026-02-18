@@ -26,7 +26,10 @@
 
 # tasks that will get completed as the system gets fleshed out
 
-- [ ] more input/output node types
+- [x] more input/output node types
+- [ ] more shapes
+    - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
+    - [ ] Banded Burst (circle, polygon, and polygram are to ring, polyring, and knot as burst is to this)
 
 # componnet improvements
 

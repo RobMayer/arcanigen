@@ -18,6 +18,8 @@ export const renderSVGObject = (obj: SVGObject, key: string | number): ReactNode
             );
         case "path":
             return <path key={key} {...attributes} style={style} />;
+        case "line":
+            return <line key={key} {...attributes} style={style} />;
         case "svg":
             return (
                 <svg key={key} {...attributes} style={style}>

@@ -3,7 +3,7 @@ import { DetailedHTMLProps, HTMLAttributes } from "react";
 export type Measure<U extends string> = `${number}${U}`;
 
 export type SVGObject = {
-    tag: "g" | "path" | "svg" | "defs" | "marker";
+    tag: "g" | "path" | "line" | "svg" | "defs" | "marker";
     children: (SVGObject | null)[];
     attributes: { [key: string]: string | undefined };
     style?: { [key: string]: string };

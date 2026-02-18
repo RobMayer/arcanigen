@@ -337,9 +337,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const markerEndShape = context.resolve<"shape">(node.id, "markerEnd")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        // Generate spur paths
+        // Generate line elements
         const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
-        const spurs: string[] = [];
+        const lines: SVGObject[] = [];
         for (let i = 0; i < N; i++) {
             const coeff = delerp(i, 0, denominator);
             const angle =
@@ -348,13 +348,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
                     : lerp(coeff, 0, N * thetaSteps, distroLerper);
             const c = Math.cos(deg2rad(angle - 90));
             const s = Math.sin(deg2rad(angle - 90));
-            spurs.push(`M ${rI * c},${rI * s} L ${rO * c},${rO * s}`);
+            lines.push({
+                tag: "line",
+                attributes: {
+                    x1: `${rI * c}`,
+                    y1: `${rI * s}`,
+                    x2: `${rO * c}`,
+                    y2: `${rO * s}`,
+                },
+                children: [],
+            });
         }
 
-        const d = spurs.join(" ");
-
-        const attributes: Record<string, string | undefined> = {
-            d,
+        // Stroke + marker attributes go on the parent <g>, inherited by each <line>
+        const groupAttributes: Record<string, string | undefined> = {
             ...Stylings.evaluate(node, context),
             markerStart: markerStartShape ? `url('#marker_start_${node.id}')` : undefined,
             markerEnd: markerEndShape ? `url('#marker_end_${node.id}')` : undefined,
@@ -410,9 +417,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
                 children: [
                     markerDefs,
                     {
-                        tag: "path",
-                        attributes,
-                        children: [],
+                        tag: "g",
+                        attributes: groupAttributes,
+                        children: lines,
                     },
                 ],
                 preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
