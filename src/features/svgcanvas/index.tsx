@@ -24,20 +24,25 @@ export const renderSVGObject = (obj: SVGRenderable, key: string | number): React
     const transform = "transform" in obj ? obj.transform : undefined;
     const allAttrs = transform ? { ...attributes, transform } : attributes;
 
+    let element: ReactNode;
     switch (tag) {
         case "g":
-            return (
+            element = (
                 <g key={key} {...allAttrs} style={style}>
                     {defsNode}
                     {childNodes}
                 </g>
             );
+            return element;
         case "path":
-            return <path key={key} {...allAttrs} style={style} />;
+            element = <path key={key} {...allAttrs} style={style} />;
+            break;
         case "line":
-            return <line key={key} {...allAttrs} style={style} />;
+            element = <line key={key} {...allAttrs} style={style} />;
+            break;
         case "rect":
-            return <rect key={key} {...allAttrs} style={style} />;
+            element = <rect key={key} {...allAttrs} style={style} />;
+            break;
         case "marker":
             return (
                 <marker key={key} {...allAttrs} style={style}>
@@ -45,6 +50,17 @@ export const renderSVGObject = (obj: SVGRenderable, key: string | number): React
                 </marker>
             );
     }
+
+    // Wrap leaf elements in a <g> if they carry definitions
+    if (defsNode) {
+        return (
+            <g key={key}>
+                {defsNode}
+                {element}
+            </g>
+        );
+    }
+    return element;
 };
 
 type SvgCanvasProps = {
