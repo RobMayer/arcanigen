@@ -8,6 +8,8 @@ import { InterfaceMember, flattenSockets, parseInterface } from "../state/projec
 export namespace Resolver {
     export namespace EnumMappings {
         export const strokeCap = ["butt", "square", "round"] as const;
+        export const strokeJoin = ["miter", "bevel", "round"] as const;
+        export const paintOrder = ["fill stroke markers", "fill markers stroke", "stroke fill markers", "stroke markers fill", "markers fill stroke", "markers stroke fill"] as const;
         export const blendMode = [
             "normal",
             "multiply",

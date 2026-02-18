@@ -62,12 +62,12 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: SVGObj
 
     if (!shape || !contents) return <div className={className} />;
 
-    const { x, y, w, h } = shape.preview;
+    const { x, y, w, h } = shape.preview ?? { x: 0, y: 0, w: 0, h: 0 };
     const pad = Math.max(w, h) * 0.05;
 
     return (
         <div className={className} style={style}>
-            <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>{contents}</svg>
+            {pad === 0 ? null : <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>{contents}</svg>}
         </div>
     );
 })`

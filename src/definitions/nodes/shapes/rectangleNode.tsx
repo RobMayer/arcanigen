@@ -6,12 +6,14 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings, Transforms } from "./abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
+import { CheckBox } from "../../../components/buttons/CheckBox";
+import { SVGObject } from "../../../types";
 
 export type RectangleDefinition = {
     inputs: {
@@ -19,6 +21,8 @@ export type RectangleDefinition = {
         height: DataTypes.Use<"length">;
         cornerRadius: DataTypes.Use<"length">;
         cornerShape: DataTypes.Use<"enum">;
+        markerShape: DataTypes.Use<"shape">;
+        markerAlign: DataTypes.Use<"boolean">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
@@ -30,6 +34,7 @@ export type RectangleDefinition = {
         height: DataTypes.TypeOf<DataTypes.Use<"length">>;
         cornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
         cornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     } & Stylings.Definition["payload"] &
         Transforms.Definition["payload"];
 };
@@ -42,12 +47,18 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RectangleDefinition
             height: null,
             cornerRadius: null,
             cornerShape: null,
+
+            markerShape: null,
+            markerAlign: null,
+
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
             strokeDashOffset: null,
             strokeCap: null,
+            strokeJoin: null,
             fillColor: null,
+            paintOrder: null,
             // transforms
             positionMode: null,
             positionX: null,
@@ -65,14 +76,17 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RectangleDefinition
             height: "100px",
             cornerRadius: "0px",
             cornerShape: 0,
+            markerAlign: false,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.Butt,
+            strokeJoin: Enum.Common.strokeJoin.Miter,
             // fill
             fillColor: null,
+            paintOrder: 0,
             // transforms
             positionMode: Enum.Common.positionMode.Cartesian,
             positionX: "0px",
@@ -106,19 +120,31 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
             <SocketIn node={node} socketId={"height"} type={"length"} label={"Height"}>
                 <LengthInput value={node.payload.height} onCommit={(height) => handleUpdate({ height })} disabled={node.in.height !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"cornerRadius"} type={"length"} label={"Corner Radius"}>
-                <LengthInput value={node.payload.cornerRadius} onCommit={(cornerRadius) => handleUpdate({ cornerRadius })} disabled={node.in.cornerRadius !== null} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"cornerShape"} type={"enum"} label={"Corner Shape"}>
-                <RadioButton.Group
-                    value={`${node.payload.cornerShape}`}
-                    options={CORNER_SHAPE_OPTIONS}
-                    onValue={(v) => handleUpdate({ cornerShape: Number(v) })}
-                    disabled={node.in.cornerShape !== null}
-                />
-            </SocketIn>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <NodeAccordion label={"More"} socketsIn={"rScribe|cornerRadius|cornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"cornerRadius"} type={"length"} label={"Corner Radius"}>
+                    <LengthInput value={node.payload.cornerRadius} onCommit={(cornerRadius) => handleUpdate({ cornerRadius })} disabled={node.in.cornerRadius !== null} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"cornerShape"} type={"enum"} label={"Corner Shape"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.cornerShape}`}
+                        options={CORNER_SHAPE_OPTIONS}
+                        onValue={(v) => handleUpdate({ cornerShape: Number(v) })}
+                        disabled={node.in.cornerShape !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"markerShape"} type={"shape"}>
+                    Markers
+                </SocketIn>
+                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                    <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
+                        Align Markers
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
+
+            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
@@ -131,12 +157,16 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, _outSock
         "height",
         "cornerRadius",
         "cornerShape",
+        "markerShape",
+        "markerAlign",
         "strokeWidth",
         "strokeColor",
         "strokeCap",
+        "strokeJoin",
         "strokeDash",
         "strokeDashOffset",
         "fillColor",
+        "paintOrder",
         "positionMode",
         "positionX",
         "positionY",
@@ -160,6 +190,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         if (!width || !height) {
             return null;
         }
+
+        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
+        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const hw = width / 2;
         const hh = height / 2;
@@ -196,42 +229,56 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
                     tlCorner = `L ${-hw + r},${-hh}`;
                     break;
             }
-            d = `M ${-hw + r},${-hh} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} L ${-hw},${-hh + r} ${tlCorner} z`;
+            d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} Z`;
         }
 
-        const attributes: Record<string, string> = {
+        const attributes: Record<string, string | undefined> = {
             d,
             ...Stylings.evaluate(node, context),
+            markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
+            markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
         };
 
         // Build transform string
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const pathPreview = { x: -hw, y: -hh, w: width, h: height };
+        const diag = Math.sqrt(width * width + height * height);
+        const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
 
-        const pathElement = {
-            tag: "path" as const,
-            attributes,
-            children: [],
+        const pathElement: SVGObject = {
+            tag: "g",
+            attributes: {
+                transform: transforms.join(" "),
+            },
+            children: [
+                !markerShape
+                    ? null
+                    : {
+                          tag: "defs",
+                          attributes: {},
+                          children: [
+                              {
+                                  tag: "marker",
+                                  attributes: {
+                                      id: `marker_${node.id}`,
+                                      markerUnits: "userSpaceOnUse",
+                                      markerWidth: "100%",
+                                      markerHeight: "100%",
+                                      overflow: "visible",
+                                      orient: markerAlign ? "auto-start-reverse" : undefined,
+                                  },
+                                  children: [markerShape],
+                              },
+                          ],
+                      },
+                {
+                    tag: "path",
+                    attributes,
+                    children: [],
+                },
+            ],
             preview: pathPreview,
         };
-
-        // If we have transforms, wrap in a <g> element
-        if (transforms.length > 0) {
-            const diag = Math.sqrt(width * width + height * height);
-
-            return {
-                kind: "shape",
-                data: {
-                    tag: "g",
-                    attributes: {
-                        transform: transforms.join(" "),
-                    },
-                    children: [pathElement],
-                    preview: { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag },
-                },
-            };
-        }
 
         return {
             kind: "shape",
@@ -247,12 +294,16 @@ const RECTANGLE_SOCKET_TYPES: Record<string, string> = {
     height: "length",
     cornerRadius: "length",
     cornerShape: "enum",
+    markerShape: "shape",
+    markerAlign: "boolean",
     strokeWidth: "length",
     strokeColor: "color",
     strokeCap: "enum",
+    strokeJoin: "enum",
     strokeDash: "tokens<length>",
     strokeDashOffset: "length",
     fillColor: "color",
+    paintOrder: "enum",
     positionMode: "enum",
     positionX: "length",
     positionY: "length",

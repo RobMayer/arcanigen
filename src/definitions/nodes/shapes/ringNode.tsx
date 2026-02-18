@@ -55,6 +55,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
             strokeDashOffset: null,
             strokeCap: null,
             fillColor: null,
+            paintOrder: null,
             // transforms
             positionMode: null,
             positionX: null,
@@ -84,6 +85,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
             strokeCap: Enum.Common.strokeCap.Butt,
             // fill
             fillColor: null,
+            paintOrder: 0,
             // transforms
             positionMode: Enum.Common.positionMode.Cartesian,
             positionX: "0px",
@@ -195,6 +197,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RingDefinition>, _outSocket: k
         "strokeDash",
         "strokeDashOffset",
         "fillColor",
+        "paintOrder",
         "positionMode",
         "positionX",
         "positionY",
@@ -259,33 +262,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
         // Build transform string
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const pathPreview = { x: -rO, y: -rO, w: 2 * rO, h: 2 * rO };
-
-        const pathElement = {
-            tag: "path" as const,
-            attributes,
-            children: [],
-            preview: pathPreview,
-        };
-
-        // If we have transforms, wrap in a <g> element
-        if (transforms.length > 0) {
-            return {
-                kind: "shape",
-                data: {
-                    tag: "g",
-                    attributes: {
-                        transform: transforms.join(" "),
-                    },
-                    children: [pathElement],
-                    preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
-                },
-            };
-        }
-
         return {
             kind: "shape",
-            data: pathElement,
+            data: {
+                tag: "g",
+                attributes: {
+                    transform: transforms.join(" "),
+                },
+                children: [
+                    {
+                        tag: "path" as const,
+                        attributes,
+                        children: [],
+                    },
+                ],
+                preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
+            },
         };
     }
 
@@ -305,6 +297,7 @@ const RING_SOCKET_TYPES: Record<string, string> = {
     strokeDash: "tokens<length>",
     strokeDashOffset: "length",
     fillColor: "color",
+    paintOrder: "enum",
     positionMode: "enum",
     positionX: "length",
     positionY: "length",

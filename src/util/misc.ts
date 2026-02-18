@@ -85,3 +85,16 @@ export const lerp = (t: number, a: number, b: number, interpolator: Interpolator
 export const delerp = (d: number, start: number, end: number) => {
     return end - start === 0 ? 0 : (d - start) / (end - start);
 };
+
+export const gcd = (a: number, b: number) => {
+    a = Math.abs(a);
+    b = Math.abs(b);
+
+    while (b !== 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+    }
+
+    return a;
+};

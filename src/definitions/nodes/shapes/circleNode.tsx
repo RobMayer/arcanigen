@@ -38,6 +38,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>,
             strokeDashOffset: null,
             strokeCap: null,
             fillColor: null,
+            paintOrder: null,
             // transforms
             positionMode: null,
             positionX: null,
@@ -60,6 +61,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>,
             strokeCap: Enum.Common.strokeCap.Butt,
             // fill
             fillColor: null,
+            paintOrder: 0,
             // transforms
             positionMode: Enum.Common.positionMode.Cartesian,
             positionX: "0px",
@@ -105,6 +107,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _outSocket:
         "strokeDash",
         "strokeDashOffset",
         "fillColor",
+        "paintOrder",
         "positionMode",
         "positionX",
         "positionY",
@@ -134,33 +137,23 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         // Build transform string
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-        const pathPreview = { x: -radius, y: -radius, w: 2 * radius, h: 2 * radius };
-
-        const pathElement = {
-            tag: "path" as const,
-            attributes,
-            children: [],
-            preview: pathPreview,
-        };
-
         // If we have transforms, wrap in a <g> element
-        if (transforms.length > 0) {
-            return {
-                kind: "shape",
-                data: {
-                    tag: "g",
-                    attributes: {
-                        transform: transforms.join(" "),
-                    },
-                    children: [pathElement],
-                    preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
-                },
-            };
-        }
-
         return {
             kind: "shape",
-            data: pathElement,
+            data: {
+                tag: "g",
+                attributes: {
+                    transform: transforms.join(" "),
+                },
+                children: [
+                    {
+                        tag: "path",
+                        attributes,
+                        children: [],
+                    },
+                ],
+                preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
+            },
         };
     }
 
@@ -175,6 +168,7 @@ const CIRCLE_SOCKET_TYPES: Record<string, string> = {
     strokeDash: "tokens<length>",
     strokeDashOffset: "length",
     fillColor: "color",
+    paintOrder: "enum",
     positionMode: "enum",
     positionX: "length",
     positionY: "length",

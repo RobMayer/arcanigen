@@ -408,10 +408,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
             maxX = -Infinity,
             maxY = -Infinity;
         for (const child of children) {
-            minX = Math.min(minX, child.preview.x);
-            minY = Math.min(minY, child.preview.y);
-            maxX = Math.max(maxX, child.preview.x + child.preview.w);
-            maxY = Math.max(maxY, child.preview.y + child.preview.h);
+            minX = Math.min(minX, child.preview?.x ?? 0);
+            minY = Math.min(minY, child.preview?.y ?? 0);
+            maxX = Math.max(maxX, (child.preview?.x ?? 0) + (child.preview?.w ?? 0));
+            maxY = Math.max(maxY, (child.preview?.y ?? 0) + (child.preview?.h ?? 0));
         }
 
         return {

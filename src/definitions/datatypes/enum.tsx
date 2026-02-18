@@ -21,6 +21,21 @@ export namespace Enum {
             Round: 2,
         } as const;
 
+        export const strokeJoin = {
+            Miter: 0,
+            Bevel: 1,
+            Round: 2,
+        } as const;
+
+        export const paintOrder = {
+            FillStrokeMarkers: 0,
+            FillMarkersStroke: 1,
+            StrokeFillMarkers: 2,
+            StrokeMarkersFill: 3,
+            MarkersFillStroke: 4,
+            MarkersStrokeFill: 5,
+        } as const;
+
         export const scribeMode = {
             Inscribe: 0,
             Middle: 1,

@@ -11,9 +11,19 @@ import { Resolver } from "../../../util/resolver";
 import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
+import { Dropdown } from "../../../components/inputs/Dropdown";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
+const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
 const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
+const PAINT_ORDER_OPTIONS = [
+    { value: 0, label: "Fill > Stroke > Markers" },
+    { value: 1, label: "Fill > Markers > Stroke" },
+    { value: 2, label: "Stroke > Fill > Markers" },
+    { value: 3, label: "Stroke > Markers > Fill" },
+    { value: 4, label: "Markers > Fill > Stroke" },
+    { value: 5, label: "Markers > Stroke > Fill" },
+];
 
 export namespace Stylings {
     export type Definition = {
@@ -22,10 +32,12 @@ export namespace Stylings {
             strokeWidth: DataTypes.Use<"length">;
             strokeColor: DataTypes.Use<"color">;
             strokeCap: DataTypes.Use<"enum">;
+            strokeJoin?: DataTypes.Use<"enum">;
             strokeDash: DataTypes.Use<"tokens<length>">;
             strokeDashOffset: DataTypes.Use<"length">;
             // fill
             fillColor?: DataTypes.Use<"color">;
+            paintOrder: DataTypes.Use<"enum">;
         };
         outputs: NodeDefinitions.Generic["outputs"];
         payload: {
@@ -35,8 +47,10 @@ export namespace Stylings {
             strokeCap: DataTypes.TypeOf<DataTypes.Use<"enum">>;
             strokeDash: DataTypes.TypeOf<DataTypes.Use<"tokens<length>">>;
             strokeDashOffset: DataTypes.TypeOf<DataTypes.Use<"length">>;
+            strokeJoin?: DataTypes.TypeOf<DataTypes.Use<"enum">>;
             // fill
             fillColor?: DataTypes.TypeOf<DataTypes.Use<"color">>;
+            paintOrder: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         };
     };
 
@@ -44,15 +58,17 @@ export namespace Stylings {
         node,
         handleUpdate,
         fill = false,
+        join = false,
         accordion = false,
     }: {
         handleUpdate: (v: Partial<Definition["payload"]>) => void;
         node: NodeDefinitions.NodeFor<Definition>;
         fill?: boolean;
+        join?: boolean;
         accordion?: boolean;
     }) => {
         return (
-            <AccordionMaybe label={"Stylings"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor"}>
+            <AccordionMaybe label={"Stylings"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder"}>
                 <SocketIn node={node} socketId={"strokeColor"} type={"color"} label={"Stroke Color"}>
                     <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} nullable alpha />
                 </SocketIn>
@@ -68,6 +84,17 @@ export namespace Stylings {
                         options={STROKE_CAP_OPTIONS}
                     />
                 </SocketIn>
+                {join && "strokeJoin" in node.payload ? (
+                    <SocketIn node={node} socketId={"strokeJoin"} type={"enum"} label={"Stroke Join"}>
+                        <RadioButton.Group
+                            orientation={"horizontal"}
+                            value={`${node.payload.strokeJoin}`}
+                            onValue={(v) => handleUpdate({ strokeJoin: Number(v) })}
+                            disabled={node.in.strokeJoin !== null}
+                            options={STROKE_JOIN_OPTIONS}
+                        />
+                    </SocketIn>
+                ) : null}
                 <SocketIn node={node} socketId={"strokeDash"} type={"tokens<length>"} label={"Stroke Dash"}>
                     <TextInput value={node.payload.strokeDash} onCommit={(strokeDash) => handleUpdate({ strokeDash })} disabled={node.in.strokeDash !== null} pattern={Length.TOKENS_REGEX} />
                 </SocketIn>
@@ -79,6 +106,17 @@ export namespace Stylings {
                         <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} nullable alpha />
                     </SocketIn>
                 ) : null}
+                <SocketIn node={node} socketId={"paintOrder"} type={"enum"} label={"Paint Order"}>
+                    <Dropdown value={`${node.payload.paintOrder}`} onValue={(v) => handleUpdate({ paintOrder: Number(v) })}>
+                        {PAINT_ORDER_OPTIONS.map((each) => {
+                            return (
+                                <option value={`${each.value}`} key={`${each.value}`}>
+                                    {each.label}
+                                </option>
+                            );
+                        })}
+                    </Dropdown>
+                </SocketIn>
             </AccordionMaybe>
         );
     };
@@ -90,6 +128,7 @@ export namespace Stylings {
         const strokeColor = context.resolve<"color">(node.id, "strokeColor")?.data ?? node.payload.strokeColor;
         const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
         const strokeCap = context.resolve<"enum">(node.id, "strokeCap")?.data ?? node.payload.strokeCap;
+        const strokeJoin = context.resolve<"enum">(node.id, "strokeJoin")?.data ?? node.payload.strokeJoin ?? 0;
         const strokeDash = context.resolve<"tokens<length>">(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
         const strokeDashOffset = context.resolve<"length">(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
 
@@ -98,6 +137,8 @@ export namespace Stylings {
 
         // Map strokeCap enum to SVG linecap value
         const strokeLinecap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
+        const strokeLinejoin = Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt";
+        const paintOrder = Resolver.EnumMappings.paintOrder[context.resolve<"enum">(node.id, "paintOrder")?.data ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
 
         // Convert stroke dash to pixel values
         const strokeDasharray = strokeDash
@@ -109,10 +150,12 @@ export namespace Stylings {
             : undefined;
 
         // Add stroke attributes
+        attributes["paintOrder"] = paintOrder;
         if (strokeColor !== null) {
             attributes.stroke = Color.toHex(strokeColor);
             attributes["strokeWidth"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
             attributes["strokeLinecap"] = strokeLinecap;
+            attributes["strokeLinejoin"] = strokeLinejoin;
             if (strokeDasharray) {
                 attributes["strokeDasharray"] = strokeDasharray;
                 attributes["strokeDashoffset"] = String(Length.Emptyable.asNumber(strokeDashOffset) ?? 0);
