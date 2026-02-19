@@ -73,6 +73,8 @@ import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
 import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
+import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
+import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -146,6 +148,8 @@ namespace Registries {
         layerCompose: LayerComposeDefinition;
         layers: LayerDefinition;
         mask: MaskDefinition;
+        sequencer: SequencerDefinition;
+        polygonArray: PolygonArrayDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
         logicalNot: LogicalNotDefinition;
@@ -179,6 +183,8 @@ namespace Registries {
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
         mask: MaskNodeType,
+        sequencer: SequencerNodeType,
+        polygonArray: PolygonArrayNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
@@ -241,6 +247,7 @@ namespace Registries {
         distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
         layer: { shape: Shape | null; enabled: boolean | null; blend: number | null };
         "array<layer>": { shape: Shape | null; enabled: boolean | null; blend: number | null }[];
+        sequence: { count: number };
     };
 
     export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {
@@ -258,6 +265,7 @@ namespace Registries {
         layer: "Layer",
         "array<layer>": "Layer Array",
         distribution: "Distribution",
+        sequence: "Sequence",
     };
 
     export const NODECAT_FLAVOURS = {

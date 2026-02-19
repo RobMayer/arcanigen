@@ -226,6 +226,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="distribution"] {
         --flavour: var(--flavour-info);
     }
+    &[data-linktype~="sequence"],
     &[data-linktype~="array<layer>"] {
         --flavour: var(--flavour-danger);
     }

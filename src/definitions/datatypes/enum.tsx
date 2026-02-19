@@ -146,6 +146,13 @@ export namespace Enum {
             Alpha: 1,
         } as const;
 
+        export const sequencerMode = {
+            Wrap: 0,
+            Truncate: 1,
+            Clamp: 2,
+            Bounce: 3,
+        } as const;
+
         //#region Input and Outpput Widgets
 
         export const numberInputWidget = {
