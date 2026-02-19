@@ -72,6 +72,7 @@ import { FloodFillDefinition, FloodFillNodeType } from "./nodes/shapes/floodFill
 import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
 import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
+import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -144,6 +145,7 @@ namespace Registries {
         // collections
         layerCompose: LayerComposeDefinition;
         layers: LayerDefinition;
+        mask: MaskDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
         logicalNot: LogicalNotDefinition;
@@ -176,6 +178,7 @@ namespace Registries {
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
+        mask: MaskNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,

@@ -155,6 +155,21 @@ export type SymbolShape = {
     preview: BBox;
 };
 
+/** A shape masked by another shape via SVG <mask> */
+export type MaskedShape = {
+    type: "masked";
+    content: Shape;
+    mask: MaskDef;
+    transform: string;
+    preview: BBox;
+};
+
+export type MaskDef = {
+    shape: Shape;
+    mode: "luminance" | "alpha";
+    invert: boolean; // only meaningful when mode is "luminance"
+};
+
 // ─── Union ───────────────────────────────────────────────────────────────────
 
 export type Shape =
@@ -164,4 +179,5 @@ export type Shape =
     | TextShape
     | GroupShape
     | OffsetPathShape
-    | SymbolShape;
+    | SymbolShape
+    | MaskedShape;

@@ -141,6 +141,11 @@ export namespace Enum {
             End: 2,
         } as const;
 
+        export const maskMode = {
+            Luminance: 0,
+            Alpha: 1,
+        } as const;
+
         //#region Input and Outpput Widgets
 
         export const numberInputWidget = {

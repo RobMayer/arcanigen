@@ -1,5 +1,5 @@
 import { ReactNode, useId } from "react";
-import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape } from "./shapeTypes";
+import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
 // ─── Paint → SVG attributes ─────────────────────────────────────────────────
@@ -88,6 +88,8 @@ export const ShapeElement = ({ shape }: { shape: Shape }): ReactNode => {
             return <OffsetPathElement shape={shape} />;
         case "symbol":
             return <SymbolElement shape={shape} />;
+        case "masked":
+            return <MaskedElement shape={shape} />;
     }
 };
 
@@ -274,6 +276,34 @@ const SymbolElement = ({ shape }: { shape: SymbolShape }) => {
                 </symbol>
             </defs>
             <use href={`#${symbolId}`} x={shape.symbol.x} y={shape.symbol.y} width={shape.symbol.width} height={shape.symbol.height} />
+        </g>
+    );
+};
+
+// ─── Masked ─────────────────────────────────────────────────────────────────
+
+const MaskedElement = ({ shape }: { shape: MaskedShape }) => {
+    const id = useId();
+    const maskId = `${id}-mask`;
+    const isLuminance = shape.mask.mode === "luminance";
+
+    return (
+        <g transform={shape.transform || undefined}>
+            <defs>
+                <mask id={maskId} maskContentUnits="userSpaceOnUse" style={{ maskType: shape.mask.mode }}>
+                    {/* Background rect: black for luminance (default hidden), transparent for alpha */}
+                    <rect x="-5000%" y="-5000%" width="10000%" height="10000%" fill={isLuminance ? "black" : "transparent"} />
+                    {/* The mask shape */}
+                    <ShapeElement shape={shape.mask.shape} />
+                    {/* Invert overlay: a white rect with difference blending flips luminance values */}
+                    {isLuminance && shape.mask.invert && (
+                        <rect x="-5000%" y="-5000%" width="10000%" height="10000%" fill="white" style={{ mixBlendMode: "difference" }} />
+                    )}
+                </mask>
+            </defs>
+            <g mask={`url(#${maskId})`}>
+                <ShapeElement shape={shape.content} />
+            </g>
         </g>
     );
 };
