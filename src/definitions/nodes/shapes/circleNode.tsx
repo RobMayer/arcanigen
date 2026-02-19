@@ -19,6 +19,7 @@ export type CircleDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -49,6 +50,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>,
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -87,6 +89,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
             </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
+            </SocketOut>
             <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
@@ -97,47 +102,45 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _outSocket: keyof CircleDefinition["outputs"], _deps: AllDeps): (keyof CircleDefinition["inputs"])[] => {
-    // output depends on all inputs
-    return [
-        "radius",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof CircleDefinition["inputs"])[] = ["radius", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof CircleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, outSocket: keyof CircleDefinition["outputs"], _deps: AllDeps): (keyof CircleDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, _inSocket: keyof CircleDefinition["inputs"], _deps: AllDeps): (keyof CircleDefinition["outputs"])[] => {
-    // all inputs contribute to output
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, inSocket: keyof CircleDefinition["inputs"], _deps: AllDeps): (keyof CircleDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
-        if (!radius) {
-            return null;
-        }
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
+    if (!radius) {
+        return null;
+    }
 
+    const d = `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1}`;
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
+    if (socket === "output") {
         const attributes: Record<string, string> = {
-            d: `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1}`,
+            d,
             ...Stylings.evaluate(node, context),
         };
 
-        // Build transform string
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
-
-        // If we have transforms, wrap in a <g> element
         return {
             kind: "shape",
             data: {
@@ -169,6 +172,7 @@ const CIRCLE_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, _side: "in" | "out"): string => CIRCLE_SOCKET_TYPES[socketId] ?? "float";

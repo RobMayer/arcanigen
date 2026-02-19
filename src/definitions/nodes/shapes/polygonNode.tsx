@@ -31,6 +31,7 @@ export type PolygonDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
         eCircumradius: DataTypes.Use<"length">;
         eApothem: DataTypes.Use<"length">;
     };
@@ -78,6 +79,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
         },
         out: {
             output: [],
+            path: [],
             eCircumradius: [],
             eApothem: [],
         },
@@ -127,6 +129,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
                 <IntegerInput.SliderInput
@@ -189,33 +194,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
     );
 };
 
+const GEOMETRY_INPUTS: (keyof PolygonDefinition["inputs"])[] = ["pointCount", "pointDistro", "radius", "rScribe", "cornerRadius", "cornerShape", "markerShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof PolygonDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"], _deps: AllDeps): (keyof PolygonDefinition["inputs"])[] => {
     if (outSocket === "output") {
-        // output shape depends on all inputs
-        return [
-            "pointCount",
-            "pointDistro",
-            "radius",
-            "rScribe",
-            "cornerRadius",
-            "cornerShape",
-            "markerShape",
-            "markerAlign",
-            "strokeWidth",
-            "strokeColor",
-            "strokeCap",
-            "strokeJoin",
-            "strokeDash",
-            "strokeDashOffset",
-            "fillColor",
-            "paintOrder",
-            "positionMode",
-            "positionX",
-            "positionY",
-            "positionRadius",
-            "positionTheta",
-            "rotation",
-        ];
+        return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
+    }
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
     }
     if (outSocket === "eCircumradius" || outSocket === "eApothem") {
         return ["pointCount", "radius", "rScribe"];
@@ -224,32 +211,22 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket:
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSocket: keyof PolygonDefinition["inputs"], _deps: AllDeps): (keyof PolygonDefinition["outputs"])[] => {
-    if (inSocket === "pointCount") {
-        return ["output", "eCircumradius", "eApothem"];
+    if (inSocket === "pointCount" || inSocket === "radius" || inSocket === "rScribe") {
+        return ["output", "path", "eCircumradius", "eApothem"];
     }
-    if (inSocket === "radius") {
-        return ["output", "eCircumradius", "eApothem"];
-    }
-    if (inSocket === "rScribe") {
-        return ["output", "eCircumradius", "eApothem"];
-    }
-    if (inSocket === "cornerRadius" || inSocket === "cornerShape") {
+    if (STYLING_INPUTS.includes(inSocket)) {
         return ["output"];
     }
-    // all other inputs only affect the shape output
-    return ["output"];
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyof PolygonDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
+    if (socket === "output" || socket === "path") {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
         const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
         if (radius === null || pointCount === null) {
             return null;
         }
-
-        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
 
@@ -279,13 +256,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                 .map(([x, y]) => `L ${x},${y}`)
                 .join(" ")} Z`;
         } else {
-            // Compute edge lengths
             const edgeLengths = vertices.map((v, i) => {
                 const next = vertices[(i + 1) % N];
                 return Math.hypot(next[0] - v[0], next[1] - v[1]);
             });
 
-            // Per-vertex: vectors to prev/next, half interior angle
             const vertexData = vertices.map((curr, i) => {
                 const prev = vertices[(i - 1 + N) % N];
                 const next = vertices[(i + 1) % N];
@@ -300,7 +275,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                 return { ax, ay, bx, by, lenA, lenB, halfAlpha };
             });
 
-            // Global clamp: find max R such that all tangent distances fit within half-edges
             let r = cornerR;
             for (let i = 0; i < N; i++) {
                 const { halfAlpha } = vertexData[i];
@@ -326,10 +300,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                     const curr = vertices[i];
                     const t = r / Math.tan(halfAlpha);
 
-                    // Approach point (r back along incoming edge)
                     const apX = curr[0] + (ax / lenA) * t;
                     const apY = curr[1] + (ay / lenA) * t;
-                    // Leave point (r forward along outgoing edge)
                     const lpX = curr[0] + (bx / lenB) * t;
                     const lpY = curr[1] + (by / lenB) * t;
 
@@ -343,7 +315,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                             parts.push(`A ${r},${r} 0 0,0 ${lpX},${lpY}`);
                             break;
                         case 3: {
-                            // Notch
                             const nX = apX + (bx / lenB) * t;
                             const nY = apY + (by / lenB) * t;
                             parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
@@ -359,14 +330,24 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             }
         }
 
+        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+        if (socket === "path") {
+            return {
+                kind: "path",
+                data: { d, transform: transforms.join(" ") },
+            };
+        }
+
+        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
+        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+
         const attributes: Record<string, string | undefined> = {
             d,
             ...Stylings.evaluate(node, context),
             markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
             markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         return {
             kind: "shape",
@@ -441,6 +422,7 @@ const POLYGON_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
     eCircumradius: "length",
     eApothem: "length",
 };

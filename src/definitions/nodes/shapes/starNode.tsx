@@ -40,6 +40,7 @@ export type StarDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -103,6 +104,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StarDefinition>>, i
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -165,6 +167,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
                 <IntegerInput.SliderInput
@@ -290,44 +295,27 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<StarDefinition>, _outSocket: keyof StarDefinition["outputs"], _deps: AllDeps): (keyof StarDefinition["inputs"])[] => {
-    return [
-        "pointCount",
-        "pointDistro",
-        "radius",
-        "spread",
-        "innerRadius",
-        "outerRadius",
-        "spanMode",
-        "spreadAlign",
-        "rScribe",
-        "iScribe",
-        "oScribe",
-        "outerCornerRadius",
-        "outerCornerShape",
-        "innerCornerRadius",
-        "innerCornerShape",
-        "markerShape",
-        "markerAlign",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeJoin",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof StarDefinition["inputs"])[] = [
+    "pointCount", "pointDistro", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign",
+    "rScribe", "iScribe", "oScribe",
+    "outerCornerRadius", "outerCornerShape", "innerCornerRadius", "innerCornerShape",
+    "markerShape", "markerAlign",
+    "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation",
+];
+const STYLING_INPUTS: (keyof StarDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<StarDefinition>, outSocket: keyof StarDefinition["outputs"], _deps: AllDeps): (keyof StarDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<StarDefinition>, _inSocket: keyof StarDefinition["inputs"], _deps: AllDeps): (keyof StarDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<StarDefinition>, inSocket: keyof StarDefinition["inputs"], _deps: AllDeps): (keyof StarDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 /** Build a star path with per-vertex corner params (alternating outer tips and inner valleys) */
@@ -417,7 +405,7 @@ const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: nu
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof StarDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
+    if (socket === "output" || socket === "path") {
         const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
         if (pointCount === null) return null;
 
@@ -490,6 +478,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         }
 
         const d = buildStarPath(vertices, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape);
+        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+        if (socket === "path") {
+            return {
+                kind: "path",
+                data: { d, transform: transforms.join(" ") },
+            };
+        }
 
         const attributes: Record<string, string | undefined> = {
             d,
@@ -497,8 +493,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
             markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
             markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         return {
             kind: "shape",
@@ -564,6 +558,7 @@ const STAR_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<StarDefinition>, socketId: string, _side: "in" | "out"): string => STAR_SOCKET_TYPES[socketId] ?? "float";

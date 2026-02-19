@@ -33,5 +33,4 @@ export type SVGShape = {
 export type SVGPath = {
     d: string;
     transform: string;
-    id: string;
 };

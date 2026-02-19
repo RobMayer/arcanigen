@@ -25,6 +25,7 @@ export type RingDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -66,6 +67,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -121,6 +123,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Span Mode"}>
                 <RadioButton.Group
@@ -182,85 +187,79 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<RingDefinition>, _outSocket: keyof RingDefinition["outputs"], _deps: AllDeps): (keyof RingDefinition["inputs"])[] => {
-    // output depends on all inputs
-    return [
-        "radius",
-        "spread",
-        "spreadAlign",
-        "spanMode",
-        "innerRadius",
-        "outerRadius",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = ["radius", "spread", "spreadAlign", "spanMode", "innerRadius", "outerRadius", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof RingDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<RingDefinition>, outSocket: keyof RingDefinition["outputs"], _deps: AllDeps): (keyof RingDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<RingDefinition>, _inSocket: keyof RingDefinition["inputs"], _deps: AllDeps): (keyof RingDefinition["outputs"])[] => {
-    // all inputs contribute to output
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<RingDefinition>, inSocket: keyof RingDefinition["inputs"], _deps: AllDeps): (keyof RingDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof RingDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+    const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+    const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+    const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
+    const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
+
+    if (spanMode === 0 && (!innerRadius || !outerRadius)) {
+        return null;
+    }
+    if (spanMode === 1 && (!radius || !spread)) {
+        return null;
+    }
+
+    let rI = innerRadius;
+    let rO = outerRadius;
+
+    if (spanMode === 1) {
+        switch (spreadAlign) {
+            case 0:
+                {
+                    rO = radius + spread / 2;
+                    rI = radius - spread / 2;
+                }
+                break;
+            case 1:
+                {
+                    rO = radius;
+                    rI = radius - spread;
+                }
+                break;
+            case 2:
+                {
+                    rO = radius + spread;
+                    rI = radius;
+                }
+                break;
+        }
+    }
+
+    const d = `M ${rO},0 A ${rO},${rO} 0 0,0 ${-rO},0 A ${rO},${rO} 0 0,0 ${rO},0 z M ${rI},0 A ${rI},${rI} 0 0,1 ${-rI},0 A ${rI},${rI} 0 0,1 ${rI},0 z`;
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
     if (socket === "output") {
-        const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
-        const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-        const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-        const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
-        const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
-
-        if (spanMode === 0 && (!innerRadius || !outerRadius)) {
-            return null;
-        }
-        if (spanMode === 1 && (!radius || !spread)) {
-            return null;
-        }
-
-        let rI = innerRadius;
-        let rO = outerRadius;
-
-        if (spanMode === 1) {
-            switch (spreadAlign) {
-                case 0:
-                    {
-                        rO = radius + spread / 2;
-                        rI = radius - spread / 2;
-                    }
-                    break;
-                case 1:
-                    {
-                        rO = radius;
-                        rI = radius - spread;
-                    }
-                    break;
-                case 2:
-                    {
-                        rO = radius + spread;
-                        rI = radius;
-                    }
-                    break;
-            }
-        }
-
         const attributes: Record<string, string> = {
             ...Stylings.evaluate(node, context),
-            d: `M ${rO},0 A ${rO},${rO} 0 0,0 ${-rO},0 A ${rO},${rO} 0 0,0 ${rO},0 z M ${rI},0 A ${rI},${rI} 0 0,1 ${-rI},0 A ${rI},${rI} 0 0,1 ${rI},0 z`,
+            d,
         };
-
-        // Build transform string
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         return {
             kind: "shape",
@@ -298,6 +297,7 @@ const RING_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<RingDefinition>, socketId: string, _side: "in" | "out"): string => RING_SOCKET_TYPES[socketId] ?? "float";

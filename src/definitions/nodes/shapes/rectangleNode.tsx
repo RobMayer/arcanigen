@@ -26,6 +26,7 @@ export type RectangleDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -68,6 +69,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RectangleDefinition
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -113,6 +115,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
             </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
+            </SocketOut>
             <SocketIn node={node} socketId={"width"} type={"length"} label={"Width"}>
                 <LengthInput value={node.payload.width} onCommit={(width) => handleUpdate({ width })} disabled={node.in.width !== null} min={"0px"} required />
             </SocketIn>
@@ -149,87 +154,82 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, _outSocket: keyof RectangleDefinition["outputs"], _deps: AllDeps): (keyof RectangleDefinition["inputs"])[] => {
-    // output depends on all inputs
-    return [
-        "width",
-        "height",
-        "cornerRadius",
-        "cornerShape",
-        "markerShape",
-        "markerAlign",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeJoin",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof RectangleDefinition["inputs"])[] = ["width", "height", "cornerRadius", "cornerShape", "markerShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof RectangleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, outSocket: keyof RectangleDefinition["outputs"], _deps: AllDeps): (keyof RectangleDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, _inSocket: keyof RectangleDefinition["inputs"], _deps: AllDeps): (keyof RectangleDefinition["outputs"])[] => {
-    // all inputs contribute to output
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, inSocket: keyof RectangleDefinition["inputs"], _deps: AllDeps): (keyof RectangleDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: keyof RectangleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
-        const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "width")?.data ?? node.payload.width, "0px")) ?? 0;
-        const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "height")?.data ?? node.payload.height, "0px")) ?? 0;
-        const cornerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
-        const cornerShape = context.resolve<"enum">(node.id, "cornerShape")?.data ?? node.payload.cornerShape ?? 0;
-        if (!width || !height) {
-            return null;
-        }
+    const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "width")?.data ?? node.payload.width, "0px")) ?? 0;
+    const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "height")?.data ?? node.payload.height, "0px")) ?? 0;
+    const cornerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
+    const cornerShape = context.resolve<"enum">(node.id, "cornerShape")?.data ?? node.payload.cornerShape ?? 0;
+    if (!width || !height) {
+        return null;
+    }
 
+    const hw = width / 2;
+    const hh = height / 2;
+    const r = Math.min(cornerRadius, hw, hh);
+
+    let d: string;
+    if (r === 0) {
+        d = `M ${-hw},${-hh} H ${hw} V ${hh} H ${-hw} z`;
+    } else {
+        let trCorner, brCorner, blCorner, tlCorner;
+        switch (cornerShape) {
+            case 0: // Round
+                trCorner = `A ${r},${r} 0 0,1 ${hw},${-hh + r}`;
+                brCorner = `A ${r},${r} 0 0,1 ${hw - r},${hh}`;
+                blCorner = `A ${r},${r} 0 0,1 ${-hw},${hh - r}`;
+                tlCorner = `A ${r},${r} 0 0,1 ${-hw + r},${-hh}`;
+                break;
+            case 2: // Scoop
+                trCorner = `A ${r},${r} 0 0,0 ${hw},${-hh + r}`;
+                brCorner = `A ${r},${r} 0 0,0 ${hw - r},${hh}`;
+                blCorner = `A ${r},${r} 0 0,0 ${-hw},${hh - r}`;
+                tlCorner = `A ${r},${r} 0 0,0 ${-hw + r},${-hh}`;
+                break;
+            case 3: // Notch
+                trCorner = `L ${hw - r},${-hh + r} L ${hw},${-hh + r}`;
+                brCorner = `L ${hw - r},${hh - r} L ${hw - r},${hh}`;
+                blCorner = `L ${-hw + r},${hh - r} L ${-hw},${hh - r}`;
+                tlCorner = `L ${-hw + r},${-hh + r} L ${-hw + r},${-hh}`;
+                break;
+            default: // Bevel (1)
+                trCorner = `L ${hw},${-hh + r}`;
+                brCorner = `L ${hw - r},${hh}`;
+                blCorner = `L ${-hw},${hh - r}`;
+                tlCorner = `L ${-hw + r},${-hh}`;
+                break;
+        }
+        d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} Z`;
+    }
+
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
+    if (socket === "output") {
         const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
-
-        const hw = width / 2;
-        const hh = height / 2;
-        const r = Math.min(cornerRadius, hw, hh);
-
-        let d: string;
-        if (r === 0) {
-            d = `M ${-hw},${-hh} H ${hw} V ${hh} H ${-hw} z`;
-        } else {
-            let trCorner, brCorner, blCorner, tlCorner;
-            switch (cornerShape) {
-                case 0: // Round
-                    trCorner = `A ${r},${r} 0 0,1 ${hw},${-hh + r}`;
-                    brCorner = `A ${r},${r} 0 0,1 ${hw - r},${hh}`;
-                    blCorner = `A ${r},${r} 0 0,1 ${-hw},${hh - r}`;
-                    tlCorner = `A ${r},${r} 0 0,1 ${-hw + r},${-hh}`;
-                    break;
-                case 2: // Scoop
-                    trCorner = `A ${r},${r} 0 0,0 ${hw},${-hh + r}`;
-                    brCorner = `A ${r},${r} 0 0,0 ${hw - r},${hh}`;
-                    blCorner = `A ${r},${r} 0 0,0 ${-hw},${hh - r}`;
-                    tlCorner = `A ${r},${r} 0 0,0 ${-hw + r},${-hh}`;
-                    break;
-                case 3: // Notch
-                    trCorner = `L ${hw - r},${-hh + r} L ${hw},${-hh + r}`;
-                    brCorner = `L ${hw - r},${hh - r} L ${hw - r},${hh}`;
-                    blCorner = `L ${-hw + r},${hh - r} L ${-hw},${hh - r}`;
-                    tlCorner = `L ${-hw + r},${-hh + r} L ${-hw + r},${-hh}`;
-                    break;
-                default: // Bevel (1)
-                    trCorner = `L ${hw},${-hh + r}`;
-                    brCorner = `L ${hw - r},${hh}`;
-                    blCorner = `L ${-hw},${hh - r}`;
-                    tlCorner = `L ${-hw + r},${-hh}`;
-                    break;
-            }
-            d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} Z`;
-        }
 
         const attributes: Record<string, string | undefined> = {
             d,
@@ -237,9 +237,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
             markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
             markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
         };
-
-        // Build transform string
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         const diag = Math.sqrt(width * width + height * height);
         const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
@@ -296,6 +293,7 @@ const RECTANGLE_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, socketId: string, _side: "in" | "out"): string => RECTANGLE_SOCKET_TYPES[socketId] ?? "float";

@@ -36,6 +36,7 @@ export type LineDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -88,6 +89,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, 
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -140,6 +142,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
 
             <NodeAccordion label={"Start Point"} socketsIn={"startMode|startX|startY|startRadius|startTheta"} nodeId={node.id}>
@@ -210,38 +215,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<LineDefinition>, _outSocket: keyof LineDefinition["outputs"], _deps: AllDeps): (keyof LineDefinition["inputs"])[] => {
-    return [
-        "startMode",
-        "startX",
-        "startY",
-        "startRadius",
-        "startTheta",
-        "endMode",
-        "endX",
-        "endY",
-        "endRadius",
-        "endTheta",
-        "markerStartShape",
-        "markerEndShape",
-        "markerAlign",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeDash",
-        "strokeDashOffset",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof LineDefinition["inputs"])[] = ["startMode", "startX", "startY", "startRadius", "startTheta", "endMode", "endX", "endY", "endRadius", "endTheta", "markerStartShape", "markerEndShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof LineDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<LineDefinition>, outSocket: keyof LineDefinition["outputs"], _deps: AllDeps): (keyof LineDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<LineDefinition>, _inSocket: keyof LineDefinition["inputs"], _deps: AllDeps): (keyof LineDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<LineDefinition>, inSocket: keyof LineDefinition["inputs"], _deps: AllDeps): (keyof LineDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 /** Convert angle convention (0deg = top, CW positive) to radians for Math.cos/sin */
@@ -256,31 +244,36 @@ const resolvePoint = (mode: number, x: number, y: number, radius: number, theta:
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof LineDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const startMode = context.resolve<"enum">(node.id, "startMode")?.data ?? node.payload.startMode;
+    const startX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
+    const startY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
+    const startRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
+    const startTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
+
+    const endMode = context.resolve<"enum">(node.id, "endMode")?.data ?? node.payload.endMode;
+    const endX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
+    const endY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
+    const endRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
+    const endTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
+
+    const [sx, sy] = resolvePoint(startMode, startX, startY, startRadius, startTheta);
+    const [ex, ey] = resolvePoint(endMode, endX, endY, endRadius, endTheta);
+
+    if (sx === ex && sy === ey) {
+        return null;
+    }
+
+    const d = `M ${sx},${sy} L ${ex},${ey}`;
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
     if (socket === "output") {
-        // Resolve start point
-        const startMode = context.resolve<"enum">(node.id, "startMode")?.data ?? node.payload.startMode;
-        const startX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
-        const startY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
-        const startRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
-        const startTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
-
-        // Resolve end point
-        const endMode = context.resolve<"enum">(node.id, "endMode")?.data ?? node.payload.endMode;
-        const endX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
-        const endY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
-        const endRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
-        const endTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
-
-        const [sx, sy] = resolvePoint(startMode, startX, startY, startRadius, startTheta);
-        const [ex, ey] = resolvePoint(endMode, endX, endY, endRadius, endTheta);
-
-        // Degenerate line (zero length)
-        if (sx === ex && sy === ey) {
-            return null;
-        }
-
-        const d = `M ${sx},${sy} L ${ex},${ey}`;
-
         const stylingAttrs = Stylings.evaluate(node, context);
         stylingAttrs.fill = "none";
 
@@ -294,8 +287,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
             markerStart: markerStartShape ? `url('#markerStart_${node.id}')` : undefined,
             markerEnd: markerEndShape ? `url('#markerEnd_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         const markerDefs: SVGDefinition[] = [];
         if (markerStartShape) {
@@ -377,6 +368,7 @@ const LINE_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<LineDefinition>, socketId: string, _side: "in" | "out"): string => LINE_SOCKET_TYPES[socketId] ?? "float";

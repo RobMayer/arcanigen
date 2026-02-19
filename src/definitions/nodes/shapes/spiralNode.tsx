@@ -37,6 +37,7 @@ export type SpiralDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -90,6 +91,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -145,6 +147,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
 
             <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Radial Mode"}>
@@ -213,39 +218,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, _outSocket: keyof SpiralDefinition["outputs"], _deps: AllDeps): (keyof SpiralDefinition["inputs"])[] => {
-    return [
-        "spanMode",
-        "innerRadius",
-        "outerRadius",
-        "radius",
-        "deviation",
-        "arcMode",
-        "thetaStart",
-        "sweep",
-        "thetaFrom",
-        "thetaTo",
-        "markerStartShape",
-        "markerEndShape",
-        "markerAlign",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["spanMode", "innerRadius", "outerRadius", "radius", "deviation", "arcMode", "thetaStart", "sweep", "thetaFrom", "thetaTo", "markerStartShape", "markerEndShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, outSocket: keyof SpiralDefinition["outputs"], _deps: AllDeps): (keyof SpiralDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, _inSocket: keyof SpiralDefinition["inputs"], _deps: AllDeps): (keyof SpiralDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, inSocket: keyof SpiralDefinition["inputs"], _deps: AllDeps): (keyof SpiralDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 /** Convert our angle convention (0° = top, CW positive) to radians for Math.cos/sin */
@@ -279,60 +266,67 @@ const bezierCommand = (points: (readonly [number, number])[], i: number) => {
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof SpiralDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+
+    let rI: number;
+    let rO: number;
+
+    if (spanMode === Enum.Common.spanMode.Spread) {
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+        const deviation = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "deviation")?.data ?? node.payload.deviation) ?? 0;
+        rI = radius - deviation / 2;
+        rO = radius + deviation / 2;
+    } else {
+        rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+        rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+    }
+
+    const arcMode = context.resolve<"enum">(node.id, "arcMode")?.data ?? node.payload.arcMode ?? 0;
+
+    let effectiveStart: number;
+    let effectiveSweep: number;
+
+    if (arcMode === Enum.Common.arcMode.FromTo) {
+        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        effectiveStart = from;
+        effectiveSweep = to - from;
+    } else {
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+    }
+
+    if (effectiveSweep === 0) {
+        return null;
+    }
+
+    const effectiveEnd = effectiveStart + effectiveSweep;
+
+    const count = Math.max(2, 2 + Math.floor(Math.abs(effectiveSweep) / 10));
+    const points: (readonly [number, number])[] = [];
+
+    for (let n = 0; n < count; n++) {
+        const t = delerp(n, 0, count - 1);
+        const rad = lerp(t, rI, rO);
+        const ang = lerp(t, effectiveStart, effectiveEnd);
+        points.push([rad * Math.cos(toRad(ang)), rad * Math.sin(toRad(ang))]);
+    }
+
+    let d = `M ${points[0][0]},${points[0][1]}`;
+    for (let i = 1; i < points.length; i++) {
+        d += ` ${bezierCommand(points, i)}`;
+    }
+
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
     if (socket === "output") {
-        const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
-
-        let rI: number;
-        let rO: number;
-
-        if (spanMode === Enum.Common.spanMode.Spread) {
-            const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-            const deviation = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "deviation")?.data ?? node.payload.deviation) ?? 0;
-            rI = radius - deviation / 2;
-            rO = radius + deviation / 2;
-        } else {
-            rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-            rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
-        }
-
-        const arcMode = context.resolve<"enum">(node.id, "arcMode")?.data ?? node.payload.arcMode ?? 0;
-
-        let effectiveStart: number;
-        let effectiveSweep: number;
-
-        if (arcMode === Enum.Common.arcMode.FromTo) {
-            const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-            const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
-            effectiveStart = from;
-            effectiveSweep = to - from;
-        } else {
-            effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-            effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
-        }
-
-        if (effectiveSweep === 0) {
-            return null;
-        }
-
-        const effectiveEnd = effectiveStart + effectiveSweep;
-
-        // Sample points along the spiral — ~1 point per 10° of angular sweep
-        const count = Math.max(2, 2 + Math.floor(Math.abs(effectiveSweep) / 10));
-        const points: (readonly [number, number])[] = [];
-
-        for (let n = 0; n < count; n++) {
-            const t = delerp(n, 0, count - 1);
-            const rad = lerp(t, rI, rO);
-            const ang = lerp(t, effectiveStart, effectiveEnd);
-            points.push([rad * Math.cos(toRad(ang)), rad * Math.sin(toRad(ang))]);
-        }
-
-        // Build smooth cubic Bézier path through sampled points
-        let d = `M ${points[0][0]},${points[0][1]}`;
-        for (let i = 1; i < points.length; i++) {
-            d += ` ${bezierCommand(points, i)}`;
-        }
-
         const stylingAttrs = Stylings.evaluate(node, context);
 
         const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
@@ -345,8 +339,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
             markerStart: markerStartShape ? `url('#markerStart_${node.id}')` : undefined,
             markerEnd: markerEndShape ? `url('#markerEnd_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         const markerDefs: SVGDefinition[] = [];
         if (markerStartShape) {
@@ -424,6 +416,7 @@ const SPIRAL_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, socketId: string, _side: "in" | "out"): string => SPIRAL_SOCKET_TYPES[socketId] ?? "float";

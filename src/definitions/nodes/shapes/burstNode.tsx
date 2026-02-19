@@ -41,6 +41,7 @@ export type BurstDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -100,6 +101,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -158,6 +160,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"spurCount"} type={"integer"} label={"Spurs"}>
                 <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null} min={"0"} required />
@@ -242,122 +247,108 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, _outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
-    return [
-        "spurCount",
-        "radius",
-        "spread",
-        "innerRadius",
-        "outerRadius",
-        "spanMode",
-        "spreadAlign",
-        "thetaMode",
-        "thetaStart",
-        "thetaEnd",
-        "thetaSteps",
-        "thetaInclusive",
-        "thetaCurve",
-        "markerStart",
-        "markerEnd",
-        "markerAlign",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = ["spurCount", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign", "thetaMode", "thetaStart", "thetaEnd", "thetaSteps", "thetaInclusive", "thetaCurve", "markerStart", "markerEnd", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<BurstDefinition>, _inSocket: keyof BurstDefinition["inputs"], _deps: AllDeps): (keyof BurstDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<BurstDefinition>, inSocket: keyof BurstDefinition["inputs"], _deps: AllDeps): (keyof BurstDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof BurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const spurCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? null;
+    if (spurCount === null || spurCount <= 0) return null;
+
+    const N = spurCount;
+    const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+
+    let rI: number;
+    let rO: number;
+
+    if (spanMode === Enum.Common.spanMode.InnerOuter) {
+        rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+        rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+    } else {
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+        const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
+        if (!radius) return null;
+
+        const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
+
+        const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? spread : 0;
+        const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? spread : 0;
+
+        rI = radius - tIMod;
+        rO = radius + tOMod;
+    }
+
+    if (rO <= 0) return null;
+    rI = Math.max(0, rI);
+
+    const thetaMode = context.resolve<"enum">(node.id, "thetaMode")?.data ?? node.payload.thetaMode ?? 0;
+    const thetaStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+    const thetaEnd = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaEnd")?.data ?? node.payload.thetaEnd) ?? 0;
+    const thetaSteps = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaSteps")?.data ?? node.payload.thetaSteps) ?? 0;
+    const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+
+    const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+    const distroLerper = distroInterpolator(
+        Enum.keyOf(Enum.Common.distroFunctions, distro.func),
+        Enum.keyOf(Enum.Common.distroEasing, distro.easing),
+        NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
+    );
+
+    const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
+
+    // Compute line endpoints for both output and path
+    const lineCoords: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    for (let i = 0; i < N; i++) {
+        const coeff = delerp(i, 0, denominator);
+        const angle = thetaMode === Enum.Common.thetaMode.StartStop ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
+        const c = Math.cos(deg2rad(angle - 90));
+        const s = Math.sin(deg2rad(angle - 90));
+        lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });
+    }
+
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        const d = lineCoords.map((l) => `M ${l.x1},${l.y1} L ${l.x2},${l.y2}`).join(" ");
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
     if (socket === "output") {
-        const spurCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? null;
-        if (spurCount === null || spurCount <= 0) return null;
-
-        const N = spurCount;
-        const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
-
-        let rI: number;
-        let rO: number;
-
-        if (spanMode === Enum.Common.spanMode.InnerOuter) {
-            rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-            rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
-        } else {
-            const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-            const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
-            if (!radius) return null;
-
-            const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
-
-            const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? spread : 0;
-            const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? spread : 0;
-
-            rI = radius - tIMod;
-            rO = radius + tOMod;
-        }
-
-        if (rO <= 0) return null;
-        rI = Math.max(0, rI);
-
-        // Theta parameters
-        const thetaMode = context.resolve<"enum">(node.id, "thetaMode")?.data ?? node.payload.thetaMode ?? 0;
-        const thetaStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        const thetaEnd = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaEnd")?.data ?? node.payload.thetaEnd) ?? 0;
-        const thetaSteps = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaSteps")?.data ?? node.payload.thetaSteps) ?? 0;
-        const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
-
-        // Distribution curve
-        const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
-        const distroLerper = distroInterpolator(
-            Enum.keyOf(Enum.Common.distroFunctions, distro.func),
-            Enum.keyOf(Enum.Common.distroEasing, distro.easing),
-            NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
-        );
-
-        // Markers
         const markerStartShape = context.resolve<"shape">(node.id, "markerStart")?.data;
         const markerEndShape = context.resolve<"shape">(node.id, "markerEnd")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        // Generate line elements
-        const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
-        const lines: SVGMember[] = [];
-        for (let i = 0; i < N; i++) {
-            const coeff = delerp(i, 0, denominator);
-            const angle = thetaMode === Enum.Common.thetaMode.StartStop ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
-            const c = Math.cos(deg2rad(angle - 90));
-            const s = Math.sin(deg2rad(angle - 90));
-            lines.push({
-                tag: "line",
-                attributes: {
-                    x1: `${rI * c}`,
-                    y1: `${rI * s}`,
-                    x2: `${rO * c}`,
-                    y2: `${rO * s}`,
-                },
-            });
-        }
+        const lines: SVGMember[] = lineCoords.map((l) => ({
+            tag: "line",
+            attributes: {
+                x1: `${l.x1}`,
+                y1: `${l.y1}`,
+                x2: `${l.x2}`,
+                y2: `${l.y2}`,
+            },
+        }));
 
-        // Stroke + marker attributes go on the parent <g>, inherited by each <line>
         const attributes: Record<string, string | undefined> = {
             ...Stylings.evaluate(node, context),
             markerStart: markerStartShape ? `url('#marker_start_${node.id}')` : undefined,
             markerEnd: markerEndShape ? `url('#marker_end_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         const markerDefs: (SVGDefinition | null)[] = [
             markerStartShape
@@ -437,6 +428,7 @@ const BURST_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<BurstDefinition>, socketId: string, _side: "in" | "out"): string => BURST_SOCKET_TYPES[socketId] ?? "float";

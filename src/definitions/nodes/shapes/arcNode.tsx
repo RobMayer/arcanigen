@@ -33,6 +33,7 @@ export type ArcDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -80,6 +81,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ArcDefinition>>, i
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
@@ -129,6 +131,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
@@ -184,107 +189,99 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<ArcDefinition>, _outSocket: keyof ArcDefinition["outputs"], _deps: AllDeps): (keyof ArcDefinition["inputs"])[] => {
-    return [
-        "radius",
-        "arcMode",
-        "thetaStart",
-        "sweep",
-        "thetaFrom",
-        "thetaTo",
-        "pieSlice",
-        "markerStartShape",
-        "markerEndShape",
-        "markerAlign",
-        "strokeWidth",
-        "strokeColor",
-        "strokeCap",
-        "strokeDash",
-        "strokeDashOffset",
-        "fillColor",
-        "paintOrder",
-        "positionMode",
-        "positionX",
-        "positionY",
-        "positionRadius",
-        "positionTheta",
-        "rotation",
-    ];
+const GEOMETRY_INPUTS: (keyof ArcDefinition["inputs"])[] = ["radius", "arcMode", "thetaStart", "sweep", "thetaFrom", "thetaTo", "pieSlice", "markerStartShape", "markerEndShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const STYLING_INPUTS: (keyof ArcDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<ArcDefinition>, outSocket: keyof ArcDefinition["outputs"], _deps: AllDeps): (keyof ArcDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
+    return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<ArcDefinition>, _inSocket: keyof ArcDefinition["inputs"], _deps: AllDeps): (keyof ArcDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<ArcDefinition>, inSocket: keyof ArcDefinition["inputs"], _deps: AllDeps): (keyof ArcDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 /** Convert our angle convention (0° = top, CW positive) to radians for Math.cos/sin */
 const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 
 const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof ArcDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
+    if (!radius) {
+        return null;
+    }
+
+    const arcMode = context.resolve<"enum">(node.id, "arcMode")?.data ?? node.payload.arcMode ?? 0;
+    const pieSlice = context.resolve<"boolean">(node.id, "pieSlice")?.data ?? node.payload.pieSlice ?? false;
+
+    let effectiveStart: number;
+    let effectiveSweep: number;
+
+    if (arcMode === Enum.Common.arcMode.FromTo) {
+        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        effectiveStart = from;
+        effectiveSweep = to - from;
+    } else {
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+    }
+
+    // Clamp sweep to [-360, 360]
+    effectiveSweep = Math.max(-360, Math.min(360, effectiveSweep));
+
+    if (effectiveSweep === 0) {
+        return null;
+    }
+
+    const absSweep = Math.abs(effectiveSweep);
+    const sweepFlag = effectiveSweep > 0 ? 1 : 0;
+
+    let d: string;
+
+    if (absSweep >= 360) {
+        const midAngle = effectiveStart + effectiveSweep / 2;
+        const sx = radius * Math.cos(toRad(effectiveStart));
+        const sy = radius * Math.sin(toRad(effectiveStart));
+        const mx = radius * Math.cos(toRad(midAngle));
+        const my = radius * Math.sin(toRad(midAngle));
+
+        if (pieSlice) {
+            d = `M 0,0 L ${sx},${sy} A ${radius},${radius} 0 0 ${sweepFlag} ${mx},${my} A ${radius},${radius} 0 0 ${sweepFlag} ${sx},${sy} Z`;
+        } else {
+            d = `M ${sx},${sy} A ${radius},${radius} 0 0 ${sweepFlag} ${mx},${my} A ${radius},${radius} 0 0 ${sweepFlag} ${sx},${sy}`;
+        }
+    } else {
+        const endAngle = effectiveStart + effectiveSweep;
+        const sx = radius * Math.cos(toRad(effectiveStart));
+        const sy = radius * Math.sin(toRad(effectiveStart));
+        const ex = radius * Math.cos(toRad(endAngle));
+        const ey = radius * Math.sin(toRad(endAngle));
+        const largeArc = absSweep > 180 ? 1 : 0;
+
+        if (pieSlice) {
+            d = `M 0,0 L ${sx},${sy} A ${radius},${radius} 0 ${largeArc} ${sweepFlag} ${ex},${ey} Z`;
+        } else {
+            d = `M ${sx},${sy} A ${radius},${radius} 0 ${largeArc} ${sweepFlag} ${ex},${ey}`;
+        }
+    }
+
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    if (socket === "path") {
+        return {
+            kind: "path",
+            data: { d, transform: transforms.join(" ") },
+        };
+    }
+
     if (socket === "output") {
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
-        if (!radius) {
-            return null;
-        }
-
-        const arcMode = context.resolve<"enum">(node.id, "arcMode")?.data ?? node.payload.arcMode ?? 0;
-        const pieSlice = context.resolve<"boolean">(node.id, "pieSlice")?.data ?? node.payload.pieSlice ?? false;
-
-        let effectiveStart: number;
-        let effectiveSweep: number;
-
-        if (arcMode === Enum.Common.arcMode.FromTo) {
-            const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-            const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
-            effectiveStart = from;
-            effectiveSweep = to - from;
-        } else {
-            effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-            effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
-        }
-
-        // Clamp sweep to [-360, 360]
-        effectiveSweep = Math.max(-360, Math.min(360, effectiveSweep));
-
-        if (effectiveSweep === 0) {
-            return null;
-        }
-
-        const absSweep = Math.abs(effectiveSweep);
-        const sweepFlag = effectiveSweep > 0 ? 1 : 0;
-
-        let d: string;
-
-        if (absSweep >= 360) {
-            // Full circle — two semicircular arcs (SVG can't draw a 360° arc with one A command)
-            const midAngle = effectiveStart + effectiveSweep / 2;
-            const sx = radius * Math.cos(toRad(effectiveStart));
-            const sy = radius * Math.sin(toRad(effectiveStart));
-            const mx = radius * Math.cos(toRad(midAngle));
-            const my = radius * Math.sin(toRad(midAngle));
-
-            if (pieSlice) {
-                d = `M 0,0 L ${sx},${sy} A ${radius},${radius} 0 0 ${sweepFlag} ${mx},${my} A ${radius},${radius} 0 0 ${sweepFlag} ${sx},${sy} Z`;
-            } else {
-                d = `M ${sx},${sy} A ${radius},${radius} 0 0 ${sweepFlag} ${mx},${my} A ${radius},${radius} 0 0 ${sweepFlag} ${sx},${sy}`;
-            }
-        } else {
-            const endAngle = effectiveStart + effectiveSweep;
-            const sx = radius * Math.cos(toRad(effectiveStart));
-            const sy = radius * Math.sin(toRad(effectiveStart));
-            const ex = radius * Math.cos(toRad(endAngle));
-            const ey = radius * Math.sin(toRad(endAngle));
-            const largeArc = absSweep > 180 ? 1 : 0;
-
-            if (pieSlice) {
-                d = `M 0,0 L ${sx},${sy} A ${radius},${radius} 0 ${largeArc} ${sweepFlag} ${ex},${ey} Z`;
-            } else {
-                d = `M ${sx},${sy} A ${radius},${radius} 0 ${largeArc} ${sweepFlag} ${ex},${ey}`;
-            }
-        }
-
         const stylingAttrs = Stylings.evaluate(node, context);
 
-        // When pie slice is disabled, fill is always "none"
         if (!pieSlice) {
             stylingAttrs.fill = "none";
         }
@@ -301,8 +298,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
             markerStart: useStartMarker ? `url('#markerStart_${node.id}')` : undefined,
             markerEnd: useEndMarker ? `url('#markerEnd_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         const markerDefs: SVGDefinition[] = [];
         if (useStartMarker) {
@@ -374,6 +369,7 @@ const ARC_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<ArcDefinition>, socketId: string, _side: "in" | "out"): string => ARC_SOCKET_TYPES[socketId] ?? "float";

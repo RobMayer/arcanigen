@@ -41,6 +41,7 @@ export type PolyringDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
         eOuterCircumradius: DataTypes.Use<"length">;
         eOuterApothem: DataTypes.Use<"length">;
         eInnerCircumradius: DataTypes.Use<"length">;
@@ -110,6 +111,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
         },
         out: {
             output: [],
+            path: [],
             eOuterCircumradius: [],
             eOuterApothem: [],
             eInnerCircumradius: [],
@@ -178,6 +180,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolyringDef
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
                 <IntegerInput.SliderInput
@@ -326,42 +331,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolyringDef
     );
 };
 
+const GEOMETRY_INPUTS: (keyof PolyringDefinition["inputs"])[] = [
+    "pointCount", "pointDistro", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign",
+    "rScribe", "iScribe", "oScribe", "expandMode",
+    "outerCornerRadius", "outerCornerShape", "innerCornerRadius", "innerCornerShape",
+    "markerShape", "markerAlign",
+    "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation",
+];
+const STYLING_INPUTS: (keyof PolyringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, outSocket: keyof PolyringDefinition["outputs"], _deps: AllDeps): (keyof PolyringDefinition["inputs"])[] => {
     if (outSocket === "output") {
-        return [
-            "pointCount",
-            "pointDistro",
-            "radius",
-            "spread",
-            "innerRadius",
-            "outerRadius",
-            "spanMode",
-            "spreadAlign",
-            "rScribe",
-            "iScribe",
-            "oScribe",
-            "expandMode",
-            "outerCornerRadius",
-            "outerCornerShape",
-            "innerCornerRadius",
-            "innerCornerShape",
-            "markerShape",
-            "markerAlign",
-            "strokeWidth",
-            "strokeColor",
-            "strokeCap",
-            "strokeJoin",
-            "strokeDash",
-            "strokeDashOffset",
-            "fillColor",
-            "paintOrder",
-            "positionMode",
-            "positionX",
-            "positionY",
-            "positionRadius",
-            "positionTheta",
-            "rotation",
-        ];
+        return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
+    }
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
     }
     if (outSocket === "eOuterCircumradius" || outSocket === "eOuterApothem" || outSocket === "eInnerCircumradius" || outSocket === "eInnerApothem") {
         return ["pointCount", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign", "rScribe", "iScribe", "oScribe", "expandMode"];
@@ -384,9 +368,12 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, inSoc
         inSocket === "oScribe" ||
         inSocket === "expandMode"
     ) {
-        return ["output", ...extras];
+        return ["output", "path", ...extras];
     }
-    return ["output"];
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, cornerShape: number, reversed: boolean): string => {
@@ -474,7 +461,7 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: keyof PolyringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
+    if (socket === "output" || socket === "path") {
         const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
         if (pointCount === null) return null;
 
@@ -552,6 +539,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         const innerPath = tI > 0 ? buildSubpath(innerVerts, innerCornerR, innerCornerShape, true) : "";
 
         const d = innerPath ? `${outerPath} ${innerPath}` : outerPath;
+        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+        if (socket === "path") {
+            return {
+                kind: "path",
+                data: { d, transform: transforms.join(" ") },
+            };
+        }
 
         const attributes: Record<string, string | undefined> = {
             d,
@@ -559,8 +554,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
             markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
             markerEnd: markerShape && !innerPath ? `url('#marker_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         return {
             kind: "shape",
@@ -673,6 +666,7 @@ const POLYRING_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
     eOuterCircumradius: "length",
     eOuterApothem: "length",
     eInnerCircumradius: "length",

@@ -42,6 +42,7 @@ export type KnotDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
         eOuterCircumradius: DataTypes.Use<"length">;
         eOuterApothem: DataTypes.Use<"length">;
         eInnerCircumradius: DataTypes.Use<"length">;
@@ -113,6 +114,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<KnotDefinition>>, i
         },
         out: {
             output: [],
+            path: [],
             eOuterCircumradius: [],
             eOuterApothem: [],
             eInnerCircumradius: [],
@@ -195,6 +197,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
                 <IntegerInput.SliderInput
@@ -353,43 +358,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
     );
 };
 
+const GEOMETRY_INPUTS: (keyof KnotDefinition["inputs"])[] = [
+    "pointCount", "skipCount", "pointDistro", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign",
+    "rScribe", "iScribe", "oScribe", "expandMode",
+    "outerCornerRadius", "outerCornerShape", "innerCornerRadius", "innerCornerShape",
+    "markerShape", "markerAlign",
+    "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation",
+];
+const STYLING_INPUTS: (keyof KnotDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
 const dependsOn = (_node: NodeDefinitions.NodeFor<KnotDefinition>, outSocket: keyof KnotDefinition["outputs"], _deps: AllDeps): (keyof KnotDefinition["inputs"])[] => {
     if (outSocket === "output") {
-        return [
-            "pointCount",
-            "skipCount",
-            "pointDistro",
-            "radius",
-            "spread",
-            "innerRadius",
-            "outerRadius",
-            "spanMode",
-            "spreadAlign",
-            "rScribe",
-            "iScribe",
-            "oScribe",
-            "expandMode",
-            "outerCornerRadius",
-            "outerCornerShape",
-            "innerCornerRadius",
-            "innerCornerShape",
-            "markerShape",
-            "markerAlign",
-            "strokeWidth",
-            "strokeColor",
-            "strokeCap",
-            "strokeJoin",
-            "strokeDash",
-            "strokeDashOffset",
-            "fillColor",
-            "paintOrder",
-            "positionMode",
-            "positionX",
-            "positionY",
-            "positionRadius",
-            "positionTheta",
-            "rotation",
-        ];
+        return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
+    }
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
     }
     if (outSocket === "eOuterCircumradius" || outSocket === "eOuterApothem" || outSocket === "eInnerCircumradius" || outSocket === "eInnerApothem") {
         return ["pointCount", "skipCount", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign", "rScribe", "iScribe", "oScribe", "expandMode"];
@@ -413,9 +396,12 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<KnotDefinition>, inSocket:
         inSocket === "oScribe" ||
         inSocket === "expandMode"
     ) {
-        return ["output", ...extras];
+        return ["output", "path", ...extras];
     }
-    return ["output"];
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, cornerShape: number, reversed: boolean): string => {
@@ -518,7 +504,7 @@ const collectStarVertices = (allVertices: (readonly [number, number])[], N: numb
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof KnotDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
+    if (socket === "output" || socket === "path") {
         const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
         if (pointCount === null) return null;
 
@@ -605,6 +591,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         const innerSubpaths = tI > 0 ? innerCycles.map((cycle) => buildSubpath([...cycle].reverse(), innerCornerR, innerCornerShape, true)) : [];
 
         const d = [...outerSubpaths, ...innerSubpaths].join(" ");
+        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+        if (socket === "path") {
+            return {
+                kind: "path",
+                data: { d, transform: transforms.join(" ") },
+            };
+        }
+
         const hasInner = innerSubpaths.length > 0;
 
         const attributes: Record<string, string | undefined> = {
@@ -613,8 +608,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
             markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
             markerEnd: markerShape && !hasInner ? `url('#marker_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         return {
             kind: "shape",
@@ -730,6 +723,7 @@ const KNOT_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
     eOuterCircumradius: "length",
     eOuterApothem: "length",
     eInnerCircumradius: "length",

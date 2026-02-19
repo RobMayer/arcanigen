@@ -32,6 +32,7 @@ export type PolygramDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
         eCircumradius: DataTypes.Use<"length">;
         eApothem: DataTypes.Use<"length">;
     };
@@ -81,6 +82,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygramDefinition>
         },
         out: {
             output: [],
+            path: [],
             eCircumradius: [],
             eApothem: [],
         },
@@ -144,6 +146,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
+            </SocketOut>
+            <SocketOut node={node} socketId={"path"} type={"path"}>
+                Path
             </SocketOut>
             <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
                 <IntegerInput.SliderInput
@@ -216,34 +221,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
     );
 };
 
+const GEOMETRY_INPUTS: (keyof PolygramDefinition["inputs"])[] = [
+    "pointCount", "skipCount", "pointDistro", "radius", "rScribe", "cornerRadius", "cornerShape",
+    "markerShape", "markerAlign",
+    "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation",
+];
+const STYLING_INPUTS: (keyof PolygramDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, outSocket: keyof PolygramDefinition["outputs"], _deps: AllDeps): (keyof PolygramDefinition["inputs"])[] => {
     if (outSocket === "output") {
-        // output shape depends on all inputs
-        return [
-            "pointCount",
-            "skipCount",
-            "pointDistro",
-            "radius",
-            "rScribe",
-            "cornerRadius",
-            "cornerShape",
-            "markerShape",
-            "markerAlign",
-            "strokeWidth",
-            "strokeColor",
-            "strokeCap",
-            "strokeJoin",
-            "strokeDash",
-            "strokeDashOffset",
-            "fillColor",
-            "paintOrder",
-            "positionMode",
-            "positionX",
-            "positionY",
-            "positionRadius",
-            "positionTheta",
-            "rotation",
-        ];
+        return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
+    }
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
     }
     if (outSocket === "eCircumradius" || outSocket === "eApothem") {
         return ["pointCount", "skipCount", "radius", "rScribe"];
@@ -252,27 +242,17 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, outSocket
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, inSocket: keyof PolygramDefinition["inputs"], _deps: AllDeps): (keyof PolygramDefinition["outputs"])[] => {
-    if (inSocket === "pointCount") {
-        return ["output", "eCircumradius", "eApothem"];
+    if (inSocket === "pointCount" || inSocket === "skipCount" || inSocket === "radius" || inSocket === "rScribe") {
+        return ["output", "path", "eCircumradius", "eApothem"];
     }
-    if (inSocket === "radius") {
-        return ["output", "eCircumradius", "eApothem"];
-    }
-    if (inSocket === "rScribe") {
-        return ["output", "eCircumradius", "eApothem"];
-    }
-    if (inSocket === "skipCount") {
-        return ["output", "eCircumradius", "eApothem"];
-    }
-    if (inSocket === "cornerRadius" || inSocket === "cornerShape") {
+    if (STYLING_INPUTS.includes(inSocket)) {
         return ["output"];
     }
-    // all other inputs only affect the shape output
-    return ["output"];
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: keyof PolygramDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
+    if (socket === "output" || socket === "path") {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
         const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
         if (radius === null || pointCount === null) {
@@ -407,6 +387,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         }
 
         const d = subpaths.join(" ");
+        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+        if (socket === "path") {
+            return {
+                kind: "path",
+                data: { d, transform: transforms.join(" ") },
+            };
+        }
 
         const attributes: Record<string, string | undefined> = {
             d,
@@ -414,8 +402,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
             markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
         };
-
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         return {
             kind: "shape",
@@ -493,6 +479,7 @@ const POLYGON_SOCKET_TYPES: Record<string, string> = {
     positionTheta: "angle",
     rotation: "angle",
     output: "shape",
+    path: "path",
     eCircumradius: "length",
     eApothem: "length",
 };

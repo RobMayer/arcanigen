@@ -220,6 +220,9 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="tokens<length>"] {
         --flavour: var(--flavour-accent);
     }
+    &[data-linktype~="path"] {
+        --flavour: var(--flavour-emphasis);
+    }
     &[data-linktype~="distribution"] {
         --flavour: var(--flavour-info);
     }
