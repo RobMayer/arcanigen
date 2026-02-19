@@ -12,6 +12,7 @@ import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { Paint, Stroke } from "../../shapeTypes";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
@@ -121,9 +122,7 @@ export namespace Stylings {
         );
     };
 
-    export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context) => {
-        const attributes: Record<string, string> = {};
-
+    export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): Paint => {
         // Resolve stroke attributes
         const strokeColor = context.resolve<"color">(node.id, "strokeColor")?.data ?? node.payload.strokeColor;
         const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
@@ -135,13 +134,13 @@ export namespace Stylings {
         // Resolve fill attributes
         const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
 
-        // Map strokeCap enum to SVG linecap value
-        const strokeLinecap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
-        const strokeLinejoin = Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt";
+        // Map enums
+        const cap = (Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt") as Stroke["cap"];
+        const join = (Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt") as Stroke["join"];
         const paintOrder = Resolver.EnumMappings.paintOrder[context.resolve<"enum">(node.id, "paintOrder")?.data ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
 
         // Convert stroke dash to pixel values
-        const strokeDasharray = strokeDash
+        const dashArray = strokeDash
             ? strokeDash
                   .split(/\s+/)
                   .filter(Boolean)
@@ -149,23 +148,22 @@ export namespace Stylings {
                   .join(" ")
             : undefined;
 
-        // Add stroke attributes
-        attributes["paintOrder"] = paintOrder;
+        const paint: Paint = {
+            paintOrder,
+            fill: (fillColor ?? null) === null ? null : Color.toHex(fillColor!),
+        };
+
         if (strokeColor !== null) {
-            attributes.stroke = Color.toHex(strokeColor);
-            attributes["strokeWidth"] = String(Length.Emptyable.asNumber(strokeWidth) ?? 0);
-            attributes["strokeLinecap"] = strokeLinecap;
-            attributes["strokeLinejoin"] = strokeLinejoin;
-            if (strokeDasharray) {
-                attributes["strokeDasharray"] = strokeDasharray;
-                attributes["strokeDashoffset"] = String(Length.Emptyable.asNumber(strokeDashOffset) ?? 0);
-            }
+            paint.stroke = {
+                color: Color.toHex(strokeColor),
+                width: Length.Emptyable.asNumber(strokeWidth) ?? 0,
+                cap,
+                join,
+                dash: dashArray ? { array: dashArray, offset: Length.Emptyable.asNumber(strokeDashOffset) ?? 0 } : undefined,
+            };
         }
 
-        // Add fill attribute
-        attributes.fill = (fillColor ?? null) === null ? "none" : Color.toHex(fillColor!);
-
-        return attributes;
+        return paint;
     };
 }
 

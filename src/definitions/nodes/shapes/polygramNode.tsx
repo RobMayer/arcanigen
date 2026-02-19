@@ -396,36 +396,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             };
         }
 
-        const attributes: Record<string, string | undefined> = {
-            d,
-            ...Stylings.evaluate(node, context),
-            markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
-            markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
-        };
-
         return {
             kind: "shape",
             data: {
-                tag: "path",
-                attributes,
-                children: [],
+                type: "path",
+                d,
+                paint: Stylings.evaluate(node, context),
+                markers: markerShape
+                    ? {
+                          mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },
+                          end: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },
+                      }
+                    : undefined,
                 transform: transforms.join(" "),
-                definitions: [
-                    markerShape
-                        ? {
-                              tag: "marker",
-                              attributes: {
-                                  id: `marker_${node.id}`,
-                                  markerUnits: "userSpaceOnUse",
-                                  markerWidth: "100%",
-                                  markerHeight: "100%",
-                                  overflow: "visible",
-                                  orient: markerAlign ? "auto-start-reverse" : undefined,
-                              },
-                              children: [markerShape],
-                          }
-                        : null,
-                ],
                 preview: { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius },
             },
         };

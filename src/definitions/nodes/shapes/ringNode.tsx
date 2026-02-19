@@ -256,18 +256,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
     }
 
     if (socket === "output") {
-        const attributes: Record<string, string> = {
-            ...Stylings.evaluate(node, context),
-            d,
-        };
-
         return {
             kind: "shape",
             data: {
+                type: "path",
+                d,
+                paint: Stylings.evaluate(node, context),
                 transform: transforms.join(" "),
-                tag: "path",
-                attributes,
-                children: [],
                 preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
         };

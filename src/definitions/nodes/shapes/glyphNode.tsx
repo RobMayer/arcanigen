@@ -14,7 +14,7 @@ import { Stylings, Transforms } from "./abstract";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
-import { SVGDefinition, SVGMember } from "../../../types";
+
 
 export type GlyphDefinition = {
     inputs: {
@@ -183,50 +183,29 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const scaledViewW = viewW * dpiScale;
     const scaledViewH = viewH * dpiScale;
 
-    const stylingAttrs = Stylings.evaluate(node, context);
+    const paint = Stylings.evaluate(node, context);
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
-
-    const symbolId = `glyph_${node.id}`;
-
-    // <symbol> definition with viewBox, containing the path with non-scaling-stroke
-    const pathMember: SVGMember = {
-        tag: "path",
-        attributes: {
-            d: pathD,
-            vectorEffect: "non-scaling-stroke",
-            ...stylingAttrs,
-        },
-    };
-
-    const symbolDef: SVGDefinition = {
-        tag: "symbol",
-        attributes: {
-            id: symbolId,
-            viewBox: `${scaledViewX} ${scaledViewY} ${scaledViewW} ${scaledViewH}`,
-        },
-        children: [pathMember],
-    };
-
-    // <use> element referencing the symbol, centered
-    const useMember: SVGMember = {
-        tag: "use",
-        attributes: {
-            href: `#${symbolId}`,
-            width: `${width}`,
-            height: `${height}`,
-            x: `${-width / 2}`,
-            y: `${-height / 2}`,
-        },
-    };
 
     return {
         kind: "shape",
         data: {
-            tag: "g",
+            type: "symbol",
+            symbol: {
+                content: {
+                    type: "path" as const,
+                    d: pathD,
+                    paint,
+                    vectorEffect: "non-scaling-stroke",
+                    transform: "",
+                    preview: { x: scaledViewX, y: scaledViewY, w: scaledViewW, h: scaledViewH },
+                },
+                viewBox: `${scaledViewX} ${scaledViewY} ${scaledViewW} ${scaledViewH}`,
+                width: `${width}`,
+                height: `${height}`,
+                x: `${-width / 2}`,
+                y: `${-height / 2}`,
+            },
             transform: transforms.join(" "),
-            attributes: {},
-            children: [useMember],
-            definitions: [symbolDef],
             preview: { x: -width / 2 + translateX, y: -height / 2 + translateY, w: width, h: height },
         },
     };

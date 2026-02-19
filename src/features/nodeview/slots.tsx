@@ -7,8 +7,8 @@ import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { DataTypes, NodeDefinitions } from "../../definitions/betterTypes";
 import { Flavour } from "../../components/types";
-import { SVGShape } from "../../types";
-import { renderSVGObject } from "../svgcanvas";
+import { Shape } from "../../definitions/shapeTypes";
+import { ShapeElement } from "../../definitions/shapeRenderer";
 import { Color } from "../../definitions/datatypes/color";
 
 const SlotBase = styled.div`
@@ -45,14 +45,7 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     );
 };
 
-export const ShapePreview = styled(({ shape, className, color }: { shape: SVGShape | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Use<"color">> }) => {
-    const contents = useMemo(() => {
-        if (shape) {
-            return renderSVGObject(shape, "preview");
-        }
-        return null;
-    }, [shape]);
-
+export const ShapePreview = styled(({ shape, className, color }: { shape: Shape | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Use<"color">> }) => {
     const style = useMemo(
         () => ({
             backgroundColor: Color.toHex(color ?? { r: 1, g: 1, b: 1, a: 1 }),
@@ -60,14 +53,14 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: SVGSha
         [color],
     );
 
-    if (!shape || !contents) return <div className={className} />;
+    if (!shape) return <div className={className} />;
 
-    const { x, y, w, h } = shape.preview ?? { x: 0, y: 0, w: 0, h: 0 };
+    const { x, y, w, h } = shape.preview;
     const pad = Math.max(w, h) * 0.05;
 
     return (
         <div className={className} style={style}>
-            {pad === 0 ? null : <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>{contents}</svg>}
+            {pad === 0 ? null : <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}><ShapeElement shape={shape} /></svg>}
         </div>
     );
 })`

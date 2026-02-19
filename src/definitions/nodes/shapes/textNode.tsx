@@ -16,7 +16,7 @@ import { AngleInput } from "../../../components/inputs/AngleInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
-import { SVGMember } from "../../../types";
+
 
 export type TextPathDefinition = {
     inputs: {
@@ -255,44 +255,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
         startOffset = `calc(clamp(0%, ${originPct} + ${lenNum}px, 100%))`;
     }
 
-    const stylingAttrs = Stylings.evaluate(node, context);
-
-    const pathId = `textpath_${node.id}`;
-
-    // path definition for <defs>
-    const pathDef: SVGMember = {
-        tag: "path",
-        attributes: {
-            id: pathId,
-            d: pathData.d,
-        },
-    };
-
-    // <textPath> element referencing the path
-    const textPathMember: SVGMember = {
-        tag: "textPath",
-        attributes: {
-            startOffset,
-            href: `#${pathId}`,
-        },
-        text,
-    };
+    const paint = Stylings.evaluate(node, context);
 
     return {
         kind: "shape",
         data: {
-            tag: "text",
+            type: "text",
+            text,
+            fontSize: size,
+            letterSpacing: spacing !== 0 ? spacing : undefined,
+            textAnchor: textAnchorValue as "start" | "middle" | "end",
+            dominantBaseline,
+            rotate: rotation !== 0 ? rotation : undefined,
+            paint,
+            textPath: { d: pathData.d, startOffset },
             transform: pathData.transform,
-            attributes: {
-                fontSize: `${size}`,
-                letterSpacing: spacing !== 0 ? `${spacing}` : undefined,
-                textAnchor: textAnchorValue,
-                dominantBaseline,
-                rotate: rotation !== 0 ? `${rotation}` : undefined,
-                ...stylingAttrs,
-            },
-            children: [textPathMember],
-            definitions: [pathDef],
             preview: pathData.preview,
         },
     };

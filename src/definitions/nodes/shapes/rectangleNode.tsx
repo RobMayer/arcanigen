@@ -232,38 +232,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const attributes: Record<string, string | undefined> = {
-            d,
-            ...Stylings.evaluate(node, context),
-            markerMid: markerShape ? `url('#marker_${node.id}')` : undefined,
-            markerEnd: markerShape ? `url('#marker_${node.id}')` : undefined,
-        };
-
         const diag = Math.sqrt(width * width + height * height);
         const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
 
         return {
             kind: "shape",
             data: {
-                tag: "path",
+                type: "path",
+                d,
+                paint: Stylings.evaluate(node, context),
+                markers: markerShape
+                    ? {
+                          mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },
+                          end: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },
+                      }
+                    : undefined,
                 transform: transforms.join(" "),
-                definitions: [
-                    markerShape
-                        ? {
-                              tag: "marker",
-                              attributes: {
-                                  id: `marker_${node.id}`,
-                                  markerUnits: "userSpaceOnUse",
-                                  markerWidth: "100%",
-                                  markerHeight: "100%",
-                                  overflow: "visible",
-                                  orient: markerAlign ? "auto-start-reverse" : undefined,
-                              },
-                              children: [markerShape],
-                          }
-                        : null,
-                ],
-                attributes,
                 preview: pathPreview,
             },
         };

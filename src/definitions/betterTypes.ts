@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { SVGPath, SVGShape } from "../types";
+import { SVGPath } from "../types";
+import { Shape } from "./shapeTypes";
 import { EmptyOr } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
@@ -230,13 +231,13 @@ namespace Registries {
         boolean: boolean;
 
         length: EmptyOr<Length.Type>;
-        shape: SVGShape;
+        shape: Shape;
         path: SVGPath;
         color: Color.Type;
         "tokens<length>": string;
         distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
-        layer: { shape: SVGShape | null; enabled: boolean | null; blend: number | null };
-        "array<layer>": { shape: SVGShape | null; enabled: boolean | null; blend: number | null }[];
+        layer: { shape: Shape | null; enabled: boolean | null; blend: number | null };
+        "array<layer>": { shape: Shape | null; enabled: boolean | null; blend: number | null }[];
     };
 
     export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {

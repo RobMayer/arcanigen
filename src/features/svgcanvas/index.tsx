@@ -1,95 +1,9 @@
-import { ReactNode, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Project } from "../../state/project";
-import { SVGDefinition, SVGMember, SVGShape } from "../../types";
 import { Resolver } from "../../util/resolver";
 import styled from "styled-components";
 import { DragPane, DragPaneControls } from "../../components/wrappers/DragPane";
-
-type SVGRenderable = SVGShape | SVGMember | SVGDefinition;
-
-export const renderSVGObject = (obj: SVGRenderable, key: string | number): ReactNode => {
-    const { tag, attributes, style } = obj;
-    const childNodes = (obj.children ?? []).flatMap((child, i) => (child ? [renderSVGObject(child, i)] : []));
-
-    // Render inline definitions from SVGShape
-    let defsNode: ReactNode = null;
-    if ("definitions" in obj && obj.definitions) {
-        const defChildren = obj.definitions.flatMap((def, i) => (def ? [renderSVGObject(def, `def-${i}`)] : []));
-        if (defChildren.length > 0) {
-            defsNode = <defs key="defs">{defChildren}</defs>;
-        }
-    }
-
-    // Apply transform from SVGShape
-    const transform = "transform" in obj ? obj.transform : undefined;
-    const allAttrs = transform ? { ...attributes, transform } : attributes;
-
-    const textContent = "text" in obj ? obj.text : undefined;
-
-    let element: ReactNode;
-    switch (tag) {
-        case "g":
-            element = (
-                <g key={key} {...allAttrs} style={style}>
-                    {defsNode}
-                    {childNodes}
-                </g>
-            );
-            return element;
-        case "path":
-            element = <path key={key} {...allAttrs} style={style} />;
-            break;
-        case "line":
-            element = <line key={key} {...allAttrs} style={style} />;
-            break;
-        case "rect":
-            element = <rect key={key} {...allAttrs} style={style} />;
-            break;
-        case "text":
-            element = (
-                <text key={key} {...allAttrs} style={style}>
-                    {defsNode}
-                    {textContent}
-                    {childNodes}
-                </text>
-            );
-            return element;
-        case "textPath":
-            element = (
-                <textPath key={key} {...allAttrs} style={style}>
-                    {textContent}
-                    {childNodes}
-                </textPath>
-            );
-            return element;
-        case "marker":
-            return (
-                <marker key={key} {...allAttrs} style={style}>
-                    {childNodes}
-                </marker>
-            );
-        case "symbol":
-            return (
-                <symbol key={key} {...allAttrs} style={style}>
-                    {childNodes}
-                </symbol>
-            );
-        case "use":
-            element = <use key={key} {...allAttrs} style={style} />;
-            break;
-    }
-
-    // Wrap leaf elements in a <g> if they carry definitions
-    if (defsNode) {
-        return (
-            <g key={key}>
-                {defsNode}
-                {element}
-            </g>
-        );
-    }
-    return element;
-};
+import { ShapeElement } from "../../definitions/shapeRenderer";
 
 type SvgCanvasProps = {
     className?: string;
@@ -108,7 +22,7 @@ export const SvgCanvas = styled(({ className, paneControls }: SvgCanvasProps) =>
         <CanvasViewPane className={className} controls={paneControls} minZoom={0.1} maxZoom={10} boundsRef={boundsRef}>
             <SvgCanvasContent>
                 <svg viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`} width={canvas.width} height={canvas.height} style={{ background: canvas.background }}>
-                    {contents && renderSVGObject(contents, "root")}
+                    {contents && <ShapeElement shape={contents} />}
                 </svg>
             </SvgCanvasContent>
             <Bounds ref={boundsRef} />

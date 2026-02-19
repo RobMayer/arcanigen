@@ -136,18 +136,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     }
 
     if (socket === "output") {
-        const attributes: Record<string, string> = {
-            d,
-            ...Stylings.evaluate(node, context),
-        };
-
         return {
             kind: "shape",
             data: {
+                type: "path",
+                d,
+                paint: Stylings.evaluate(node, context),
                 transform: transforms.join(" "),
-                tag: "path",
-                attributes,
-                children: [],
                 preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
             },
         };

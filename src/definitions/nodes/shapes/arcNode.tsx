@@ -15,7 +15,6 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
-import { SVGDefinition } from "../../../types";
 
 export type ArcDefinition = {
     inputs: {
@@ -280,10 +279,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     }
 
     if (socket === "output") {
-        const stylingAttrs = Stylings.evaluate(node, context);
+        const paint = Stylings.evaluate(node, context);
 
         if (!pieSlice) {
-            stylingAttrs.fill = "none";
+            paint.fill = null;
         }
 
         const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
@@ -292,50 +291,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
         const useStartMarker = !pieSlice && !!markerStartShape;
         const useEndMarker = !pieSlice && !!markerEndShape;
 
-        const attributes: Record<string, string | undefined> = {
-            d,
-            ...stylingAttrs,
-            markerStart: useStartMarker ? `url('#markerStart_${node.id}')` : undefined,
-            markerEnd: useEndMarker ? `url('#markerEnd_${node.id}')` : undefined,
-        };
-
-        const markerDefs: SVGDefinition[] = [];
-        if (useStartMarker) {
-            markerDefs.push({
-                tag: "marker",
-                attributes: {
-                    id: `markerStart_${node.id}`,
-                    markerUnits: "userSpaceOnUse",
-                    markerWidth: "100%",
-                    markerHeight: "100%",
-                    overflow: "visible",
-                    orient: markerAlign ? "auto-start-reverse" : undefined,
-                },
-                children: [markerStartShape],
-            });
-        }
-        if (useEndMarker) {
-            markerDefs.push({
-                tag: "marker",
-                attributes: {
-                    id: `markerEnd_${node.id}`,
-                    markerUnits: "userSpaceOnUse",
-                    markerWidth: "100%",
-                    markerHeight: "100%",
-                    overflow: "visible",
-                    orient: markerAlign ? "auto-start-reverse" : undefined,
-                },
-                children: [markerEndShape],
-            });
-        }
+        const markers = (useStartMarker || useEndMarker)
+            ? {
+                  start: useStartMarker ? { shape: markerStartShape!, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  end: useEndMarker ? { shape: markerEndShape!, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+              }
+            : undefined;
 
         return {
             kind: "shape",
             data: {
-                tag: "path",
+                type: "path",
+                d,
+                paint,
+                markers,
                 transform: transforms.join(" "),
-                attributes,
-                definitions: markerDefs,
                 preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
             },
         };

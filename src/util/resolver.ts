@@ -1,4 +1,4 @@
-import { SVGShape } from "../types";
+import { Shape } from "../definitions/shapeTypes";
 import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -59,7 +59,7 @@ export namespace Resolver {
             originY: number;
             background: string;
         };
-        contents: SVGShape | null;
+        contents: Shape | null;
     };
 
     export const evaluateRootResult = (state: State): RootResult => {

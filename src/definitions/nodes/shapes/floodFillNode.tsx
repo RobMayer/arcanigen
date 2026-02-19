@@ -79,17 +79,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloodFillDefinition>, socket: ke
         return {
             kind: "shape",
             data: {
-                tag: "rect",
+                type: "rect",
+                x: "-5000%",
+                y: "-5000%",
+                width: "10000%",
+                height: "10000%",
+                paint: { fill: Color.toHex(fillColor) },
                 transform: "",
                 preview: { x: 0, y: 0, w: 100, h: 100 },
-                attributes: {
-                    x: "-5000%",
-                    y: "-5000%",
-                    width: "10000%",
-                    height: "10000%",
-                    fill: Color.toHex(fillColor),
-                },
-                children: [],
             },
         };
     }

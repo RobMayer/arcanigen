@@ -14,7 +14,7 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { SVGMember } from "../../../types";
+
 
 export type AlongPathDefinition = {
     inputs: {
@@ -164,29 +164,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
         offsetDistance = `calc(clamp(0%, ${originPct} + ${lenNum}px, 100%))`;
     }
 
-    const pathId = `alongpath_${node.id}`;
-
-    // path definition for <defs>
-    const pathDef: SVGMember = {
-        tag: "path",
-        attributes: {
-            id: pathId,
-            d: pathData.d,
-        },
-    };
-
     return {
         kind: "shape",
         data: {
-            ...shapeData,
-            transform: pathData.transform,
-            style: {
-                ...shapeData.style,
-                offsetPath: `url(#${pathId})`,
-                offsetDistance,
-                offsetRotate: alignToPath ? "auto" : "0deg",
+            type: "offsetPath",
+            shape: shapeData,
+            path: {
+                d: pathData.d,
+                distance: offsetDistance,
+                rotate: alignToPath ? "auto" : "0deg",
             },
-            definitions: [...(shapeData.definitions ?? []), pathDef],
+            transform: pathData.transform,
             preview: pathData.preview,
         },
     };

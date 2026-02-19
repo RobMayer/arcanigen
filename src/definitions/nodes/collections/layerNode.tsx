@@ -387,15 +387,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
 
         const doBlendInternal = context.resolve<"boolean">(node.id, "isolate")?.data ?? node.payload.isolate ?? false;
 
-        // Build SVG: wrap each layer in <g> with blend mode
+        // Wrap each layer: non-normal blend gets a GroupShape wrapper
         const children = layerData.map((layer) => {
             const blendModeStr = Resolver.EnumMappings.blendMode[layer.blend] ?? "normal";
             if (blendModeStr !== "normal") {
                 return {
-                    tag: "g" as const,
-                    attributes: {},
-                    style: { mixBlendMode: blendModeStr },
+                    type: "group" as const,
                     children: [layer.shape],
+                    blendMode: blendModeStr,
+                    transform: "",
                     preview: layer.shape.preview,
                 };
             }
@@ -408,19 +408,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
             maxX = -Infinity,
             maxY = -Infinity;
         for (const child of children) {
-            minX = Math.min(minX, child.preview?.x ?? 0);
-            minY = Math.min(minY, child.preview?.y ?? 0);
-            maxX = Math.max(maxX, (child.preview?.x ?? 0) + (child.preview?.w ?? 0));
-            maxY = Math.max(maxY, (child.preview?.y ?? 0) + (child.preview?.h ?? 0));
+            minX = Math.min(minX, child.preview.x);
+            minY = Math.min(minY, child.preview.y);
+            maxX = Math.max(maxX, child.preview.x + child.preview.w);
+            maxY = Math.max(maxY, child.preview.y + child.preview.h);
         }
 
         return {
             kind: "shape",
             data: {
-                tag: "g",
-                attributes: {},
-                style: { isolation: doBlendInternal ? "isolate" : "auto" },
+                type: "group",
                 children,
+                isolation: doBlendInternal,
                 transform: "",
                 preview: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
             },

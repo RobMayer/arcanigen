@@ -17,7 +17,7 @@ import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
 import { Stylings, Transforms } from "./abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { SVGDefinition, SVGMember } from "../../../types";
+
 
 export type BurstDefinition = {
     inputs: {
@@ -334,61 +334,32 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const markerEndShape = context.resolve<"shape">(node.id, "markerEnd")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const lines: SVGMember[] = lineCoords.map((l) => ({
-            tag: "line",
-            attributes: {
-                x1: `${l.x1}`,
-                y1: `${l.y1}`,
-                x2: `${l.x2}`,
-                y2: `${l.y2}`,
-            },
+        const paint = Stylings.evaluate(node, context);
+        const markers = (markerStartShape || markerEndShape)
+            ? {
+                  start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+              }
+            : undefined;
+
+        const children = lineCoords.map((l) => ({
+            type: "line" as const,
+            x1: l.x1,
+            y1: l.y1,
+            x2: l.x2,
+            y2: l.y2,
+            paint,
+            markers,
+            transform: "",
+            preview: { x: Math.min(l.x1, l.x2), y: Math.min(l.y1, l.y2), w: Math.abs(l.x2 - l.x1), h: Math.abs(l.y2 - l.y1) },
         }));
-
-        const attributes: Record<string, string | undefined> = {
-            ...Stylings.evaluate(node, context),
-            markerStart: markerStartShape ? `url('#marker_start_${node.id}')` : undefined,
-            markerEnd: markerEndShape ? `url('#marker_end_${node.id}')` : undefined,
-        };
-
-        const markerDefs: (SVGDefinition | null)[] = [
-            markerStartShape
-                ? {
-                      tag: "marker" as const,
-                      attributes: {
-                          id: `marker_start_${node.id}`,
-                          markerUnits: "userSpaceOnUse",
-                          markerWidth: "100%",
-                          markerHeight: "100%",
-                          overflow: "visible",
-                          orient: markerAlign ? "auto-start-reverse" : undefined,
-                      },
-                      children: [markerStartShape],
-                  }
-                : null,
-            markerEndShape
-                ? {
-                      tag: "marker" as const,
-                      attributes: {
-                          id: `marker_end_${node.id}`,
-                          markerUnits: "userSpaceOnUse",
-                          markerWidth: "100%",
-                          markerHeight: "100%",
-                          overflow: "visible",
-                          orient: markerAlign ? "auto-start-reverse" : undefined,
-                      },
-                      children: [markerEndShape],
-                  }
-                : null,
-        ];
 
         return {
             kind: "shape",
             data: {
-                tag: "g",
+                type: "group",
                 transform: transforms.join(" "),
-                attributes,
-                definitions: markerDefs,
-                children: lines,
+                children,
                 preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
         };
