@@ -4,6 +4,9 @@ import { Resolver } from "../../util/resolver";
 import type { CacheType, GraphId, InterfacesType, LinksType, NodesType } from "./types";
 import { flattenSockets, parseInterface } from "./types";
 
+/** Mutable graph cache used during a rebuild pass */
+type MutableGraphCache = { [nodeId: string]: { [cacheKey: string]: DataTypes.AnyEval | null } };
+
 /** Invalidates cache for a node and all its downstream nodes */
 export const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: LinksType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
     const graph = { nodes: nodes[graphId], links: links[graphId] };
@@ -29,7 +32,7 @@ export const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: 
     return { ...cache, [graphId]: newGraphCache };
 };
 
-/** Evaluates a subgraph given inputs, returns outputs */
+/** Evaluates a subgraph given inputs, returns outputs (demand-driven, not cached) */
 const evaluateSubgraphForCache = (
     nodes: NodesType,
     links: LinksType,
@@ -42,7 +45,7 @@ const evaluateSubgraphForCache = (
     if (!subgraphNodes || !subgraphLinks) return {};
 
     // Helper to evaluate a node's output within this subgraph
-    const evaluateNodeInSubgraph = (nodeId: string, outSocket: string): DataTypes.AnyEval | null => {
+    const evaluateNodeInSubgraph = (nodeId: string, outSocket: string, iteration?: number): DataTypes.AnyEval | null => {
         const node = subgraphNodes[nodeId];
         if (!node) return null;
 
@@ -55,7 +58,7 @@ const evaluateSubgraphForCache = (
             getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
                 return inputValues[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
             },
-            resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+            resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, iter?: number): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const targetNode = subgraphNodes[targetNodeId];
                 if (!targetNode) return null;
 
@@ -65,14 +68,14 @@ const evaluateSubgraphForCache = (
                 const link = subgraphLinks[linkId];
                 if (!link) return null;
 
-                return evaluateNodeInSubgraph(link.fromNode, link.fromSocket) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+                return evaluateNodeInSubgraph(link.fromNode, link.fromSocket, iter) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
             },
             subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }) => {
                 return evaluateSubgraphForCache(nodes, links, interfaces, nestedGraphId, nestedInputs);
             },
         };
 
-        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], subContext);
+        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], subContext, iteration);
     };
 
     // Get output node IDs by parsing interfaces with "out:" prefix
@@ -106,16 +109,39 @@ const evaluateSubgraphForCache = (
     return results;
 };
 
-/** Evaluates a single node and caches all its output sockets */
-export const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: LinksType, interfaces: InterfacesType, graphId: GraphId, nodeId: ArcaneGraph.NodeId): CacheType => {
+/**
+ * Evaluates a single output socket and caches the result.
+ * Demand-driven with evaluate-on-miss: if resolve follows a link to an
+ * uncached upstream socket, it recursively evaluates that socket first.
+ * Null results are cached explicitly to distinguish "evaluated to null"
+ * from "not yet cached" (checked via `in` operator).
+ */
+const evaluateSocketCached = (
+    graphCache: MutableGraphCache,
+    nodes: NodesType,
+    links: LinksType,
+    interfaces: InterfacesType,
+    graphId: GraphId,
+    nodeId: string,
+    outSocket: string,
+    iteration?: number,
+): DataTypes.AnyEval | null => {
+    const cacheKey = iteration != null ? `${outSocket}:${iteration}` : outSocket;
+
+    // Already cached (including null)? Return it.
+    const nodeCache = graphCache[nodeId];
+    if (nodeCache && cacheKey in nodeCache) {
+        return nodeCache[cacheKey];
+    }
+
     const node = nodes[graphId]?.[nodeId];
-    if (!node) return cache;
+    if (!node) return null;
 
     const evaluate = NodeTypes.getEvaluator(node.type);
-    if (!evaluate) return cache;
+    if (!evaluate) return null;
 
-    // Create a resolve function that uses the cache
-    const resolve = <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+    // Build context with evaluate-on-miss resolve
+    const resolve = <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, iter?: number): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
         const targetNode = nodes[graphId]?.[targetNodeId];
         if (!targetNode) return null;
 
@@ -125,8 +151,8 @@ export const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: 
         const link = links[graphId]?.[linkId];
         if (!link) return null;
 
-        const { fromNode, fromSocket } = link;
-        return (cache[graphId]?.[fromNode]?.[fromSocket] ?? null) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        // Recurse — returns cached value or evaluates on miss
+        return evaluateSocketCached(graphCache, nodes, links, interfaces, graphId, link.fromNode, link.fromSocket, iter) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
     };
 
     const context: Resolver.Context = {
@@ -138,24 +164,13 @@ export const evaluateAndCacheNode = (cache: CacheType, nodes: NodesType, links: 
         getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
     };
 
-    // Evaluate all output sockets
-    const outputSockets = Object.keys(node.out);
-    const nodeResults: { [outSocket: string]: DataTypes.AnyEval } = {};
+    const result = evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context, iteration);
 
-    for (const outSocket of outputSockets) {
-        const result = evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context);
-        if (result !== null) {
-            nodeResults[outSocket] = result;
-        }
-    }
+    // Cache immediately (including null — distinguishes from "not cached")
+    if (!graphCache[nodeId]) graphCache[nodeId] = {};
+    graphCache[nodeId][cacheKey] = result;
 
-    return {
-        ...cache,
-        [graphId]: {
-            ...cache[graphId],
-            [nodeId]: nodeResults,
-        },
-    };
+    return result;
 };
 
 /** Rebuilds cache for a node and all downstream nodes in topological order */
@@ -164,14 +179,31 @@ export const rebuildDownstream = (cache: CacheType, nodes: NodesType, links: Lin
 
     // Get downstream nodes in BFS order (ensures upstream is processed before downstream)
     const downstream = ArcaneGraph.wideDownstreamOf(graph, nodeId);
-    const toEvaluate = [nodeId, ...downstream];
+    const toRebuild = new Set([nodeId, ...downstream]);
 
-    let newCache = cache;
-    for (const id of toEvaluate) {
-        newCache = evaluateAndCacheNode(newCache, nodes, links, interfaces, graphId, id);
+    // Create mutable graph cache — copy existing entries, EXCEPT for invalidated nodes
+    const graphCache: MutableGraphCache = {};
+    const existing = cache[graphId] ?? {};
+    for (const [nId, entries] of Object.entries(existing)) {
+        if (!toRebuild.has(nId)) {
+            graphCache[nId] = entries; // keep non-invalidated entries as-is
+        }
+        // invalidated nodes: entries are dropped (not copied)
     }
 
-    return newCache;
+    // Proactively evaluate all output sockets of affected nodes.
+    // evaluate-on-miss in the resolve closure handles socket-level ordering:
+    // if socket A on this node depends on socket B (via upstream links),
+    // the recursive resolve evaluates B first and caches it.
+    for (const nId of [nodeId, ...downstream]) {
+        const node = nodes[graphId]?.[nId];
+        if (!node) continue;
+        for (const outSocket of Object.keys(node.out)) {
+            evaluateSocketCached(graphCache, nodes, links, interfaces, graphId, nId, outSocket);
+        }
+    }
+
+    return { ...cache, [graphId]: graphCache };
 };
 
 /** Builds cache for all nodes in a graph by evaluating in topological order (sources first) */

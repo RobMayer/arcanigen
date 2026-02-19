@@ -2,7 +2,7 @@ import { FastContextMember } from "../../util/hooks/useFastContext";
 import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
-import { evaluateAndCacheNode, rebuildDownstream, invalidateDownstream } from "./cache";
+import { rebuildDownstream, invalidateDownstream } from "./cache";
 import type { GraphId, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, XY, InterfaceMember } from "./types";
 
 export type StateRefs = {
@@ -153,8 +153,7 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.fireOnConnect(graphId, fromNode, newLink, "out");
         this.fireOnConnect(graphId, toNode, newLink, "in");
 
-        // Cache: evaluate fromNode first, then rebuild from toNode downstream
-        this.refs.cache.ref.current = evaluateAndCacheNode(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, fromNode);
+        // Cache: rebuild from toNode downstream (evaluate-on-miss handles fromNode if needed)
         this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, toNode);
         this.dirty.add("cache");
 

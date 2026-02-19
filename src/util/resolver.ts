@@ -43,7 +43,7 @@ export namespace Resolver {
 
     export type Context = {
         graphId: string;
-        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, iteration?: number) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
         subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
         getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
@@ -66,7 +66,7 @@ export namespace Resolver {
         const context: Context = {
             graphId: "root",
             getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
-            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, iteration?: number): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const links = ArcaneGraph.linksTo({ nodes: state.nodes["root"], links: state.links["root"] }, nodeId, inSocket);
                 if (links.length === 0) {
                     return null;
@@ -76,7 +76,7 @@ export namespace Resolver {
                     return null;
                 }
 
-                return evaluateNodeOutput<K>(state, "root", theLink.fromNode, theLink.fromSocket, context);
+                return evaluateNodeOutput<K>(state, "root", theLink.fromNode, theLink.fromSocket, context, iteration);
             },
             subgraph: (subgraphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
                 return evaluateSubgraph(state, subgraphId, inputs);
@@ -129,7 +129,7 @@ export namespace Resolver {
             getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
                 return inputs[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
             },
-            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, iteration?: number): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const links = ArcaneGraph.linksTo({ nodes: subgraphNodes, links: subgraphLinks }, nodeId, inSocket);
                 if (links.length === 0) {
                     return null;
@@ -138,7 +138,7 @@ export namespace Resolver {
                 if (!theLink) {
                     return null;
                 }
-                return evaluateNodeOutput<K>(state, subgraphId, theLink.fromNode, theLink.fromSocket, subContext);
+                return evaluateNodeOutput<K>(state, subgraphId, theLink.fromNode, theLink.fromSocket, subContext, iteration);
             },
             subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
                 // Recursively evaluate nested subgraphs
@@ -172,6 +172,7 @@ export namespace Resolver {
         nodeId: ArcaneGraph.NodeId,
         outSocket: string,
         context: Context,
+        iteration?: number,
     ): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
         const node = state.nodes[graphId][nodeId];
         if (!node) {
@@ -182,6 +183,6 @@ export namespace Resolver {
             return null;
         }
 
-        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context, iteration) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
     };
 }
