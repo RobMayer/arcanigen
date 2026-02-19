@@ -5,7 +5,7 @@ export type Measure<U extends string> = `${number}${U}`;
 export type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "title"> & { tooltip?: string };
 
 export type SVGMember = {
-    tag: "g" | "path" | "line" | "rect" | "text" | "textPath";
+    tag: "g" | "path" | "line" | "rect" | "text" | "textPath" | "use";
     children?: (SVGMember | null)[];
     text?: string;
     style?: { [key: string]: string };
@@ -13,7 +13,7 @@ export type SVGMember = {
 };
 
 export type SVGDefinition = {
-    tag: "marker"; // later might include "filter", "mask", etc...
+    tag: "marker" | "symbol"; // later might include "filter", "mask", etc...
     children?: (SVGMember | SVGDefinition | SVGShape | null)[]; // maybe just SVGElement?
     attributes: { [key: string]: string | undefined };
     style?: { [key: string]: string };

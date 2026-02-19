@@ -70,6 +70,7 @@ import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
 import { FloodFillDefinition, FloodFillNodeType } from "./nodes/shapes/floodFillNode";
 import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
+import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -98,6 +99,7 @@ namespace Registries {
         floodFill: FloodFillDefinition;
         textPath: TextPathDefinition;
         alongPath: AlongPathDefinition;
+        glyph: GlyphDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -169,6 +171,7 @@ namespace Registries {
         floodFill: FloodFillNodeType,
         textPath: TextPathNodeType,
         alongPath: AlongPathNodeType,
+        glyph: GlyphNodeType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,

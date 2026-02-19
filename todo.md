@@ -33,7 +33,7 @@
     - [x] Line
     - [x] Flood Fill
     - [ ] Custom Glyph
-    - [ ] Text Path (ugh)
+    - [x] Text Path (ugh)
 - [ ] more shapes (new)
     - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
     - [ ] Banded Burst (circle, polygon, and polygram are to ring, polyring, and knot as burst is to this)

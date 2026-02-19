@@ -68,6 +68,15 @@ export const renderSVGObject = (obj: SVGRenderable, key: string | number): React
                     {childNodes}
                 </marker>
             );
+        case "symbol":
+            return (
+                <symbol key={key} {...allAttrs} style={style}>
+                    {childNodes}
+                </symbol>
+            );
+        case "use":
+            element = <use key={key} {...allAttrs} style={style} />;
+            break;
     }
 
     // Wrap leaf elements in a <g> if they carry definitions
