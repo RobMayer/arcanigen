@@ -131,7 +131,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" ") },
+            data: { d, transform: transforms.join(" "), preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius } },
         };
     }
 

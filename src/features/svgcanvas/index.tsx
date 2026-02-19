@@ -24,6 +24,8 @@ export const renderSVGObject = (obj: SVGRenderable, key: string | number): React
     const transform = "transform" in obj ? obj.transform : undefined;
     const allAttrs = transform ? { ...attributes, transform } : attributes;
 
+    const textContent = "text" in obj ? obj.text : undefined;
+
     let element: ReactNode;
     switch (tag) {
         case "g":
@@ -43,6 +45,23 @@ export const renderSVGObject = (obj: SVGRenderable, key: string | number): React
         case "rect":
             element = <rect key={key} {...allAttrs} style={style} />;
             break;
+        case "text":
+            element = (
+                <text key={key} {...allAttrs} style={style}>
+                    {defsNode}
+                    {textContent}
+                    {childNodes}
+                </text>
+            );
+            return element;
+        case "textPath":
+            element = (
+                <textPath key={key} {...allAttrs} style={style}>
+                    {textContent}
+                    {childNodes}
+                </textPath>
+            );
+            return element;
         case "marker":
             return (
                 <marker key={key} {...allAttrs} style={style}>

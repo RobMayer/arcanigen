@@ -31,7 +31,7 @@
     - [x] Arc (has a bug in the old implementation)
     - [x] Spiral
     - [x] Line
-    - [ ] Flood Fill
+    - [x] Flood Fill
     - [ ] Custom Glyph
     - [ ] Text Path (ugh)
 - [ ] more shapes (new)

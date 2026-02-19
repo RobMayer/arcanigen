@@ -325,7 +325,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const d = lineCoords.map((l) => `M ${l.x1},${l.y1} L ${l.x2},${l.y2}`).join(" ");
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" ") },
+            data: { d, transform: transforms.join(" "), preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO } },
         };
     }
 

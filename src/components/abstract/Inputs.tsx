@@ -1,4 +1,4 @@
-import { ChangeEvent, DetailedHTMLProps, InputHTMLAttributes, SelectHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DetailedHTMLProps, InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Flavour } from "../types";
 import { useStable } from "../../util/hooks/useStable";
@@ -8,7 +8,8 @@ import { useStableValue } from "../../util/hooks/useStableValue";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 
 export namespace AbstractInput {
-    type BaseProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string };
+    type InputProps = Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "title" | "value"> & { tooltip?: string };
+    type TextAreaProps = Omit<DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>, "title" | "value"> & { tooltip?: string };
 
     export function Text<T extends string = string>({
         value,
@@ -219,7 +220,7 @@ export namespace AbstractInput {
             onCommit?: (v: T) => void;
             onConfirm?: (v: T) => void; // fires when you hit enter, even if no change was made
             normalize?: (v: T) => T;
-        } & BaseProps;
+        } & InputProps;
     }
 
     export function Numeric({
@@ -552,7 +553,7 @@ export namespace AbstractInput {
             wrap?: number | EmptyOr<NumericString.Type>;
             snap?: number | EmptyOr<NumericString.Type> | (number | EmptyOr<NumericString.Type>)[]; // interval or discrete values
             normalize?: (v: EmptyOr<NumericString.Type>) => EmptyOr<NumericString.Type>;
-        } & Omit<BaseProps, "min" | "max" | "step" | "pattern">;
+        } & Omit<InputProps, "min" | "max" | "step" | "pattern">;
     }
 
     export function Measurement<U extends string>({
@@ -958,7 +959,84 @@ export namespace AbstractInput {
             onCommit?: (v: EmptyOr<Measure<U>>) => void;
             onConfirm?: (v: EmptyOr<Measure<U>>) => void;
             normalize?: (v: EmptyOr<Measure<U>>) => EmptyOr<Measure<U>>;
-        } & BaseProps;
+        } & InputProps;
+    }
+
+    export function Block({ value, onValue, onCommit, onBlur, onFocus, onChange, onKeyDown, noTab = false, tooltip, ...props }: Block.Props) {
+        const onChangeRef = useStable(onChange);
+        const onBlurRef = useStable(onBlur);
+        const onFocusRef = useStable(onFocus);
+        const onKeyDownRef = useStable(onKeyDown);
+
+        const valueRef = useRef(value);
+        const [cache, setCache] = useState(value);
+        const isFocusedRef = useRef(false);
+
+        useEffect(() => {
+            if (valueRef.current !== value) {
+                valueRef.current = value;
+                if (!isFocusedRef.current) {
+                    setCache(value);
+                }
+            }
+        }, [value]);
+
+        const onValueRef = useStable(onValue);
+        const onCommitRef = useStable(onCommit);
+
+        const handleChange = useCallback((evt: ChangeEvent<HTMLTextAreaElement>) => {
+            onChangeRef.current?.(evt);
+            if (evt.nativeEvent.handled) return;
+            evt.nativeEvent.handled = "implied";
+            const v = evt.target.value;
+            setCache(v);
+            onValueRef.current?.(v);
+        }, []);
+
+        const handleKeyDown = useCallback(
+            (evt: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                onKeyDownRef.current?.(evt);
+                if (evt.nativeEvent.handled) return;
+                if (evt.key === "Tab" && !noTab) {
+                    evt.preventDefault();
+                    evt.nativeEvent.handled = "implied";
+                    const ta = evt.currentTarget;
+                    const start = ta.selectionStart;
+                    const end = ta.selectionEnd;
+                    const v = ta.value.substring(0, start) + "\t" + ta.value.substring(end);
+                    setCache(v);
+                    onValueRef.current?.(v);
+                    requestAnimationFrame(() => {
+                        ta.selectionStart = ta.selectionEnd = start + 1;
+                    });
+                }
+            },
+            [noTab],
+        );
+
+        const handleFocus = useCallback((evt: React.FocusEvent<HTMLTextAreaElement>) => {
+            onFocusRef.current?.(evt);
+            isFocusedRef.current = true;
+        }, []);
+
+        const handleBlur = useCallback((evt: React.FocusEvent<HTMLTextAreaElement>) => {
+            isFocusedRef.current = false;
+            onBlurRef.current?.(evt);
+            if (evt.nativeEvent.handled) return;
+            evt.nativeEvent.handled = "implied";
+            onCommitRef.current?.(evt.currentTarget.value);
+        }, []);
+
+        return <textarea {...props} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} />;
+    }
+
+    export namespace Block {
+        export type Props = {
+            value: string;
+            onValue?: (v: string) => void;
+            onCommit?: (v: string) => void;
+            noTab?: boolean;
+        } & TextAreaProps;
     }
 }
 

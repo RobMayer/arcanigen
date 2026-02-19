@@ -320,9 +320,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
     if (socket === "path") {
+        const maxR = Math.max(Math.abs(rI), Math.abs(rO));
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" ") },
+            data: { d, transform: transforms.join(" "), preview: { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR } },
         };
     }
 

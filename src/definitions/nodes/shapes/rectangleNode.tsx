@@ -221,9 +221,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
     if (socket === "path") {
+        const diag = Math.sqrt(width * width + height * height);
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" ") },
+            data: { d, transform: transforms.join(" "), preview: { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag } },
         };
     }
 

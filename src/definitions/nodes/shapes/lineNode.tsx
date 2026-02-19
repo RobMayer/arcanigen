@@ -267,9 +267,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
     if (socket === "path") {
+        const minX = Math.min(sx, ex);
+        const minY = Math.min(sy, ey);
+        const maxX = Math.max(sx, ex);
+        const maxY = Math.max(sy, ey);
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" ") },
+            data: { d, transform: transforms.join(" "), preview: { x: minX + translateX, y: minY + translateY, w: maxX - minX, h: maxY - minY } },
         };
     }
 

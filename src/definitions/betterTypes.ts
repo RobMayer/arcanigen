@@ -68,6 +68,8 @@ import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
 import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
 import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
 import { FloodFillDefinition, FloodFillNodeType } from "./nodes/shapes/floodFillNode";
+import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
+import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -94,6 +96,8 @@ namespace Registries {
         spiral: SpiralDefinition;
         line: LineDefinition;
         floodFill: FloodFillDefinition;
+        textPath: TextPathDefinition;
+        alongPath: AlongPathDefinition;
 
         angle: AngleDefinition;
         float: FloatDefinition;
@@ -163,6 +167,8 @@ namespace Registries {
         spiral: SpiralNodeType,
         line: LineNodeType,
         floodFill: FloodFillNodeType,
+        textPath: TextPathNodeType,
+        alongPath: AlongPathNodeType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,

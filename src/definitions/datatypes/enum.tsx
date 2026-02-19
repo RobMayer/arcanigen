@@ -118,6 +118,29 @@ export namespace Enum {
             Notch: 3,
         };
 
+        export const textAlign = {
+            Start: 0,
+            Center: 1,
+            End: 2,
+        } as const;
+
+        export const textAnchor = {
+            Top: 0,
+            Middle: 1,
+            Bottom: 2,
+        } as const;
+
+        export const offsetMode = {
+            Relative: 0,
+            Absolute: 1,
+        } as const;
+
+        export const offsetOrigin = {
+            Start: 0,
+            Center: 1,
+            End: 2,
+        } as const;
+
         //#region Input and Outpput Widgets
 
         export const numberInputWidget = {

@@ -147,6 +147,35 @@ export namespace COMMON_STYLES {
         flex: 1 1 auto;
     `;
 
+    export const BLOCK = `
+        background: #111;
+        padding: 0.25em 0.4em;
+        font-family: monospace;
+        border: 1px solid #666;
+        outline: 1px solid transparent;
+        outline-offset: 0px;
+        transition: outline-offset 0.1s ease;
+        &:focus-visible {
+            outline-color: #fffa;
+            outline-offset: -2px;
+        }
+        &:invalid {
+            outline-color: #f00;
+            background-color: #200;
+        }
+        &:invalid:focus-visible {
+            outline-color: #f88;
+        }
+        &:disabled {
+            opacity: 0.4;
+            filter: saturate(0);
+            cursor: auto;
+        }
+        min-width: 0;
+        flex: 1 1 auto;
+        resize: none;
+    `;
+
     export const SLIDER = `
         --handleSize: 1lh;
         --trackSize: calc(1lh / 2 + 2px);

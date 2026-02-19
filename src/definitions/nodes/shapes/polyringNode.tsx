@@ -544,7 +544,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         if (socket === "path") {
             return {
                 kind: "path",
-                data: { d, transform: transforms.join(" ") },
+                data: { d, transform: transforms.join(" "), preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO } },
             };
         }
 

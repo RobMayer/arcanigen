@@ -392,7 +392,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         if (socket === "path") {
             return {
                 kind: "path",
-                data: { d, transform: transforms.join(" ") },
+                data: { d, transform: transforms.join(" "), preview: { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius } },
             };
         }
 

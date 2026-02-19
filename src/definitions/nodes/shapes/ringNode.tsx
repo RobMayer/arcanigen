@@ -251,7 +251,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" ") },
+            data: { d, transform: transforms.join(" "), preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO } },
         };
     }
 
