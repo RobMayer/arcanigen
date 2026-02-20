@@ -266,7 +266,7 @@ const bezierCommand = (points: (readonly [number, number])[], i: number) => {
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof SpiralDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+    const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
     let rI: number;
     let rO: number;
@@ -281,7 +281,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
         rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
     }
 
-    const arcMode = context.resolve<"enum">(node.id, "arcMode")?.data ?? node.payload.arcMode ?? 0;
+    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
 
     let effectiveStart: number;
     let effectiveSweep: number;

@@ -235,14 +235,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     const size = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16;
     const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
     const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
-    const align = context.resolve<"enum">(node.id, "align")?.data ?? node.payload.align;
-    const anchor = context.resolve<"enum">(node.id, "anchor")?.data ?? node.payload.anchor;
+    const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.textAlign) ?? node.payload.align;
+    const anchor = Enum.resolve(context.resolve<"enum">(node.id, "anchor")?.data, Enum.Common.textAnchor) ?? node.payload.anchor;
 
     const textAnchorValue: string = Resolver.EnumMappings.textAlign[align] ?? "start";
     const dominantBaseline: string = Resolver.EnumMappings.textAnchor[anchor] ?? "central";
 
-    const offsetMode = context.resolve<"enum">(node.id, "offsetMode")?.data ?? node.payload.offsetMode;
-    const offsetOrigin = context.resolve<"enum">(node.id, "offsetOrigin")?.data ?? node.payload.offsetOrigin;
+    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
+    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let startOffset: string;

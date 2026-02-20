@@ -214,7 +214,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
         return null;
     }
 
-    const arcMode = context.resolve<"enum">(node.id, "arcMode")?.data ?? node.payload.arcMode ?? 0;
+    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
     const pieSlice = context.resolve<"boolean">(node.id, "pieSlice")?.data ?? node.payload.pieSlice ?? false;
 
     let effectiveStart: number;

@@ -289,8 +289,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     if (!pathData) return null;
 
     // Resolve common parameters
-    const spacingModeEnum = context.resolve<"enum">(node.id, "spacingMode")?.data ?? node.payload.spacingMode;
-    const overflowModeEnum = context.resolve<"enum">(node.id, "overflowMode")?.data ?? node.payload.overflowMode;
+    const spacingModeEnum = Enum.resolve(context.resolve<"enum">(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode;
+    const overflowModeEnum = Enum.resolve(context.resolve<"enum">(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
     const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
     const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
     const skipFirst = context.resolve<"boolean">(node.id, "skipFirst")?.data ?? node.payload.skipFirst;
@@ -300,8 +300,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     const padEndNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "padEnd")?.data ?? node.payload.padEnd) ?? 0;
 
     // Offset
-    const offsetMode = context.resolve<"enum">(node.id, "offsetMode")?.data ?? node.payload.offsetMode;
-    const offsetOrigin = context.resolve<"enum">(node.id, "offsetOrigin")?.data ?? node.payload.offsetOrigin;
+    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
+    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let offsetExpr: string;
@@ -412,8 +412,8 @@ export const PathArrayNodeType: NodeTypes.Type<"pathArray", PathArrayDefinition>
     type: "pathArray",
     displayName: "Path Array",
     defaultLabel: "Path Array",
-    iconNode: <Icon shape={NODE_ICONS.alongPath.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.alongPath.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.pathArray.Item} color={"var(--icon-flavour)"} />,
+    iconCard: <Icon shape={NODE_ICONS.pathArray.Card} color={"var(--icon-flavour)"} />,
     category: "Collections",
     create,
     dependsOn,

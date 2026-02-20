@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { Enum } from "../../datatypes/enum";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -128,8 +129,8 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const func = context.resolve<"enum">(node.id, "func")?.data ?? node.payload.func;
-        const easing = context.resolve<"enum">(node.id, "easing")?.data ?? node.payload.easing;
+        const func = Enum.resolve(context.resolve<"enum">(node.id, "func")?.data, Enum.Common.distroFunctions) ?? node.payload.func;
+        const easing = Enum.resolve(context.resolve<"enum">(node.id, "easing")?.data, Enum.Common.distroEasing) ?? node.payload.easing;
         const intensity = context.resolve<"float">(node.id, "intensity")?.data ?? node.payload.intensity;
         return {
             kind: "distribution",

@@ -102,7 +102,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket:
         }
 
         const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
-        const blend = context.resolve<"enum">(node.id, "blend")?.data ?? node.payload.blend;
+        const blend = Enum.resolve(context.resolve<"enum">(node.id, "blend")?.data, Enum.Common.blendMode) ?? node.payload.blend;
 
         return {
             kind: "layer",

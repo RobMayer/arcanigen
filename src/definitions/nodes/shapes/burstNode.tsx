@@ -269,7 +269,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     if (spurCount === null || spurCount <= 0) return null;
 
     const N = spurCount;
-    const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+    const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
     let rI: number;
     let rO: number;
@@ -282,7 +282,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
         if (!radius) return null;
 
-        const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
+        const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
 
         const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? spread : 0;
         const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? spread : 0;
@@ -294,7 +294,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     if (rO <= 0) return null;
     rI = Math.max(0, rI);
 
-    const thetaMode = context.resolve<"enum">(node.id, "thetaMode")?.data ?? node.payload.thetaMode ?? 0;
+    const thetaMode = Enum.resolve(context.resolve<"enum">(node.id, "thetaMode")?.data, Enum.Common.thetaMode) ?? node.payload.thetaMode ?? 0;
     const thetaStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
     const thetaEnd = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaEnd")?.data ?? node.payload.thetaEnd) ?? 0;
     const thetaSteps = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaSteps")?.data ?? node.payload.thetaSteps) ?? 0;

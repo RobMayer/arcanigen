@@ -179,10 +179,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
 
     const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign ?? true;
     const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
-    const overflowMode = context.resolve<"enum">(node.id, "overflowMode")?.data ?? node.payload.overflowMode;
+    const overflowMode = Enum.resolve(context.resolve<"enum">(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
 
-    const offsetMode = context.resolve<"enum">(node.id, "offsetMode")?.data ?? node.payload.offsetMode;
-    const offsetOrigin = context.resolve<"enum">(node.id, "offsetOrigin")?.data ?? node.payload.offsetOrigin;
+    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
+    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let rawDistance: string;

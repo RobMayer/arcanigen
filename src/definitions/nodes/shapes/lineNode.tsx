@@ -244,13 +244,13 @@ const resolvePoint = (mode: number, x: number, y: number, radius: number, theta:
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof LineDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const startMode = context.resolve<"enum">(node.id, "startMode")?.data ?? node.payload.startMode;
+    const startMode = Enum.resolve(context.resolve<"enum">(node.id, "startMode")?.data, Enum.Common.positionMode) ?? node.payload.startMode;
     const startX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
     const startY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
     const startRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
     const startTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
 
-    const endMode = context.resolve<"enum">(node.id, "endMode")?.data ?? node.payload.endMode;
+    const endMode = Enum.resolve(context.resolve<"enum">(node.id, "endMode")?.data, Enum.Common.positionMode) ?? node.payload.endMode;
     const endX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
     const endY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
     const endRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;

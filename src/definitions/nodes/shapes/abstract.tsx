@@ -126,8 +126,8 @@ export namespace Stylings {
         // Resolve stroke attributes
         const strokeColor = context.resolve<"color">(node.id, "strokeColor")?.data ?? node.payload.strokeColor;
         const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
-        const strokeCap = context.resolve<"enum">(node.id, "strokeCap")?.data ?? node.payload.strokeCap;
-        const strokeJoin = context.resolve<"enum">(node.id, "strokeJoin")?.data ?? node.payload.strokeJoin ?? 0;
+        const strokeCap = Enum.resolve(context.resolve<"enum">(node.id, "strokeCap")?.data, Enum.Common.strokeCap) ?? node.payload.strokeCap;
+        const strokeJoin = Enum.resolve(context.resolve<"enum">(node.id, "strokeJoin")?.data, Enum.Common.strokeJoin) ?? node.payload.strokeJoin ?? 0;
         const strokeDash = context.resolve<"tokens<length>">(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
         const strokeDashOffset = context.resolve<"length">(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
 
@@ -137,7 +137,7 @@ export namespace Stylings {
         // Map enums
         const cap = (Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt") as Stroke["cap"];
         const join = (Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt") as Stroke["join"];
-        const paintOrder = Resolver.EnumMappings.paintOrder[context.resolve<"enum">(node.id, "paintOrder")?.data ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
+        const paintOrder = Resolver.EnumMappings.paintOrder[Enum.resolve(context.resolve<"enum">(node.id, "paintOrder")?.data, Enum.Common.paintOrder) ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
 
         // Convert stroke dash to pixel values
         const dashArray = strokeDash
@@ -238,7 +238,7 @@ export namespace Transforms {
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context) => {
         // Resolve transform attributes
-        const positionMode = context.resolve<"enum">(node.id, "positionMode")?.data ?? node.payload.positionMode;
+        const positionMode = Enum.resolve(context.resolve<"enum">(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
         const positionX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
         const positionY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
         const positionRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;

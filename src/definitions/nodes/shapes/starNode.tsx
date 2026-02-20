@@ -410,7 +410,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         if (pointCount === null) return null;
 
         const N = pointCount;
-        const spanMode = context.resolve<"enum">(node.id, "spanMode")?.data ?? node.payload.spanMode ?? 0;
+        const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
         let tI: number;
         let tO: number;
@@ -432,7 +432,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
             if (!radius || !spread) return null;
 
             const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
-            const spreadAlign = context.resolve<"enum">(node.id, "spreadAlign")?.data ?? node.payload.spreadAlign ?? 0;
+            const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
 
             const base = getTrueRadius(radius, rScribeMode, N);
 
@@ -448,9 +448,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
 
         // Corner parameters
         const outerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerCornerRadius")?.data ?? node.payload.outerCornerRadius, "0px")) ?? 0;
-        const outerCornerShape = context.resolve<"enum">(node.id, "outerCornerShape")?.data ?? node.payload.outerCornerShape ?? 0;
+        const outerCornerShape = Enum.resolve(context.resolve<"enum">(node.id, "outerCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.outerCornerShape ?? 0;
         const innerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerCornerRadius")?.data ?? node.payload.innerCornerRadius, "0px")) ?? 0;
-        const innerCornerShape = context.resolve<"enum">(node.id, "innerCornerShape")?.data ?? node.payload.innerCornerShape ?? 0;
+        const innerCornerShape = Enum.resolve(context.resolve<"enum">(node.id, "innerCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.innerCornerShape ?? 0;
 
         // Markers
         const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;

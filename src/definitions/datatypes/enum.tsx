@@ -12,7 +12,10 @@ export namespace Enum {
         Object.keys(o).map((label) => {
             return { value: `${o[label]}`, label };
         });
-    export const resolve = <O extends Base>(n: number, o: O) => Math.max(0, Math.min(n, Object.keys(o).length - 1));
+    export const resolve = <O extends Base>(n: number | null | undefined, o: O): number | undefined => {
+        if (n == null || n === undefined) return undefined;
+        return Math.max(0, Math.min(n, Object.keys(o).length - 1));
+    };
 
     export namespace Common {
         export const strokeCap = {
