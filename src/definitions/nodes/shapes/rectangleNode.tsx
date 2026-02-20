@@ -83,13 +83,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RectangleDefinition
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
-            strokeJoin: Enum.Common.strokeJoin.Miter,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
+            strokeJoin: Enum.Common.strokeJoin.MITER.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",

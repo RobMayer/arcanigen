@@ -106,13 +106,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
         payload: {
             label: "",
             spurCount: "5",
-            spanMode: Enum.Common.spanMode.InnerOuter,
+            spanMode: Enum.Common.spanMode.INNER_OUTER.value,
             spreadAlign: 0,
             radius: "150px",
             spread: "20px",
             innerRadius: "140px",
             outerRadius: "160px",
-            thetaMode: Enum.Common.thetaMode.Incremental,
+            thetaMode: Enum.Common.thetaMode.INCREMENTAL.value,
             thetaStart: "0",
             thetaEnd: "90",
             thetaSteps: "30",
@@ -123,12 +123,12 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -274,7 +274,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     let rI: number;
     let rO: number;
 
-    if (spanMode === Enum.Common.spanMode.InnerOuter) {
+    if (spanMode === Enum.Common.spanMode.INNER_OUTER.value) {
         rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
         rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
     } else {
@@ -284,8 +284,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
 
         const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
 
-        const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? spread : 0;
-        const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? spread : 0;
+        const tIMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.INWARD.value ? spread : 0;
+        const tOMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.OUTWARD.value ? spread : 0;
 
         rI = radius - tIMod;
         rO = radius + tOMod;
@@ -300,7 +300,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     const thetaSteps = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaSteps")?.data ?? node.payload.thetaSteps) ?? 0;
     const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
 
-    const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+    const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
@@ -313,7 +313,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     const lineCoords: { x1: number; y1: number; x2: number; y2: number }[] = [];
     for (let i = 0; i < N; i++) {
         const coeff = delerp(i, 0, denominator);
-        const angle = thetaMode === Enum.Common.thetaMode.StartStop ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
+        const angle = thetaMode === Enum.Common.thetaMode.START_STOP.value ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
         const c = Math.cos(deg2rad(angle - 90));
         const s = Math.sin(deg2rad(angle - 90));
         lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });

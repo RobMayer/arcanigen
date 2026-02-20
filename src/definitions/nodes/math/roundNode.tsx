@@ -41,7 +41,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RoundDefinition>>, 
         payload: {
             label: "",
             input: input.input ?? "0",
-            mode: input.mode ?? Enum.Common.roundingMode["Half Expand"],
+            mode: input.mode ?? Enum.Common.roundingMode.HALF_EXPAND.value,
             connectedType: SocketTypes.NONE,
             resolvedInTypes: SocketTypes.ANY,
         },
@@ -75,26 +75,25 @@ const queryDownstreamTypes = (node: RoundNode, graphId: string, ctx: NodeTypes.M
 
 const applyRounding = (value: number, mode: number): number => {
     switch (mode) {
-        case Enum.Common.roundingMode.Ceil:
+        case Enum.Common.roundingMode.CEIL.value:
             return Math.ceil(value);
-        case Enum.Common.roundingMode.Floor:
+        case Enum.Common.roundingMode.FLOOR.value:
             return Math.floor(value);
-        case Enum.Common.roundingMode.Truncate:
+        case Enum.Common.roundingMode.TRUNCATE.value:
             return Math.trunc(value);
-        case Enum.Common.roundingMode.Expand:
+        case Enum.Common.roundingMode.EXPAND.value:
             return value >= 0 ? Math.ceil(value) : Math.floor(value);
-        case Enum.Common.roundingMode["Half Ceil"]:
+        case Enum.Common.roundingMode.HALF_CEIL.value:
             return Math.round(value);
-        case Enum.Common.roundingMode["Half Floor"]:
+        case Enum.Common.roundingMode.HALF_FLOOR.value:
             return -Math.round(-value);
-        case Enum.Common.roundingMode["Half Truncate"]: {
-            const rounded = Math.round(Math.abs(value));
+        case Enum.Common.roundingMode.HALF_TRUNCATE.value: {
             const abs = Math.abs(value);
             const frac = abs - Math.floor(abs);
             if (frac === 0.5) return value >= 0 ? Math.floor(value) : Math.ceil(value);
             return Math.round(value);
         }
-        case Enum.Common.roundingMode["Half Expand"]: {
+        case Enum.Common.roundingMode.HALF_EXPAND.value: {
             const abs = Math.abs(value);
             const frac = abs - Math.floor(abs);
             if (frac === 0.5) return value >= 0 ? Math.ceil(value) : Math.floor(value);
@@ -192,7 +191,13 @@ const onConnect = (node: RoundNode, linkId: string, direction: "in" | "out", gra
     }
 };
 
-const onDisconnect = (node: RoundNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: RoundNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         if (link.toSocket === "mode") return;
         ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");

@@ -76,11 +76,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonArrayDefinit
             label: "",
             count: input.count ?? "5",
             radius: input.radius ?? "100px",
-            scribeMode: input.scribeMode ?? Enum.Common.scribeMode.Inscribe,
+            scribeMode: input.scribeMode ?? Enum.Common.scribeMode.INSCRIBE.value,
             memberAlign: input.memberAlign ?? false,
             memberRotation: input.memberRotation ?? "0",
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -204,22 +204,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket:
     const radius = Length.Emptyable.asNumber(Length.Emptyable.max(radiusStr, "0px"));
     if (radius === null) return null;
 
-    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "scribeMode")?.data ?? node.payload.scribeMode ?? Enum.Common.scribeMode.Inscribe);
+    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "scribeMode")?.data ?? node.payload.scribeMode ?? Enum.Common.scribeMode.INSCRIBE.value);
     const trueRadius = getTrueRadius(radius, scribeMode, count);
 
     if (socket === "eCircumradius") {
         const [, unit] = Length.Emptyable.parse(Length.Emptyable.max(radiusStr, "0px")) ?? [null, null];
         if (unit === null) return null;
-        return { kind: "length", data: `${getDerivedRadius(trueRadius, "Circumscribe", count)}${unit}` };
+        return { kind: "length", data: `${getDerivedRadius(trueRadius, "CIRCUMSCRIBE", count)}${unit}` };
     }
     if (socket === "eApothem") {
         const [, unit] = Length.Emptyable.parse(Length.Emptyable.max(radiusStr, "0px")) ?? [null, null];
         if (unit === null) return null;
-        return { kind: "length", data: `${getDerivedRadius(trueRadius, "Inscribe", count)}${unit}` };
+        return { kind: "length", data: `${getDerivedRadius(trueRadius, "INSCRIBE", count)}${unit}` };
     }
 
     if (socket === "output") {
-        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
             Enum.keyOf(Enum.Common.distroEasing, distro.easing),

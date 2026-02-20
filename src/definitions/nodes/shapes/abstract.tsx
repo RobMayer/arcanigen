@@ -17,14 +17,7 @@ import { Paint } from "../../shapeTypes";
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
 const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
-const PAINT_ORDER_OPTIONS = [
-    { value: 0, label: "Fill > Stroke > Markers" },
-    { value: 1, label: "Fill > Markers > Stroke" },
-    { value: 2, label: "Stroke > Fill > Markers" },
-    { value: 3, label: "Stroke > Markers > Fill" },
-    { value: 4, label: "Markers > Fill > Stroke" },
-    { value: 5, label: "Markers > Stroke > Fill" },
-];
+const PAINT_ORDER_OPTIONS = Enum.options(Enum.Common.paintOrder);
 
 export namespace Stylings {
     export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
@@ -219,8 +212,8 @@ export namespace Transforms {
         node: NodeDefinitions.NodeFor<Definition>;
         accordion?: boolean;
     }) => {
-        const isCartesian = node.payload.positionMode === Enum.Common.positionMode.Cartesian;
-        const isPolar = node.payload.positionMode === Enum.Common.positionMode.Polar;
+        const isCartesian = node.payload.positionMode === Enum.Common.positionMode.CARTESIAN.value;
+        const isPolar = node.payload.positionMode === Enum.Common.positionMode.POLAR.value;
 
         return (
             <AccordionMaybe has={accordion} socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta|rotation"} label={"Transforms"} nodeId={node.id}>
@@ -269,7 +262,7 @@ export namespace Transforms {
         // Calculate translation based on position mode
         let translateX: number;
         let translateY: number;
-        if (positionMode === Enum.Common.positionMode.Polar) {
+        if (positionMode === Enum.Common.positionMode.POLAR.value) {
             // Convert polar (radius, theta) to cartesian
             // theta is in degrees, convert to radians
             // 0° is at the top (12 o'clock), so we offset by -90°

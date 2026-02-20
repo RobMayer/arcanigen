@@ -49,7 +49,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<MaskDefinition>>, i
         payload: {
             label: "",
             showMask: input.showMask ?? false,
-            maskMode: input.maskMode ?? Enum.Common.maskMode.Luminance,
+            maskMode: input.maskMode ?? Enum.Common.maskMode.LUMINANCE.value,
             invert: input.invert ?? false,
         },
         type: "mask",
@@ -65,7 +65,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MaskDefinit
     );
 
     const maskMode = node.payload.maskMode;
-    const isLuminance = maskMode === Enum.Common.maskMode.Luminance;
+    const isLuminance = maskMode === Enum.Common.maskMode.LUMINANCE.value;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -127,7 +127,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
         const maskModeEnum = context.resolve<"enum">(node.id, "maskMode")?.data ?? node.payload.maskMode;
         const invert = context.resolve<"boolean">(node.id, "invert")?.data ?? node.payload.invert;
 
-        const mode = Enum.keyOf(Enum.Common.maskMode, maskModeEnum) === "Luminance" ? "luminance" : "alpha";
+        const mode = Enum.keyOf(Enum.Common.maskMode, maskModeEnum) === "LUMINANCE" ? "luminance" : "alpha";
 
         const masked: MaskedShape = {
             type: "masked",

@@ -93,12 +93,12 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, 
         },
         payload: {
             label: "",
-            startMode: Enum.Common.positionMode.Cartesian,
+            startMode: Enum.Common.positionMode.CARTESIAN.value,
             startX: "0px",
             startY: "0px",
             startRadius: "0px",
             startTheta: "0",
-            endMode: Enum.Common.positionMode.Cartesian,
+            endMode: Enum.Common.positionMode.CARTESIAN.value,
             endX: "100px",
             endY: "0px",
             endRadius: "100px",
@@ -109,10 +109,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, 
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -133,10 +133,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
         [methods],
     );
 
-    const startIsCartesian = node.payload.startMode === Enum.Common.positionMode.Cartesian && node.in.startMode === null;
-    const startIsPolar = node.payload.startMode === Enum.Common.positionMode.Polar && node.in.startMode === null;
-    const endIsCartesian = node.payload.endMode === Enum.Common.positionMode.Cartesian && node.in.endMode === null;
-    const endIsPolar = node.payload.endMode === Enum.Common.positionMode.Polar && node.in.endMode === null;
+    const startIsCartesian = node.payload.startMode === Enum.Common.positionMode.CARTESIAN.value && node.in.startMode === null;
+    const startIsPolar = node.payload.startMode === Enum.Common.positionMode.POLAR.value && node.in.startMode === null;
+    const endIsCartesian = node.payload.endMode === Enum.Common.positionMode.CARTESIAN.value && node.in.endMode === null;
+    const endIsPolar = node.payload.endMode === Enum.Common.positionMode.POLAR.value && node.in.endMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -236,7 +236,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LineDefinition>, inSocket:
 const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 
 const resolvePoint = (mode: number, x: number, y: number, radius: number, theta: number): [number, number] => {
-    if (mode === Enum.Common.positionMode.Polar) {
+    if (mode === Enum.Common.positionMode.POLAR.value) {
         const thetaRad = toRad(theta);
         return [radius * Math.cos(thetaRad), radius * Math.sin(thetaRad)];
     }

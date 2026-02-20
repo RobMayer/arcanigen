@@ -31,7 +31,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorOutputDefinit
         out: {},
         payload: {
             label: "",
-            widget: Enum.Common.typicalOutputWidget.None,
+            widget: Enum.Common.typicalOutputWidget.NONE.value,
         },
         type: "colorOutput",
     };

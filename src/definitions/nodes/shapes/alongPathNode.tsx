@@ -68,11 +68,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition
             label: "",
             memberAlign: true,
             memberRotation: "0",
-            overflowMode: Enum.Common.overflowMode.Clamp,
-            offsetMode: Enum.Common.offsetMode.Relative,
+            overflowMode: Enum.Common.overflowMode.CLAMP.value,
+            offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
             offsetLength: "0px",
-            offsetOrigin: Enum.Common.offsetOrigin.Start,
+            offsetOrigin: Enum.Common.offsetOrigin.START.value,
             ...input,
         },
         type: "alongPath",
@@ -128,7 +128,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
                 <DecimalInput.SliderInput
                     value={node.payload.offsetPercent}
                     onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
-                    disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.Relative}
+                    disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.RELATIVE.value}
                     min={-100}
                     max={100}
                 />
@@ -137,7 +137,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
                 <LengthInput
                     value={node.payload.offsetLength}
                     onCommit={(offsetLength) => handleUpdate({ offsetLength })}
-                    disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.Absolute}
+                    disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.ABSOLUTE.value}
                     required
                 />
             </SocketIn>
@@ -165,7 +165,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, _inS
 };
 
 const wrapDistance = (raw: string, overflowMode: number): string => {
-    if (overflowMode === Enum.Common.overflowMode.Wrap) {
+    if (overflowMode === Enum.Common.overflowMode.WRAP.value) {
         return `mod(${raw}, 100%)`;
     }
     return `clamp(0%, ${raw}, 100%)`;
@@ -189,7 +189,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let rawDistance: string;
-    if (offsetMode === Enum.Common.offsetMode.Relative) {
+    if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
         const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         rawDistance = `${originPct} + ${pct}%`;
     } else {

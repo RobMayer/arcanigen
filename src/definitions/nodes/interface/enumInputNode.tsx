@@ -38,7 +38,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<EnumInputDefinitio
         payload: {
             label: "",
             initialValue: 0,
-            widget: Enum.Common.enumInputWidget.Dropdown,
+            widget: Enum.Common.enumInputWidget.DROPDOWN.value,
             options: ["Option A", "Option B"],
             socketed: true,
         },
@@ -48,7 +48,6 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<EnumInputDefinitio
 
 const WIDGET_OPTIONS = Enum.options(Enum.Common.enumInputWidget);
 
-const PAINT_ORDER_OPTIONS = ["Fill > Stroke > Markers", "Fill > Markers > Stroke", "Stroke > Fill > Markers", "Stroke > Markers > Fill", "Markers > Fill > Stroke", "Markers > Stroke > Fill"];
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -123,16 +122,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
                 </Slot>
             ))}
             <NodeAccordion label={"Presets"} nodeId={node.id}>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.blendMode) })}>Blend Modes</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.scribeMode) })}>Scribe Modes</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.positionMode) })}>Position Modes</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.strokeCap) })}>Stroke Cap</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.strokeJoin) })}>Stroke Join</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.distroFunctions) })}>Distro Functions</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.distroEasing) })}>Distro Easing</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.spanMode) })}>Span Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Object.keys(Enum.Common.spreadAlign) })}>Spread Align</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: [...PAINT_ORDER_OPTIONS] })}>Paint Order</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.blendMode) })}>Blend Modes</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.scribeMode) })}>Scribe Modes</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.positionMode) })}>Position Modes</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.strokeCap) })}>Stroke Cap</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.strokeJoin) })}>Stroke Join</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.distroFunctions) })}>Distro Functions</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.distroEasing) })}>Distro Easing</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spanMode) })}>Span Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spreadAlign) })}>Spread Align</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.paintOrder) })}>Paint Order</ActionButton>
             </NodeAccordion>
         </TypicalNode>
     );

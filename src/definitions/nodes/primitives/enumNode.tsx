@@ -26,8 +26,6 @@ export type EnumDefinition = {
     };
 };
 
-const PAINT_ORDER_OPTIONS = ["Fill > Stroke > Markers", "Fill > Markers > Stroke", "Stroke > Fill > Markers", "Stroke > Markers > Fill", "Markers > Fill > Stroke", "Markers > Stroke > Fill"];
-
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<EnumDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"enum", EnumDefinition> => {
     return {
         id,
@@ -111,28 +109,28 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumDefinit
                     </Slot>
                 ))}
                 <NodeAccordion label={"Presets"} nodeId={node.id} accordionId={"presets"}>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.blendMode))}>Blend Modes</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.scribeMode))}>Scribe Modes</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.positionMode))}>Position Modes</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.strokeCap))}>Stroke Cap</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.strokeJoin))}>Stroke Join</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.distroFunctions))}>Distro Functions</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.distroEasing))}>Distro Easing</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.spanMode))}>Span Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.spreadAlign))}>Spread Align</ActionButton>
-                    <ActionButton onClick={() => handlePreset([...PAINT_ORDER_OPTIONS])}>Paint Order</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.cornerShape))}>Corner Shape</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.textAlign))}>Text Align</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.textAnchor))}>Text Anchor</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.offsetMode))}>Offset Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.offsetOrigin))}>Offset Origin</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.maskMode))}>Mask Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.spacingMode))}>Spacing Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.overflowMode))}>Overflow Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.sequencerMode))}>Sequencer Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.arcMode))}>Arc Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.expandMode))}>Expand Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.thetaMode))}>Theta Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.blendMode))}>Blend Modes</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.scribeMode))}>Scribe Modes</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.positionMode))}>Position Modes</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.strokeCap))}>Stroke Cap</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.strokeJoin))}>Stroke Join</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.distroFunctions))}>Distro Functions</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.distroEasing))}>Distro Easing</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.spanMode))}>Span Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.spreadAlign))}>Spread Align</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.paintOrder))}>Paint Order</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.cornerShape))}>Corner Shape</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.textAlign))}>Text Align</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.textAnchor))}>Text Anchor</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.offsetMode))}>Offset Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.offsetOrigin))}>Offset Origin</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.maskMode))}>Mask Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.spacingMode))}>Spacing Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.overflowMode))}>Overflow Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.sequencerMode))}>Sequencer Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.arcMode))}>Arc Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.expandMode))}>Expand Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.thetaMode))}>Theta Mode</ActionButton>
                 </NodeAccordion>
             </NodeAccordion>
         </TypicalNode>

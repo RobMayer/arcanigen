@@ -84,12 +84,12 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -100,16 +100,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
     };
 };
 
-const SPAN_MODE_OPTIONS = [
-    { value: "0", label: "Inner / Outer" },
-    { value: "1", label: "Spread" },
-];
-
-const SPREAD_ALIGN_OPTIONS = [
-    { value: "0", label: "Center" },
-    { value: "1", label: "Inward" },
-    { value: "2", label: "Outward" },
-];
+const SPAN_MODE_OPTIONS = Enum.options(Enum.Common.spanMode);
+const SPREAD_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(

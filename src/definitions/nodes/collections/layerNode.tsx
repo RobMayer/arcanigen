@@ -48,7 +48,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LayerDefinition>>, 
         payload: {
             label: "",
             isolate: false,
-            layers: input.layers ?? [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
+            layers: input.layers ?? [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.NORMAL.value }],
         },
         type: "layers",
     };
@@ -80,7 +80,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
             in: { ...n.in, [socketId]: null },
             payload: {
                 ...n.payload,
-                layers: [...(n.payload as LayerDefinition["payload"]).layers, { socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
+                layers: [...(n.payload as LayerDefinition["payload"]).layers, { socket: socketId, enabled: true, blend: Enum.Common.blendMode.NORMAL.value }],
             },
         }));
     }, [alterNode, node.id]);
@@ -355,7 +355,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
                 if (!enabled) continue;
                 layerData.push({
                     shape: entry.shape,
-                    blend: entry.blend ?? Enum.Common.blendMode.Normal,
+                    blend: entry.blend ?? Enum.Common.blendMode.NORMAL.value,
                 });
             }
         } else {

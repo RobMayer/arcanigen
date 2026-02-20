@@ -45,7 +45,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<IntegerInputDefini
             max: "100",
             step: "1",
             snap: "1",
-            widget: Enum.Common.numberInputWidget.Input,
+            widget: Enum.Common.numberInputWidget.INPUT.value,
             socketed: true,
         },
         type: "integerInput",

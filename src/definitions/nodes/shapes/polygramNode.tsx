@@ -90,7 +90,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygramDefinition>
             label: "",
             pointCount: "3",
             skipCount: "1",
-            rScribe: Enum.Common.scribeMode.Inscribe,
+            rScribe: Enum.Common.scribeMode.INSCRIBE.value,
             radius: "100px",
             cornerRadius: "0px",
             cornerShape: 0,
@@ -101,13 +101,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygramDefinition>
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
-            strokeJoin: Enum.Common.strokeJoin.Miter,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
+            strokeJoin: Enum.Common.strokeJoin.MITER.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -274,7 +274,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
 
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
@@ -282,7 +282,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
+        const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
 
         const trueRadius = getTrueRadius(radius, scribeMode, pointCount);
         const N = pointCount;
@@ -432,13 +432,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         return null;
     }
 
-    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
+    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
     const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
     const tempSkipCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0;
     const step = Math.min(tempSkipCount, Math.ceil(pointCount / 2) - 2) + 1;
 
     if (socket === "eCircumradius") {
-        const outputRadius = getDerivedRadius(currentRadius, "Circumscribe", pointCount);
+        const outputRadius = getDerivedRadius(currentRadius, "CIRCUMSCRIBE", pointCount);
         return { kind: "length", data: `${outputRadius}${unit}` };
     }
     if (socket === "eApothem") {

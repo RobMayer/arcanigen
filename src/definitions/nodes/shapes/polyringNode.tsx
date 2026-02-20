@@ -120,9 +120,9 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
         payload: {
             label: "",
             pointCount: "3",
-            rScribe: Enum.Common.scribeMode.Inscribe,
-            iScribe: Enum.Common.scribeMode.Inscribe,
-            oScribe: Enum.Common.scribeMode.Inscribe,
+            rScribe: Enum.Common.scribeMode.INSCRIBE.value,
+            iScribe: Enum.Common.scribeMode.INSCRIBE.value,
+            oScribe: Enum.Common.scribeMode.INSCRIBE.value,
             radius: "100px",
 
             spread: "20px",
@@ -142,13 +142,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
-            strokeJoin: Enum.Common.strokeJoin.Miter,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
+            strokeJoin: Enum.Common.strokeJoin.MITER.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -472,13 +472,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         let tI: number;
         let tO: number;
 
-        if (spanMode === Enum.Common.spanMode.InnerOuter) {
+        if (spanMode === Enum.Common.spanMode.INNER_OUTER.value) {
             const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
             const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
             if (!innerRadius || !outerRadius) return null;
 
-            const iScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "iScribe")?.data ?? node.payload.iScribe ?? Enum.Common.scribeMode.Inscribe);
-            const oScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "oScribe")?.data ?? node.payload.oScribe ?? Enum.Common.scribeMode.Inscribe);
+            const iScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "iScribe")?.data ?? node.payload.iScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+            const oScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "oScribe")?.data ?? node.payload.oScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
 
             tI = getTrueRadius(innerRadius, iScribeMode, N);
             tO = getTrueRadius(outerRadius, oScribeMode, N);
@@ -488,14 +488,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
             const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
             if (!radius || !spread) return null;
 
-            const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
+            const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
             const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
 
             const base = getTrueRadius(radius, rScribeMode, N);
-            const theSpread = expandMode === Enum.Common.expandMode.Point ? spread : spread / Math.cos(Math.PI / N);
+            const theSpread = expandMode === Enum.Common.expandMode.POINT.value ? spread : spread / Math.cos(Math.PI / N);
 
-            const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? theSpread : 0;
-            const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? theSpread : 0;
+            const tIMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.INWARD.value ? theSpread : 0;
+            const tOMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.OUTWARD.value ? theSpread : 0;
 
             tI = base - tIMod;
             tO = base + tOMod;
@@ -515,7 +515,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         // Distribution
-        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
             Enum.keyOf(Enum.Common.distroEasing, distro.easing),
@@ -576,22 +576,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
     let tI: number;
     let tO: number;
 
-    if (spanMode === Enum.Common.spanMode.InnerOuter) {
+    if (spanMode === Enum.Common.spanMode.INNER_OUTER.value) {
         const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
         const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
-        const iScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "iScribe")?.data ?? node.payload.iScribe ?? Enum.Common.scribeMode.Inscribe);
-        const oScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "oScribe")?.data ?? node.payload.oScribe ?? Enum.Common.scribeMode.Inscribe);
+        const iScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "iScribe")?.data ?? node.payload.iScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+        const oScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "oScribe")?.data ?? node.payload.oScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
         tI = getTrueRadius(innerRadius, iScribeMode, N);
         tO = getTrueRadius(outerRadius, oScribeMode, N);
     } else {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
         const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
-        const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.Inscribe);
+        const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
         const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
         const base = getTrueRadius(radius, rScribeMode, N);
-        const theSpread = expandMode === Enum.Common.expandMode.Point ? spread : spread / Math.cos(Math.PI / N);
-        const tIMod = spreadAlign === Enum.Common.spreadAlign.Center ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.Inward ? theSpread : 0;
-        const tOMod = spreadAlign === Enum.Common.spreadAlign.Center ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.Outward ? theSpread : 0;
+        const theSpread = expandMode === Enum.Common.expandMode.POINT.value ? spread : spread / Math.cos(Math.PI / N);
+        const tIMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.INWARD.value ? theSpread : 0;
+        const tOMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? theSpread / 2 : spreadAlign === Enum.Common.spreadAlign.OUTWARD.value ? theSpread : 0;
         tI = base - tIMod;
         tO = base + tOMod;
     }
@@ -600,16 +600,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
     tO = Math.max(0, tO);
 
     if (socket === "eOuterCircumradius") {
-        return { kind: "length", data: `${getDerivedRadius(tO, "Circumscribe", N)}px` };
+        return { kind: "length", data: `${getDerivedRadius(tO, "CIRCUMSCRIBE", N)}px` };
     }
     if (socket === "eOuterApothem") {
-        return { kind: "length", data: `${getDerivedRadius(tO, "Inscribe", N)}px` };
+        return { kind: "length", data: `${getDerivedRadius(tO, "INSCRIBE", N)}px` };
     }
     if (socket === "eInnerCircumradius") {
-        return { kind: "length", data: `${getDerivedRadius(tI, "Circumscribe", N)}px` };
+        return { kind: "length", data: `${getDerivedRadius(tI, "CIRCUMSCRIBE", N)}px` };
     }
     if (socket === "eInnerApothem") {
-        return { kind: "length", data: `${getDerivedRadius(tI, "Inscribe", N)}px` };
+        return { kind: "length", data: `${getDerivedRadius(tI, "INSCRIBE", N)}px` };
     }
 
     return null;

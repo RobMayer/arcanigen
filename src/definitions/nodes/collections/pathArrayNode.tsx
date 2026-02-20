@@ -97,13 +97,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition
         payload: {
             label: "",
             count: "5",
-            spacingMode: Enum.Common.spacingMode.Even,
+            spacingMode: Enum.Common.spacingMode.EVEN.value,
             spacing: "20px",
-            overflowMode: Enum.Common.overflowMode.Clamp,
-            offsetMode: Enum.Common.offsetMode.Relative,
+            overflowMode: Enum.Common.overflowMode.CLAMP.value,
+            offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
             offsetLength: "0px",
-            offsetOrigin: Enum.Common.offsetOrigin.Start,
+            offsetOrigin: Enum.Common.offsetOrigin.START.value,
             padStart: "0px",
             padEnd: "0px",
             skipFirst: false,
@@ -124,7 +124,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
         [methods],
     );
 
-    const isFixedSpacing = node.payload.spacingMode !== Enum.Common.spacingMode.Even;
+    const isFixedSpacing = node.payload.spacingMode !== Enum.Common.spacingMode.EVEN.value;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -197,7 +197,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                     <DecimalInput.SliderInput
                         value={node.payload.offsetPercent}
                         onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
-                        disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.Relative}
+                        disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.RELATIVE.value}
                         min={-100}
                         max={100}
                     />
@@ -206,7 +206,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                     <LengthInput
                         value={node.payload.offsetLength}
                         onCommit={(offsetLength) => handleUpdate({ offsetLength })}
-                        disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.Absolute}
+                        disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.ABSOLUTE.value}
                         required
                     />
                 </SocketIn>
@@ -268,7 +268,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, inSo
 };
 
 const wrapDistance = (raw: string, overflowMode: number): string => {
-    if (overflowMode === Enum.Common.overflowMode.Wrap) {
+    if (overflowMode === Enum.Common.overflowMode.WRAP.value) {
         return `mod(${raw}, 100%)`;
     }
     return `clamp(0%, ${raw}, 100%)`;
@@ -305,7 +305,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let offsetExpr: string;
-    if (offsetMode === Enum.Common.offsetMode.Relative) {
+    if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
         const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         offsetExpr = pct !== 0 || originPct !== "0%" ? `${originPct} + ${pct}%` : "";
     } else {
@@ -314,7 +314,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     }
 
     // Distribution (only for Even mode)
-    const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.Linear, easing: Enum.Common.distroEasing.In, intensity: "1" };
+    const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
@@ -343,13 +343,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
         // Compute spacing expression for this index
         let spacingExpr: string;
 
-        if (spacingModeEnum === Enum.Common.spacingMode.Even) {
+        if (spacingModeEnum === Enum.Common.spacingMode.EVEN.value) {
             const segments = count - 1;
             const t = segments > 0 ? distroLerper(i / segments) : 0.5;
             spacingExpr = `${padStartNum}px + ${t} * (100% - ${padStartNum}px - ${padEndNum}px)`;
-        } else if (spacingModeEnum === Enum.Common.spacingMode.FixedStart) {
+        } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_START.value) {
             spacingExpr = `${padStartNum + i * spacingNum}px`;
-        } else if (spacingModeEnum === Enum.Common.spacingMode.FixedCenter) {
+        } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_CENTER.value) {
             const delta = (i - (count - 1) / 2) * spacingNum;
             spacingExpr = `50% + ${(padStartNum - padEndNum) / 2 + delta}px`;
         } else {

@@ -1,225 +1,230 @@
 import { Options } from "../../components/types";
 
 export namespace Enum {
-    type Base = Record<string, number>;
+    type Entry = { readonly value: number; readonly label: string };
+    type Base = Record<string, Entry>;
 
-    export const members = <O extends Base>(o: O) => Object.keys(o) as (keyof O)[];
     export const keyOf = <O extends Base>(o: O, k: number) => {
         const keys = Object.keys(o);
         return keys[k > keys.length - 1 || k < 0 ? 0 : k] as keyof O;
     };
-    export const options = <O extends Base>(o: O): Options<keyof O & string> =>
-        Object.keys(o).map((label) => {
-            return { value: `${o[label]}`, label };
+    export const labelOf = <O extends Base>(o: O, k: number): string => {
+        const entries = Object.values(o);
+        return entries[k > entries.length - 1 || k < 0 ? 0 : k].label;
+    };
+    export const labels = <O extends Base>(o: O): string[] => Object.values(o).map((e) => e.label);
+    export const options = <O extends Base>(o: O): Options =>
+        Object.values(o).map(({ value, label }) => {
+            return { value: `${value}`, label };
         });
     export const resolve = <O extends Base>(n: number | null | undefined, o: O): number | undefined => {
         if (n == null || n === undefined) return undefined;
-        return Math.max(0, Math.min(n, Object.keys(o).length - 1));
+        return Math.max(0, Math.min(n, Object.values(o).length - 1));
     };
 
     export namespace Common {
         export const strokeCap = {
-            Butt: 0,
-            Square: 1,
-            Round: 2,
+            BUTT: { value: 0, label: "Butt" },
+            SQUARE: { value: 1, label: "Square" },
+            ROUND: { value: 2, label: "Round" },
         } as const;
 
         export const strokeJoin = {
-            Miter: 0,
-            Bevel: 1,
-            Round: 2,
+            MITER: { value: 0, label: "Miter" },
+            BEVEL: { value: 1, label: "Bevel" },
+            ROUND: { value: 2, label: "Round" },
         } as const;
 
         export const paintOrder = {
-            FillStrokeMarkers: 0,
-            FillMarkersStroke: 1,
-            StrokeFillMarkers: 2,
-            StrokeMarkersFill: 3,
-            MarkersFillStroke: 4,
-            MarkersStrokeFill: 5,
+            FILL_STROKE_MARKERS: { value: 0, label: "Fill > Stroke > Markers" },
+            FILL_MARKERS_STROKE: { value: 1, label: "Fill > Markers > Stroke" },
+            STROKE_FILL_MARKERS: { value: 2, label: "Stroke > Fill > Markers" },
+            STROKE_MARKERS_FILL: { value: 3, label: "Stroke > Markers > Fill" },
+            MARKERS_FILL_STROKE: { value: 4, label: "Markers > Fill > Stroke" },
+            MARKERS_STROKE_FILL: { value: 5, label: "Markers > Stroke > Fill" },
         } as const;
 
         export const scribeMode = {
-            Inscribe: 0,
-            Middle: 1,
-            Circumscribe: 2,
+            INSCRIBE: { value: 0, label: "Inscribe" },
+            MIDDLE: { value: 1, label: "Middle" },
+            CIRCUMSCRIBE: { value: 2, label: "Circumscribe" },
         } as const;
 
         export const expandMode = {
-            Point: 0,
-            Edge: 1,
+            POINT: { value: 0, label: "Point" },
+            EDGE: { value: 1, label: "Edge" },
         } as const;
 
         export const positionMode = {
-            Cartesian: 0,
-            Polar: 1,
+            CARTESIAN: { value: 0, label: "Cartesian" },
+            POLAR: { value: 1, label: "Polar" },
         } as const;
 
         export const blendMode = {
-            Normal: 0,
-            Multiply: 1,
-            Screen: 2,
-            Overlay: 3,
-            Darken: 4,
-            Lighten: 5,
-            ColorDodge: 6,
-            ColorBurn: 7,
-            HardLight: 8,
-            SoftLight: 9,
-            Difference: 10,
-            Exclusion: 11,
-            Hue: 12,
-            Saturation: 13,
-            Color: 14,
-            Luminosity: 15,
-            PlusLighter: 16,
-            // PlusDarker: 17, // not yet supported
+            NORMAL: { value: 0, label: "Normal" },
+            MULTIPLY: { value: 1, label: "Multiply" },
+            SCREEN: { value: 2, label: "Screen" },
+            OVERLAY: { value: 3, label: "Overlay" },
+            DARKEN: { value: 4, label: "Darken" },
+            LIGHTEN: { value: 5, label: "Lighten" },
+            COLOR_DODGE: { value: 6, label: "Color Dodge" },
+            COLOR_BURN: { value: 7, label: "Color Burn" },
+            HARD_LIGHT: { value: 8, label: "Hard Light" },
+            SOFT_LIGHT: { value: 9, label: "Soft Light" },
+            DIFFERENCE: { value: 10, label: "Difference" },
+            EXCLUSION: { value: 11, label: "Exclusion" },
+            HUE: { value: 12, label: "Hue" },
+            SATURATION: { value: 13, label: "Saturation" },
+            COLOR: { value: 14, label: "Color" },
+            LUMINOSITY: { value: 15, label: "Luminosity" },
+            PLUS_LIGHTER: { value: 16, label: "Plus Lighter" },
+            // PLUS_DARKER: { value: 17, label: "Plus Darker" }, // not yet supported
         } as const;
 
         export const distroFunctions = {
-            Linear: 0,
-            Quadratic: 1,
-            Cubic: 2,
-            Exponential: 3,
-            Sinusoidal: 4,
-            Rootic: 5,
-            Circular: 6,
-        };
+            LINEAR: { value: 0, label: "Linear" },
+            QUADRATIC: { value: 1, label: "Quadratic" },
+            CUBIC: { value: 2, label: "Cubic" },
+            EXPONENTIAL: { value: 3, label: "Exponential" },
+            SINUSOIDAL: { value: 4, label: "Sinusoidal" },
+            ROOTIC: { value: 5, label: "Rootic" },
+            CIRCULAR: { value: 6, label: "Circular" },
+        } as const;
 
         export const distroEasing = {
-            In: 0,
-            Out: 1,
-            InOut: 2,
-            OutIn: 3,
-        };
+            IN: { value: 0, label: "In" },
+            OUT: { value: 1, label: "Out" },
+            IN_OUT: { value: 2, label: "In Out" },
+            OUT_IN: { value: 3, label: "Out In" },
+        } as const;
 
         export const spanMode = {
-            InnerOuter: 0,
-            Spread: 1,
-        };
+            INNER_OUTER: { value: 0, label: "Inner / Outer" },
+            SPREAD: { value: 1, label: "Spread" },
+        } as const;
 
         export const spreadAlign = {
-            Center: 0,
-            Inward: 1,
-            Outward: 2,
-        };
+            CENTER: { value: 0, label: "Center" },
+            INWARD: { value: 1, label: "Inward" },
+            OUTWARD: { value: 2, label: "Outward" },
+        } as const;
 
         export const thetaMode = {
-            StartStop: 0,
-            Incremental: 1,
-        };
+            START_STOP: { value: 0, label: "Start / Stop" },
+            INCREMENTAL: { value: 1, label: "Incremental" },
+        } as const;
 
         export const arcMode = {
-            StartSweep: 0,
-            FromTo: 1,
-        };
+            START_SWEEP: { value: 0, label: "Start / Sweep" },
+            FROM_TO: { value: 1, label: "From / To" },
+        } as const;
 
         export const cornerShape = {
-            Round: 0,
-            Bevel: 1,
-            Scoop: 2,
-            Notch: 3,
-        };
+            ROUND: { value: 0, label: "Round" },
+            BEVEL: { value: 1, label: "Bevel" },
+            SCOOP: { value: 2, label: "Scoop" },
+            NOTCH: { value: 3, label: "Notch" },
+        } as const;
 
         export const textAlign = {
-            Start: 0,
-            Center: 1,
-            End: 2,
+            START: { value: 0, label: "Start" },
+            CENTER: { value: 1, label: "Center" },
+            END: { value: 2, label: "End" },
         } as const;
 
         export const textAnchor = {
-            Top: 0,
-            Middle: 1,
-            Bottom: 2,
+            TOP: { value: 0, label: "Top" },
+            MIDDLE: { value: 1, label: "Middle" },
+            BOTTOM: { value: 2, label: "Bottom" },
         } as const;
 
         export const offsetMode = {
-            Relative: 0,
-            Absolute: 1,
+            RELATIVE: { value: 0, label: "Relative" },
+            ABSOLUTE: { value: 1, label: "Absolute" },
         } as const;
 
         export const offsetOrigin = {
-            Start: 0,
-            Center: 1,
-            End: 2,
+            START: { value: 0, label: "Start" },
+            CENTER: { value: 1, label: "Center" },
+            END: { value: 2, label: "End" },
         } as const;
 
         export const maskMode = {
-            Luminance: 0,
-            Alpha: 1,
+            LUMINANCE: { value: 0, label: "Luminance" },
+            ALPHA: { value: 1, label: "Alpha" },
         } as const;
 
         export const spacingMode = {
-            Even: 0,
-            FixedStart: 1,
-            FixedCenter: 2,
-            FixedEnd: 3,
+            EVEN: { value: 0, label: "Even" },
+            FIXED_START: { value: 1, label: "Fixed Start" },
+            FIXED_CENTER: { value: 2, label: "Fixed Center" },
+            FIXED_END: { value: 3, label: "Fixed End" },
         } as const;
 
         export const overflowMode = {
-            Clamp: 0,
-            Wrap: 1,
+            CLAMP: { value: 0, label: "Clamp" },
+            WRAP: { value: 1, label: "Wrap" },
         } as const;
 
         export const sequencerMode = {
-            Wrap: 0,
-            Truncate: 1,
-            Clamp: 2,
-            Bounce: 3,
+            WRAP: { value: 0, label: "Wrap" },
+            TRUNCATE: { value: 1, label: "Truncate" },
+            CLAMP: { value: 2, label: "Clamp" },
+            BOUNCE: { value: 3, label: "Bounce" },
         } as const;
 
-        //#region Input and Outpput Widgets
+        //#region Input and Output Widgets
 
         export const numberInputWidget = {
-            None: 0,
-            Input: 1,
-            Slider: 2,
+            NONE: { value: 0, label: "None" },
+            INPUT: { value: 1, label: "Input" },
+            SLIDER: { value: 2, label: "Slider" },
         } as const;
 
         export const lengthInputWidget = {
-            None: 0,
-            Input: 1,
+            NONE: { value: 0, label: "None" },
+            INPUT: { value: 1, label: "Input" },
         } as const;
 
         export const colorInputWidget = {
-            None: 0,
-            Hex: 1,
+            NONE: { value: 0, label: "None" },
+            HEX: { value: 1, label: "Hex" },
         } as const;
 
         export const booleanInputWidget = {
-            None: 0,
-            Checkbox: 1,
-            Checkbutton: 2,
+            NONE: { value: 0, label: "None" },
+            CHECKBOX: { value: 1, label: "Checkbox" },
+            CHECKBUTTON: { value: 2, label: "Checkbutton" },
         } as const;
 
         export const enumInputWidget = {
-            None: 0,
-            Dropdown: 1,
-            VerticalRadioButton: 2,
-            HorizontalRadioButton: 3,
-            VerticalRadioBox: 4,
-            HorizontalRadioBox: 5,
+            NONE: { value: 0, label: "None" },
+            DROPDOWN: { value: 1, label: "Dropdown" },
+            VERTICAL_RADIO_BUTTON: { value: 2, label: "Vertical Radio Button" },
+            HORIZONTAL_RADIO_BUTTON: { value: 3, label: "Horizontal Radio Button" },
+            VERTICAL_RADIO_BOX: { value: 4, label: "Vertical Radio Box" },
+            HORIZONTAL_RADIO_BOX: { value: 5, label: "Horizontal Radio Box" },
         } as const;
 
         export const typicalInputWidget = {
-            None: 0,
-            Input: 1,
+            NONE: { value: 0, label: "None" },
+            INPUT: { value: 1, label: "Input" },
         } as const;
 
         export const typicalOutputWidget = {
-            None: 0,
-            Preview: 1,
+            NONE: { value: 0, label: "None" },
+            PREVIEW: { value: 1, label: "Preview" },
         } as const;
 
         export const roundingMode = {
-            Ceil: 0,
-            Floor: 1,
-            Truncate: 2,
-            Expand: 3,
-            "Half Ceil": 4,
-            "Half Floor": 5,
-            "Half Truncate": 6,
-            "Half Expand": 7,
+            CEIL: { value: 0, label: "Ceil" },
+            FLOOR: { value: 1, label: "Floor" },
+            TRUNCATE: { value: 2, label: "Truncate" },
+            EXPAND: { value: 3, label: "Expand" },
+            HALF_CEIL: { value: 4, label: "Half Ceil" },
+            HALF_FLOOR: { value: 5, label: "Half Floor" },
+            HALF_TRUNCATE: { value: 6, label: "Half Truncate" },
+            HALF_EXPAND: { value: 7, label: "Half Expand" },
         } as const;
 
         //#endregion

@@ -40,7 +40,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorInputDefiniti
         payload: {
             label: "",
             initialValue: Color.fromHex("#ffffffff"),
-            widget: Enum.Common.colorInputWidget.Hex,
+            widget: Enum.Common.colorInputWidget.HEX.value,
             alpha: true,
             nullable: true,
             socketed: true,

@@ -43,7 +43,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LayerComposeDefinit
         payload: {
             label: "",
             enabled: input.enabled ?? true,
-            blend: input.blend ?? Enum.Common.blendMode.Normal,
+            blend: input.blend ?? Enum.Common.blendMode.NORMAL.value,
         },
         type: "layerCompose",
     };

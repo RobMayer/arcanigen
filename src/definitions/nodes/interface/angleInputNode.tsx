@@ -47,7 +47,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefiniti
             max: "360",
             step: "1",
             snap: "1",
-            widget: Enum.Common.numberInputWidget.Input,
+            widget: Enum.Common.numberInputWidget.INPUT.value,
             wraps: false,
             socketed: true,
         },

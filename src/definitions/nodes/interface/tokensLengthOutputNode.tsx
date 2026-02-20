@@ -34,7 +34,7 @@ const create = (
         out: {},
         payload: {
             label: "",
-            widget: Enum.Common.typicalOutputWidget.None,
+            widget: Enum.Common.typicalOutputWidget.NONE.value,
         },
         type: "tokensLengthOutput",
     };

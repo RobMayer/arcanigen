@@ -45,7 +45,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinitio
             max: "1",
             step: "0.01",
             snap: "0.01",
-            widget: Enum.Common.numberInputWidget.Input,
+            widget: Enum.Common.numberInputWidget.INPUT.value,
             socketed: true,
         },
         type: "floatInput",

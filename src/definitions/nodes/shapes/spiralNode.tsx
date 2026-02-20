@@ -95,12 +95,12 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
         },
         payload: {
             label: "",
-            spanMode: Enum.Common.spanMode.InnerOuter,
+            spanMode: Enum.Common.spanMode.INNER_OUTER.value,
             innerRadius: "120px",
             outerRadius: "180px",
             radius: "150px",
             deviation: "60px",
-            arcMode: Enum.Common.arcMode.StartSweep,
+            arcMode: Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: "0",
             sweep: "90",
             thetaFrom: "0",
@@ -111,12 +111,12 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -138,10 +138,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
         [methods],
     );
 
-    const isInOut = node.payload.spanMode === Enum.Common.spanMode.InnerOuter && node.in.spanMode === null;
-    const isSpread = node.payload.spanMode === Enum.Common.spanMode.Spread && node.in.spanMode === null;
-    const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.StartSweep && node.in.arcMode === null;
-    const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FromTo && node.in.arcMode === null;
+    const isInOut = node.payload.spanMode === Enum.Common.spanMode.INNER_OUTER.value && node.in.spanMode === null;
+    const isSpread = node.payload.spanMode === Enum.Common.spanMode.SPREAD.value && node.in.spanMode === null;
+    const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
+    const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -271,7 +271,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     let rI: number;
     let rO: number;
 
-    if (spanMode === Enum.Common.spanMode.Spread) {
+    if (spanMode === Enum.Common.spanMode.SPREAD.value) {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
         const deviation = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "deviation")?.data ?? node.payload.deviation) ?? 0;
         rI = radius - deviation / 2;
@@ -286,7 +286,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     let effectiveStart: number;
     let effectiveSweep: number;
 
-    if (arcMode === Enum.Common.arcMode.FromTo) {
+    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
         const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
         const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;

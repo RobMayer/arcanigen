@@ -45,7 +45,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LengthInputDefinit
             max: "",
             step: "",
             snap: "",
-            widget: Enum.Common.lengthInputWidget.Input,
+            widget: Enum.Common.lengthInputWidget.INPUT.value,
             socketed: true,
         },
         type: "lengthInput",

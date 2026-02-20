@@ -88,18 +88,18 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             size: "16px",
             spacing: "0px",
             rotation: "0",
-            anchor: Enum.Common.textAnchor.Middle,
-            align: Enum.Common.textAlign.Start,
-            offsetMode: Enum.Common.offsetMode.Relative,
+            anchor: Enum.Common.textAnchor.MIDDLE.value,
+            align: Enum.Common.textAlign.START.value,
+            offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
             offsetLength: "0px",
-            offsetOrigin: Enum.Common.offsetOrigin.Start,
+            offsetOrigin: Enum.Common.offsetOrigin.START.value,
             // stroke
             strokeWidth: "0px",
             strokeDash: "",
             strokeColor: null,
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             fillColor: { r: 0, g: 0, b: 0, a: 1 },
             paintOrder: 0,
@@ -166,7 +166,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                 <DecimalInput.SliderInput
                     value={node.payload.offsetPercent}
                     onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
-                    disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.Relative}
+                    disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.RELATIVE.value}
                     min={-100}
                     max={100}
                 />
@@ -175,7 +175,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                 <LengthInput
                     value={node.payload.offsetLength}
                     onCommit={(offsetLength) => handleUpdate({ offsetLength })}
-                    disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.Absolute}
+                    disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.ABSOLUTE.value}
                     required
                 />
             </SocketIn>
@@ -245,7 +245,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let startOffset: string;
-    if (offsetMode === Enum.Common.offsetMode.Relative) {
+    if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
         const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         startOffset = `calc(clamp(0%, ${originPct} + ${pct}%, 100%))`;
     } else {

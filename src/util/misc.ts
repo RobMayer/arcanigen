@@ -20,22 +20,22 @@ export const merge = <M, S extends Record<string, unknown>>(item: M, extra: S): 
 
 export const getTrueRadius = (r: number, scribe: keyof typeof Enum.Common.scribeMode, sides: number) => {
     switch (scribe) {
-        case "Middle":
+        case "MIDDLE":
             return (r + r / Math.cos(Math.PI / sides)) / 2;
-        case "Circumscribe":
+        case "CIRCUMSCRIBE":
             return r / Math.cos(Math.PI / sides);
-        case "Inscribe":
+        case "INSCRIBE":
             return r;
     }
 };
 
 export const getDerivedRadius = (r: number, scribe: keyof typeof Enum.Common.scribeMode, sides: number) => {
     switch (scribe) {
-        case "Middle":
+        case "MIDDLE":
             return (r + r * Math.cos(Math.PI / sides)) / 2;
-        case "Circumscribe":
+        case "CIRCUMSCRIBE":
             return r;
-        case "Inscribe":
+        case "INSCRIBE":
             return r * Math.cos(Math.PI / sides);
     }
 };
@@ -52,24 +52,24 @@ export const distroInterpolator = (curve: keyof typeof Enum.Common.distroFunctio
 };
 
 const CURVE_HANDLERS: { [k in keyof typeof Enum.Common.distroFunctions]: (t: number) => number } = {
-    Linear: (t: number) => t,
-    Quadratic: (t: number) => Math.pow(t, 2),
-    Cubic: (t: number) => Math.pow(t, 3),
-    Exponential: (t: number) => Math.pow(2, t) - 1,
-    Sinusoidal: (t: number) => Math.sin(t * (Math.PI / 2)),
-    Rootic: (t: number) => Math.sqrt(t),
-    Circular: (t: number) => 1 - Math.sqrt(1 - Math.pow(t, 2)),
+    LINEAR: (t: number) => t,
+    QUADRATIC: (t: number) => Math.pow(t, 2),
+    CUBIC: (t: number) => Math.pow(t, 3),
+    EXPONENTIAL: (t: number) => Math.pow(2, t) - 1,
+    SINUSOIDAL: (t: number) => Math.sin(t * (Math.PI / 2)),
+    ROOTIC: (t: number) => Math.sqrt(t),
+    CIRCULAR: (t: number) => 1 - Math.sqrt(1 - Math.pow(t, 2)),
 };
 
 const easedCurve = (ease: keyof typeof Enum.Common.distroEasing, func: (t: number) => number) => {
     switch (ease) {
-        case "In":
+        case "IN":
             return (a: number) => func(a);
-        case "Out":
+        case "OUT":
             return (a: number) => 1 - func(1 - a);
-        case "InOut":
+        case "IN_OUT":
             return (a: number) => (a < 0.5 ? func(a * 2) / 2 : a > 0.5 ? 1 - func(a * -2 + 2) / 2 : 0.5);
-        case "OutIn":
+        case "OUT_IN":
             return (a: number) => (a < 0.5 ? 0.5 - func(1 - a * 2) / 2 : a > 0.5 ? 0.5 + func(a * 2 - 1) / 2 : 0.5);
     }
 };

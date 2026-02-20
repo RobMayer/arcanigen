@@ -59,7 +59,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<SequencerDefinition
         },
         payload: {
             label: "",
-            mode: input.mode ?? Enum.Common.sequencerMode.Wrap,
+            mode: input.mode ?? Enum.Common.sequencerMode.WRAP.value,
             reverseSequence: input.reverseSequence ?? false,
             reverseSteps: input.reverseSteps ?? false,
             offset: input.offset ?? "0",
@@ -205,16 +205,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     // Pipeline step 3: Mode maps idx (0..count-1) → stepIdx (0..socketCount-1)
     let stepIdx: number | null;
     switch (modeKey) {
-        case "Wrap":
+        case "WRAP":
             stepIdx = idx % socketCount;
             break;
-        case "Clamp":
+        case "CLAMP":
             stepIdx = Math.min(idx, socketCount - 1);
             break;
-        case "Truncate":
+        case "TRUNCATE":
             stepIdx = idx < socketCount ? idx : null;
             break;
-        case "Bounce": {
+        case "BOUNCE": {
             // ping-pong: [0,1,2,1,0,1,2,...]
             const cycle = socketCount > 1 ? 2 * (socketCount - 1) : 1;
             const pos = idx % cycle;

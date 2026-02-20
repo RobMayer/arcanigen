@@ -85,7 +85,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ArcDefinition>>, i
         payload: {
             label: "",
             radius: "150px",
-            arcMode: Enum.Common.arcMode.StartSweep,
+            arcMode: Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: "0",
             sweep: "90",
             thetaFrom: "0",
@@ -97,12 +97,12 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ArcDefinition>>, i
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
-            strokeCap: Enum.Common.strokeCap.Butt,
+            strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             fillColor: null,
             paintOrder: 0,
             // transforms
-            positionMode: Enum.Common.positionMode.Cartesian,
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
@@ -123,8 +123,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
         [methods],
     );
 
-    const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.StartSweep && node.in.arcMode === null;
-    const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FromTo && node.in.arcMode === null;
+    const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
+    const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -220,7 +220,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     let effectiveStart: number;
     let effectiveSweep: number;
 
-    if (arcMode === Enum.Common.arcMode.FromTo) {
+    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
         const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
         const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;

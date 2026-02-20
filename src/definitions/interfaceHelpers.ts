@@ -30,7 +30,7 @@ export const addInterface = (ctx: NodeTypes.MethodContext, graphId: string, node
                         in: { ...customNode.in, [nodeId]: null, [socketId]: null },
                         payload: {
                             ...customNode.payload,
-                            [`layers_${nodeId}`]: [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.Normal }],
+                            [`layers_${nodeId}`]: [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.NORMAL.value }],
                         },
                     };
                 } else {
