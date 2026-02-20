@@ -175,7 +175,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
             </SocketIn>
             <SocketIn node={node} socketId={"rScribe"} type={"enum"} label={"Scribe Mode"}>
                 <RadioButton.Group
-                    orientation={"vertical"}
+                    orientation={"horizontal"}
                     value={`${node.payload.rScribe}`}
                     onValue={(v) => handleUpdate({ rScribe: Number(v) })}
                     disabled={node.in.rScribe !== null}
@@ -222,9 +222,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
 };
 
 const GEOMETRY_INPUTS: (keyof PolygramDefinition["inputs"])[] = [
-    "pointCount", "skipCount", "pointDistro", "radius", "rScribe", "cornerRadius", "cornerShape",
-    "markerShape", "markerAlign",
-    "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation",
+    "pointCount",
+    "skipCount",
+    "pointDistro",
+    "radius",
+    "rScribe",
+    "cornerRadius",
+    "cornerShape",
+    "markerShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
 ];
 const STYLING_INPUTS: (keyof PolygramDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 

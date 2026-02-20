@@ -148,7 +148,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
             </SocketIn>
             <SocketIn node={node} socketId={"rScribe"} type={"enum"} label={"Scribe Mode"}>
                 <RadioButton.Group
-                    orientation={"vertical"}
+                    orientation={"horizontal"}
                     value={`${node.payload.rScribe}`}
                     onValue={(v) => handleUpdate({ rScribe: Number(v) })}
                     disabled={node.in.rScribe !== null}
@@ -194,7 +194,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
     );
 };
 
-const GEOMETRY_INPUTS: (keyof PolygonDefinition["inputs"])[] = ["pointCount", "pointDistro", "radius", "rScribe", "cornerRadius", "cornerShape", "markerShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof PolygonDefinition["inputs"])[] = [
+    "pointCount",
+    "pointDistro",
+    "radius",
+    "rScribe",
+    "cornerRadius",
+    "cornerShape",
+    "markerShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof PolygonDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"], _deps: AllDeps): (keyof PolygonDefinition["inputs"])[] => {

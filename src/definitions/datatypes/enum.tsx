@@ -146,6 +146,18 @@ export namespace Enum {
             Alpha: 1,
         } as const;
 
+        export const spacingMode = {
+            Even: 0,
+            FixedStart: 1,
+            FixedCenter: 2,
+            FixedEnd: 3,
+        } as const;
+
+        export const overflowMode = {
+            Clamp: 0,
+            Wrap: 1,
+        } as const;
+
         export const sequencerMode = {
             Wrap: 0,
             Truncate: 1,

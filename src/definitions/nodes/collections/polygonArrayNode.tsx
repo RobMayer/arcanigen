@@ -13,7 +13,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterType
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
-import { deg2rad, delerp, distroInterpolator, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
+import { deg2rad, delerp, distroInterpolator, getDerivedRadius, getTrueRadius, lerp } from "../../../util/misc";
 import { Transforms } from "../shapes/abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -111,21 +111,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
                 Input
             </SocketIn>
             <SocketIn node={node} socketId={"count"} type={"integer"} label={"Count"}>
-                <IntegerInput.SliderInput
-                    value={node.payload.count}
-                    onCommit={(count) => handleUpdate({ count })}
-                    disabled={node.in.count !== null}
-                    min={"3"}
-                    max={"64"}
-                    required
-                />
+                <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"3"} max={"64"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"scribeMode"} type={"enum"} label={"Scribe Mode"}>
                 <RadioButton.Group
-                    orientation={"vertical"}
+                    orientation={"horizontal"}
                     value={`${node.payload.scribeMode}`}
                     onValue={(v) => handleUpdate({ scribeMode: Number(v) })}
                     disabled={node.in.scribeMode !== null}
@@ -156,7 +149,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
     );
 };
 
-const GEOMETRY_INPUTS: (keyof PolygonArrayDefinition["inputs"])[] = ["input", "count", "radius", "scribeMode", "pointDistro", "memberAlign", "memberRotation", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof PolygonArrayDefinition["inputs"])[] = [
+    "input",
+    "count",
+    "radius",
+    "scribeMode",
+    "pointDistro",
+    "memberAlign",
+    "memberRotation",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, outSocket: keyof PolygonArrayDefinition["outputs"], _deps: AllDeps): (keyof PolygonArrayDefinition["inputs"])[] => {
     if (outSocket === "output") {
@@ -291,8 +298,8 @@ export const PolygonArrayNodeType: NodeTypes.Type<"polygonArray", PolygonArrayDe
     type: "polygonArray",
     displayName: "Polygon Array",
     defaultLabel: "Polygon Array",
-    iconNode: <Icon shape={NODE_ICONS.clusterArray.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.clusterArray.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.vertexArray.Item} color={"var(--icon-flavour)"} />,
+    iconCard: <Icon shape={NODE_ICONS.vertexArray.Card} color={"var(--icon-flavour)"} />,
     category: "Collections",
     create,
     dependsOn,

@@ -75,6 +75,7 @@ import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
 import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
+import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -150,6 +151,7 @@ namespace Registries {
         mask: MaskDefinition;
         sequencer: SequencerDefinition;
         polygonArray: PolygonArrayDefinition;
+        pathArray: PathArrayDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
         logicalNot: LogicalNotDefinition;
@@ -185,6 +187,7 @@ namespace Registries {
         mask: MaskNodeType,
         sequencer: SequencerNodeType,
         polygonArray: PolygonArrayNodeType,
+        pathArray: PathArrayNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,

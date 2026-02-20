@@ -14,13 +14,16 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { AngleInput } from "../../../components/inputs/AngleInput";
 
 
 export type AlongPathDefinition = {
     inputs: {
         shape: DataTypes.Use<"shape">;
         path: DataTypes.Use<"path">;
-        alignToPath: DataTypes.Use<"boolean">;
+        memberAlign: DataTypes.Use<"boolean">;
+        memberRotation: DataTypes.Use<"angle">;
+        overflowMode: DataTypes.Use<"enum">;
         offsetMode: DataTypes.Use<"enum">;
         offsetPercent: DataTypes.Use<"float">;
         offsetLength: DataTypes.Use<"length">;
@@ -31,7 +34,9 @@ export type AlongPathDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        alignToPath: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        memberAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        memberRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        overflowMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         offsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         offsetPercent: DataTypes.TypeOf<DataTypes.Use<"float">>;
         offsetLength: DataTypes.TypeOf<DataTypes.Use<"length">>;
@@ -41,6 +46,7 @@ export type AlongPathDefinition = {
 
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
 const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.offsetOrigin);
+const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"alongPath", AlongPathDefinition> => {
     return {
@@ -48,7 +54,9 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition
         in: {
             shape: null,
             path: null,
-            alignToPath: null,
+            memberAlign: null,
+            memberRotation: null,
+            overflowMode: null,
             offsetMode: null,
             offsetPercent: null,
             offsetLength: null,
@@ -59,7 +67,9 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition
         },
         payload: {
             label: "",
-            alignToPath: true,
+            memberAlign: true,
+            memberRotation: "0",
+            overflowMode: Enum.Common.overflowMode.Clamp,
             offsetMode: Enum.Common.offsetMode.Relative,
             offsetPercent: "0",
             offsetLength: "0px",
@@ -85,10 +95,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
             </SocketOut>
             <SocketIn node={node} socketId={"shape"} type={"shape"} label={"Shape"} />
             <SocketIn node={node} socketId={"path"} type={"path"} label={"Path"} />
-            <SocketIn node={node} socketId={"alignToPath"} type={"boolean"}>
-                <CheckBox checked={node.payload.alignToPath} onToggle={(alignToPath) => handleUpdate({ alignToPath })} disabled={node.in.alignToPath !== null}>
+            <SocketIn node={node} socketId={"memberAlign"} type={"boolean"}>
+                <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
                     Align to Path
                 </CheckBox>
+            </SocketIn>
+            <SocketIn node={node} socketId={"memberRotation"} type={"angle"} label={"Member Rotation"}>
+                <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
+            </SocketIn>
+            <SocketIn node={node} socketId={"overflowMode"} type={"enum"} label={"Overflow"}>
+                <RadioButton.Group
+                    orientation={"horizontal"}
+                    value={`${node.payload.overflowMode}`}
+                    onValue={(v) => handleUpdate({ overflowMode: Number(v) })}
+                    disabled={node.in.overflowMode !== null}
+                    options={OVERFLOW_MODE_OPTIONS}
+                />
             </SocketIn>
             <SocketIn node={node} socketId={"offsetMode"} type={"enum"} label={"Offset Mode"}>
                 <RadioButton.Group
@@ -129,7 +151,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
     );
 };
 
-const ALL_INPUTS: (keyof AlongPathDefinition["inputs"])[] = ["shape", "path", "alignToPath", "offsetMode", "offsetPercent", "offsetLength", "offsetOrigin"];
+const ALL_INPUTS: (keyof AlongPathDefinition["inputs"])[] = ["shape", "path", "memberAlign", "memberRotation", "overflowMode", "offsetMode", "offsetPercent", "offsetLength", "offsetOrigin"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, _outSocket: keyof AlongPathDefinition["outputs"], _deps: AllDeps): (keyof AlongPathDefinition["inputs"])[] => {
     return ALL_INPUTS;
@@ -137,6 +159,13 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, _outSock
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, _inSocket: keyof AlongPathDefinition["inputs"], _deps: AllDeps): (keyof AlongPathDefinition["outputs"])[] => {
     return ["output"];
+};
+
+const wrapDistance = (raw: string, overflowMode: number): string => {
+    if (overflowMode === Enum.Common.overflowMode.Wrap) {
+        return `mod(${raw}, 100%)`;
+    }
+    return `clamp(0%, ${raw}, 100%)`;
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: keyof AlongPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -148,20 +177,31 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     const shapeData = context.resolve<"shape">(node.id, "shape")?.data;
     if (!shapeData) return null;
 
-    const alignToPath = context.resolve<"boolean">(node.id, "alignToPath")?.data ?? node.payload.alignToPath ?? true;
+    const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign ?? true;
+    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const overflowMode = context.resolve<"enum">(node.id, "overflowMode")?.data ?? node.payload.overflowMode;
 
     const offsetMode = context.resolve<"enum">(node.id, "offsetMode")?.data ?? node.payload.offsetMode;
     const offsetOrigin = context.resolve<"enum">(node.id, "offsetOrigin")?.data ?? node.payload.offsetOrigin;
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
-    let offsetDistance: string;
+    let rawDistance: string;
     if (offsetMode === Enum.Common.offsetMode.Relative) {
         const pct = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
-        offsetDistance = `calc(clamp(0%, ${originPct} + ${pct}%, 100%))`;
+        rawDistance = `${originPct} + ${pct}%`;
     } else {
         const len = context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
         const lenNum = Length.Emptyable.asNumber(len) ?? 0;
-        offsetDistance = `calc(clamp(0%, ${originPct} + ${lenNum}px, 100%))`;
+        rawDistance = `${originPct} + ${lenNum}px`;
+    }
+
+    const offsetDistance = `calc(${wrapDistance(rawDistance, overflowMode)})`;
+
+    let rotate: string;
+    if (memberAlign) {
+        rotate = memberRotation !== 0 ? `auto ${memberRotation}deg` : "auto";
+    } else {
+        rotate = memberRotation !== 0 ? `${memberRotation}deg` : "0deg";
     }
 
     return {
@@ -172,7 +212,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
             path: {
                 d: pathData.d,
                 distance: offsetDistance,
-                rotate: alignToPath ? "auto" : "0deg",
+                rotate,
             },
             transform: pathData.transform,
             preview: pathData.preview,
@@ -183,7 +223,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
 const ALONGPATH_SOCKET_TYPES: Record<string, string> = {
     shape: "shape",
     path: "path",
-    alignToPath: "boolean",
+    memberAlign: "boolean",
+    memberRotation: "angle",
+    overflowMode: "enum",
     offsetMode: "enum",
     offsetPercent: "float",
     offsetLength: "length",
