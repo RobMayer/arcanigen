@@ -16,7 +16,6 @@ import { NumericString } from "../../datatypes/numericString";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 
-
 export type AlongPathDefinition = {
     inputs: {
         shape: DataTypes.Use<"shape">;
@@ -93,8 +92,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"shape"} type={"shape"} label={"Shape"} />
-            <SocketIn node={node} socketId={"path"} type={"path"} label={"Path"} />
+            <SocketIn node={node} socketId={"shape"} type={"shape"}>
+                Shape
+            </SocketIn>
+            <SocketIn node={node} socketId={"path"} type={"path"}>
+                Path
+            </SocketIn>
             <SocketIn node={node} socketId={"memberAlign"} type={"boolean"}>
                 <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
                     Align to Path
