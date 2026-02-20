@@ -24,7 +24,7 @@ export type AlongPathDefinition = {
         memberRotation: DataTypes.Use<"angle">;
         overflowMode: DataTypes.Use<"enum">;
         offsetMode: DataTypes.Use<"enum">;
-        offsetPercent: DataTypes.Use<"float">;
+        offsetPercent: DataTypes.Use<"float" | "integer">;
         offsetLength: DataTypes.Use<"length">;
         offsetOrigin: DataTypes.Use<"enum">;
     };
@@ -124,7 +124,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
                     options={OFFSET_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"offsetPercent"} type={"float"} label={"Offset %"}>
+            <SocketIn node={node} socketId={"offsetPercent"} type={"float integer"} label={"Offset %"}>
                 <DecimalInput.SliderInput
                     value={node.payload.offsetPercent}
                     onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
@@ -190,7 +190,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
 
     let rawDistance: string;
     if (offsetMode === Enum.Common.offsetMode.Relative) {
-        const pct = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
+        const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         rawDistance = `${originPct} + ${pct}%`;
     } else {
         const len = context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
@@ -230,7 +230,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<AlongPathDefinition["inputs"]>]: 
     memberRotation: { types: ["angle"], mode: "or" },
     overflowMode: { types: ["enum"], mode: "or" },
     offsetMode: { types: ["enum"], mode: "or" },
-    offsetPercent: { types: ["float"], mode: "or" },
+    offsetPercent: { types: ["float", "integer"], mode: "or" },
     offsetLength: { types: ["length"], mode: "or" },
     offsetOrigin: { types: ["enum"], mode: "or" },
 };

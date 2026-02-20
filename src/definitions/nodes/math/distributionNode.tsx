@@ -10,12 +10,13 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { RadioButton } from "../../../components/buttons/RadioButton";
+import { NumericString } from "../../datatypes/numericString";
 
 export type DistributionNodeDefinition = {
     inputs: {
         func: DataTypes.Use<"enum">;
         easing: DataTypes.Use<"enum">;
-        intensity: DataTypes.Use<"float">;
+        intensity: DataTypes.Use<"float" | "integer">;
     };
     outputs: {
         output: DataTypes.Use<"distribution">;
@@ -43,7 +44,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DistributionNodeDef
             label: "",
             func: input.func ?? 0,
             easing: input.easing ?? 0,
-            intensity: input.intensity ?? "1",
+            intensity: input.intensity ?? "100",
         },
         type: "distribution",
     };
@@ -98,13 +99,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
                     options={EASING_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"intensity"} type={"float"} label={"Intensity"}>
+            <SocketIn node={node} socketId={"intensity"} type={"float integer"} label={"Intensity"}>
                 <DecimalInput.SliderInput
                     value={node.payload.intensity}
                     onCommit={(intensity) => handleUpdate({ intensity })}
                     disabled={node.in.intensity !== null}
                     min={"0"}
-                    max={"1"}
+                    max={"100"}
                     step={"0.01"}
                     snap={"0.01"}
                 />
@@ -131,10 +132,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
     if (socket === "output") {
         const func = Enum.resolve(context.resolve<"enum">(node.id, "func")?.data, Enum.Common.distroFunctions) ?? node.payload.func;
         const easing = Enum.resolve(context.resolve<"enum">(node.id, "easing")?.data, Enum.Common.distroEasing) ?? node.payload.easing;
-        const intensity = context.resolve<"float">(node.id, "intensity")?.data ?? node.payload.intensity;
+        const intensity = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "intensity")?.data ?? node.payload.intensity) ?? 100;
         return {
             kind: "distribution",
-            data: { func, easing, intensity },
+            data: { func, easing, intensity: `${intensity / 100}` },
         };
     }
     return null;
@@ -143,7 +144,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
 const SOCKETTYPES_IN: { [key in keyof Required<DistributionNodeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     func: { types: ["enum"], mode: "or" },
     easing: { types: ["enum"], mode: "or" },
-    intensity: { types: ["float"], mode: "or" },
+    intensity: { types: ["float", "integer"], mode: "or" },
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<DistributionNodeDefinition["outputs"]>]: SocketTypes.SocketRule } = {

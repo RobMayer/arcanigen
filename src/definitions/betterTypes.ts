@@ -20,13 +20,32 @@ import { LengthDefinition, LengthPrimitiveType } from "./nodes/primitives/length
 import { TokensLengthDefinition, TokensLengthPrimitiveType } from "./nodes/primitives/tokensLengthNode";
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import type { Project } from "../state/project";
-import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
 import { ShapePreviewDefinition, ShapePreviewType } from "./nodes/debug/shapePreviewNode";
 import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInputNode";
 import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
-import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
 import { AddDefinition, AddType } from "./nodes/math/addNode";
+import { SubtractDefinition, SubtractType } from "./nodes/math/subtractNode";
+import { MultiplyDefinition, MultiplyType } from "./nodes/math/multiplyNode";
+import { DivideDefinition, DivideType } from "./nodes/math/divideNode";
+import { ModuloDefinition, ModuloType } from "./nodes/math/moduloNode";
+import { RemainderDefinition, RemainderType } from "./nodes/math/remainderNode";
+import { NegateDefinition, NegateType } from "./nodes/math/negateNode";
+import { ReciprocalDefinition, ReciprocalType } from "./nodes/math/reciprocalNode";
+import { AbsDefinition, AbsType } from "./nodes/math/absNode";
+import { RoundDefinition, RoundType } from "./nodes/math/roundNode";
+import { SinDefinition, SinType } from "./nodes/math/sinNode";
+import { CosDefinition, CosType } from "./nodes/math/cosNode";
+import { TanDefinition, TanType } from "./nodes/math/tanNode";
+import { ArcsinDefinition, ArcsinType } from "./nodes/math/arcsinNode";
+import { ArccosDefinition, ArccosType } from "./nodes/math/arccosNode";
+import { ArctanDefinition, ArctanType } from "./nodes/math/arctanNode";
+import { MinDefinition, MinType } from "./nodes/math/minNode";
+import { MaxDefinition, MaxType } from "./nodes/math/maxNode";
+import { ClampDefinition, ClampType } from "./nodes/math/clampNode";
+import { LerpDefinition, LerpType } from "./nodes/math/lerpNode";
+import { PowDefinition, PowType } from "./nodes/math/powNode";
+import { RootDefinition, RootType } from "./nodes/math/rootNode";
 import { NumericString } from "./datatypes/numericString";
 import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
@@ -122,7 +141,6 @@ namespace Registries {
         tokensLength: TokensLengthDefinition;
 
         //debug
-        debug: DebugDefinition;
         shapePreview: ShapePreviewDefinition;
 
         // subgraph interfaces
@@ -154,7 +172,27 @@ namespace Registries {
 
         // math
         add: AddDefinition;
-        addFloat: AddFloatDefinition;
+        subtract: SubtractDefinition;
+        multiply: MultiplyDefinition;
+        divide: DivideDefinition;
+        modulo: ModuloDefinition;
+        remainder: RemainderDefinition;
+        negate: NegateDefinition;
+        reciprocal: ReciprocalDefinition;
+        abs: AbsDefinition;
+        round: RoundDefinition;
+        sin: SinDefinition;
+        cos: CosDefinition;
+        tan: TanDefinition;
+        arcsin: ArcsinDefinition;
+        arccos: ArccosDefinition;
+        arctan: ArctanDefinition;
+        min: MinDefinition;
+        max: MaxDefinition;
+        clamp: ClampDefinition;
+        lerp: LerpDefinition;
+        pow: PowDefinition;
+        root: RootDefinition;
         distribution: DistributionNodeDefinition;
 
         // collections
@@ -208,7 +246,6 @@ namespace Registries {
         enum: EnumPrimitiveType,
         length: LengthPrimitiveType,
         tokensLength: TokensLengthPrimitiveType,
-        debug: DebugType,
         shapePreview: ShapePreviewType,
 
         floatInput: FloatInputType,
@@ -238,7 +275,27 @@ namespace Registries {
         custom: CustomNodeType,
 
         add: AddType,
-        addFloat: AddFloatType,
+        subtract: SubtractType,
+        multiply: MultiplyType,
+        divide: DivideType,
+        modulo: ModuloType,
+        remainder: RemainderType,
+        negate: NegateType,
+        reciprocal: ReciprocalType,
+        abs: AbsType,
+        round: RoundType,
+        sin: SinType,
+        cos: CosType,
+        tan: TanType,
+        arcsin: ArcsinType,
+        arccos: ArccosType,
+        arctan: ArctanType,
+        min: MinType,
+        max: MaxType,
+        clamp: ClampType,
+        lerp: LerpType,
+        pow: PowType,
+        root: RootType,
         distribution: DistributionNodeType,
         switchCase: SwitchCaseNodeType,
         condition: ConditionNodeType,

@@ -15,15 +15,14 @@ import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 
-
 export type GlyphDefinition = {
     inputs: {
         width: DataTypes.Use<"length">;
         height: DataTypes.Use<"length">;
-        viewX: DataTypes.Use<"float">;
-        viewY: DataTypes.Use<"float">;
-        viewW: DataTypes.Use<"float">;
-        viewH: DataTypes.Use<"float">;
+        viewX: DataTypes.Use<"float" | "integer">;
+        viewY: DataTypes.Use<"float" | "integer">;
+        viewW: DataTypes.Use<"float" | "integer">;
+        viewH: DataTypes.Use<"float" | "integer">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
@@ -126,19 +125,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
             <SocketIn node={node} socketId={"height"} type={"length"} label={"Height"}>
                 <LengthInput value={node.payload.height} onCommit={(height) => handleUpdate({ height })} disabled={node.in.height !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewX"} type={"float"} label={"ViewBox X"}>
+            <SocketIn node={node} socketId={"viewX"} type={"float integer"} label={"ViewBox X"}>
                 <DecimalInput value={node.payload.viewX} onCommit={(viewX) => handleUpdate({ viewX })} disabled={node.in.viewX !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewY"} type={"float"} label={"ViewBox Y"}>
+            <SocketIn node={node} socketId={"viewY"} type={"float integer"} label={"ViewBox Y"}>
                 <DecimalInput value={node.payload.viewY} onCommit={(viewY) => handleUpdate({ viewY })} disabled={node.in.viewY !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewW"} type={"float"} label={"ViewBox W"}>
+            <SocketIn node={node} socketId={"viewW"} type={"float integer"} label={"ViewBox W"}>
                 <DecimalInput value={node.payload.viewW} onCommit={(viewW) => handleUpdate({ viewW })} disabled={node.in.viewW !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewH"} type={"float"} label={"ViewBox H"}>
+            <SocketIn node={node} socketId={"viewH"} type={"float integer"} label={"ViewBox H"}>
                 <DecimalInput value={node.payload.viewH} onCommit={(viewH) => handleUpdate({ viewH })} disabled={node.in.viewH !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"dpi" as never} type={"float"} label={"DPI"}>
+            <SocketIn node={node} socketId={"dpi" as never} type={"float integer"} label={"DPI"}>
                 <DecimalInput value={node.payload.dpi} onCommit={(dpi) => handleUpdate({ dpi })} min={1} required />
             </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
@@ -147,7 +146,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
     );
 };
 
-const GEOMETRY_INPUTS: (keyof GlyphDefinition["inputs"])[] = ["width", "height", "viewX", "viewY", "viewW", "viewH", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof GlyphDefinition["inputs"])[] = [
+    "width",
+    "height",
+    "viewX",
+    "viewY",
+    "viewW",
+    "viewH",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof GlyphDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, _outSocket: keyof GlyphDefinition["outputs"], _deps: AllDeps): (keyof GlyphDefinition["inputs"])[] => {
@@ -168,13 +180,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "height")?.data ?? node.payload.height, "0px"));
     if (!width || !height) return null;
 
-    const viewX = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "viewX")?.data ?? node.payload.viewX) ?? 0;
-    const viewY = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "viewY")?.data ?? node.payload.viewY) ?? 0;
-    const viewW = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "viewW")?.data ?? node.payload.viewW) ?? 512;
-    const viewH = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
+    const viewX = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewX")?.data ?? node.payload.viewX) ?? 0;
+    const viewY = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewY")?.data ?? node.payload.viewY) ?? 0;
+    const viewW = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewW")?.data ?? node.payload.viewW) ?? 512;
+    const viewH = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
-    const dpi = NumericString.Emptyable.asNumber(node.payload.dpi) ?? 96;
+    const dpi = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "dpi" as never)?.data ?? node.payload.dpi) ?? 96;
     const dpiScale = 72 / dpi;
 
     // Scale viewbox by DPI conversion
@@ -214,10 +226,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
 const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     width: { types: ["length"], mode: "or" },
     height: { types: ["length"], mode: "or" },
-    viewX: { types: ["float"], mode: "or" },
-    viewY: { types: ["float"], mode: "or" },
-    viewW: { types: ["float"], mode: "or" },
-    viewH: { types: ["float"], mode: "or" },
+    viewX: { types: ["float", "integer"], mode: "or" },
+    viewY: { types: ["float", "integer"], mode: "or" },
+    viewW: { types: ["float", "integer"], mode: "or" },
+    viewH: { types: ["float", "integer"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
     ...Transforms.IN_SOCKET_TYPES,
 };

@@ -29,7 +29,7 @@ export type PathArrayDefinition = {
         spacing: DataTypes.Use<"length">;
         overflowMode: DataTypes.Use<"enum">;
         offsetMode: DataTypes.Use<"enum">;
-        offsetPercent: DataTypes.Use<"float">;
+        offsetPercent: DataTypes.Use<"float" | "integer">;
         offsetLength: DataTypes.Use<"length">;
         offsetOrigin: DataTypes.Use<"enum">;
         padStart: DataTypes.Use<"length">;
@@ -193,7 +193,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                         options={OFFSET_MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"offsetPercent"} type={"float"} label={"Offset %"}>
+                <SocketIn node={node} socketId={"offsetPercent"} type={"float integer"} label={"Offset %"}>
                     <DecimalInput.SliderInput
                         value={node.payload.offsetPercent}
                         onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
@@ -306,7 +306,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
 
     let offsetExpr: string;
     if (offsetMode === Enum.Common.offsetMode.Relative) {
-        const pct = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
+        const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         offsetExpr = pct !== 0 || originPct !== "0%" ? `${originPct} + ${pct}%` : "";
     } else {
         const lenNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength) ?? 0;
@@ -392,7 +392,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<PathArrayDefinition["inputs"]>]: 
     spacing: { types: ["length"], mode: "or" },
     overflowMode: { types: ["enum"], mode: "or" },
     offsetMode: { types: ["enum"], mode: "or" },
-    offsetPercent: { types: ["float"], mode: "or" },
+    offsetPercent: { types: ["float", "integer"], mode: "or" },
     offsetLength: { types: ["length"], mode: "or" },
     offsetOrigin: { types: ["enum"], mode: "or" },
     padStart: { types: ["length"], mode: "or" },

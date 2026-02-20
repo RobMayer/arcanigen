@@ -179,6 +179,17 @@ export const extractPair = (
 };
 
 /**
+ * Extract a single raw number from a resolved value, handling length unit extraction.
+ */
+export const extractSingle = (kind: string, data: unknown): { value: number; unit: Length.Unit | null } => {
+    if (kind === "length") {
+        const parsed = Length.parse(data as string);
+        return { value: parsed ? parsed[0] : 0, unit: parsed ? parsed[1] : "px" };
+    }
+    return { value: NumericString.Emptyable.asNumber(data as NumericString.Type | "") ?? 0, unit: null };
+};
+
+/**
  * Wrap a computed number back into the appropriate AnyEval for the output kind.
  */
 export const wrapResult = (value: number, outputKind: string, unit: Length.Unit | null): DataTypes.AnyEval => {

@@ -211,6 +211,17 @@ export namespace Enum {
             Preview: 1,
         } as const;
 
+        export const roundingMode = {
+            Ceil: 0,
+            Floor: 1,
+            Truncate: 2,
+            Expand: 3,
+            "Half Ceil": 4,
+            "Half Floor": 5,
+            "Half Truncate": 6,
+            "Half Expand": 7,
+        } as const;
+
         //#endregion
     }
 }
