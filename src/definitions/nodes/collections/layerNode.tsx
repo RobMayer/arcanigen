@@ -438,15 +438,33 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     return null;
 };
 
+const SOCKETTYPES_IN: { [key in keyof Required<LayerDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    layers: {
+        types: ["array<layer>"],
+        mode: "or",
+    },
+    isolate: {
+        types: ["boolean"],
+        mode: "or",
+    },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<LayerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["layer"], mode: "and" },
+    layerCount: {
+        types: ["integer"],
+        mode: "and",
+    },
+};
+
 const getSocketType = (_node: NodeDefinitions.NodeFor<LayerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
-        if (socketId === "output") return SocketTypes.of("shape");
-        if (socketId === "layerCount") return SocketTypes.of("integer");
+        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
-    if (socketId === "layers") return SocketTypes.of("array<layer>");
-    if (socketId === "isolate") return SocketTypes.of("boolean");
-    if (socketId.startsWith("layer_")) return SocketTypes.LAYER_OR_SHAPE;
-    return SocketTypes.of("shape");
+    if (socketId.startsWith("layer_")) {
+        return { types: ["layer", "shape"], mode: "or" };
+    }
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {

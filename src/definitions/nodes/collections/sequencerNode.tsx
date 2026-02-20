@@ -200,7 +200,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     let idx = reverseSequence ? count - 1 - iter : iter;
 
     // Pipeline step 2: Offset
-    idx = ((idx - offset) % count + count) % count;
+    idx = (((idx - offset) % count) + count) % count;
 
     // Pipeline step 3: Mode maps idx (0..count-1) → stepIdx (0..socketCount-1)
     let stepIdx: number | null;
@@ -239,19 +239,26 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     return context.resolve<"shape">(node.id, stepSocket, 0);
 };
 
-const SEQUENCER_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
-    sequence: { types: ["sequence"], mode: "and" },
+const SOCKETTYPES_IN: { [key in keyof Required<SequencerDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     mode: { types: ["enum"], mode: "and" },
     reverseSequence: { types: ["boolean"], mode: "and" },
     reverseSteps: { types: ["boolean"], mode: "and" },
     offset: { types: ["integer"], mode: "and" },
+    sequence: { types: ["sequence"], mode: "and" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<SequencerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<SequencerDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    if (socketId in SEQUENCER_SOCKET_TYPES) return SEQUENCER_SOCKET_TYPES[socketId];
-    if (socketId.startsWith("step_")) return SocketTypes.of("shape");
-    return SocketTypes.of("shape");
+const getSocketType = (_node: NodeDefinitions.NodeFor<SequencerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    if (side === "out") {
+        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+    if (socketId.startsWith("step_")) {
+        return { types: ["shape"], mode: "and" };
+    }
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition> = {

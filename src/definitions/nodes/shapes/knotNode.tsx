@@ -692,7 +692,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
     return null;
 };
 
-const SOCKETYPES_IN: { [key in keyof Required<KnotDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<KnotDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     pointCount: { types: ["integer"], mode: "and" },
     skipCount: { types: ["integer"], mode: "and" },
     radius: { types: ["length"], mode: "and" },
@@ -728,7 +728,7 @@ const SOCKETTYPES_OUT: { [key in keyof Required<KnotDefinition["outputs"]>]: Soc
 const getSocketType = (_node: NodeDefinitions.NodeFor<KnotDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
-            return SOCKETYPES_IN[socketId as keyof typeof SOCKETYPES_IN];
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
         case "out":
             return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
