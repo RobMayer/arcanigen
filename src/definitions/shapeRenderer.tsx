@@ -1,4 +1,5 @@
-import { ReactNode, useId } from "react";
+import { ReactNode, useId, useMemo } from "react";
+import { nanoid } from "nanoid";
 import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
@@ -237,8 +238,7 @@ const GroupElement = ({ shape }: { shape: GroupShape }) => {
 // ─── Offset Path ─────────────────────────────────────────────────────────────
 
 const OffsetPathElement = ({ shape }: { shape: OffsetPathShape }) => {
-    const id = useId();
-    const pathId = `${id}-op`;
+    const pathId = useMemo(() => `op-${nanoid()}`, [shape.path.d]);
 
     const style: Record<string, string> = {
         offsetPath: `url(#${pathId})`,
