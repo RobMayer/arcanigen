@@ -9,7 +9,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
@@ -672,7 +672,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
     return null;
 };
 
-const KNOT_SOCKET_TYPES: Record<string, string> = {
+const KNOT_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     pointCount: "integer",
     skipCount: "integer",
     radius: "length",
@@ -714,7 +714,7 @@ const KNOT_SOCKET_TYPES: Record<string, string> = {
     eInnerApothem: "length",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<KnotDefinition>, socketId: string, _side: "in" | "out"): string => KNOT_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<KnotDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(KNOT_SOCKET_TYPES[socketId] ?? "float");
 
 export const KnotNodeType: NodeTypes.Type<"knot", KnotDefinition> = {
     type: "knot",

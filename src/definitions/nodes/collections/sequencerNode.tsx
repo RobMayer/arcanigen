@@ -10,7 +10,7 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { ICONS } from "../../../components/Icon";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { NumericString } from "../../datatypes/numericString";
 import { EmptyOr } from "../../../util/misc";
 import { Project } from "../../../state/project";
@@ -239,19 +239,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     return context.resolve<"shape">(node.id, stepSocket, 0);
 };
 
-const SEQUENCER_SOCKET_TYPES: Record<string, string> = {
-    sequence: "sequence",
-    mode: "enum",
-    reverseSequence: "boolean",
-    reverseSteps: "boolean",
-    offset: "integer",
-    output: "shape",
+const SEQUENCER_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
+    sequence: { types: ["sequence"], mode: "and" },
+    mode: { types: ["enum"], mode: "and" },
+    reverseSequence: { types: ["boolean"], mode: "and" },
+    reverseSteps: { types: ["boolean"], mode: "and" },
+    offset: { types: ["integer"], mode: "and" },
+    output: { types: ["shape"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<SequencerDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<SequencerDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
     if (socketId in SEQUENCER_SOCKET_TYPES) return SEQUENCER_SOCKET_TYPES[socketId];
-    if (socketId.startsWith("step_")) return "shape";
-    return "shape";
+    if (socketId.startsWith("step_")) return SocketTypes.of("shape");
+    return SocketTypes.of("shape");
 };
 
 export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition> = {

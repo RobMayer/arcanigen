@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings, Transforms } from "./abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -359,7 +359,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     return null;
 };
 
-const SPIRAL_SOCKET_TYPES: Record<string, string> = {
+const SPIRAL_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     spanMode: "enum",
     innerRadius: "length",
     outerRadius: "length",
@@ -390,7 +390,7 @@ const SPIRAL_SOCKET_TYPES: Record<string, string> = {
     path: "path",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, socketId: string, _side: "in" | "out"): string => SPIRAL_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(SPIRAL_SOCKET_TYPES[socketId] ?? "float");
 
 export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     type: "spiral",

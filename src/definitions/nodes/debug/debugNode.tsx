@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 
@@ -59,12 +59,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<DebugDefinition>, socket: keyof 
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<DebugDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<DebugDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "input":
-            return "float";
+            return SocketTypes.of("float");
         default:
-            return "float";
+            return SocketTypes.of("float");
     }
 };
 

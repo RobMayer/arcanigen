@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
@@ -114,8 +114,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<LogicalOrDefinition>, socket: ke
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalOrDefinition>, _socketId: string, _side: "in" | "out"): string => {
-    return "boolean";
+const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalOrDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SocketTypes.of("boolean");
 };
 
 export const LogicalOrNodeType: NodeTypes.Type<"logicalOr", LogicalOrDefinition> = {

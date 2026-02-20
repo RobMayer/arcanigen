@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
@@ -77,7 +77,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"shapeInput", ShapeInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): string => "shape";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("shape");
 
 export const ShapeInputType: NodeTypes.Type<"shapeInput", ShapeInputDefinition> = {
     type: "shapeInput",

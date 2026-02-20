@@ -388,34 +388,34 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-const INTERFACE_SOCKET_TYPES: Record<string, string> = {
-    floatInput: "float",
-    floatOutput: "float",
-    integerInput: "integer",
-    integerOutput: "integer",
-    angleInput: "angle",
-    angleOutput: "angle",
-    lengthInput: "length",
-    lengthOutput: "length",
-    colorInput: "color",
-    colorOutput: "color",
-    booleanInput: "boolean",
-    booleanOutput: "boolean",
-    enumInput: "enum",
-    enumOutput: "enum",
-    stringInput: "string",
-    stringOutput: "string",
-    tokensLengthInput: "tokens<length>",
-    tokensLengthOutput: "tokens<length>",
-    shapeInput: "shape",
-    shapeOutput: "shape",
-    arrayLayerInput: "array<layer>",
-    arrayLayerOutput: "array<layer>",
-    distributionInput: "distribution",
-    distributionOutput: "distribution",
+const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
+    floatInput: { types: ["float"], mode: "and" },
+    floatOutput: { types: ["float"], mode: "and" },
+    integerInput: { types: ["integer"], mode: "and" },
+    integerOutput: { types: ["integer"], mode: "and" },
+    angleInput: { types: ["angle"], mode: "and" },
+    angleOutput: { types: ["angle"], mode: "and" },
+    lengthInput: { types: ["length"], mode: "and" },
+    lengthOutput: { types: ["length"], mode: "and" },
+    colorInput: { types: ["color"], mode: "and" },
+    colorOutput: { types: ["color"], mode: "and" },
+    booleanInput: { types: ["boolean"], mode: "and" },
+    booleanOutput: { types: ["boolean"], mode: "and" },
+    enumInput: { types: ["enum"], mode: "and" },
+    enumOutput: { types: ["enum"], mode: "and" },
+    stringInput: { types: ["string"], mode: "and" },
+    stringOutput: { types: ["string"], mode: "and" },
+    tokensLengthInput: { types: ["tokens<length>"], mode: "and" },
+    tokensLengthOutput: { types: ["tokens<length>"], mode: "and" },
+    shapeInput: { types: ["shape"], mode: "and" },
+    shapeOutput: { types: ["shape"], mode: "and" },
+    arrayLayerInput: { types: ["array<layer>"], mode: "and" },
+    arrayLayerOutput: { types: ["array<layer>"], mode: "and" },
+    distributionInput: { types: ["distribution"], mode: "and" },
+    distributionOutput: { types: ["distribution"], mode: "and" },
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): string => {
+const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
     const subgraphId = node.payload.graphId;
     if (!subgraphId) return SocketTypes.ANY;
 
@@ -1295,7 +1295,7 @@ const LayerGroupEntry = ({
 
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
-            <SocketIn node={host} socketId={entry.socket} type={SocketTypes.LAYER_OR_SHAPE}>
+            <SocketIn node={host} socketId={entry.socket} type={SocketTypes.toCSS(SocketTypes.LAYER_OR_SHAPE)}>
                 <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
                 <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
                     {BLEND_MODE_OPTIONS.map((opt) => (

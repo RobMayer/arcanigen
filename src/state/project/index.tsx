@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useMemo, useContext, useCallback, useSyncExternalStore, SetStateAction } from "react";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../definitions/betterTypes";
 import { computeSubgraphDeps, computeForbiddenSockets } from "../../util/cycleDetection";
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
@@ -10,7 +10,7 @@ import { INITIAL_STATE } from "./storage";
 import { MethodContextImpl } from "./methodContext";
 
 export namespace Project {
-    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string; forbidden: Set<string> };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.SocketRule; forbidden: Set<string> };
 
     type TheType = {
         nodes: NodesType;
@@ -44,7 +44,7 @@ export namespace Project {
         const deps = useFastContextMember<TheType["deps"]>(INITIAL_STATE.deps);
         const meta = useFastContextMember<TheType["meta"]>(INITIAL_STATE.meta);
 
-        const pendingConnection = useFastContextMember<{ node: string; socket: string; side: "in" | "out"; type: string; scope: string; forbidden: Set<string> } | null>(null);
+        const pendingConnection = useFastContextMember<PendingConnection | null>(null);
 
         const mc = useMemo(() => new MethodContextImpl({ nodes, nodeList, links, linkList, positions, users, interfaces, cache, deps, meta }), []);
 
@@ -115,7 +115,7 @@ export namespace Project {
         const value = useSyncExternalStore(ctx.pendingConnection.subscribe, ctx.pendingConnection.get);
 
         const set = useCallback(
-            (payload: { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: string } | null) => {
+            (payload: { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.SocketRule } | null) => {
                 if (payload === null) {
                     ctx.pendingConnection.ref.current = null;
                     ctx.pendingConnection.notify();
@@ -213,6 +213,7 @@ export namespace Project {
 
     export const usePositionsRef = () => useContext(CTX)!.positions.ref;
     export const useNodesRef = () => useContext(CTX)!.nodes.ref;
+    export const useMC = () => useContext(CTX)!.mc;
 
     export const useResolverState = () => {
         const ctx = useContext(CTX)!;

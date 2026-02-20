@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
@@ -220,7 +220,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     };
 };
 
-const ALONGPATH_SOCKET_TYPES: Record<string, string> = {
+const ALONGPATH_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     shape: "shape",
     path: "path",
     memberAlign: "boolean",
@@ -233,7 +233,7 @@ const ALONGPATH_SOCKET_TYPES: Record<string, string> = {
     output: "shape",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, socketId: string, _side: "in" | "out"): string => ALONGPATH_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(ALONGPATH_SOCKET_TYPES[socketId] ?? "float");
 
 export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition> = {
     type: "alongPath",

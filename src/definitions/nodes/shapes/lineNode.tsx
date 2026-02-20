@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings, Transforms } from "./abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -313,7 +313,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     return null;
 };
 
-const LINE_SOCKET_TYPES: Record<string, string> = {
+const LINE_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     startMode: "enum",
     startX: "length",
     startY: "length",
@@ -343,7 +343,7 @@ const LINE_SOCKET_TYPES: Record<string, string> = {
     path: "path",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LineDefinition>, socketId: string, _side: "in" | "out"): string => LINE_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<LineDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(LINE_SOCKET_TYPES[socketId] ?? "float");
 
 export const LineNodeType: NodeTypes.Type<"line", LineDefinition> = {
     type: "line",

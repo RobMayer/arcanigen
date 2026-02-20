@@ -9,7 +9,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
@@ -615,7 +615,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
     return null;
 };
 
-const POLYRING_SOCKET_TYPES: Record<string, string> = {
+const POLYRING_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     pointCount: "integer",
     radius: "length",
     spread: "length",
@@ -656,7 +656,7 @@ const POLYRING_SOCKET_TYPES: Record<string, string> = {
     eInnerApothem: "length",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, socketId: string, _side: "in" | "out"): string => POLYRING_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(POLYRING_SOCKET_TYPES[socketId] ?? "float");
 
 export const PolyringNodeType: NodeTypes.Type<"polyring", PolyringDefinition> = {
     type: "polyring",

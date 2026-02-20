@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
@@ -384,29 +384,29 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     return { kind: "shape", data: group };
 };
 
-const PATH_ARRAY_SOCKET_TYPES: Record<string, string> = {
-    input: "shape",
-    path: "path",
-    count: "integer",
-    spacingMode: "enum",
-    spacing: "length",
-    overflowMode: "enum",
-    offsetMode: "enum",
-    offsetPercent: "float",
-    offsetLength: "length",
-    offsetOrigin: "enum",
-    padStart: "length",
-    padEnd: "length",
-    pointDistro: "distribution",
-    skipFirst: "boolean",
-    skipLast: "boolean",
-    memberAlign: "boolean",
-    memberRotation: "angle",
-    output: "shape",
-    sequence: "sequence",
+const PATH_ARRAY_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
+    input: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+    count: { types: ["integer"], mode: "and" },
+    spacingMode: { types: ["enum"], mode: "and" },
+    spacing: { types: ["length"], mode: "and" },
+    overflowMode: { types: ["enum"], mode: "and" },
+    offsetMode: { types: ["enum"], mode: "and" },
+    offsetPercent: { types: ["float"], mode: "and" },
+    offsetLength: { types: ["length"], mode: "and" },
+    offsetOrigin: { types: ["enum"], mode: "and" },
+    padStart: { types: ["length"], mode: "and" },
+    padEnd: { types: ["length"], mode: "and" },
+    pointDistro: { types: ["distribution"], mode: "and" },
+    skipFirst: { types: ["boolean"], mode: "and" },
+    skipLast: { types: ["boolean"], mode: "and" },
+    memberAlign: { types: ["boolean"], mode: "and" },
+    memberRotation: { types: ["angle"], mode: "and" },
+    output: { types: ["shape"], mode: "and" },
+    sequence: { types: ["sequence"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, socketId: string, _side: "in" | "out"): string => PATH_ARRAY_SOCKET_TYPES[socketId] ?? "shape";
+const getSocketType = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => PATH_ARRAY_SOCKET_TYPES[socketId] ?? SocketTypes.of("shape");
 
 export const PathArrayNodeType: NodeTypes.Type<"pathArray", PathArrayDefinition> = {
     type: "pathArray",

@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Color } from "../../datatypes/color";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
@@ -94,12 +94,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloodFillDefinition>, socket: ke
     return null;
 };
 
-const FLOOD_FILL_SOCKET_TYPES: Record<string, string> = {
+const FLOOD_FILL_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     fillColor: "color",
     output: "shape",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, socketId: string, _side: "in" | "out"): string => FLOOD_FILL_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(FLOOD_FILL_SOCKET_TYPES[socketId] ?? "float");
 
 export const FloodFillNodeType: NodeTypes.Type<"floodFill", FloodFillDefinition> = {
     type: "floodFill",

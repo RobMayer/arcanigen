@@ -9,7 +9,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
@@ -508,7 +508,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
     return null;
 };
 
-const STAR_SOCKET_TYPES: Record<string, string> = {
+const STAR_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     pointCount: "integer",
     radius: "length",
     spread: "length",
@@ -544,7 +544,7 @@ const STAR_SOCKET_TYPES: Record<string, string> = {
     path: "path",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<StarDefinition>, socketId: string, _side: "in" | "out"): string => STAR_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<StarDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(STAR_SOCKET_TYPES[socketId] ?? "float");
 
 export const StarNodeType: NodeTypes.Type<"star", StarDefinition> = {
     type: "star",

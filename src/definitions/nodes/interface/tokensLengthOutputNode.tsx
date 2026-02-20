@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -98,7 +98,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"tokensLengthOutput", Tokens
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): string => "tokens<length>";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("tokens<length>");
 
 export const TokensLengthOutputType: NodeTypes.Type<"tokensLengthOutput", TokensLengthOutputDefinition> = {
     type: "tokensLengthOutput",

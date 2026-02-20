@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Project } from "../../../state/project";
 
@@ -81,14 +81,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<BooleanDefinition>, socket: "out
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "value":
-            return "boolean";
+            return SocketTypes.of("boolean");
         case "output":
-            return "boolean";
+            return SocketTypes.of("boolean");
         default:
-            return "boolean";
+            return SocketTypes.of("boolean");
     }
 };
 

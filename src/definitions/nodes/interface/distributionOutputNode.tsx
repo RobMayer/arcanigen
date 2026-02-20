@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -81,7 +81,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", Distri
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): string => "distribution";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("distribution");
 
 export const DistributionOutputType: NodeTypes.Type<"distributionOutput", DistributionOutputDefinition> = {
     type: "distributionOutput",

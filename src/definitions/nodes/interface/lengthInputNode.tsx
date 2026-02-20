@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -130,7 +130,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"lengthInput", LengthInputDe
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): string => "length";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("length");
 
 export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinition> = {
     type: "lengthInput",

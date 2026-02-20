@@ -9,7 +9,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
@@ -449,7 +449,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
     return null;
 };
 
-const POLYGON_SOCKET_TYPES: Record<string, string> = {
+const POLYGON_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     pointCount: "integer",
     skipCount: "integer",
     radius: "length",
@@ -479,7 +479,7 @@ const POLYGON_SOCKET_TYPES: Record<string, string> = {
     eApothem: "length",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, socketId: string, _side: "in" | "out"): string => POLYGON_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(POLYGON_SOCKET_TYPES[socketId] ?? "float");
 
 export const PolygramNodeType: NodeTypes.Type<"polygram", PolygramDefinition> = {
     type: "polygram",

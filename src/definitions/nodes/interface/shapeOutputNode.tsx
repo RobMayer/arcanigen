@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -87,7 +87,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): string => "shape";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("shape");
 
 export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinition> = {
     type: "shapeOutput",

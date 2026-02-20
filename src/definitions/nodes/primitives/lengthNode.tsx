@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { Project } from "../../../state/project";
 
@@ -79,14 +79,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthDefinition>, socket: "outp
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LengthDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<LengthDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "value":
-            return "length";
+            return SocketTypes.of("length");
         case "output":
-            return "length";
+            return SocketTypes.of("length");
         default:
-            return "length";
+            return SocketTypes.of("length");
     }
 };
 

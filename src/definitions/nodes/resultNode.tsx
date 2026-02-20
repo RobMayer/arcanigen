@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../features/nodeview/node";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { LengthInput } from "../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../betterTypes";
 import { Project } from "../../state/project";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 
@@ -101,22 +101,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<ResultDefinition>, socket: strin
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ResultDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<ResultDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "input":
-            return "shape";
+            return SocketTypes.of("shape");
         case "w":
-            return "length";
+            return SocketTypes.of("length");
         case "h":
-            return "length";
+            return SocketTypes.of("length");
         case "x":
-            return "length";
+            return SocketTypes.of("length");
         case "y":
-            return "length";
+            return SocketTypes.of("length");
         case "color":
-            return "color";
+            return SocketTypes.of("color");
         default:
-            return "shape";
+            return SocketTypes.of("shape");
     }
 };
 

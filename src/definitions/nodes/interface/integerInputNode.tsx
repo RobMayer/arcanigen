@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -130,7 +130,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"integerInput", IntegerInput
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): string => "integer";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("integer");
 
 export const IntegerInputType: NodeTypes.Type<"integerInput", IntegerInputDefinition> = {
     type: "integerInput",

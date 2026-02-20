@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings } from "./abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -275,7 +275,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     };
 };
 
-const TEXTPATH_SOCKET_TYPES: Record<string, string> = {
+const TEXTPATH_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     text: "string",
     path: "path",
     size: "length",
@@ -297,7 +297,7 @@ const TEXTPATH_SOCKET_TYPES: Record<string, string> = {
     output: "shape",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, _side: "in" | "out"): string => TEXTPATH_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(TEXTPATH_SOCKET_TYPES[socketId] ?? "float");
 
 export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = {
     type: "textPath",

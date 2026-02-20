@@ -3,11 +3,12 @@ import { Project } from "../../state/project";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
-import { SocketTypes } from "../../definitions/betterTypes";
+import { NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { useGraphId } from "../../state/graphId";
 
 type GraphConnectionControls = {
-    start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => void;
-    finish: (nodeId: string, socketId: string, side: "in" | "out", type: string) => void;
+    start: (nodeId: string, socketId: string, side: "in" | "out") => void;
+    finish: (nodeId: string, socketId: string, side: "in" | "out") => void;
     clear: () => void;
 };
 
@@ -16,22 +17,28 @@ const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: (
 export const GraphConnectionProvider = ({ children, graphId }: { children?: ReactNode; graphId: string }) => {
     const [pendingConnection, setPendingConnection] = Project.usePendingConnection();
     const graphMethods = Project.useMethods();
+    const mc = Project.useMC();
 
     const connectionContextValue = useMemo(() => {
         let pending: null | Project.PendingConnection;
         return {
-            start: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
-                // todo: parametize scope properly...
-                const p = { node: nodeId, socket: socketId, side, type, scope: graphId };
+            start: (nodeId: string, socketId: string, side: "in" | "out") => {
+                const node = mc.getNode(graphId, nodeId);
+                const socketType = node ? NodeTypes.getSocketType(node, socketId, side, mc) : SocketTypes.NONE;
+                const p = { node: nodeId, socket: socketId, side, type: socketType, scope: graphId };
                 pending = setPendingConnection(p);
             },
-            finish: (nodeId: string, socketId: string, side: "in" | "out", type: string) => {
+            finish: (nodeId: string, socketId: string, side: "in" | "out") => {
                 if (pending !== null && pending.side !== side) {
+                    const node = mc.getNode(graphId, nodeId);
+                    const socketType = node ? NodeTypes.getSocketType(node, socketId, side, mc) : SocketTypes.NONE;
                     // normalize: out -> in
                     const [fromNode, toNode, fromSocket, toSocket, outType, inType] =
-                        pending.side === "out" ? [pending.node, nodeId, pending.socket, socketId, pending.type, type] : [nodeId, pending.node, socketId, pending.socket, type, pending.type];
+                        pending.side === "out"
+                            ? [pending.node, nodeId, pending.socket, socketId, pending.type, socketType]
+                            : [nodeId, pending.node, socketId, pending.socket, socketType, pending.type];
                     if (SocketTypes.canFlow(outType, inType)) {
-                        graphMethods.connect(fromNode, toNode, fromSocket, toSocket, outType || inType);
+                        graphMethods.connect(fromNode, toNode, fromSocket, toSocket, SocketTypes.representativeKind(outType, inType));
                     }
                 }
             },
@@ -40,7 +47,7 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
                 pending = null;
             },
         };
-    }, [setPendingConnection, graphMethods, graphId]);
+    }, [setPendingConnection, graphMethods, graphId, mc]);
 
     useEffect(() => {
         document.addEventListener("mouseup", connectionContextValue.clear);
@@ -52,7 +59,7 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
     return (
         <GraphViewConnectionCTX value={connectionContextValue}>
             {children}
-            {pendingConnection && pendingConnection.scope === graphId ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={pendingConnection.type} /> : null}
+            {pendingConnection && pendingConnection.scope === graphId ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={SocketTypes.toCSS(pendingConnection.type)} /> : null}
         </GraphViewConnectionCTX>
     );
 };
@@ -62,6 +69,8 @@ export const Socket = styled(
         const socketRef = useRef<HTMLDivElement>(null);
 
         const [pendingConnection] = Project.usePendingConnection();
+        const mc = Project.useMC();
+        const graphId = useGraphId();
 
         const canConnect = useMemo(() => {
             if (pendingConnection === null) {
@@ -70,7 +79,9 @@ export const Socket = styled(
             if (pendingConnection.side === side) {
                 return false;
             }
-            const [outType, inType] = pendingConnection.side === "out" ? [pendingConnection.type, type] : [type, pendingConnection.type];
+            const node = mc.getNode(graphId, nodeId);
+            const rule = node ? NodeTypes.getSocketType(node, socketId, side, mc) : SocketTypes.NONE;
+            const [outType, inType] = pendingConnection.side === "out" ? [pendingConnection.type, rule] : [rule, pendingConnection.type];
             if (!SocketTypes.canFlow(outType, inType)) {
                 return false;
             }
@@ -78,7 +89,7 @@ export const Socket = styled(
                 return false;
             }
             return true;
-        }, [nodeId, pendingConnection, side, socketId, type]);
+        }, [nodeId, pendingConnection, side, socketId, mc, graphId]);
 
         const canConnectRef = useStable(canConnect);
 
@@ -90,12 +101,12 @@ export const Socket = styled(
                 const connectStart = (evt: globalThis.MouseEvent) => {
                     if (evt.button === 0) {
                         evt.handled = "active";
-                        connectionContext.start(nodeId, socketId, side, type);
+                        connectionContext.start(nodeId, socketId, side);
                     }
                 };
                 const finishConnection = () => {
                     if (canConnectRef.current) {
-                        connectionContext.finish(nodeId, socketId, side, type);
+                        connectionContext.finish(nodeId, socketId, side);
                     }
                 };
 
@@ -106,7 +117,7 @@ export const Socket = styled(
                     socket.removeEventListener("mouseup", finishConnection);
                 };
             }
-        }, [nodeId, socketId, connectionContext, side, type]);
+        }, [nodeId, socketId, connectionContext, side]);
 
         const state = useMemo(() => {
             const r: string[] = [
@@ -117,7 +128,8 @@ export const Socket = styled(
             return r.length > 0 ? r.join(" ") : undefined;
         }, [pendingConnection, canConnect, nodeId, socketId, connected]);
 
-        const titleType = useMemo(() => (type === "" ? "« unknown »" : type === SocketTypes.ANY ? "« any »" : type.split(" ").join(" | ")), [type]);
+        const anyCSS = SocketTypes.toCSS(SocketTypes.ANY);
+        const titleType = useMemo(() => (type === "" ? "« unknown »" : type === anyCSS ? "« any »" : type.split(" ").join(" | ")), [type, anyCSS]);
 
         return (
             <div
@@ -126,7 +138,7 @@ export const Socket = styled(
                 data-socketid={`--socket_${nodeId}_${socketId}`}
                 data-socketside={side}
                 data-sockettype={type}
-                data-typeany={type === SocketTypes.ANY ? "" : undefined}
+                data-typeany={type === anyCSS ? "" : undefined}
                 data-state={state}
                 title={titleType}
             />
@@ -250,7 +262,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} data-sockettype={type} data-typeany={type === SocketTypes.ANY ? "" : undefined} />
+                <path ref={pathRef} data-sockettype={type} data-typeany={type === SocketTypes.toCSS(SocketTypes.ANY) ? "" : undefined} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>

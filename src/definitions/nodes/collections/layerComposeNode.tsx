@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
@@ -113,18 +113,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket:
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "shape":
-            return "shape";
+            return SocketTypes.of("shape");
         case "enabled":
-            return "boolean";
+            return SocketTypes.of("boolean");
         case "blend":
-            return "enum";
+            return SocketTypes.of("enum");
         case "output":
-            return "layer";
+            return SocketTypes.of("layer");
         default:
-            return "shape";
+            return SocketTypes.of("shape");
     }
 };
 

@@ -22,8 +22,8 @@ export type SwitchCaseDefinition = {
     };
     payload: {
         label: string;
-        resolvedOutTypes: string; // union of upstream OUT types on case INs. "" = unconstrained
-        resolvedInTypes: string; // intersection of downstream IN types on result OUT. ANY = unconstrained
+        resolvedOutTypes: SocketTypes.SocketRule; // union of upstream OUT types on case INs. NONE = unconstrained
+        resolvedInTypes: SocketTypes.SocketRule; // intersection of downstream IN types on result OUT. ANY = unconstrained
         cases: { label: string; socket: string }[];
     };
 };
@@ -105,7 +105,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"result"} type={outType}>
+            <SocketOut node={node} socketId={"result"} type={SocketTypes.toCSS(outType)}>
                 Result
             </SocketOut>
             <SocketIn node={node} socketId={"switch"} type={"enum"}>
@@ -116,7 +116,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
                 Add Case
             </ActionButton>
             {node.payload.cases.map((entry, idx) => (
-                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `case_${string}`} type={inType}>
+                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `case_${string}`} type={SocketTypes.toCSS(inType)}>
                     {idx}
                     <TextInput value={entry.label} onCommit={(label) => handleCaseLabelUpdate(entry.socket, label)} placeholder={`Case ${idx}`} />
                     <ActionButton.Lite onClick={() => handleRemoveCase(entry.socket)} flavour={"danger"}>
@@ -125,7 +125,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
                 </SocketIn>
             ))}
             <hr />
-            <SocketIn node={node} socketId={"default"} type={inType}>
+            <SocketIn node={node} socketId={"default"} type={SocketTypes.toCSS(inType)}>
                 Default
             </SocketIn>
         </TypicalNode>
@@ -141,39 +141,35 @@ const isCaseInSocket = (socket: string, cases: SwitchCaseDefinition["payload"]["
 };
 
 type SCNode = NodeDefinitions.BuiltNodeOf<"switchCase", SwitchCaseDefinition>;
-type GetSocketType = (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => string;
-
-/** Query the type string of the upstream neighbor connected to one of our IN sockets */
-const queryUpstreamType = (node: SCNode, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): string | null => {
+/** Query the SocketRule of the upstream neighbor connected to one of our IN sockets */
+const queryUpstreamType = (node: SCNode, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
     const linkId = (node.in as Record<string, string | null>)[socketId];
     if (!linkId) return null;
     const link = ctx.getLink(graphId, linkId);
     if (!link) return null;
     const neighbor = ctx.getNode(graphId, link.fromNode);
     if (!neighbor) return null;
-    const neighborType = NodeTypes.get(neighbor.type);
-    return (neighborType.getSocketType as GetSocketType)(neighbor, link.fromSocket, "out", ctx);
+    return NodeTypes.getSocketType(neighbor, link.fromSocket, "out", ctx);
 };
 
 /** Query the intersection of all downstream neighbors' IN types connected to our result OUT */
-const queryDownstreamTypes = (node: SCNode, graphId: string, ctx: NodeTypes.MethodContext): string | null => {
+const queryDownstreamTypes = (node: SCNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
     const linkIds = (node.out as Record<string, string[]>)["result"];
     if (!linkIds || linkIds.length === 0) return null;
-    let result: string | null = null;
+    let result: SocketTypes.SocketRule | null = null;
     for (const linkId of linkIds) {
         const link = ctx.getLink(graphId, linkId);
         if (!link) continue;
         const neighbor = ctx.getNode(graphId, link.toNode);
         if (!neighbor) continue;
-        const neighborType = NodeTypes.get(neighbor.type);
-        const st = (neighborType.getSocketType as GetSocketType)(neighbor, link.toSocket, "in", ctx);
+        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
         result = result === null ? st : SocketTypes.intersect(result, st);
     }
     return result;
 };
 
 /** Recompute resolvedOutTypes: union of all upstream OUT types on case INs */
-const recomputeOutTypes = (node: SCNode, excludeSocket: string | null, graphId: string, ctx: NodeTypes.MethodContext): string => {
+const recomputeOutTypes = (node: SCNode, excludeSocket: string | null, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
     let result = SocketTypes.NONE;
     if (excludeSocket !== "default") {
         const t = queryUpstreamType(node, "default", graphId, ctx);
@@ -189,13 +185,13 @@ const recomputeOutTypes = (node: SCNode, excludeSocket: string | null, graphId: 
 };
 
 /** Recompute resolvedInTypes: intersection of all downstream IN types on result OUT */
-const recomputeInTypes = (node: SCNode, graphId: string, ctx: NodeTypes.MethodContext): string => {
+const recomputeInTypes = (node: SCNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
     const result = queryDownstreamTypes(node, graphId, ctx);
     return result ?? SocketTypes.ANY;
 };
 
-/** Write both constraint strings into the node's payload */
-const setPayloadTypes = (nodeId: string, resolvedOutTypes: string, resolvedInTypes: string, graphId: string, ctx: NodeTypes.MethodContext): void => {
+/** Write both constraint rules into the node's payload */
+const setPayloadTypes = (nodeId: string, resolvedOutTypes: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const n = ctx.getNode(graphId, nodeId);
     if (!n) return;
     ctx.setNode(graphId, nodeId, {
@@ -222,9 +218,9 @@ const onConnect = (node: SCNode, linkId: string, direction: "in" | "out", graphI
     if (direction === "in" && isCaseInSocket(socket, node.payload.cases)) {
         // A case IN got connected — update resolvedOutTypes (union in upstream's OUT type)
         const upstreamType = queryUpstreamType(node, socket, graphId, ctx);
-        if (upstreamType !== null && upstreamType !== SocketTypes.NONE) {
+        if (upstreamType !== null && upstreamType.types.length > 0) {
             const newOutTypes = SocketTypes.union(node.payload.resolvedOutTypes, upstreamType);
-            if (newOutTypes !== node.payload.resolvedOutTypes) {
+            if (!SocketTypes.equals(newOutTypes, node.payload.resolvedOutTypes)) {
                 setPayloadTypes(node.id, newOutTypes, node.payload.resolvedInTypes, graphId, ctx);
                 ctx.requestRefresh(graphId, node.id, "result", "out", "constraintAdded");
             }
@@ -234,7 +230,7 @@ const onConnect = (node: SCNode, linkId: string, direction: "in" | "out", graphI
         const downstreamTypes = queryDownstreamTypes(node, graphId, ctx);
         if (downstreamTypes !== null) {
             const newInTypes = SocketTypes.intersect(node.payload.resolvedInTypes, downstreamTypes);
-            if (newInTypes !== node.payload.resolvedInTypes) {
+            if (!SocketTypes.equals(newInTypes, node.payload.resolvedInTypes)) {
                 setPayloadTypes(node.id, node.payload.resolvedOutTypes, newInTypes, graphId, ctx);
                 propagateToCaseIns(node.id, node.payload.cases, "constraintAdded", graphId, ctx);
             }
@@ -340,8 +336,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socket: k
     return null;
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): string => {
-    if (socketId === "switch" && side === "in") return "enum";
+const getSocketType = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
+    if (socketId === "switch" && side === "in") return SocketTypes.of("enum");
     if (socketId === "result" && side === "out") return node.payload.resolvedOutTypes;
     if (isCaseInSocket(socketId, node.payload.cases) && side === "in") return node.payload.resolvedInTypes;
     return SocketTypes.ANY;

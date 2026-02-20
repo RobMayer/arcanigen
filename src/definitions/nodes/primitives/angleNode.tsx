@@ -6,7 +6,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { useGraphId } from "../../../state/graphId";
@@ -92,16 +92,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "outpu
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "value":
-            return "angle";
+            return SocketTypes.of("angle");
         case "wraps":
-            return "boolean";
+            return SocketTypes.of("boolean");
         case "output":
-            return "angle";
+            return SocketTypes.of("angle");
         default:
-            return "angle";
+            return SocketTypes.of("angle");
     }
 };
 

@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { Enum } from "../../datatypes/enum";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Project } from "../../../state/project";
@@ -140,18 +140,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "func":
-            return "enum";
+            return SocketTypes.of("enum");
         case "easing":
-            return "enum";
+            return SocketTypes.of("enum");
         case "intensity":
-            return "float";
+            return SocketTypes.of("float");
         case "output":
-            return "distribution";
+            return SocketTypes.of("distribution");
         default:
-            return "float";
+            return SocketTypes.of("float");
     }
 };
 

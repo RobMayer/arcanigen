@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
@@ -61,8 +61,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<LogicalNotDefinition>, socket: k
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalNotDefinition>, _socketId: string, _side: "in" | "out"): string => {
-    return "boolean";
+const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalNotDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SocketTypes.of("boolean");
 };
 
 export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefinition> = {

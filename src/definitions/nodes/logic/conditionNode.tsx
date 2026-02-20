@@ -22,8 +22,8 @@ export type ConditionDefinition = {
     payload: {
         label: string;
         if: boolean;
-        resolvedOutTypes: string;
-        resolvedInTypes: string;
+        resolvedOutTypes: SocketTypes.SocketRule;
+        resolvedInTypes: SocketTypes.SocketRule;
     };
 };
 
@@ -61,7 +61,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ConditionDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"result"} type={outType}>
+            <SocketOut node={node} socketId={"result"} type={SocketTypes.toCSS(outType)}>
                 Result
             </SocketOut>
             <SocketIn node={node} socketId={"if"} type={"boolean"}>
@@ -70,10 +70,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ConditionDe
                 </CheckBox>
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"then"} type={inType}>
+            <SocketIn node={node} socketId={"then"} type={SocketTypes.toCSS(inType)}>
                 Then
             </SocketIn>
-            <SocketIn node={node} socketId={"else"} type={inType}>
+            <SocketIn node={node} socketId={"else"} type={SocketTypes.toCSS(inType)}>
                 Else
             </SocketIn>
         </TypicalNode>
@@ -90,39 +90,36 @@ const isBranchSocket = (socket: string): socket is "then" | "else" => {
 };
 
 type CNode = NodeDefinitions.BuiltNodeOf<"condition", ConditionDefinition>;
-type GetSocketType = (n: NodeDefinitions.NodeFor<NodeDefinitions.Any>, s: string, d: "in" | "out", c: NodeTypes.MethodContext) => string;
 
-/** Query the type string of the upstream neighbor connected to one of our IN sockets */
-const queryUpstreamType = (node: CNode, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): string | null => {
+/** Query the SocketRule of the upstream neighbor connected to one of our IN sockets */
+const queryUpstreamType = (node: CNode, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
     const linkId = (node.in as Record<string, string | null>)[socketId];
     if (!linkId) return null;
     const link = ctx.getLink(graphId, linkId);
     if (!link) return null;
     const neighbor = ctx.getNode(graphId, link.fromNode);
     if (!neighbor) return null;
-    const neighborType = NodeTypes.get(neighbor.type);
-    return (neighborType.getSocketType as GetSocketType)(neighbor, link.fromSocket, "out", ctx);
+    return NodeTypes.getSocketType(neighbor, link.fromSocket, "out", ctx);
 };
 
 /** Query the intersection of all downstream neighbors' IN types connected to our result OUT */
-const queryDownstreamTypes = (node: CNode, graphId: string, ctx: NodeTypes.MethodContext): string | null => {
+const queryDownstreamTypes = (node: CNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
     const linkIds = (node.out as Record<string, string[]>)["result"];
     if (!linkIds || linkIds.length === 0) return null;
-    let result: string | null = null;
+    let result: SocketTypes.SocketRule | null = null;
     for (const linkId of linkIds) {
         const link = ctx.getLink(graphId, linkId);
         if (!link) continue;
         const neighbor = ctx.getNode(graphId, link.toNode);
         if (!neighbor) continue;
-        const neighborType = NodeTypes.get(neighbor.type);
-        const st = (neighborType.getSocketType as GetSocketType)(neighbor, link.toSocket, "in", ctx);
+        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
         result = result === null ? st : SocketTypes.intersect(result, st);
     }
     return result;
 };
 
 /** Recompute resolvedOutTypes: union of all upstream OUT types on branch INs */
-const recomputeOutTypes = (node: CNode, excludeSocket: string | null, graphId: string, ctx: NodeTypes.MethodContext): string => {
+const recomputeOutTypes = (node: CNode, excludeSocket: string | null, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
     let result = SocketTypes.NONE;
     for (const socket of BRANCH_SOCKETS) {
         if (socket !== excludeSocket) {
@@ -134,13 +131,13 @@ const recomputeOutTypes = (node: CNode, excludeSocket: string | null, graphId: s
 };
 
 /** Recompute resolvedInTypes: intersection of all downstream IN types on result OUT */
-const recomputeInTypes = (node: CNode, graphId: string, ctx: NodeTypes.MethodContext): string => {
+const recomputeInTypes = (node: CNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
     const result = queryDownstreamTypes(node, graphId, ctx);
     return result ?? SocketTypes.ANY;
 };
 
-/** Write both constraint strings into the node's payload */
-const setPayloadTypes = (nodeId: string, resolvedOutTypes: string, resolvedInTypes: string, graphId: string, ctx: NodeTypes.MethodContext): void => {
+/** Write both constraint rules into the node's payload */
+const setPayloadTypes = (nodeId: string, resolvedOutTypes: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const n = ctx.getNode(graphId, nodeId);
     if (!n) return;
     ctx.setNode(graphId, nodeId, {
@@ -166,9 +163,9 @@ const onConnect = (node: CNode, linkId: string, direction: "in" | "out", graphId
     if (direction === "in" && isBranchSocket(socket)) {
         // A branch IN got connected — update resolvedOutTypes (union in upstream's OUT type)
         const upstreamType = queryUpstreamType(node, socket, graphId, ctx);
-        if (upstreamType !== null && upstreamType !== SocketTypes.NONE) {
+        if (upstreamType !== null && upstreamType.types.length > 0) {
             const newOutTypes = SocketTypes.union(node.payload.resolvedOutTypes, upstreamType);
-            if (newOutTypes !== node.payload.resolvedOutTypes) {
+            if (!SocketTypes.equals(newOutTypes, node.payload.resolvedOutTypes)) {
                 setPayloadTypes(node.id, newOutTypes, node.payload.resolvedInTypes, graphId, ctx);
                 ctx.requestRefresh(graphId, node.id, "result", "out", "constraintAdded");
             }
@@ -178,7 +175,7 @@ const onConnect = (node: CNode, linkId: string, direction: "in" | "out", graphId
         const downstreamTypes = queryDownstreamTypes(node, graphId, ctx);
         if (downstreamTypes !== null) {
             const newInTypes = SocketTypes.intersect(node.payload.resolvedInTypes, downstreamTypes);
-            if (newInTypes !== node.payload.resolvedInTypes) {
+            if (!SocketTypes.equals(newInTypes, node.payload.resolvedInTypes)) {
                 setPayloadTypes(node.id, node.payload.resolvedOutTypes, newInTypes, graphId, ctx);
                 propagateToBranchIns(node.id, "constraintAdded", graphId, ctx);
             }
@@ -267,8 +264,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<ConditionDefinition>, socket: ke
     return null;
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<ConditionDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): string => {
-    if (socketId === "if" && side === "in") return "boolean";
+const getSocketType = (node: NodeDefinitions.NodeFor<ConditionDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
+    if (socketId === "if" && side === "in") return SocketTypes.of("boolean");
     if (socketId === "result" && side === "out") return node.payload.resolvedOutTypes;
     if (isBranchSocket(socketId) && side === "in") return node.payload.resolvedInTypes;
     return SocketTypes.ANY;

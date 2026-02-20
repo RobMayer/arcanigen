@@ -9,7 +9,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
@@ -272,27 +272,27 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket:
     return null;
 };
 
-const POLYGON_ARRAY_SOCKET_TYPES: Record<string, string> = {
-    input: "shape",
-    count: "integer",
-    radius: "length",
-    scribeMode: "enum",
-    memberAlign: "boolean",
-    memberRotation: "angle",
-    pointDistro: "distribution",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    sequence: "sequence",
-    eCircumradius: "length",
-    eApothem: "length",
+const POLYGON_ARRAY_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
+    input: { types: ["shape"], mode: "and" },
+    count: { types: ["integer"], mode: "and" },
+    radius: { types: ["length"], mode: "and" },
+    scribeMode: { types: ["enum"], mode: "and" },
+    memberAlign: { types: ["boolean"], mode: "and" },
+    memberRotation: { types: ["angle"], mode: "and" },
+    pointDistro: { types: ["distribution"], mode: "and" },
+    positionMode: { types: ["enum"], mode: "and" },
+    positionX: { types: ["length"], mode: "and" },
+    positionY: { types: ["length"], mode: "and" },
+    positionRadius: { types: ["length"], mode: "and" },
+    positionTheta: { types: ["angle"], mode: "and" },
+    rotation: { types: ["angle"], mode: "and" },
+    output: { types: ["shape"], mode: "and" },
+    sequence: { types: ["sequence"], mode: "and" },
+    eCircumradius: { types: ["length"], mode: "and" },
+    eApothem: { types: ["length"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socketId: string, _side: "in" | "out"): string => POLYGON_ARRAY_SOCKET_TYPES[socketId] ?? "shape";
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => POLYGON_ARRAY_SOCKET_TYPES[socketId] ?? SocketTypes.of("shape");
 
 export const PolygonArrayNodeType: NodeTypes.Type<"polygonArray", PolygonArrayDefinition> = {
     type: "polygonArray",

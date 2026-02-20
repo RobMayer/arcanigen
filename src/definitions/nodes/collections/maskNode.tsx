@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { MaskedShape } from "../../shapeTypes";
@@ -147,16 +147,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
     return null;
 };
 
-const MASK_SOCKET_TYPES: Record<string, string> = {
-    content: "shape",
-    mask: "shape",
-    showMask: "boolean",
-    maskMode: "enum",
-    invert: "boolean",
-    output: "shape",
+const MASK_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
+    content: { types: ["shape"], mode: "and" },
+    mask: { types: ["shape"], mode: "and" },
+    showMask: { types: ["boolean"], mode: "and" },
+    maskMode: { types: ["enum"], mode: "and" },
+    invert: { types: ["boolean"], mode: "and" },
+    output: { types: ["shape"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<MaskDefinition>, socketId: string, _side: "in" | "out"): string => MASK_SOCKET_TYPES[socketId] ?? "shape";
+const getSocketType = (_node: NodeDefinitions.NodeFor<MaskDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => MASK_SOCKET_TYPES[socketId] ?? SocketTypes.of("shape");
 
 export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     type: "mask",

@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NumericString } from "../../datatypes/numericString";
@@ -89,23 +89,23 @@ const evaluate = (node: NodeDefinitions.NodeFor<AddFloatDefinition>, socket: "ou
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "a":
-            return "float";
+            return SocketTypes.of("float");
         case "b":
-            return "float";
+            return SocketTypes.of("float");
         case "output":
-            return "float";
+            return SocketTypes.of("float");
         default:
-            return "float";
+            return SocketTypes.of("float");
     }
 };
 
 export const AddFloatType: NodeTypes.Type<"addFloat", AddFloatDefinition> = {
     type: "addFloat",
-    displayName: "Add",
-    defaultLabel: "Add",
+    displayName: "Add (Float)",
+    defaultLabel: "Add (Float)",
     iconNode: <Icon shape={NODE_ICONS.addValue.Item} color={"var(--icon-flavour)"} />,
     iconCard: <Icon shape={NODE_ICONS.addValue.Card} color={"var(--icon-flavour)"} />,
     category: "Math",

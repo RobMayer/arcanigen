@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings, Transforms } from "./abstract";
 import { BlockInput } from "../../../components/inputs/BlockInput";
@@ -211,7 +211,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     };
 };
 
-const GLYPH_SOCKET_TYPES: Record<string, string> = {
+const GLYPH_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     width: "length",
     height: "length",
     viewX: "float",
@@ -234,7 +234,7 @@ const GLYPH_SOCKET_TYPES: Record<string, string> = {
     output: "shape",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, socketId: string, _side: "in" | "out"): string => GLYPH_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(GLYPH_SOCKET_TYPES[socketId] ?? "float");
 
 export const GlyphNodeType: NodeTypes.Type<"glyph", GlyphDefinition> = {
     type: "glyph",

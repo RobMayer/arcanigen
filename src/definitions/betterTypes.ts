@@ -26,6 +26,7 @@ import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInp
 import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
 import { AddFloatDefinition, AddFloatType } from "./nodes/math/addFloat";
+import { AddDefinition, AddType } from "./nodes/math/addNode";
 import { NumericString } from "./datatypes/numericString";
 import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
@@ -152,6 +153,7 @@ namespace Registries {
         custom: CustomDefinition;
 
         // math
+        add: AddDefinition;
         addFloat: AddFloatDefinition;
         distribution: DistributionNodeDefinition;
 
@@ -235,6 +237,7 @@ namespace Registries {
         distributionOutput: DistributionOutputType,
         custom: CustomNodeType,
 
+        add: AddType,
         addFloat: AddFloatType,
         distribution: DistributionNodeType,
         switchCase: SwitchCaseNodeType,
@@ -395,7 +398,7 @@ export namespace NodeTypes {
         onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
         onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], graphId: string, ctx: MethodContext) => void;
         onRefreshRequest?: (node: NodeDefinitions.BuiltNodeOf<T, D>, socketId: string, side: "in" | "out", reason: RefreshReason, graphId: string, ctx: MethodContext) => void;
-        getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => string;
+        getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => SocketTypes.SocketRule;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {
@@ -410,6 +413,10 @@ export namespace NodeTypes {
         return Registries.NODETYPES[key].evaluate;
     };
 
+    export const getSocketType = (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, socketId: string, side: "in" | "out", ctx: MethodContext): SocketTypes.SocketRule => {
+        return (get(node.type).getSocketType as (n: typeof node, s: string, d: "in" | "out", c: MethodContext) => SocketTypes.SocketRule)(node, socketId, side, ctx);
+    };
+
     export const list = () => Object.values(Registries.NODETYPES);
 
     export type Any = (typeof Registries.NODETYPES)[keyof typeof Registries.NODETYPES];
@@ -417,53 +424,70 @@ export namespace NodeTypes {
 }
 
 export namespace SocketTypes {
-    // --- New set-based socket type system ---
+    // --- Socket rule system ---
+
+    /** A socket's type constraint: which DataTypes.Kind values it handles, and whether it's conjunctive or disjunctive */
+    export type SocketRule = { types: DataTypes.Kind[]; mode: "and" | "or" };
 
     /** All concrete data types, sorted alphabetically for canonical ordering */
     export const ALL_TYPES: readonly DataTypes.Kind[] = (Object.keys(Registries.DATATYPE_LABELS) as DataTypes.Kind[]).sort();
 
-    /** Empty set — unconstrained OUT ("no type yet"). ∅ ⊆ anything. */
-    export const NONE = "";
+    /** Empty set — unconstrained OUT ("no type yet"). */
+    export const NONE: SocketRule = { types: [], mode: "and" };
 
     /** Full set — unconstrained IN (accepts everything). Auto-expands with new DataTypes. */
-    export const ANY = ALL_TYPES.join(" ");
+    export const ANY: SocketRule = { types: [...ALL_TYPES], mode: "and" };
 
     /** Named presets */
-    export const LAYER_OR_SHAPE = "layer shape";
+    export const LAYER_OR_SHAPE: SocketRule = { types: ["layer", "shape"], mode: "and" };
 
-    /** Parse a type string into an array of concrete DataTypes.Kind */
-    export const parseSocketType = (type: string): readonly DataTypes.Kind[] => {
-        if (type === "") return [];
-        return type.split(" ") as DataTypes.Kind[];
+    /** Create a single-type rule (mode is irrelevant for single types) */
+    export const of = (kind: DataTypes.Kind): SocketRule => ({ types: [kind], mode: "and" });
+
+    /** Create a conjunctive rule — "all of these" */
+    export const and = (...kinds: DataTypes.Kind[]): SocketRule => ({ types: [...kinds].sort(), mode: "and" });
+
+    /** Create a disjunctive rule — "one of these" */
+    export const or = (...kinds: DataTypes.Kind[]): SocketRule => ({ types: [...kinds].sort(), mode: "or" });
+
+    /** Convert a SocketRule to a CSS-friendly string for the Socket type prop */
+    export const toCSS = (rule: SocketRule): string => rule.types.join(" ");
+
+    /** Directional compatibility check: can this OUT connect to this IN? */
+    export const canFlow = (outRule: SocketRule, inRule: SocketRule): boolean => {
+        if (outRule.types.length === 0) return true;
+        if (outRule.mode === "or") {
+            // Disjunctive: at least one OUT kind must be accepted by IN
+            return outRule.types.some((t) => inRule.types.includes(t));
+        }
+        // Conjunctive: every OUT kind must be accepted by IN
+        return outRule.types.every((t) => inRule.types.includes(t));
     };
 
-    /** Directional subset check: can this OUT connect to this IN? */
-    export const canFlow = (outType: string, inType: string): boolean => {
-        if (outType === "") return true;
-        if (outType === inType) return true;
-        const outTypes = parseSocketType(outType);
-        const inTypes = parseSocketType(inType);
-        return outTypes.every((t) => inTypes.includes(t));
+    /** Pick a representative DataTypes.Kind for the link type (cosmetic — wire color) */
+    export const representativeKind = (out: SocketRule, inp: SocketRule): string => {
+        if (out.types.length > 0) return out.types[0];
+        if (inp.types.length > 0) return inp.types[0];
+        return "float";
     };
 
-    /** Union two type strings (A ∪ B), maintaining canonical sort order */
-    export const union = (a: string, b: string): string => {
-        if (a === "") return b;
-        if (b === "") return a;
-        if (a === b) return a;
-        const set = new Set([...a.split(" "), ...b.split(" ")]);
-        return [...set].sort().join(" ");
+    /** Union two rules (A ∪ B), maintaining canonical sort order. Mode propagates from first operand. */
+    export const union = (a: SocketRule, b: SocketRule): SocketRule => {
+        if (a.types.length === 0) return b;
+        if (b.types.length === 0) return a;
+        const set = new Set<DataTypes.Kind>([...a.types, ...b.types]);
+        return { types: [...set].sort(), mode: a.mode };
     };
 
-    /** Intersect two type strings (A ∩ B), maintaining canonical sort order */
-    export const intersect = (a: string, b: string): string => {
-        if (a === "" || b === "") return "";
-        if (a === b) return a;
-        const aSet = new Set(a.split(" "));
-        return b
-            .split(" ")
-            .filter((t) => aSet.has(t))
-            .sort()
-            .join(" ");
+    /** Intersect two rules (A ∩ B), maintaining canonical sort order. Mode propagates from first operand. */
+    export const intersect = (a: SocketRule, b: SocketRule): SocketRule => {
+        if (a.types.length === 0 || b.types.length === 0) return { types: [], mode: a.mode };
+        const bSet = new Set(b.types);
+        return { types: a.types.filter((t) => bSet.has(t)).sort(), mode: a.mode };
+    };
+
+    /** Structural equality check for two SocketRules */
+    export const equals = (a: SocketRule, b: SocketRule): boolean => {
+        return a.mode === b.mode && a.types.length === b.types.length && a.types.every((t, i) => t === b.types[i]);
     };
 }

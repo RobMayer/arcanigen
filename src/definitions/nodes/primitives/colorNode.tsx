@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { Project } from "../../../state/project";
 
@@ -79,14 +79,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorDefinition>, socket: "outpu
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<ColorDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "value":
-            return "color";
+            return SocketTypes.of("color");
         case "output":
-            return "color";
+            return SocketTypes.of("color");
         default:
-            return "color";
+            return SocketTypes.of("color");
     }
 };
 

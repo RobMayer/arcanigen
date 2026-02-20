@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 
@@ -78,14 +78,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "out
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "value":
-            return "integer";
+            return SocketTypes.of("integer");
         case "output":
-            return "integer";
+            return SocketTypes.of("integer");
         default:
-            return "integer";
+            return SocketTypes.of("integer");
     }
 };
 

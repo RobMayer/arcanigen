@@ -5,7 +5,7 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
@@ -159,14 +159,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<EnumDefinition>, socket: "output
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<EnumDefinition>, socketId: string, _side: "in" | "out"): string => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<EnumDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
     switch (socketId) {
         case "value":
-            return "enum";
+            return SocketTypes.of("enum");
         case "output":
-            return "enum";
+            return SocketTypes.of("enum");
         default:
-            return "enum";
+            return SocketTypes.of("enum");
     }
 };
 

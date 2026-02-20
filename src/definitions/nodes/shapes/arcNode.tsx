@@ -8,7 +8,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings, Transforms } from "./abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -314,7 +314,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     return null;
 };
 
-const ARC_SOCKET_TYPES: Record<string, string> = {
+const ARC_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
     radius: "length",
     arcMode: "enum",
     thetaStart: "angle",
@@ -342,7 +342,7 @@ const ARC_SOCKET_TYPES: Record<string, string> = {
     path: "path",
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArcDefinition>, socketId: string, _side: "in" | "out"): string => ARC_SOCKET_TYPES[socketId] ?? "float";
+const getSocketType = (_node: NodeDefinitions.NodeFor<ArcDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(ARC_SOCKET_TYPES[socketId] ?? "float");
 
 export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     type: "arc",

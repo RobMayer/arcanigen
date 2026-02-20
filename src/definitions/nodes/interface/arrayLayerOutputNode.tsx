@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface } from "../../interfaceHelpers";
 import { Project } from "../../../state/project";
 import { TextInput } from "../../../components/inputs/TextInput";
@@ -78,7 +78,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerOutput", ArrayLay
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): string => "array<layer>";
+const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("array<layer>");
 
 export const ArrayLayerOutputType: NodeTypes.Type<"arrayLayerOutput", ArrayLayerOutputDefinition> = {
     type: "arrayLayerOutput",
