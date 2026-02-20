@@ -11,8 +11,13 @@ import { Flavour } from "../components/types";
 import { InterfaceMember } from "../state/project/types";
 import { ResultDefinition, ResultNodeType } from "./nodes/resultNode";
 import { AngleDefinition, AnglePrimitiveType } from "./nodes/primitives/angleNode";
+import { BooleanDefinition, BooleanPrimitiveType } from "./nodes/primitives/booleanNode";
+import { ColorDefinition, ColorPrimitiveType } from "./nodes/primitives/colorNode";
+import { EnumDefinition as EnumPrimDefinition, EnumPrimitiveType } from "./nodes/primitives/enumNode";
 import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNode";
 import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/integerNode";
+import { LengthDefinition, LengthPrimitiveType } from "./nodes/primitives/lengthNode";
+import { TokensLengthDefinition, TokensLengthPrimitiveType } from "./nodes/primitives/tokensLengthNode";
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import type { Project } from "../state/project";
 import { DebugDefinition, DebugType } from "./nodes/debug/debugNode";
@@ -107,8 +112,13 @@ namespace Registries {
         glyph: GlyphDefinition;
 
         angle: AngleDefinition;
+        boolean: BooleanDefinition;
+        color: ColorDefinition;
+        enum: EnumPrimDefinition;
         float: FloatDefinition;
         integer: IntegerDefinition;
+        length: LengthDefinition;
+        tokensLength: TokensLengthDefinition;
 
         //debug
         debug: DebugDefinition;
@@ -191,6 +201,11 @@ namespace Registries {
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
+        boolean: BooleanPrimitiveType,
+        color: ColorPrimitiveType,
+        enum: EnumPrimitiveType,
+        length: LengthPrimitiveType,
+        tokensLength: TokensLengthPrimitiveType,
         debug: DebugType,
         shapePreview: ShapePreviewType,
 

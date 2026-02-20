@@ -1,0 +1,185 @@
+import { nanoid } from "nanoid";
+import { ICONS, Icon } from "../../../components/Icon";
+import { Resolver } from "../../../util/resolver";
+import { ReactNode, useCallback } from "react";
+
+import { TypicalNode } from "../../../features/nodeview/node";
+import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { AllDeps, DataTypes, NodeDefinitions, NodeTypes } from "../../betterTypes";
+import { Dropdown } from "../../../components/inputs/Dropdown";
+import { TextInput } from "../../../components/inputs/TextInput";
+import { ActionButton } from "../../../components/buttons/ActionButton";
+import { Project } from "../../../state/project";
+import { Enum } from "../../datatypes/enum";
+
+export type EnumDefinition = {
+    inputs: {
+        value: DataTypes.Use<"enum">;
+    };
+    outputs: {
+        output: DataTypes.Use<"enum">;
+    };
+    payload: {
+        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        value: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        options: string[];
+    };
+};
+
+const PAINT_ORDER_OPTIONS = ["Fill > Stroke > Markers", "Fill > Markers > Stroke", "Stroke > Fill > Markers", "Stroke > Markers > Fill", "Markers > Fill > Stroke", "Markers > Stroke > Fill"];
+
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<EnumDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"enum", EnumDefinition> => {
+    return {
+        id,
+        in: {
+            value: null,
+        },
+        out: {
+            output: [],
+        },
+        payload: {
+            label: "",
+            value: input.value ?? 0,
+            options: input.options ?? ["Option A", "Option B"],
+        },
+        type: "enum",
+    };
+};
+
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<EnumDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
+
+    const handleOptionChange = useCallback(
+        (index: number, value: string) => {
+            const options = [...node.payload.options];
+            options[index] = value;
+            handleUpdate({ options });
+        },
+        [handleUpdate, node.payload.options],
+    );
+
+    const handleAddOption = useCallback(() => {
+        handleUpdate({ options: [...node.payload.options, `Option ${String.fromCharCode(65 + node.payload.options.length)}`] });
+    }, [handleUpdate, node.payload.options]);
+
+    const handleRemoveOption = useCallback(
+        (index: number) => {
+            const options = node.payload.options.filter((_, i) => i !== index);
+            const value = node.payload.value >= options.length ? Math.max(0, options.length - 1) : node.payload.value;
+            handleUpdate({ options, value });
+        },
+        [handleUpdate, node.payload.options, node.payload.value],
+    );
+
+    const handlePreset = useCallback(
+        (options: string[]) => {
+            const value = node.payload.value >= options.length ? 0 : node.payload.value;
+            handleUpdate({ options, value });
+        },
+        [handleUpdate, node.payload.value],
+    );
+
+    return (
+        <TypicalNode node={node} methods={methods}>
+            <SocketOut node={node} socketId={"output"} type={"enum"}>
+                Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"value"} type={"enum"} label={"Value"}>
+                <Dropdown value={`${node.payload.value}`} onValue={(v) => handleUpdate({ value: Number(v) })} disabled={node.in.value !== null}>
+                    {node.payload.options.map((opt, i) => (
+                        <option value={i} key={i}>
+                            {opt}
+                        </option>
+                    ))}
+                </Dropdown>
+            </SocketIn>
+            <NodeAccordion label={"Options"} nodeId={node.id}>
+                <ActionButton onClick={handleAddOption} flavour={"accent"}>
+                    Add Option
+                </ActionButton>
+                {node.payload.options.map((opt, i) => (
+                    <Slot key={i}>
+                        <TextInput value={opt} onCommit={(v) => handleOptionChange(i, v)} />
+                        <ActionButton.Lite onClick={() => handleRemoveOption(i)} flavour={"danger"}>
+                            <Icon shape={ICONS.Close} />
+                        </ActionButton.Lite>
+                    </Slot>
+                ))}
+                <NodeAccordion label={"Presets"} nodeId={node.id} accordionId={"presets"}>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.blendMode))}>Blend Modes</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.scribeMode))}>Scribe Modes</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.positionMode))}>Position Modes</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.strokeCap))}>Stroke Cap</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.strokeJoin))}>Stroke Join</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.distroFunctions))}>Distro Functions</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.distroEasing))}>Distro Easing</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.spanMode))}>Span Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.spreadAlign))}>Spread Align</ActionButton>
+                    <ActionButton onClick={() => handlePreset([...PAINT_ORDER_OPTIONS])}>Paint Order</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.cornerShape))}>Corner Shape</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.textAlign))}>Text Align</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.textAnchor))}>Text Anchor</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.offsetMode))}>Offset Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.offsetOrigin))}>Offset Origin</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.maskMode))}>Mask Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.spacingMode))}>Spacing Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.overflowMode))}>Overflow Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.sequencerMode))}>Sequencer Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.arcMode))}>Arc Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.expandMode))}>Expand Mode</ActionButton>
+                    <ActionButton onClick={() => handlePreset(Object.keys(Enum.Common.thetaMode))}>Theta Mode</ActionButton>
+                </NodeAccordion>
+            </NodeAccordion>
+        </TypicalNode>
+    );
+};
+
+const dependsOn = (_node: NodeDefinitions.NodeFor<EnumDefinition>, outSocket: "output", _deps: AllDeps): (keyof EnumDefinition["inputs"])[] => {
+    if (outSocket === "output") return ["value"];
+    return [];
+};
+
+const contributesTo = (_node: NodeDefinitions.NodeFor<EnumDefinition>, inSocket: keyof EnumDefinition["inputs"], _deps: AllDeps): (keyof EnumDefinition["outputs"])[] => {
+    if (inSocket === "value") return ["output"];
+    return [];
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<EnumDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "output") {
+        return {
+            kind: "enum",
+            data: context.resolve<"enum">(node.id, "value")?.data ?? node.payload.value,
+        };
+    }
+    return null;
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<EnumDefinition>, socketId: string, _side: "in" | "out"): string => {
+    switch (socketId) {
+        case "value":
+            return "enum";
+        case "output":
+            return "enum";
+        default:
+            return "enum";
+    }
+};
+
+export const EnumPrimitiveType: NodeTypes.Type<"enum", EnumDefinition> = {
+    type: "enum",
+    displayName: "Enum",
+    defaultLabel: "Enum",
+    iconNode: <Icon shape={ICONS.List.OL} color={"var(--icon-flavour)"} />,
+    category: "Primitives",
+    evaluate,
+    Controls,
+    dependsOn,
+    contributesTo,
+    create,
+    getSocketType,
+};
