@@ -140,18 +140,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "func":
-            return SocketTypes.of("enum");
-        case "easing":
-            return SocketTypes.of("enum");
-        case "intensity":
-            return SocketTypes.of("float");
-        case "output":
-            return SocketTypes.of("distribution");
-        default:
-            return SocketTypes.of("float");
+const SOCKETTYPES_IN: { [key in keyof Required<DistributionNodeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    func: { types: ["enum"], mode: "or" },
+    easing: { types: ["enum"], mode: "or" },
+    intensity: { types: ["float"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<DistributionNodeDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["distribution"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

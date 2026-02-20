@@ -89,7 +89,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("float");
+const SOCKETTYPES_IN: { [key in keyof Required<FloatOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["float"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
     type: "floatOutput",

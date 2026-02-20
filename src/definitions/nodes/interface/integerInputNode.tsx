@@ -130,7 +130,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"integerInput", IntegerInput
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("integer");
+const SOCKETTYPES_OUT: { [key in keyof Required<IntegerInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["integer"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+};
 
 export const IntegerInputType: NodeTypes.Type<"integerInput", IntegerInputDefinition> = {
     type: "integerInput",

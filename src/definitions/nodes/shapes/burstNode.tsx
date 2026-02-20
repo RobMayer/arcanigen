@@ -368,41 +368,40 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     return null;
 };
 
-const BURST_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    spurCount: "integer",
-    radius: "length",
-    spread: "length",
-    innerRadius: "length",
-    outerRadius: "length",
-    spanMode: "enum",
-    spreadAlign: "enum",
-    thetaMode: "enum",
-    thetaStart: "angle",
-    thetaEnd: "angle",
-    thetaSteps: "angle",
-    thetaInclusive: "boolean",
-    thetaCurve: "distribution",
-    markerStart: "shape",
-    markerEnd: "shape",
-    markerAlign: "boolean",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
+const SOCKETTYPES_IN: { [key in keyof Required<BurstDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    spurCount: { types: ["integer"], mode: "or" },
+    radius: { types: ["length"], mode: "or" },
+    spread: { types: ["length"], mode: "or" },
+    innerRadius: { types: ["length"], mode: "or" },
+    outerRadius: { types: ["length"], mode: "or" },
+    spanMode: { types: ["enum"], mode: "or" },
+    spreadAlign: { types: ["enum"], mode: "or" },
+    thetaMode: { types: ["enum"], mode: "or" },
+    thetaStart: { types: ["angle"], mode: "or" },
+    thetaEnd: { types: ["angle"], mode: "or" },
+    thetaSteps: { types: ["angle"], mode: "or" },
+    thetaInclusive: { types: ["boolean"], mode: "or" },
+    thetaCurve: { types: ["distribution"], mode: "or" },
+    markerStart: { types: ["shape"], mode: "or" },
+    markerEnd: { types: ["shape"], mode: "or" },
+    markerAlign: { types: ["boolean"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<BurstDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(BURST_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<BurstDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<BurstDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
     type: "burst",

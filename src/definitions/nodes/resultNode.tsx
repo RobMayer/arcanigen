@@ -101,23 +101,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<ResultDefinition>, socket: strin
     return null;
 };
 
+const SOCKETTYPES_IN: { [key in keyof Required<ResultDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["shape"], mode: "or" },
+    w: { types: ["length"], mode: "or" },
+    h: { types: ["length"], mode: "or" },
+    x: { types: ["length"], mode: "or" },
+    y: { types: ["length"], mode: "or" },
+    color: { types: ["color"], mode: "or" },
+};
+
 const getSocketType = (_node: NodeDefinitions.NodeFor<ResultDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "input":
-            return SocketTypes.of("shape");
-        case "w":
-            return SocketTypes.of("length");
-        case "h":
-            return SocketTypes.of("length");
-        case "x":
-            return SocketTypes.of("length");
-        case "y":
-            return SocketTypes.of("length");
-        case "color":
-            return SocketTypes.of("color");
-        default:
-            return SocketTypes.of("shape");
-    }
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {

@@ -94,12 +94,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloodFillDefinition>, socket: ke
     return null;
 };
 
-const FLOOD_FILL_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    fillColor: "color",
-    output: "shape",
+const SOCKETTYPES_IN: { [key in keyof Required<FloodFillDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    fillColor: { types: ["color"], mode: "or" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(FLOOD_FILL_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<FloodFillDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<FloodFillDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const FloodFillNodeType: NodeTypes.Type<"floodFill", FloodFillDefinition> = {
     type: "floodFill",

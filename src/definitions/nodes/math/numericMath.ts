@@ -70,6 +70,56 @@ export const computeOutputType = (aRule: SocketTypes.SocketRule, bRule: SocketTy
     return { types: [...result].sort() as DataTypes.Kind[], mode: "or" };
 };
 
+// --- Backward propagation ---
+
+/** For a given output kind, what input types can participate in producing it? */
+const INVERT_DOMINANT: Record<string, DataTypes.Kind[]> = {
+    integer: ["integer"],
+    float: ["float", "integer"],
+    angle: ["angle", "float", "integer"],
+    length: ["float", "integer", "length"],
+};
+
+/**
+ * Given what the downstream consumers accept (resolvedInTypes) and the partner's
+ * connected type, compute what input types are allowed.
+ *
+ * When partner is known: for each accepted output kind, find input kinds K where
+ * there exists a partner kind P such that dominantKind(K, P) produces that output.
+ *
+ * When partner is unknown (NONE): uses INVERT_DOMINANT as a looser approximation.
+ */
+export const constrainForOutput = (resolvedInTypes: SocketTypes.SocketRule, partnerType: SocketTypes.SocketRule): SocketTypes.SocketRule => {
+    const numericIn = SocketTypes.intersect(resolvedInTypes, NUMERIC_TYPES);
+    if (numericIn.types.length === 0) return NUMERIC_TYPES; // no numeric constraint
+    const partnerKnown = partnerType.types.length > 0;
+    const allowed = new Set<DataTypes.Kind>();
+    for (const outKind of numericIn.types) {
+        if (partnerKnown) {
+            // Precise: check each candidate against actual partner kinds
+            for (const k of NUMERIC_TYPES.types) {
+                for (const p of partnerType.types) {
+                    if (isForbidden(k, p)) continue;
+                    if (dominantKind(k, p) === outKind) {
+                        allowed.add(k);
+                    }
+                }
+            }
+        } else {
+            // Loose: no partner info, use precomputed inversion
+            for (const k of INVERT_DOMINANT[outKind] ?? NUMERIC_TYPES.types) {
+                allowed.add(k);
+            }
+        }
+    }
+    return { types: ([...allowed] as DataTypes.Kind[]).sort(), mode: "or" };
+};
+
+/** Returns true if the pair is forbidden (angle + length) */
+const isForbidden = (a: string, b: string): boolean => {
+    return (a === "angle" && b === "length") || (a === "length" && b === "angle");
+};
+
 // --- Evaluation helpers ---
 
 /**

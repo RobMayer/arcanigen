@@ -87,7 +87,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"booleanOutput", BooleanOutp
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("boolean");
+const SOCKETTYPES_IN: { [key in keyof Required<BooleanOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["boolean"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const BooleanOutputType: NodeTypes.Type<"booleanOutput", BooleanOutputDefinition> = {
     type: "booleanOutput",

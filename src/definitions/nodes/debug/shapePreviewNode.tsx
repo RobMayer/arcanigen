@@ -74,13 +74,12 @@ const evaluate = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, _socke
     return null;
 };
 
+const SOCKETTYPES_IN: { [key in keyof Required<ShapePreviewDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["shape"], mode: "or" },
+};
+
 const getSocketType = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "input":
-            return SocketTypes.of("shape");
-        default:
-            return SocketTypes.of("shape");
-    }
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefinition> = {

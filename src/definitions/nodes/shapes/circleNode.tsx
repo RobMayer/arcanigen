@@ -151,26 +151,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     return null;
 };
 
-const CIRCLE_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    radius: "length",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
+const SOCKETTYPES_IN: { [key in keyof Required<CircleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    radius: { types: ["length"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(CIRCLE_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<CircleDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     type: "circle",

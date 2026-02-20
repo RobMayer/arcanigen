@@ -89,16 +89,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<AddFloatDefinition>, socket: "ou
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "a":
-            return SocketTypes.of("float");
-        case "b":
-            return SocketTypes.of("float");
-        case "output":
-            return SocketTypes.of("float");
-        default:
-            return SocketTypes.of("float");
+const SOCKETTYPES_IN: { [key in keyof Required<AddFloatDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    a: { types: ["float"], mode: "or" },
+    b: { types: ["float"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<AddFloatDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["float"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<AddFloatDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

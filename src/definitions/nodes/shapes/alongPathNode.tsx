@@ -220,20 +220,30 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     };
 };
 
-const ALONGPATH_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    shape: "shape",
-    path: "path",
-    memberAlign: "boolean",
-    memberRotation: "angle",
-    overflowMode: "enum",
-    offsetMode: "enum",
-    offsetPercent: "float",
-    offsetLength: "length",
-    offsetOrigin: "enum",
-    output: "shape",
+const SOCKETTYPES_IN: { [key in keyof Required<AlongPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    shape: { types: ["shape"], mode: "or" },
+    path: { types: ["path"], mode: "or" },
+    memberAlign: { types: ["boolean"], mode: "or" },
+    memberRotation: { types: ["angle"], mode: "or" },
+    overflowMode: { types: ["enum"], mode: "or" },
+    offsetMode: { types: ["enum"], mode: "or" },
+    offsetPercent: { types: ["float"], mode: "or" },
+    offsetLength: { types: ["length"], mode: "or" },
+    offsetOrigin: { types: ["enum"], mode: "or" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(ALONGPATH_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<AlongPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition> = {
     type: "alongPath",

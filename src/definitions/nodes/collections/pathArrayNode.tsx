@@ -384,29 +384,39 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     return { kind: "shape", data: group };
 };
 
-const PATH_ARRAY_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
-    input: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-    count: { types: ["integer"], mode: "and" },
-    spacingMode: { types: ["enum"], mode: "and" },
-    spacing: { types: ["length"], mode: "and" },
-    overflowMode: { types: ["enum"], mode: "and" },
-    offsetMode: { types: ["enum"], mode: "and" },
-    offsetPercent: { types: ["float"], mode: "and" },
-    offsetLength: { types: ["length"], mode: "and" },
-    offsetOrigin: { types: ["enum"], mode: "and" },
-    padStart: { types: ["length"], mode: "and" },
-    padEnd: { types: ["length"], mode: "and" },
-    pointDistro: { types: ["distribution"], mode: "and" },
-    skipFirst: { types: ["boolean"], mode: "and" },
-    skipLast: { types: ["boolean"], mode: "and" },
-    memberAlign: { types: ["boolean"], mode: "and" },
-    memberRotation: { types: ["angle"], mode: "and" },
+const SOCKETTYPES_IN: { [key in keyof Required<PathArrayDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["shape"], mode: "or" },
+    path: { types: ["path"], mode: "or" },
+    count: { types: ["integer"], mode: "or" },
+    spacingMode: { types: ["enum"], mode: "or" },
+    spacing: { types: ["length"], mode: "or" },
+    overflowMode: { types: ["enum"], mode: "or" },
+    offsetMode: { types: ["enum"], mode: "or" },
+    offsetPercent: { types: ["float"], mode: "or" },
+    offsetLength: { types: ["length"], mode: "or" },
+    offsetOrigin: { types: ["enum"], mode: "or" },
+    padStart: { types: ["length"], mode: "or" },
+    padEnd: { types: ["length"], mode: "or" },
+    pointDistro: { types: ["distribution"], mode: "or" },
+    skipFirst: { types: ["boolean"], mode: "or" },
+    skipLast: { types: ["boolean"], mode: "or" },
+    memberAlign: { types: ["boolean"], mode: "or" },
+    memberRotation: { types: ["angle"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<PathArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => PATH_ARRAY_SOCKET_TYPES[socketId] ?? SocketTypes.of("shape");
+const getSocketType = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const PathArrayNodeType: NodeTypes.Type<"pathArray", PathArrayDefinition> = {
     type: "pathArray",

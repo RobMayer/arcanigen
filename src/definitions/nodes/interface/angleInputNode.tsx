@@ -138,7 +138,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"angleInput", AngleInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("angle");
+const SOCKETTYPES_OUT: { [key in keyof Required<AngleInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["angle"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+};
 
 export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> = {
     type: "angleInput",

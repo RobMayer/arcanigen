@@ -79,7 +79,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayLayerInput", ArrayLaye
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("array<layer>");
+const SOCKETTYPES_OUT: { [key in keyof Required<ArrayLayerInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["array<layer>"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayLayerInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+};
 
 export const ArrayLayerInputType: NodeTypes.Type<"arrayLayerInput", ArrayLayerInputDefinition> = {
     type: "arrayLayerInput",

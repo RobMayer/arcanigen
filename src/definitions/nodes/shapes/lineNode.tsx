@@ -313,37 +313,37 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     return null;
 };
 
-const LINE_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    startMode: "enum",
-    startX: "length",
-    startY: "length",
-    startRadius: "length",
-    startTheta: "angle",
-    endMode: "enum",
-    endX: "length",
-    endY: "length",
-    endRadius: "length",
-    endTheta: "angle",
-    markerStartShape: "shape",
-    markerEndShape: "shape",
-    markerAlign: "boolean",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
+const SOCKETTYPES_IN: { [key in keyof Required<LineDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    startMode: { types: ["enum"], mode: "or" },
+    startX: { types: ["length"], mode: "or" },
+    startY: { types: ["length"], mode: "or" },
+    startRadius: { types: ["length"], mode: "or" },
+    startTheta: { types: ["angle"], mode: "or" },
+    endMode: { types: ["enum"], mode: "or" },
+    endX: { types: ["length"], mode: "or" },
+    endY: { types: ["length"], mode: "or" },
+    endRadius: { types: ["length"], mode: "or" },
+    endTheta: { types: ["angle"], mode: "or" },
+    markerStartShape: { types: ["shape"], mode: "or" },
+    markerEndShape: { types: ["shape"], mode: "or" },
+    markerAlign: { types: ["boolean"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LineDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(LINE_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<LineDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<LineDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const LineNodeType: NodeTypes.Type<"line", LineDefinition> = {
     type: "line",

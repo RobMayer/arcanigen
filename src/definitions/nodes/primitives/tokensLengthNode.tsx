@@ -80,14 +80,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<TokensLengthDefinition>, socket:
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "value":
-            return SocketTypes.of("tokens<length>");
-        case "output":
-            return SocketTypes.of("tokens<length>");
-        default:
-            return SocketTypes.of("tokens<length>");
+const SOCKETTYPES_IN: { [key in keyof Required<TokensLengthDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["tokens<length>"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<TokensLengthDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["tokens<length>"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

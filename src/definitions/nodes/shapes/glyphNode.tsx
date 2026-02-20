@@ -211,30 +211,29 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     };
 };
 
-const GLYPH_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    width: "length",
-    height: "length",
-    viewX: "float",
-    viewY: "float",
-    viewW: "float",
-    viewH: "float",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
+const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    width: { types: ["length"], mode: "or" },
+    height: { types: ["length"], mode: "or" },
+    viewX: { types: ["float"], mode: "or" },
+    viewY: { types: ["float"], mode: "or" },
+    viewW: { types: ["float"], mode: "or" },
+    viewH: { types: ["float"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(GLYPH_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<GlyphDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const GlyphNodeType: NodeTypes.Type<"glyph", GlyphDefinition> = {
     type: "glyph",

@@ -87,7 +87,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"shapeOutput", ShapeOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("shape");
+const SOCKETTYPES_IN: { [key in keyof Required<ShapeOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["shape"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<ShapeOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinition> = {
     type: "shapeOutput",

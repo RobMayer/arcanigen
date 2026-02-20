@@ -4,7 +4,7 @@ import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { NodeAccordion, SocketIn } from "../../../features/nodeview/slots";
-import { DataTypes, NodeDefinitions } from "../../betterTypes";
+import { DataTypes, NodeDefinitions, SocketTypes } from "../../betterTypes";
 import { Enum } from "../../datatypes/enum";
 import { Length } from "../../datatypes/length";
 import { Resolver } from "../../../util/resolver";
@@ -12,7 +12,7 @@ import { Color } from "../../datatypes/color";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
 import { Dropdown } from "../../../components/inputs/Dropdown";
-import { Paint, Stroke } from "../../shapeTypes";
+import { Paint } from "../../shapeTypes";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
@@ -27,6 +27,17 @@ const PAINT_ORDER_OPTIONS = [
 ];
 
 export namespace Stylings {
+    export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
+        strokeWidth: { types: ["length"], mode: "and" },
+        strokeColor: { types: ["color"], mode: "and" },
+        strokeJoin: { types: ["enum"], mode: "and" },
+        strokeCap: { types: ["enum"], mode: "and" },
+        strokeDash: { types: ["tokens<length>"], mode: "and" },
+        strokeDashOffset: { types: ["length"], mode: "and" },
+        fillColor: { types: ["color"], mode: "and" },
+        paintOrder: { types: ["enum"], mode: "and" },
+    };
+
     export type Definition = {
         inputs: {
             // stroke
@@ -135,9 +146,10 @@ export namespace Stylings {
         const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
 
         // Map enums
-        const cap = (Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt") as Stroke["cap"];
-        const join = (Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt") as Stroke["join"];
-        const paintOrder = Resolver.EnumMappings.paintOrder[Enum.resolve(context.resolve<"enum">(node.id, "paintOrder")?.data, Enum.Common.paintOrder) ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
+        const cap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
+        const join = Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt";
+        const paintOrder =
+            Resolver.EnumMappings.paintOrder[Enum.resolve(context.resolve<"enum">(node.id, "paintOrder")?.data, Enum.Common.paintOrder) ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
 
         // Convert stroke dash to pixel values
         const dashArray = strokeDash
@@ -168,6 +180,15 @@ export namespace Stylings {
 }
 
 export namespace Transforms {
+    export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
+        positionMode: { types: ["enum"], mode: "and" },
+        positionX: { types: ["length"], mode: "and" },
+        positionY: { types: ["length"], mode: "and" },
+        positionRadius: { types: ["length"], mode: "and" },
+        positionTheta: { types: ["angle"], mode: "and" },
+        rotation: { types: ["angle"], mode: "and" },
+    };
+
     export type Definition = {
         inputs: {
             // stroke

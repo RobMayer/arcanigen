@@ -81,7 +81,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionOutput", Distri
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("distribution");
+const SOCKETTYPES_IN: { [key in keyof Required<DistributionOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["distribution"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const DistributionOutputType: NodeTypes.Type<"distributionOutput", DistributionOutputDefinition> = {
     type: "distributionOutput",

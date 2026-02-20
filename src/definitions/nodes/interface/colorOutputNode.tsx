@@ -87,7 +87,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"colorOutput", ColorOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("color");
+const SOCKETTYPES_IN: { [key in keyof Required<ColorOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["color"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<ColorOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const ColorOutputType: NodeTypes.Type<"colorOutput", ColorOutputDefinition> = {
     type: "colorOutput",

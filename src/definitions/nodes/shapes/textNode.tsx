@@ -17,7 +17,6 @@ import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 
-
 export type TextPathDefinition = {
     inputs: {
         text: DataTypes.Use<"string">;
@@ -275,29 +274,33 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     };
 };
 
-const TEXTPATH_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    text: "string",
-    path: "path",
-    size: "length",
-    spacing: "length",
-    rotation: "angle",
-    anchor: "enum",
-    align: "enum",
-    offsetMode: "enum",
-    offsetPercent: "float",
-    offsetLength: "length",
-    offsetOrigin: "enum",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    output: "shape",
+const SOCKETTYPES_IN: { [key in keyof Required<TextPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    text: { types: ["string"], mode: "or" },
+    path: { types: ["path"], mode: "or" },
+    size: { types: ["length"], mode: "or" },
+    spacing: { types: ["length"], mode: "or" },
+    rotation: { types: ["angle"], mode: "or" },
+    anchor: { types: ["enum"], mode: "or" },
+    align: { types: ["enum"], mode: "or" },
+    offsetMode: { types: ["enum"], mode: "or" },
+    offsetPercent: { types: ["float"], mode: "or" },
+    offsetLength: { types: ["length"], mode: "or" },
+    offsetOrigin: { types: ["enum"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(TEXTPATH_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<TextPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = {
     type: "textPath",

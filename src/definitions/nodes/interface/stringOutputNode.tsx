@@ -87,7 +87,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"stringOutput", StringOutput
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("string");
+const SOCKETTYPES_IN: { [key in keyof Required<StringOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["string"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<StringOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const StringOutputType: NodeTypes.Type<"stringOutput", StringOutputDefinition> = {
     type: "stringOutput",

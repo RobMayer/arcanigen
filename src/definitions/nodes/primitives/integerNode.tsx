@@ -78,14 +78,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "out
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "value":
-            return SocketTypes.of("integer");
-        case "output":
-            return SocketTypes.of("integer");
-        default:
-            return SocketTypes.of("integer");
+const SOCKETTYPES_IN: { [key in keyof Required<IntegerDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["integer"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<IntegerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["integer"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

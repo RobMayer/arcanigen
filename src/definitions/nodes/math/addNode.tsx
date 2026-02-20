@@ -8,7 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, constrainForPartner, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
 
 export type AddDefinition = {
     inputs: {
@@ -24,6 +24,7 @@ export type AddDefinition = {
         b: DataTypes.TypeOf<DataTypes.Use<"float">>;
         connectedTypeA: SocketTypes.SocketRule;
         connectedTypeB: SocketTypes.SocketRule;
+        resolvedInTypes: SocketTypes.SocketRule;
     };
 };
 
@@ -45,10 +46,39 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AddDefinition>>, id
             b: input.b ?? "0",
             connectedTypeA: SocketTypes.NONE,
             connectedTypeB: SocketTypes.NONE,
+            resolvedInTypes: SocketTypes.ANY,
         },
         type: "add",
     };
 };
+
+// --- Helpers ---
+
+/** Compute the effective type for an input socket, considering forward (partner) and backward (output) constraints */
+const effectiveInputType = (connectedType: SocketTypes.SocketRule, partnerType: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule): SocketTypes.SocketRule => {
+    if (connectedType.types.length > 0) return connectedType;
+    const forward = constrainForPartner(partnerType);
+    const backward = constrainForOutput(resolvedInTypes, partnerType);
+    return SocketTypes.intersect(forward, backward);
+};
+
+/** Query the intersection of all downstream neighbors' IN types connected to our output */
+const queryDownstreamTypes = (node: AddNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
+    const linkIds = node.out.output;
+    if (linkIds.length === 0) return null;
+    let result: SocketTypes.SocketRule | null = null;
+    for (const linkId of linkIds) {
+        const link = ctx.getLink(graphId, linkId);
+        if (!link) continue;
+        const neighbor = ctx.getNode(graphId, link.toNode);
+        if (!neighbor) continue;
+        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
+        result = result === null ? st : SocketTypes.intersect(result, st);
+    }
+    return result;
+};
+
+// --- Controls ---
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -58,8 +88,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefiniti
         [methods],
     );
 
-    const typeA = node.payload.connectedTypeA.types.length > 0 ? node.payload.connectedTypeA : constrainForPartner(node.payload.connectedTypeB);
-    const typeB = node.payload.connectedTypeB.types.length > 0 ? node.payload.connectedTypeB : constrainForPartner(node.payload.connectedTypeA);
+    const { connectedTypeA, connectedTypeB, resolvedInTypes } = node.payload;
+    const typeA = effectiveInputType(connectedTypeA, connectedTypeB, resolvedInTypes);
+    const typeB = effectiveInputType(connectedTypeB, connectedTypeA, resolvedInTypes);
     const typeOut = computeOutputType(typeA, typeB);
 
     return (
@@ -76,6 +107,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefiniti
         </TypicalNode>
     );
 };
+
+// --- Evaluation ---
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<AddDefinition>, outSocket: "output", _deps: AllDeps): (keyof AddDefinition["inputs"])[] => {
     if (outSocket === "output") return ["a", "b"];
@@ -101,78 +134,116 @@ const evaluate = (node: NodeDefinitions.NodeFor<AddDefinition>, socket: "output"
     return null;
 };
 
-// --- Lifecycle hooks for constraint propagation ---
+// --- Lifecycle hooks ---
 
-const setPayload = (node: AddNode, updates: Partial<AddDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const current = ctx.getNode(graphId, node.id);
+const setPayload = (nodeId: string, updates: Partial<AddDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const current = ctx.getNode(graphId, nodeId);
     if (!current) return;
-    ctx.setNode(graphId, node.id, {
+    ctx.setNode(graphId, nodeId, {
         ...current,
         payload: { ...current.payload, ...updates } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"],
     });
 };
 
 const onConnect = (node: AddNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
     const link = ctx.getLink(graphId, linkId);
     if (!link) return;
-    const socket = link.toSocket as "a" | "b";
 
-    const upstreamType = queryUpstreamOutType(node, socket, graphId, ctx);
-    const payloadKey = socket === "a" ? "connectedTypeA" : "connectedTypeB";
+    if (direction === "in") {
+        const socket = link.toSocket as "a" | "b";
+        const upstreamType = queryUpstreamOutType(node, socket, graphId, ctx);
+        const payloadKey = socket === "a" ? "connectedTypeA" : "connectedTypeB";
 
-    setPayload(node, { [payloadKey]: upstreamType }, graphId, ctx);
+        setPayload(node.id, { [payloadKey]: upstreamType }, graphId, ctx);
 
-    const otherSocket = socket === "a" ? "b" : "a";
-    ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
-    ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
+        const otherSocket = socket === "a" ? "b" : "a";
+        ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
+        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
+    } else {
+        // Output connected — update resolvedInTypes (intersect with downstream's IN type)
+        const currentNode = ctx.getNode(graphId, node.id) as AddNode | undefined;
+        if (!currentNode) return;
+        const downstreamTypes = queryDownstreamTypes(currentNode, graphId, ctx);
+        if (downstreamTypes !== null) {
+            const newInTypes = SocketTypes.intersect(currentNode.payload.resolvedInTypes, downstreamTypes);
+            if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
+                setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
+                ctx.requestRefresh(graphId, node.id, "a", "in", "constraintAdded");
+                ctx.requestRefresh(graphId, node.id, "b", "in", "constraintAdded");
+            }
+        }
+    }
 };
 
 const onDisconnect = (node: AddNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
+    if (direction === "in") {
+        const socket = link.toSocket as "a" | "b";
+        const otherSocket = socket === "a" ? "b" : "a";
+        const payloadKey = socket === "a" ? "connectedTypeA" : "connectedTypeB";
 
-    const socket = link.toSocket as "a" | "b";
-    const otherSocket = socket === "a" ? "b" : "a";
-    const payloadKey = socket === "a" ? "connectedTypeA" : "connectedTypeB";
+        // Phase 1: constraintRemoved
+        ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintRemoved");
+        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
 
-    // Phase 1: constraintRemoved
-    ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintRemoved");
-    ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
+        // Phase 2: update payload
+        setPayload(node.id, { [payloadKey]: SocketTypes.NONE }, graphId, ctx);
 
-    // Phase 2: update payload
-    setPayload(node, { [payloadKey]: SocketTypes.NONE }, graphId, ctx);
+        // Phase 3: constraintAdded
+        ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
+        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
+    } else {
+        // Output disconnected — recompute resolvedInTypes
 
-    // Phase 3: constraintAdded
-    ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
-    ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
+        // Phase 1: constraintRemoved to input upstreams
+        ctx.requestRefresh(graphId, node.id, "a", "in", "constraintRemoved");
+        ctx.requestRefresh(graphId, node.id, "b", "in", "constraintRemoved");
+
+        // Phase 2: recompute from remaining downstreams
+        const currentNode = ctx.getNode(graphId, node.id) as AddNode | undefined;
+        if (!currentNode) return;
+        const downstream = queryDownstreamTypes(currentNode, graphId, ctx);
+        setPayload(node.id, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
+
+        // Phase 3: constraintAdded to input upstreams
+        ctx.requestRefresh(graphId, node.id, "a", "in", "constraintAdded");
+        ctx.requestRefresh(graphId, node.id, "b", "in", "constraintAdded");
+    }
 };
 
 const onRefreshRequest = (node: AddNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (side !== "in") return;
-
     const currentNode = ctx.getNode(graphId, node.id) as AddNode | undefined;
     if (!currentNode) return;
 
-    const newUpstreamType = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
-    const payloadKey = socketId === "a" ? "connectedTypeA" : "connectedTypeB";
-    const oldType = (currentNode.payload as Record<string, unknown>)[payloadKey] as SocketTypes.SocketRule;
+    if (side === "in") {
+        // Upstream changed on an input socket
+        const newUpstreamType = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
+        const payloadKey = socketId === "a" ? "connectedTypeA" : "connectedTypeB";
+        const oldType = socketId === "a" ? currentNode.payload.connectedTypeA : currentNode.payload.connectedTypeB;
 
-    if (!SocketTypes.equals(newUpstreamType, oldType)) {
-        setPayload(currentNode, { [payloadKey]: newUpstreamType }, graphId, ctx);
+        if (!SocketTypes.equals(newUpstreamType, oldType)) {
+            setPayload(node.id, { [payloadKey]: newUpstreamType }, graphId, ctx);
 
-        const otherSocket = socketId === "a" ? "b" : "a";
-        ctx.requestRefresh(graphId, node.id, otherSocket, "in", reason);
-        ctx.requestRefresh(graphId, node.id, "output", "out", reason);
+            const otherSocket = socketId === "a" ? "b" : "a";
+            ctx.requestRefresh(graphId, node.id, otherSocket, "in", reason);
+            ctx.requestRefresh(graphId, node.id, "output", "out", reason);
+        }
+    } else {
+        // Downstream changed on output socket — recompute resolvedInTypes
+        const newInTypes = queryDownstreamTypes(currentNode, graphId, ctx) ?? SocketTypes.ANY;
+        if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
+            setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
+            ctx.requestRefresh(graphId, node.id, "a", "in", reason);
+            ctx.requestRefresh(graphId, node.id, "b", "in", reason);
+        }
     }
 };
 
 // --- getSocketType ---
 
-const getSocketType = (node: NodeDefinitions.NodeFor<AddDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    const { connectedTypeA, connectedTypeB } = node.payload;
-    const effectiveA = connectedTypeA.types.length > 0 ? connectedTypeA : constrainForPartner(connectedTypeB);
-    const effectiveB = connectedTypeB.types.length > 0 ? connectedTypeB : constrainForPartner(connectedTypeA);
+const getSocketType = (node: NodeDefinitions.NodeFor<AddDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
+    const { connectedTypeA, connectedTypeB, resolvedInTypes } = node.payload;
+    const effectiveA = effectiveInputType(connectedTypeA, connectedTypeB, resolvedInTypes);
+    const effectiveB = effectiveInputType(connectedTypeB, connectedTypeA, resolvedInTypes);
     switch (socketId) {
         case "a":
             return effectiveA;

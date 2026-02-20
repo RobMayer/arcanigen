@@ -81,14 +81,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<BooleanDefinition>, socket: "out
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "value":
-            return SocketTypes.of("boolean");
-        case "output":
-            return SocketTypes.of("boolean");
-        default:
-            return SocketTypes.of("boolean");
+const SOCKETTYPES_IN: { [key in keyof Required<BooleanDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["boolean"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<BooleanDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["boolean"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

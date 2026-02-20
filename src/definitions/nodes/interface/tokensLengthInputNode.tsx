@@ -95,7 +95,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"tokensLengthInput", TokensL
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("tokens<length>");
+const SOCKETTYPES_OUT: { [key in keyof Required<TokensLengthInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["tokens<length>"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+};
 
 export const TokensLengthInputType: NodeTypes.Type<"tokensLengthInput", TokensLengthInputDefinition> = {
     type: "tokensLengthInput",

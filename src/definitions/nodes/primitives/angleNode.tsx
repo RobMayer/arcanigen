@@ -92,16 +92,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "outpu
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "value":
-            return SocketTypes.of("angle");
-        case "wraps":
-            return SocketTypes.of("boolean");
-        case "output":
-            return SocketTypes.of("angle");
-        default:
-            return SocketTypes.of("angle");
+const SOCKETTYPES_IN: { [key in keyof Required<AngleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["angle"], mode: "or" },
+    wraps: { types: ["boolean"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<AngleDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["angle"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

@@ -272,27 +272,32 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket:
     return null;
 };
 
-const POLYGON_ARRAY_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
-    input: { types: ["shape"], mode: "and" },
-    count: { types: ["integer"], mode: "and" },
-    radius: { types: ["length"], mode: "and" },
-    scribeMode: { types: ["enum"], mode: "and" },
-    memberAlign: { types: ["boolean"], mode: "and" },
-    memberRotation: { types: ["angle"], mode: "and" },
-    pointDistro: { types: ["distribution"], mode: "and" },
-    positionMode: { types: ["enum"], mode: "and" },
-    positionX: { types: ["length"], mode: "and" },
-    positionY: { types: ["length"], mode: "and" },
-    positionRadius: { types: ["length"], mode: "and" },
-    positionTheta: { types: ["angle"], mode: "and" },
-    rotation: { types: ["angle"], mode: "and" },
+const SOCKETTYPES_IN: { [key in keyof Required<PolygonArrayDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["shape"], mode: "or" },
+    count: { types: ["integer"], mode: "or" },
+    radius: { types: ["length"], mode: "or" },
+    scribeMode: { types: ["enum"], mode: "or" },
+    memberAlign: { types: ["boolean"], mode: "or" },
+    memberRotation: { types: ["angle"], mode: "or" },
+    pointDistro: { types: ["distribution"], mode: "or" },
+    ...Transforms.IN_SOCKET_TYPES,
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<PolygonArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
     eCircumradius: { types: ["length"], mode: "and" },
     eApothem: { types: ["length"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => POLYGON_ARRAY_SOCKET_TYPES[socketId] ?? SocketTypes.of("shape");
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const PolygonArrayNodeType: NodeTypes.Type<"polygonArray", PolygonArrayDefinition> = {
     type: "polygonArray",

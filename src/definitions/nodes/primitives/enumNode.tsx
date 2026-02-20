@@ -159,14 +159,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<EnumDefinition>, socket: "output
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<EnumDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "value":
-            return SocketTypes.of("enum");
-        case "output":
-            return SocketTypes.of("enum");
-        default:
-            return SocketTypes.of("enum");
+const SOCKETTYPES_IN: { [key in keyof Required<EnumDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["enum"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<EnumDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["enum"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<EnumDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

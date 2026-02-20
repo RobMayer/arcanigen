@@ -147,16 +147,26 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
     return null;
 };
 
-const MASK_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
-    content: { types: ["shape"], mode: "and" },
-    mask: { types: ["shape"], mode: "and" },
-    showMask: { types: ["boolean"], mode: "and" },
-    maskMode: { types: ["enum"], mode: "and" },
-    invert: { types: ["boolean"], mode: "and" },
+const SOCKETTYPES_IN: { [key in keyof Required<MaskDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    content: { types: ["shape"], mode: "or" },
+    mask: { types: ["shape"], mode: "or" },
+    showMask: { types: ["boolean"], mode: "or" },
+    maskMode: { types: ["enum"], mode: "or" },
+    invert: { types: ["boolean"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<MaskDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<MaskDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => MASK_SOCKET_TYPES[socketId] ?? SocketTypes.of("shape");
+const getSocketType = (_node: NodeDefinitions.NodeFor<MaskDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     type: "mask",

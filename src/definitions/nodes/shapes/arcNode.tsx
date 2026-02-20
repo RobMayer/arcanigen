@@ -314,35 +314,34 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     return null;
 };
 
-const ARC_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    radius: "length",
-    arcMode: "enum",
-    thetaStart: "angle",
-    sweep: "angle",
-    thetaFrom: "angle",
-    thetaTo: "angle",
-    pieSlice: "boolean",
-    markerStartShape: "shape",
-    markerEndShape: "shape",
-    markerAlign: "boolean",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
+const SOCKETTYPES_IN: { [key in keyof Required<ArcDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    radius: { types: ["length"], mode: "or" },
+    arcMode: { types: ["enum"], mode: "or" },
+    thetaStart: { types: ["angle"], mode: "or" },
+    sweep: { types: ["angle"], mode: "or" },
+    thetaFrom: { types: ["angle"], mode: "or" },
+    thetaTo: { types: ["angle"], mode: "or" },
+    pieSlice: { types: ["boolean"], mode: "or" },
+    markerStartShape: { types: ["shape"], mode: "or" },
+    markerEndShape: { types: ["shape"], mode: "or" },
+    markerAlign: { types: ["boolean"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArcDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(ARC_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<ArcDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<ArcDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     type: "arc",

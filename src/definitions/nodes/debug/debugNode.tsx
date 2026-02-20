@@ -59,13 +59,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<DebugDefinition>, socket: keyof 
     return null;
 };
 
+const SOCKETTYPES_IN: { [key in keyof Required<DebugDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["float"], mode: "or" },
+};
+
 const getSocketType = (_node: NodeDefinitions.NodeFor<DebugDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "input":
-            return SocketTypes.of("float");
-        default:
-            return SocketTypes.of("float");
-    }
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const DebugType: NodeTypes.Type<"debug", DebugDefinition> = {

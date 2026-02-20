@@ -113,18 +113,22 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket:
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "shape":
-            return SocketTypes.of("shape");
-        case "enabled":
-            return SocketTypes.of("boolean");
-        case "blend":
-            return SocketTypes.of("enum");
-        case "output":
-            return SocketTypes.of("layer");
-        default:
-            return SocketTypes.of("shape");
+const SOCKETTYPES_IN: { [key in keyof Required<LayerComposeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    shape: { types: ["shape"], mode: "or" },
+    enabled: { types: ["boolean"], mode: "or" },
+    blend: { types: ["enum"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<LayerComposeDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["layer"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 

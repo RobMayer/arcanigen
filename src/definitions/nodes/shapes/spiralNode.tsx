@@ -359,38 +359,37 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     return null;
 };
 
-const SPIRAL_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    spanMode: "enum",
-    innerRadius: "length",
-    outerRadius: "length",
-    radius: "length",
-    deviation: "length",
-    arcMode: "enum",
-    thetaStart: "angle",
-    sweep: "angle",
-    thetaFrom: "angle",
-    thetaTo: "angle",
-    markerStartShape: "shape",
-    markerEndShape: "shape",
-    markerAlign: "boolean",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
+const SOCKETTYPES_IN: { [key in keyof Required<SpiralDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    spanMode: { types: ["enum"], mode: "or" },
+    innerRadius: { types: ["length"], mode: "or" },
+    outerRadius: { types: ["length"], mode: "or" },
+    radius: { types: ["length"], mode: "or" },
+    deviation: { types: ["length"], mode: "or" },
+    arcMode: { types: ["enum"], mode: "or" },
+    thetaStart: { types: ["angle"], mode: "or" },
+    sweep: { types: ["angle"], mode: "or" },
+    thetaFrom: { types: ["angle"], mode: "or" },
+    thetaTo: { types: ["angle"], mode: "or" },
+    markerStartShape: { types: ["shape"], mode: "or" },
+    markerEndShape: { types: ["shape"], mode: "or" },
+    markerAlign: { types: ["boolean"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(SPIRAL_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<SpiralDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     type: "spiral",

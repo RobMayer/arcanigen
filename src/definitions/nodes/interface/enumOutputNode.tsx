@@ -87,7 +87,13 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumOutput", EnumOutputDefi
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const getSocketType = (): SocketTypes.SocketRule => SocketTypes.of("enum");
+const SOCKETTYPES_IN: { [key in keyof Required<EnumOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    input: { types: ["enum"], mode: "or" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<EnumOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
+    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+};
 
 export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> = {
     type: "enumOutput",

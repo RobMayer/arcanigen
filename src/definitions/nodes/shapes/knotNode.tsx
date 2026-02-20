@@ -359,11 +359,31 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
 };
 
 const GEOMETRY_INPUTS: (keyof KnotDefinition["inputs"])[] = [
-    "pointCount", "skipCount", "pointDistro", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign",
-    "rScribe", "iScribe", "oScribe", "expandMode",
-    "outerCornerRadius", "outerCornerShape", "innerCornerRadius", "innerCornerShape",
-    "markerShape", "markerAlign",
-    "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation",
+    "pointCount",
+    "skipCount",
+    "pointDistro",
+    "radius",
+    "spread",
+    "innerRadius",
+    "outerRadius",
+    "spanMode",
+    "spreadAlign",
+    "rScribe",
+    "iScribe",
+    "oScribe",
+    "expandMode",
+    "outerCornerRadius",
+    "outerCornerShape",
+    "innerCornerRadius",
+    "innerCornerShape",
+    "markerShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
 ];
 const STYLING_INPUTS: (keyof KnotDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
@@ -672,49 +692,47 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
     return null;
 };
 
-const KNOT_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    pointCount: "integer",
-    skipCount: "integer",
-    radius: "length",
-    spread: "length",
-    innerRadius: "length",
-    outerRadius: "length",
-    spanMode: "enum",
-    spreadAlign: "enum",
-    rScribe: "enum",
-    iScribe: "enum",
-    oScribe: "enum",
-    expandMode: "enum",
-    pointDistro: "distribution",
-    outerCornerRadius: "length",
-    outerCornerShape: "enum",
-    innerCornerRadius: "length",
-    innerCornerShape: "enum",
-    markerShape: "shape",
-    markerAlign: "boolean",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeJoin: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
-    eOuterCircumradius: "length",
-    eOuterApothem: "length",
-    eInnerCircumradius: "length",
-    eInnerApothem: "length",
+const SOCKETYPES_IN: { [key in keyof Required<KnotDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    pointCount: { types: ["integer"], mode: "and" },
+    skipCount: { types: ["integer"], mode: "and" },
+    radius: { types: ["length"], mode: "and" },
+    spread: { types: ["length"], mode: "and" },
+    innerRadius: { types: ["length"], mode: "and" },
+    outerRadius: { types: ["length"], mode: "and" },
+    spanMode: { types: ["enum"], mode: "and" },
+    spreadAlign: { types: ["enum"], mode: "and" },
+    rScribe: { types: ["enum"], mode: "and" },
+    iScribe: { types: ["enum"], mode: "and" },
+    oScribe: { types: ["enum"], mode: "and" },
+    expandMode: { types: ["enum"], mode: "and" },
+    pointDistro: { types: ["distribution"], mode: "and" },
+    outerCornerRadius: { types: ["length"], mode: "and" },
+    outerCornerShape: { types: ["enum"], mode: "and" },
+    innerCornerRadius: { types: ["length"], mode: "and" },
+    innerCornerShape: { types: ["enum"], mode: "and" },
+    markerShape: { types: ["shape"], mode: "and" },
+    markerAlign: { types: ["boolean"], mode: "and" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<KnotDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(KNOT_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<KnotDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+    eOuterCircumradius: { types: ["length"], mode: "and" },
+    eOuterApothem: { types: ["length"], mode: "and" },
+    eInnerCircumradius: { types: ["length"], mode: "and" },
+    eInnerApothem: { types: ["length"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<KnotDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETYPES_IN[socketId as keyof typeof SOCKETYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const KnotNodeType: NodeTypes.Type<"knot", KnotDefinition> = {
     type: "knot",

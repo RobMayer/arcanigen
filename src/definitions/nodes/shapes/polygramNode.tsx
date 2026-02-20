@@ -449,37 +449,35 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
     return null;
 };
 
-const POLYGON_SOCKET_TYPES: Record<string, DataTypes.Kind> = {
-    pointCount: "integer",
-    skipCount: "integer",
-    radius: "length",
-    rScribe: "enum",
-    pointDistro: "distribution",
-    cornerRadius: "length",
-    cornerShape: "enum",
-    markerShape: "shape",
-    markerAlign: "boolean",
-    strokeWidth: "length",
-    strokeColor: "color",
-    strokeCap: "enum",
-    strokeJoin: "enum",
-    strokeDash: "tokens<length>",
-    strokeDashOffset: "length",
-    fillColor: "color",
-    paintOrder: "enum",
-    positionMode: "enum",
-    positionX: "length",
-    positionY: "length",
-    positionRadius: "length",
-    positionTheta: "angle",
-    rotation: "angle",
-    output: "shape",
-    path: "path",
-    eCircumradius: "length",
-    eApothem: "length",
+const SOCKETTYPES_IN: { [key in keyof Required<PolygramDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    pointCount: { types: ["integer"], mode: "or" },
+    skipCount: { types: ["integer"], mode: "or" },
+    radius: { types: ["length"], mode: "or" },
+    rScribe: { types: ["enum"], mode: "or" },
+    pointDistro: { types: ["distribution"], mode: "or" },
+    cornerRadius: { types: ["length"], mode: "or" },
+    cornerShape: { types: ["enum"], mode: "or" },
+    markerShape: { types: ["shape"], mode: "or" },
+    markerAlign: { types: ["boolean"], mode: "or" },
+    ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => SocketTypes.of(POLYGON_SOCKET_TYPES[socketId] ?? "float");
+const SOCKETTYPES_OUT: { [key in keyof Required<PolygramDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
+    eCircumradius: { types: ["length"], mode: "and" },
+    eApothem: { types: ["length"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
+    }
+};
 
 export const PolygramNodeType: NodeTypes.Type<"polygram", PolygramDefinition> = {
     type: "polygram",

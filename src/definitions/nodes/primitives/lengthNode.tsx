@@ -79,14 +79,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthDefinition>, socket: "outp
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LengthDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "value":
-            return SocketTypes.of("length");
-        case "output":
-            return SocketTypes.of("length");
-        default:
-            return SocketTypes.of("length");
+const SOCKETTYPES_IN: { [key in keyof Required<LengthDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["length"], mode: "or" },
+};
+
+const SOCKETTYPES_OUT: { [key in keyof Required<LengthDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["length"], mode: "and" },
+};
+
+const getSocketType = (_node: NodeDefinitions.NodeFor<LengthDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+    switch (side) {
+        case "in":
+            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+        case "out":
+            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
 };
 
