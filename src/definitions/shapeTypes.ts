@@ -82,6 +82,7 @@ export type PathShape = {
     paint: Paint;
     markers?: Markers;
     vectorEffect?: string; // e.g. "non-scaling-stroke"
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -95,6 +96,7 @@ export type LineShape = {
     y2: number;
     paint: Paint;
     markers?: Markers;
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -109,6 +111,7 @@ export type RectShape = {
     rx?: string;
     ry?: string;
     paint: Paint;
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -124,6 +127,7 @@ export type TextShape = {
     rotate?: number; // per-character rotation in degrees
     paint: Paint;
     textPath?: TextPathDef;
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -134,6 +138,7 @@ export type GroupShape = {
     children: (Shape | null)[];
     blendMode?: string; // CSS mix-blend-mode value
     isolation?: boolean; // CSS isolation: isolate
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -143,6 +148,7 @@ export type OffsetPathShape = {
     type: "offsetPath";
     shape: Shape; // the shape being positioned
     path: OffsetPathDef;
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -151,6 +157,7 @@ export type OffsetPathShape = {
 export type SymbolShape = {
     type: "symbol";
     symbol: SymbolDef;
+    signals?: string[];
     transform: string;
     preview: BBox;
 };
@@ -160,6 +167,7 @@ export type MaskedShape = {
     type: "masked";
     content: Shape;
     mask: MaskDef;
+    signals?: string[];
     transform: string;
     preview: BBox;
 };

@@ -107,6 +107,7 @@ import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collection
 import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/radialArrayNode";
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
+import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
 
 export type { SubgraphDeps };
@@ -216,6 +217,7 @@ namespace Registries {
         radialArray: RadialArrayDefinition;
         pathArray: PathArrayDefinition;
         colorIterator: ColorIteratorDefinition;
+        restyle: RestyleDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
         logicalNot: LogicalNotDefinition;
@@ -255,6 +257,7 @@ namespace Registries {
         radialArray: RadialArrayNodeType,
         pathArray: PathArrayNodeType,
         colorIterator: ColorIteratorNodeType,
+        restyle: RestyleNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,

@@ -44,13 +44,16 @@
 - [ ] Figure out Random Seed mechanism
 - [ ] Figure out Style Overrides
 - [x] Transform Node (translation, pre-rotation, post-rotation, skew, scale)
-- [ ] Radial Array (similar interface as Burst)
+- [x] Radial Array (similar interface as Burst)
 - [x] Figure out Conformal Paths
 - [ ] colorStops datatypes - think colorStops is to ColorIterator as layers datatype is to LayerNode (a collection of multiple color stops that overrides the dynamic list of color stops in the ColorIterator node). Could be recycled for a Gradient node type as well.
     - [ ] support for gradients in (most?) sockets that currently also take a fill would be nice.
 - [ ] Value iterator (float, integer, length) - (should we include angle in this too or have a different node for angles because it has extra gubbins like angular wrap direction - see hue on color iterator?)
 - [ ] Equality test (A == B)
 - [ ] Within test (A == B +/- C)
+- [ ] Color Split
+- [ ] Color Join
+- [ ] Color Adjust?
 - [ ] Can we make the type prop on <SocketIn/> and <SocketOut/> redundant by using a properly memoized return of getSocketType(...) - with the idea that we could concat the list of types with either " | " or " & " depending on that socket rule's mode?
 
 # componnet improvements
