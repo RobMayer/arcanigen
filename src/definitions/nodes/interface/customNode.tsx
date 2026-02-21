@@ -397,6 +397,8 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
     distributionOutput: { types: ["distribution"], mode: "and" },
     sequenceInput: { types: ["sequence"], mode: "and" },
     sequenceOutput: { types: ["sequence"], mode: "and" },
+    pathInput: { types: ["path"], mode: "and" },
+    pathOutput: { types: ["path"], mode: "and" },
 };
 
 const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
@@ -504,6 +506,10 @@ const DynamicSlot = ({
             return <InputSlotSequence host={hostNode} source={sourceNode} />;
         case "sequenceOutput":
             return <OutputSlotSequence host={hostNode} source={sourceNode} />;
+        case "pathInput":
+            return <InputSlotPath host={hostNode} source={sourceNode} />;
+        case "pathOutput":
+            return <OutputSlotPath host={hostNode} source={sourceNode} />;
     }
     return null;
 };
@@ -1128,6 +1134,22 @@ const InputSlotSequence = ({ host, source }: { host: NodeDefinitions.NodeFor<Cus
 const OutputSlotSequence = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
         <SocketOut node={host} socketId={source.id} type={"sequence"}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
+        </SocketOut>
+    );
+};
+
+const InputSlotPath = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketIn node={host} socketId={source.id} type={"path"}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
+        </SocketIn>
+    );
+};
+
+const OutputSlotPath = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketOut node={host} socketId={source.id} type={"path"}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
         </SocketOut>
     );

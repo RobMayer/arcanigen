@@ -76,6 +76,8 @@ import { DistributionInputDefinition, DistributionInputType } from "./nodes/inte
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
 import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/sequenceInputNode";
 import { SequenceOutputDefinition, SequenceOutputType } from "./nodes/interface/sequenceOutputNode";
+import { PathInputDefinition, PathInputType } from "./nodes/interface/pathInputNode";
+import { PathOutputDefinition, PathOutputType } from "./nodes/interface/pathOutputNode";
 import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/logic/switchCaseNode";
 import { ConditionDefinition, ConditionNodeType } from "./nodes/logic/conditionNode";
 import { LogicalNotDefinition, LogicalNotNodeType } from "./nodes/logic/logicalNotNode";
@@ -104,6 +106,7 @@ import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequ
 import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
+import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -133,6 +136,7 @@ namespace Registries {
         textPath: TextPathDefinition;
         alongPath: AlongPathDefinition;
         glyph: GlyphDefinition;
+        transform: TransformDefinition;
 
         angle: AngleDefinition;
         boolean: BooleanDefinition;
@@ -173,6 +177,8 @@ namespace Registries {
         distributionOutput: DistributionOutputDefinition;
         sequenceInput: SequenceInputDefinition;
         sequenceOutput: SequenceOutputDefinition;
+        pathInput: PathInputDefinition;
+        pathOutput: PathOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -237,6 +243,7 @@ namespace Registries {
         textPath: TextPathNodeType,
         alongPath: AlongPathNodeType,
         glyph: GlyphNodeType,
+        transform: TransformType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
@@ -281,6 +288,8 @@ namespace Registries {
         distributionOutput: DistributionOutputType,
         sequenceInput: SequenceInputType,
         sequenceOutput: SequenceOutputType,
+        pathInput: PathInputType,
+        pathOutput: PathOutputType,
         custom: CustomNodeType,
 
         add: AddType,

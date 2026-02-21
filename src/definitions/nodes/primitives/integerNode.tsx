@@ -9,7 +9,6 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
-import { RadioButton } from "../../../components/buttons/RadioButton";
 import { extractSingle, applyRounding } from "../math/numericMath";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 
