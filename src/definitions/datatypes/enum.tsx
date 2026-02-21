@@ -216,6 +216,14 @@ export namespace Enum {
             PREVIEW: { value: 1, label: "Preview" },
         } as const;
 
+        export const lengthUnit = {
+            PX: { value: 0, label: "px" },
+            PT: { value: 1, label: "pt" },
+            IN: { value: 2, label: "in" },
+            MM: { value: 3, label: "mm" },
+            CM: { value: 4, label: "cm" },
+        } as const;
+
         export const roundingMode = {
             CEIL: { value: 0, label: "Ceil" },
             FLOOR: { value: 1, label: "Floor" },

@@ -1,4 +1,5 @@
 import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { Enum } from "../../datatypes/enum";
 import { Length } from "../../datatypes/length";
 import { NumericString } from "../../datatypes/numericString";
 
@@ -84,7 +85,7 @@ export const computeOutputType = (aRule: SocketTypes.SocketRule, bRule: SocketTy
             result.add(dominantKind(a, b) as DataTypes.Kind);
         }
     }
-    return { types: [...result].sort() as DataTypes.Kind[], mode: "or" };
+    return { types: [...result].sort(), mode: "or" };
 };
 
 // --- Backward propagation ---
@@ -143,12 +144,7 @@ const isForbidden = (a: string, b: string): boolean => {
  * Extract a pair of raw numbers from two resolved values, handling length unit conversion.
  * Returns the numeric values and the reference unit (if any length is involved).
  */
-export const extractPair = (
-    aKind: string,
-    aData: unknown,
-    bKind: string,
-    bData: unknown,
-): { a: number; b: number; unit: Length.Unit | null } => {
+export const extractPair = (aKind: string, aData: unknown, bKind: string, bData: unknown): { a: number; b: number; unit: Length.Unit | null } => {
     const aIsLength = aKind === "length";
     const bIsLength = bKind === "length";
 
@@ -212,13 +208,47 @@ export const extractSingle = (kind: string, data: unknown): { value: number; uni
 export const wrapResult = (value: number, outputKind: string, unit: Length.Unit | null): DataTypes.AnyEval => {
     switch (outputKind) {
         case "integer":
-            return { kind: "integer", data: `${Math.trunc(value)}` as `${number}` };
+            return { kind: "integer", data: `${Math.trunc(value)}` };
         case "angle":
-            return { kind: "angle", data: `${value}` as `${number}` };
+            return { kind: "angle", data: `${value}` };
         case "length":
-            return { kind: "length", data: `${value}${unit ?? "px"}` as Length.Type };
+            return { kind: "length", data: `${value}${unit ?? "px"}` };
         case "float":
         default:
-            return { kind: "float", data: `${value}` as `${number}` };
+            return { kind: "float", data: `${value}` };
+    }
+};
+
+/**
+ * Apply a rounding mode to a number. Used by round node and integer cast.
+ */
+export const applyRounding = (value: number, mode: number): number => {
+    switch (mode) {
+        case Enum.Common.roundingMode.CEIL.value:
+            return Math.ceil(value);
+        case Enum.Common.roundingMode.FLOOR.value:
+            return Math.floor(value);
+        case Enum.Common.roundingMode.TRUNCATE.value:
+            return Math.trunc(value);
+        case Enum.Common.roundingMode.EXPAND.value:
+            return value >= 0 ? Math.ceil(value) : Math.floor(value);
+        case Enum.Common.roundingMode.HALF_CEIL.value:
+            return Math.round(value);
+        case Enum.Common.roundingMode.HALF_FLOOR.value:
+            return -Math.round(-value);
+        case Enum.Common.roundingMode.HALF_TRUNCATE.value: {
+            const abs = Math.abs(value);
+            const frac = abs - Math.floor(abs);
+            if (frac === 0.5) return value >= 0 ? Math.floor(value) : Math.ceil(value);
+            return Math.round(value);
+        }
+        case Enum.Common.roundingMode.HALF_EXPAND.value: {
+            const abs = Math.abs(value);
+            const frac = abs - Math.floor(abs);
+            if (frac === 0.5) return value >= 0 ? Math.ceil(value) : Math.floor(value);
+            return Math.round(value);
+        }
+        default:
+            return Math.round(value);
     }
 };

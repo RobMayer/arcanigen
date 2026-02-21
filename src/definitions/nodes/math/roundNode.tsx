@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult } from "./numericMath";
+import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, applyRounding } from "./numericMath";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 
@@ -68,37 +68,6 @@ const queryDownstreamTypes = (node: RoundNode, graphId: string, ctx: NodeTypes.M
         result = result === null ? st : SocketTypes.intersect(result, st);
     }
     return result;
-};
-
-const applyRounding = (value: number, mode: number): number => {
-    switch (mode) {
-        case Enum.Common.roundingMode.CEIL.value:
-            return Math.ceil(value);
-        case Enum.Common.roundingMode.FLOOR.value:
-            return Math.floor(value);
-        case Enum.Common.roundingMode.TRUNCATE.value:
-            return Math.trunc(value);
-        case Enum.Common.roundingMode.EXPAND.value:
-            return value >= 0 ? Math.ceil(value) : Math.floor(value);
-        case Enum.Common.roundingMode.HALF_CEIL.value:
-            return Math.round(value);
-        case Enum.Common.roundingMode.HALF_FLOOR.value:
-            return -Math.round(-value);
-        case Enum.Common.roundingMode.HALF_TRUNCATE.value: {
-            const abs = Math.abs(value);
-            const frac = abs - Math.floor(abs);
-            if (frac === 0.5) return value >= 0 ? Math.floor(value) : Math.ceil(value);
-            return Math.round(value);
-        }
-        case Enum.Common.roundingMode.HALF_EXPAND.value: {
-            const abs = Math.abs(value);
-            const frac = abs - Math.floor(abs);
-            if (frac === 0.5) return value >= 0 ? Math.ceil(value) : Math.floor(value);
-            return Math.round(value);
-        }
-        default:
-            return Math.round(value);
-    }
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RoundDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {

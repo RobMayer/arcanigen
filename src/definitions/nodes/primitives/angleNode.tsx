@@ -10,6 +10,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { useGraphId } from "../../../state/graphId";
+import { extractSingle } from "../math/numericMath";
 
 export type AngleDefinition = {
     inputs: {
@@ -61,7 +62,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
             <SocketOut node={node} socketId={"output"} type={"angle"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"angle"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} type={"angle float integer"} label={"Value"}>
                 <AngleInput.SliderInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
             </SocketIn>
             <SocketIn node={node} socketId={"wraps"} type={"boolean"} label={"Wraps"}>
@@ -84,16 +85,19 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AngleDefinition>, inSocket
 };
 const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        return {
-            kind: "angle",
-            data: context.resolve<"angle">(node.id, "value")?.data ?? node.payload.value,
-        };
+        const val = context.resolve(node.id, "value");
+        if (val) {
+            if (val.kind === "angle") return val;
+            const { value } = extractSingle(val.kind, val.data);
+            return { kind: "angle", data: `${value}` };
+        }
+        return { kind: "angle", data: node.payload.value };
     }
     return null;
 };
 
 const SOCKETTYPES_IN: { [key in keyof Required<AngleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["angle"], mode: "or" },
+    value: { types: ["angle", "float", "integer"], mode: "or" },
     wraps: { types: ["boolean"], mode: "or" },
 };
 

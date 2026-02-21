@@ -8,6 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
+import { extractSingle } from "../math/numericMath";
 
 export type FloatDefinition = {
     inputs: {
@@ -52,7 +53,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatDefini
             <SocketOut node={node} socketId={"output"} type={"float"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"float"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} type={"float angle integer length"} label={"Value"}>
                 <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
             </SocketIn>
         </TypicalNode>
@@ -70,16 +71,19 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FloatDefinition>, inSocket
 };
 const evaluate = (node: NodeDefinitions.NodeFor<FloatDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        return {
-            kind: "float",
-            data: context.resolve<"float">(node.id, "value")?.data ?? node.payload.value,
-        };
+        const val = context.resolve(node.id, "value");
+        if (val) {
+            if (val.kind === "float") return val;
+            const { value } = extractSingle(val.kind, val.data);
+            return { kind: "float", data: `${value}` };
+        }
+        return { kind: "float", data: node.payload.value };
     }
     return null;
 };
 
 const SOCKETTYPES_IN: { [key in keyof Required<FloatDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["float"], mode: "or" },
+    value: { types: ["angle", "float", "integer", "length"], mode: "or" },
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<FloatDefinition["outputs"]>]: SocketTypes.SocketRule } = {
