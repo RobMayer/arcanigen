@@ -42,7 +42,7 @@
     - [ ] Banded Line
     - [ ] Merged Knot (like knot but without overlap - complex as fuck)
 - [ ] Figure out Random Seed mechanism
-- [ ] Figure out Style Overrides
+- [x] Figure out Style Overrides
 - [x] Transform Node (translation, pre-rotation, post-rotation, skew, scale)
 - [x] Radial Array (similar interface as Burst)
 - [x] Figure out Conformal Paths
@@ -51,6 +51,8 @@
 - [ ] Value iterator (float, integer, length) - (should we include angle in this too or have a different node for angles because it has extra gubbins like angular wrap direction - see hue on color iterator?)
 - [ ] Equality test (A == B)
 - [ ] Within test (A == B +/- C)
+- [ ] Between test (A <= B <= C)
+- [ ] Comparison tests (<, >, <=, >=)
 - [ ] Color Split
 - [ ] Color Join
 - [ ] Color Adjust?

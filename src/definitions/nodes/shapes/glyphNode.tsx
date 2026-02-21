@@ -10,7 +10,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "./abstract";
+import { Stylings, Transforms } from "../abstract";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";

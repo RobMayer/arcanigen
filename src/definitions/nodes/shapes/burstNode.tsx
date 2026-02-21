@@ -14,7 +14,7 @@ import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
-import { Stylings, Transforms } from "./abstract";
+import { Stylings, Transforms } from "../abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 

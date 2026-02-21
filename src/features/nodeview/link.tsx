@@ -34,7 +34,6 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const pathContainer = useRef<SVGPathElement>(null);
 
     const onResize = useCallback((entry: ResizeObserverEntry) => {
-        console.log("resize did refire");
         const basis = entry.target.getBoundingClientRect();
         if (fromMarkerRef.current && toMarkerRef.current && pathContainer.current) {
             const fromPoint = fromMarkerRef.current.getBoundingClientRect();

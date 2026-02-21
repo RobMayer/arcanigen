@@ -8,7 +8,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { Stylings } from "../shapes/abstract";
+import { Stylings } from "../abstract";
 import { Paint, Shape } from "../../shapeTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";

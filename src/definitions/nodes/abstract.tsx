@@ -1,23 +1,27 @@
 import { ReactNode } from "react";
-import { RadioButton } from "../../../components/buttons/RadioButton";
-import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
-import { LengthInput } from "../../../components/inputs/LengthInput";
-import { TextInput } from "../../../components/inputs/TextInput";
-import { NodeAccordion, SocketIn } from "../../../features/nodeview/slots";
-import { DataTypes, NodeDefinitions, SocketTypes } from "../../betterTypes";
-import { Enum } from "../../datatypes/enum";
-import { Length } from "../../datatypes/length";
-import { Resolver } from "../../../util/resolver";
-import { Color } from "../../datatypes/color";
-import { AngleInput } from "../../../components/inputs/AngleInput";
-import { NumericString } from "../../datatypes/numericString";
-import { Dropdown } from "../../../components/inputs/Dropdown";
-import { Paint } from "../../shapeTypes";
+import { RadioButton } from "../../components/buttons/RadioButton";
+import { CheckBox } from "../../components/buttons/CheckBox";
+import { ColorHexInput } from "../../components/inputs/ColorHexInput";
+import { IntegerInput } from "../../components/inputs/IntegerInput";
+import { LengthInput } from "../../components/inputs/LengthInput";
+import { TextInput } from "../../components/inputs/TextInput";
+import { AngleInput } from "../../components/inputs/AngleInput";
+import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
+import { DataTypes, NodeDefinitions, SocketTypes } from "../betterTypes";
+import { Enum } from "../datatypes/enum";
+import { Length } from "../datatypes/length";
+import { NumericString } from "../datatypes/numericString";
+import { Color } from "../datatypes/color";
+import { Resolver } from "../../util/resolver";
+import { EmptyOr } from "../../util/misc";
+import { Dropdown } from "../../components/inputs/Dropdown";
+import { Paint } from "../shapeTypes";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
 const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 const PAINT_ORDER_OPTIONS = Enum.options(Enum.Common.paintOrder);
+const MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 
 export namespace Stylings {
     export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
@@ -285,6 +289,157 @@ export namespace Transforms {
         }
 
         return [css, transforms] as const;
+    };
+}
+
+export namespace Iteration {
+    export type Definition = {
+        inputs: {
+            sequence: DataTypes.Use<"sequence">;
+            mode: DataTypes.Use<"enum">;
+            reverseSequence: DataTypes.Use<"boolean">;
+            startOffset: DataTypes.Use<"integer">;
+            endOffset: DataTypes.Use<"integer">;
+        };
+        outputs: NodeDefinitions.Generic["outputs"];
+        payload: {
+            mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+            reverseSequence: boolean;
+            startOffset: EmptyOr<NumericString.Type>;
+            endOffset: EmptyOr<NumericString.Type>;
+        };
+    };
+
+    export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
+        sequence: { types: ["sequence"], mode: "and" },
+        mode: { types: ["enum"], mode: "and" },
+        reverseSequence: { types: ["boolean"], mode: "and" },
+        startOffset: { types: ["integer"], mode: "and" },
+        endOffset: { types: ["integer"], mode: "and" },
+    };
+
+    /**
+     * Compute `t` (0..1) from the sequence, applying mode, offsets, and reverse.
+     * Returns `null` when TRUNCATE mode discards out-of-range iterations.
+     */
+    export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): { t: number } | null => {
+        const sequenceEval = context.resolve<"sequence">(node.id, "sequence");
+        if (!sequenceEval) return null;
+
+        const { senderId, count } = sequenceEval.data;
+        if (count <= 0) return null;
+
+        const reverseSequence = context.resolve<"boolean">(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
+        const startOffsetStr = context.resolve<"integer">(node.id, "startOffset")?.data ?? node.payload.startOffset;
+        const endOffsetStr = context.resolve<"integer">(node.id, "endOffset")?.data ?? node.payload.endOffset;
+        const startOffset = startOffsetStr === "" ? 0 : parseInt(startOffsetStr as string, 10) || 0;
+        const endOffset = endOffsetStr === "" ? 0 : parseInt(endOffsetStr as string, 10) || 0;
+        const modeEnum = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
+        const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
+
+        let iter = context.sequenceData[senderId] ?? 0;
+
+        // Reverse
+        if (reverseSequence) {
+            iter = count - 1 - iter;
+        }
+
+        // Effective range
+        const effectiveStart = startOffset;
+        const effectiveEnd = count - 1 + endOffset;
+        const effectiveCount = effectiveEnd - effectiveStart + 1;
+        if (effectiveCount <= 0) return null;
+
+        // Mode handling for out-of-range
+        let effectiveIdx = iter - effectiveStart;
+        if (effectiveIdx < 0 || effectiveIdx >= effectiveCount) {
+            switch (modeKey) {
+                case "CLAMP":
+                    effectiveIdx = Math.max(0, Math.min(effectiveIdx, effectiveCount - 1));
+                    break;
+                case "WRAP":
+                    effectiveIdx = ((effectiveIdx % effectiveCount) + effectiveCount) % effectiveCount;
+                    break;
+                case "BOUNCE": {
+                    const cycle = effectiveCount > 1 ? 2 * (effectiveCount - 1) : 1;
+                    const pos = ((effectiveIdx % cycle) + cycle) % cycle;
+                    effectiveIdx = pos < effectiveCount ? pos : cycle - pos;
+                    break;
+                }
+                case "TRUNCATE":
+                    return null;
+                default:
+                    effectiveIdx = Math.max(0, Math.min(effectiveIdx, effectiveCount - 1));
+            }
+        }
+
+        // Compute t (0..1)
+        const t = effectiveCount <= 1 ? 0 : effectiveIdx / (effectiveCount - 1);
+        return { t };
+    };
+
+    /**
+     * Sample a piecewise-linear function defined by sorted stops at a given position.
+     * Stops should be sorted by position (0..100 scale).
+     * Clamps to the nearest stop value outside the range.
+     */
+    export const sampleStops = (stops: { value: number; position: number }[], position: number): number => {
+        if (stops.length === 0) return 0;
+        if (stops.length === 1) return stops[0].value;
+
+        // Clamp to range
+        if (position <= stops[0].position) return stops[0].value;
+        if (position >= stops[stops.length - 1].position) return stops[stops.length - 1].value;
+
+        // Find bracketing stops
+        let lo = 0;
+        for (let i = 1; i < stops.length; i++) {
+            if (stops[i].position >= position) {
+                lo = i - 1;
+                break;
+            }
+        }
+        const hi = lo + 1;
+
+        const range = stops[hi].position - stops[lo].position;
+        const localT = range === 0 ? 0 : (position - stops[lo].position) / range;
+
+        return stops[lo].value + localT * (stops[hi].value - stops[lo].value);
+    };
+
+    export const Controls = ({
+        node,
+        handleUpdate,
+        accordion = false,
+    }: {
+        handleUpdate: (v: Partial<Definition["payload"]>) => void;
+        node: NodeDefinitions.NodeFor<Definition>;
+        accordion?: boolean;
+    }): ReactNode => {
+        return (
+            <AccordionMaybe has={accordion} socketsIn={"mode|reverseSequence|startOffset|endOffset"} label={"Options"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.mode}`}
+                        onValue={(v) => handleUpdate({ mode: Number(v) })}
+                        disabled={node.in.mode !== null}
+                        options={MODE_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"reverseSequence"} type={"boolean"}>
+                    <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
+                        Reverse Sequence
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"startOffset"} type={"integer"} label={"Start Offset"}>
+                    <IntegerInput value={node.payload.startOffset} onCommit={(startOffset) => handleUpdate({ startOffset })} disabled={node.in.startOffset !== null} />
+                </SocketIn>
+                <SocketIn node={node} socketId={"endOffset"} type={"integer"} label={"End Offset"}>
+                    <IntegerInput value={node.payload.endOffset} onCommit={(endOffset) => handleUpdate({ endOffset })} disabled={node.in.endOffset !== null} />
+                </SocketIn>
+            </AccordionMaybe>
+        );
     };
 }
 

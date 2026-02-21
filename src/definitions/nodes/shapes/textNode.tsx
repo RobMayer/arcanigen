@@ -10,7 +10,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { Stylings } from "./abstract";
+import { Stylings } from "../abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";

@@ -108,6 +108,9 @@ import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
+import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/collections/floatIteratorNode";
+import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/collections/integerIteratorNode";
+import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/collections/lengthIteratorNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
 
 export type { SubgraphDeps };
@@ -217,6 +220,9 @@ namespace Registries {
         radialArray: RadialArrayDefinition;
         pathArray: PathArrayDefinition;
         colorIterator: ColorIteratorDefinition;
+        floatIterator: FloatIteratorDefinition;
+        integerIterator: IntegerIteratorDefinition;
+        lengthIterator: LengthIteratorDefinition;
         restyle: RestyleDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
@@ -257,6 +263,9 @@ namespace Registries {
         radialArray: RadialArrayNodeType,
         pathArray: PathArrayNodeType,
         colorIterator: ColorIteratorNodeType,
+        floatIterator: FloatIteratorNodeType,
+        integerIterator: IntegerIteratorNodeType,
+        lengthIterator: LengthIteratorNodeType,
         restyle: RestyleNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
