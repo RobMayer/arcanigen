@@ -23,6 +23,8 @@ export type GlyphDefinition = {
         viewY: DataTypes.Use<"float" | "integer">;
         viewW: DataTypes.Use<"float" | "integer">;
         viewH: DataTypes.Use<"float" | "integer">;
+        dpi: DataTypes.Use<"float" | "integer">;
+        path: DataTypes.Use<"string">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
@@ -52,6 +54,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, 
             viewY: null,
             viewW: null,
             viewH: null,
+            dpi: null,
+            path: null,
             // styling
             strokeWidth: null,
             strokeColor: null,
@@ -116,7 +120,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
             <SocketOut node={node} socketId={"output"} type={"shape"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"path" as never} type={"string"} label={"Path Data"}>
+            <SocketIn node={node} socketId={"path"} type={"string"} label={"Path Data"}>
                 <BlockInput value={node.payload.path} onCommit={(path) => handleUpdate({ path })} />
             </SocketIn>
             <SocketIn node={node} socketId={"width"} type={"length"} label={"Width"}>
@@ -137,7 +141,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
             <SocketIn node={node} socketId={"viewH"} type={"float integer"} label={"ViewBox H"}>
                 <DecimalInput value={node.payload.viewH} onCommit={(viewH) => handleUpdate({ viewH })} disabled={node.in.viewH !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"dpi" as never} type={"float integer"} label={"DPI"}>
+            <SocketIn node={node} socketId={"dpi"} type={"float integer"} label={"DPI"}>
                 <DecimalInput value={node.payload.dpi} onCommit={(dpi) => handleUpdate({ dpi })} min={1} required />
             </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
@@ -230,6 +234,8 @@ const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: Sock
     viewY: { types: ["float", "integer"], mode: "or" },
     viewW: { types: ["float", "integer"], mode: "or" },
     viewH: { types: ["float", "integer"], mode: "or" },
+    dpi: { types: ["float", "integer"], mode: "or" },
+    path: { types: ["string"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
     ...Transforms.IN_SOCKET_TYPES,
 };

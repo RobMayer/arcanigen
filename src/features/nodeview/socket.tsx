@@ -59,7 +59,9 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
     return (
         <GraphViewConnectionCTX value={connectionContextValue}>
             {children}
-            {pendingConnection && pendingConnection.scope === graphId ? <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={SocketTypes.toCSS(pendingConnection.type)} /> : null}
+            {pendingConnection && pendingConnection.scope === graphId ? (
+                <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={SocketTypes.toCSS(pendingConnection.type)} />
+            ) : null}
         </GraphViewConnectionCTX>
     );
 };
@@ -271,7 +273,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     position: fixed;
     width: auto;
     height: auto;
-    z-index: -1;
+    z-index: 0;
     pointer-events: none;
 
     --anchorFrom: anchor(var(--source) center);
@@ -300,8 +302,8 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             vector-effect: non-scaling-stroke;
             fill: none;
             stroke: #fff;
-            stroke-width: 1.5px;
-            stroke-dasharray: 6 4;
+            stroke-width: 3px;
+            stroke-dasharray: 8 8;
             pointer-events: none;
             --flavour: var(--flavour-base);
 

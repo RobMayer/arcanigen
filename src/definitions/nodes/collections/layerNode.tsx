@@ -450,7 +450,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<LayerDefinition["inputs"]>]: Sock
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<LayerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["layer"], mode: "and" },
+    output: { types: ["shape"], mode: "and" },
     layerCount: {
         types: ["integer"],
         mode: "and",

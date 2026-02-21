@@ -191,13 +191,13 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, i
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket: keyof PolygonArrayDefinition["outputs"], context: Resolver.Context, iteration?: number): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket: keyof PolygonArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = NumericString.Emptyable.asNumber(countStr);
     if (count === null || count < 3) return null;
 
     if (socket === "sequence") {
-        return { kind: "sequence", data: { count } };
+        return { kind: "sequence", data: { senderId: node.id, count } };
     }
 
     const radiusStr = context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius;
@@ -233,7 +233,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket:
 
         const children = [];
         for (let i = 0; i < count; i++) {
-            const shape = context.resolve<"shape">(node.id, "input", i)?.data ?? null;
+            const shape = context.resolve<"shape">(node.id, "input", { ...context.sequenceData, [node.id]: i })?.data ?? null;
             if (shape === null) continue;
 
             // Vertex angle with distribution applied, starting at top (-90°)

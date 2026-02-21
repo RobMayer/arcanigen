@@ -228,5 +228,28 @@ export namespace Enum {
         } as const;
 
         //#endregion
+
+        export const colorSpace = {
+            RGB: { value: 0, label: "RGB" },
+            CMY: { value: 1, label: "CMY" },
+            CMYK: { value: 2, label: "CMYK" },
+            HSV: { value: 3, label: "HSV" },
+            HSL: { value: 4, label: "HSL" },
+            HWK: { value: 5, label: "HWK" },
+            HSI: { value: 6, label: "HSI" },
+            HCY: { value: 7, label: "HCY" },
+            LAB: { value: 8, label: "LAB" },
+            OKLAB: { value: 9, label: "OKLAB" },
+            OKLCH: { value: 10, label: "OKLCH" },
+        } as const;
+
+        export const hueTraversal = {
+            CLOSEST_CW: { value: 0, label: "Closest CW" },
+            CLOSEST_CCW: { value: 1, label: "Closest CCW" },
+            FARTHEST_CW: { value: 2, label: "Farthest CW" },
+            FARTHEST_CCW: { value: 3, label: "Farthest CCW" },
+            CLOCKWISE: { value: 4, label: "Clockwise" },
+            COUNTER_CLOCKWISE: { value: 5, label: "Counter-Clockwise" },
+        } as const;
     }
 }

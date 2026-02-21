@@ -33,7 +33,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const toMarkerRef = useRef<HTMLDivElement>(null);
     const pathContainer = useRef<SVGPathElement>(null);
 
-    useResizeObserver(ref, (entry) => {
+    const onResize = useCallback((entry: ResizeObserverEntry) => {
+        console.log("resize did refire");
         const basis = entry.target.getBoundingClientRect();
         if (fromMarkerRef.current && toMarkerRef.current && pathContainer.current) {
             const fromPoint = fromMarkerRef.current.getBoundingClientRect();
@@ -45,10 +46,12 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             const x2 = (toPoint.left - basis.left) / zoom;
             const y2 = (toPoint.top - basis.top) / zoom;
 
-            const dx = Math.max(200, Math.abs(x2 - x1) * 0.1);
+            const dx = Math.max(150, Math.abs(x2 - x1) * 0.5);
             pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
         }
-    });
+    }, []);
+
+    useResizeObserver(ref, onResize);
 
     const deleteMe = useCallback(() => {
         removeLinks(linkId);
@@ -73,7 +76,15 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
     return (
         <>
-            <div className={className} style={style} ref={ref} tabIndex={-1} data-linktype={link.type} data-typeany={link.type === SocketTypes.toCSS(SocketTypes.ANY) ? "" : undefined} onKeyDown={handleKeyDown}>
+            <div
+                className={className}
+                style={style}
+                ref={ref}
+                tabIndex={-1}
+                data-linktype={link.type}
+                data-typeany={link.type === SocketTypes.toCSS(SocketTypes.ANY) ? "" : undefined}
+                onKeyDown={handleKeyDown}
+            >
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
                         <path data-part={"target"} d="" />

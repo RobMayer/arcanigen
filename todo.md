@@ -32,7 +32,7 @@
     - [x] Spiral
     - [x] Line
     - [x] Flood Fill
-    - [ ] Custom Glyph
+    - [x] Custom Glyph
     - [x] Text Path (ugh)
 - [ ] more shapes (new)
     - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
@@ -43,7 +43,12 @@
     - [ ] Merged Knot (like knot but without overlap - complex as fuck)
 - [ ] Figure out Random Seed mechanism
 - [ ] Figure out Style Overrides
-- [ ] Figure out Conformal Paths
+- [x] Figure out Conformal Paths
+- [ ] colorStops datatypes - think colorStops is to ColorIterator as layers datatype is to LayerNode (a collection of multiple color stops that overrides the dynamic list of color stops in the ColorIterator node). Could be recycled for a Gradient node type as well.
+    - [ ] support for gradients in (most?) sockets that currently also take a fill would be nice.
+- [ ] Value iterator (float, integer, length) - (should we include angle in this too or have a different node for angles because it has extra gubbins like angular wrap direction - see hue on color iterator?)
+- [ ] Equality test (A == B)
+- [ ] Within test (A == B +/- C)
 
 # componnet improvements
 

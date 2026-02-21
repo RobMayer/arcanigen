@@ -41,9 +41,12 @@ export namespace Resolver {
         interfaces: { [graphId: GraphId]: InterfaceMember[] };
     };
 
+    export type SequenceData = Readonly<Record<string, number>>;
+
     export type Context = {
         graphId: string;
-        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, iteration?: number) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        sequenceData: SequenceData;
+        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, sequenceData?: SequenceData) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
         subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
         getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
@@ -62,26 +65,10 @@ export namespace Resolver {
         contents: Shape | null;
     };
 
-    export const evaluateRootResult = (state: State): RootResult => {
-        const context: Context = {
-            graphId: "root",
-            getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
-            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, iteration?: number): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
-                const links = ArcaneGraph.linksTo({ nodes: state.nodes["root"], links: state.links["root"] }, nodeId, inSocket);
-                if (links.length === 0) {
-                    return null;
-                }
-                const theLink = state.links.root?.[links[0]];
-                if (!theLink) {
-                    return null;
-                }
+    const EMPTY_SEQ: SequenceData = {};
 
-                return evaluateNodeOutput<K>(state, "root", theLink.fromNode, theLink.fromSocket, context, iteration);
-            },
-            subgraph: (subgraphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
-                return evaluateSubgraph(state, subgraphId, inputs);
-            },
-        };
+    export const evaluateRootResult = (state: State): RootResult => {
+        const resolve = makeResolve(state, "root", EMPTY_SEQ);
 
         // Get the RESULT node directly and resolve its inputs
         const resultNode = state.nodes["root"]?.["RESULT"] as unknown as NodeDefinitions.NodeFor<NodeTypes.DefinitionOf<NodeTypes.Use<"result">>>;
@@ -93,16 +80,15 @@ export namespace Resolver {
         }
 
         // Resolve canvas settings from result node (use connected values or fall back to payload)
-        // Cast payload values since we know this is a result node with specific types
-        const width = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "w")?.data ?? resultNode.payload.w ?? "800px") ?? 800;
-        const height = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "h")?.data ?? resultNode.payload.h ?? "800px") ?? 800;
-        const originX = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x ?? "0px") ?? 0;
-        const originY = Length.Emptyable.asNumber(context.resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y ?? "0px") ?? 0;
-        const backgroundColor = context.resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
+        const width = Length.Emptyable.asNumber(resolve<"length">("RESULT", "w")?.data ?? resultNode.payload.w ?? "800px") ?? 800;
+        const height = Length.Emptyable.asNumber(resolve<"length">("RESULT", "h")?.data ?? resultNode.payload.h ?? "800px") ?? 800;
+        const originX = Length.Emptyable.asNumber(resolve<"length">("RESULT", "x")?.data ?? resultNode.payload.x ?? "0px") ?? 0;
+        const originY = Length.Emptyable.asNumber(resolve<"length">("RESULT", "y")?.data ?? resultNode.payload.y ?? "0px") ?? 0;
+        const backgroundColor = resolve<"color">("RESULT", "color")?.data ?? resultNode.payload.color;
         const background = backgroundColor === null ? "none" : Color.toHex(backgroundColor);
 
         // Resolve the shape input
-        const shapeEval = context.resolve<"shape">("RESULT", "input");
+        const shapeEval = resolve<"shape">("RESULT", "input");
         const contents = shapeEval?.data ?? null;
 
         return {
@@ -111,40 +97,70 @@ export namespace Resolver {
         };
     };
 
+    /** Creates a resolve function for a given graph and sequenceData */
+    const makeResolve = (
+        state: State,
+        graphId: GraphId,
+        sequenceData: SequenceData,
+        getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined,
+    ): Context["resolve"] => {
+        const graphNodes = state.nodes[graphId];
+        const graphLinks = state.links[graphId];
+
+        return <K extends DataTypes.Kind>(nodeId: string, inSocket: string, overrideSeqData?: SequenceData): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+            const effectiveSeqData = overrideSeqData ?? sequenceData;
+            const links = ArcaneGraph.linksTo({ nodes: graphNodes, links: graphLinks }, nodeId, inSocket);
+            if (links.length === 0) return null;
+            const theLink = graphLinks?.[links[0]];
+            if (!theLink) return null;
+            return evaluateNodeOutput<K>(state, graphId, theLink.fromNode, theLink.fromSocket, effectiveSeqData, getInput);
+        };
+    };
+
+    /** Evaluates a single node output, creating a per-call context with the correct sequenceData */
+    const evaluateNodeOutput = <K extends DataTypes.Kind>(
+        state: State,
+        graphId: GraphId,
+        nodeId: ArcaneGraph.NodeId,
+        outSocket: string,
+        sequenceData: SequenceData,
+        getInput?: <K2 extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K2>> | undefined,
+    ): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+        const node = state.nodes[graphId]?.[nodeId];
+        if (!node) return null;
+
+        const evaluate = NodeTypes.getEvaluator(node.type);
+        if (!evaluate) return null;
+
+        const context: Context = {
+            graphId,
+            sequenceData,
+            resolve: makeResolve(state, graphId, sequenceData, getInput),
+            subgraph: (subgraphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => {
+                return evaluateSubgraph(state, subgraphId, inputs, sequenceData);
+            },
+            getInput,
+            getNode: (gId: string, nId: string) => state.nodes[gId]?.[nId],
+        };
+
+        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+    };
+
     const evaluateSubgraph = (
         state: State,
         subgraphId: GraphId,
         inputs: { [key: string]: DataTypes.AnyEval | null },
+        sequenceData: SequenceData,
     ): { [key: string]: DataTypes.AnyEval | null } => {
         const subgraphNodes = state.nodes[subgraphId];
         const subgraphLinks = state.links[subgraphId];
-        if (!subgraphNodes || !subgraphLinks) {
-            return {};
-        }
+        if (!subgraphNodes || !subgraphLinks) return {};
 
-        // Create a context for evaluating within the subgraph
-        const subContext: Context = {
-            graphId: subgraphId,
-            getNode: (graphId: string, nodeId: string) => state.nodes[graphId]?.[nodeId],
-            getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
-                return inputs[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
-            },
-            resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, iteration?: number): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
-                const links = ArcaneGraph.linksTo({ nodes: subgraphNodes, links: subgraphLinks }, nodeId, inSocket);
-                if (links.length === 0) {
-                    return null;
-                }
-                const theLink = subgraphLinks[links[0]];
-                if (!theLink) {
-                    return null;
-                }
-                return evaluateNodeOutput<K>(state, subgraphId, theLink.fromNode, theLink.fromSocket, subContext, iteration);
-            },
-            subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }): { [key: string]: DataTypes.AnyEval | null } => {
-                // Recursively evaluate nested subgraphs
-                return evaluateSubgraph(state, nestedGraphId, nestedInputs);
-            },
+        const getInput = <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
+            return inputs[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
         };
+
+        const resolve = makeResolve(state, subgraphId, sequenceData, getInput);
 
         // Get output node IDs by parsing interfaces with "out:" prefix
         const subgraphSockets = flattenSockets(state.interfaces[subgraphId] ?? []);
@@ -159,30 +175,10 @@ export namespace Resolver {
             if (!outputNode) continue;
 
             // Resolve the "input" socket of the output node
-            const resolved = subContext.resolve(outputNodeId, "input");
+            const resolved = resolve(outputNodeId, "input");
             results[outputNodeId] = resolved;
         }
 
         return results;
-    };
-
-    const evaluateNodeOutput = <K extends DataTypes.Kind>(
-        state: State,
-        graphId: GraphId,
-        nodeId: ArcaneGraph.NodeId,
-        outSocket: string,
-        context: Context,
-        iteration?: number,
-    ): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
-        const node = state.nodes[graphId][nodeId];
-        if (!node) {
-            return null;
-        }
-        const evaluate = NodeTypes.getEvaluator(node.type);
-        if (!evaluate) {
-            return null;
-        }
-
-        return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], context, iteration) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
     };
 }

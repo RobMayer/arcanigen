@@ -101,6 +101,7 @@ import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
 import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
+import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -202,6 +203,7 @@ namespace Registries {
         sequencer: SequencerDefinition;
         polygonArray: PolygonArrayDefinition;
         pathArray: PathArrayDefinition;
+        colorIterator: ColorIteratorDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
         logicalNot: LogicalNotDefinition;
@@ -238,6 +240,7 @@ namespace Registries {
         sequencer: SequencerNodeType,
         polygonArray: PolygonArrayNodeType,
         pathArray: PathArrayNodeType,
+        colorIterator: ColorIteratorNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
@@ -325,7 +328,7 @@ namespace Registries {
         distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
         layer: { shape: Shape | null; enabled: boolean | null; blend: number | null };
         "array<layer>": { shape: Shape | null; enabled: boolean | null; blend: number | null }[];
-        sequence: { count: number };
+        sequence: { senderId: string; count: number };
     };
 
     export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {
@@ -446,7 +449,7 @@ export namespace NodeTypes {
         category: Category;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
-        evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context, iteration?: number) => DataTypes.AnyEval | null;
+        evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;
         dependsOn: (node: NodeDefinitions.NodeFor<D>, outSocket: keyof D["outputs"], deps: AllDeps) => (keyof D["inputs"])[];
         contributesTo: (node: NodeDefinitions.NodeFor<D>, inSocket: keyof D["inputs"], deps: AllDeps) => (keyof D["outputs"])[];
         onCreate?: (node: NodeDefinitions.BuiltNodeOf<T, D>, graphId: string, ctx: MethodContext) => void;

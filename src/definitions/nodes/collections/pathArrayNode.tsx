@@ -274,13 +274,13 @@ const wrapDistance = (raw: string, overflowMode: number): string => {
     return `clamp(0%, ${raw}, 100%)`;
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: keyof PathArrayDefinition["outputs"], context: Resolver.Context, iteration?: number): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: keyof PathArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = NumericString.Emptyable.asNumber(countStr);
     if (count === null || count < 1) return null;
 
     if (socket === "sequence") {
-        return { kind: "sequence", data: { count } };
+        return { kind: "sequence", data: { senderId: node.id, count } };
     }
 
     if (socket !== "output") return null;
@@ -337,7 +337,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
         if (skipFirst && i === 0) continue;
         if (skipLast && i === count - 1) continue;
 
-        const shape = context.resolve<"shape">(node.id, "input", i)?.data ?? null;
+        const shape = context.resolve<"shape">(node.id, "input", { ...context.sequenceData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
         // Compute spacing expression for this index
