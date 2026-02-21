@@ -161,7 +161,7 @@ const StopEntry = styled.div`
     display: grid;
     gap: 0px 4px;
     grid-template-columns: 1fr auto;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
         "value remove"
         "position remove";

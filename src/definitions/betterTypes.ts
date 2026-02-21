@@ -87,6 +87,13 @@ import { LogicalNandDefinition, LogicalNandNodeType } from "./nodes/logic/logica
 import { LogicalNorDefinition, LogicalNorNodeType } from "./nodes/logic/logicalNorNode";
 import { LogicalXorDefinition, LogicalXorNodeType } from "./nodes/logic/logicalXorNode";
 import { LogicalXnorDefinition, LogicalXnorNodeType } from "./nodes/logic/logicalXnorNode";
+import { EqualDefinition, EqualNodeType } from "./nodes/logic/equalNode";
+import { GreaterThanDefinition, GreaterThanNodeType } from "./nodes/logic/greaterThanNode";
+import { GreaterOrEqualDefinition, GreaterOrEqualNodeType } from "./nodes/logic/greaterOrEqualNode";
+import { LessThanDefinition, LessThanNodeType } from "./nodes/logic/lessThanNode";
+import { LessOrEqualDefinition, LessOrEqualNodeType } from "./nodes/logic/lessOrEqualNode";
+import { WithinDefinition, WithinNodeType } from "./nodes/logic/withinNode";
+import { BetweenDefinition, BetweenNodeType } from "./nodes/logic/betweenNode";
 import { RingDefinition, RingNodeType } from "./nodes/shapes/ringNode";
 import { RectangleDefinition, RectangleNodeType } from "./nodes/shapes/rectangleNode";
 import { PolygramDefinition, PolygramNodeType } from "./nodes/shapes/polygramNode";
@@ -111,6 +118,7 @@ import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleN
 import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/collections/floatIteratorNode";
 import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/collections/integerIteratorNode";
 import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/collections/lengthIteratorNode";
+import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/collections/angleIteratorNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
 
 export type { SubgraphDeps };
@@ -223,6 +231,7 @@ namespace Registries {
         floatIterator: FloatIteratorDefinition;
         integerIterator: IntegerIteratorDefinition;
         lengthIterator: LengthIteratorDefinition;
+        angleIterator: AngleIteratorDefinition;
         restyle: RestyleDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
@@ -233,6 +242,13 @@ namespace Registries {
         logicalNor: LogicalNorDefinition;
         logicalXor: LogicalXorDefinition;
         logicalXnor: LogicalXnorDefinition;
+        equal: EqualDefinition;
+        greaterThan: GreaterThanDefinition;
+        greaterOrEqual: GreaterOrEqualDefinition;
+        lessThan: LessThanDefinition;
+        lessOrEqual: LessOrEqualDefinition;
+        within: WithinDefinition;
+        between: BetweenDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -266,6 +282,7 @@ namespace Registries {
         floatIterator: FloatIteratorNodeType,
         integerIterator: IntegerIteratorNodeType,
         lengthIterator: LengthIteratorNodeType,
+        angleIterator: AngleIteratorNodeType,
         restyle: RestyleNodeType,
         float: FloatPrimitiveType,
         integer: IntegerPrimitiveType,
@@ -339,6 +356,13 @@ namespace Registries {
         logicalNor: LogicalNorNodeType,
         logicalXor: LogicalXorNodeType,
         logicalXnor: LogicalXnorNodeType,
+        equal: EqualNodeType,
+        greaterThan: GreaterThanNodeType,
+        greaterOrEqual: GreaterOrEqualNodeType,
+        lessThan: LessThanNodeType,
+        lessOrEqual: LessOrEqualNodeType,
+        within: WithinNodeType,
+        between: BetweenNodeType,
     } as const;
 
     export type DATATYPES = {

@@ -22,7 +22,7 @@ import { interpolateColor } from "../../../util/colorSpaces";
 import styled from "styled-components";
 
 const COLOR_SPACE_OPTIONS = Enum.options(Enum.Common.colorSpace);
-const HUE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.hueTraversal);
+const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
 const MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 
 // Color spaces that have a hue component
@@ -39,7 +39,7 @@ export type ColorIteratorDefinition = {
     inputs: {
         sequence: DataTypes.Use<"sequence">;
         colorSpace: DataTypes.Use<"enum">;
-        hueTraversal: DataTypes.Use<"enum">;
+        angleTraversal: DataTypes.Use<"enum">;
         mode: DataTypes.Use<"enum">;
         reverseSequence: DataTypes.Use<"boolean">;
         startOffset: DataTypes.Use<"integer">;
@@ -53,7 +53,7 @@ export type ColorIteratorDefinition = {
     payload: {
         label: string;
         colorSpace: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        hueTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         reverseSequence: boolean;
         startOffset: EmptyOr<NumericString.Type>;
@@ -70,7 +70,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIteratorDefini
         in: {
             sequence: null,
             colorSpace: null,
-            hueTraversal: null,
+            angleTraversal: null,
             mode: null,
             reverseSequence: null,
             startOffset: null,
@@ -86,7 +86,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIteratorDefini
         payload: {
             label: "",
             colorSpace: input.colorSpace ?? Enum.Common.colorSpace.RGB.value,
-            hueTraversal: input.hueTraversal ?? Enum.Common.hueTraversal.CLOSEST_CW.value,
+            angleTraversal: input.angleTraversal ?? Enum.Common.angleTraversal.CLOSEST_CW.value,
             mode: input.mode ?? Enum.Common.sequencerMode.CLAMP.value,
             reverseSequence: input.reverseSequence ?? false,
             startOffset: input.startOffset ?? "0",
@@ -191,7 +191,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                     </ActionButton.Lite>
                 </StopEntry>
             ))}
-            <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="colorSpace|hueTraversal|mode|reverseSequence|startOffset|endOffset">
+            <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="colorSpace|angleTraversal|mode|reverseSequence|startOffset|endOffset">
                 <SocketIn node={node} socketId={"colorSpace"} type={"enum"} label={"Color Space"}>
                     <Dropdown value={`${node.payload.colorSpace}`} onValue={(v) => handleUpdate({ colorSpace: Number(v) })} disabled={node.in.colorSpace !== null}>
                         {COLOR_SPACE_OPTIONS.map((each) => (
@@ -201,9 +201,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <SocketIn node={node} socketId={"hueTraversal"} type={"enum"} label={"Hue Traversal"}>
-                    <Dropdown value={`${node.payload.hueTraversal}`} onValue={(v) => handleUpdate({ hueTraversal: Number(v) })} disabled={node.in.hueTraversal !== null || !hueRelevant}>
-                        {HUE_TRAVERSAL_OPTIONS.map((each) => (
+                <SocketIn node={node} socketId={"angleTraversal"} type={"enum"} label={"Hue Traversal"}>
+                    <Dropdown value={`${node.payload.angleTraversal}`} onValue={(v) => handleUpdate({ angleTraversal: Number(v) })} disabled={node.in.angleTraversal !== null || !hueRelevant}>
+                        {ANGLE_TRAVERSAL_OPTIONS.map((each) => (
                             <option value={each.value} key={each.value}>
                                 {each.label}
                             </option>
@@ -239,7 +239,7 @@ const StopEntry = styled.div`
     display: grid;
     gap: 0px 4px;
     grid-template-columns: 1fr auto;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
         "color remove"
         "position remove";
@@ -258,7 +258,7 @@ const StopEntry = styled.div`
 const dependsOn = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, outSocket: keyof ColorIteratorDefinition["outputs"], _deps: AllDeps): (keyof ColorIteratorDefinition["inputs"])[] => {
     if (outSocket === "output") {
         const stopSockets = node.payload.stops.flatMap((s) => [`color_${s.id}`, `pos_${s.id}`]) as (keyof ColorIteratorDefinition["inputs"])[];
-        return ["sequence", "colorSpace", "hueTraversal", "mode", "reverseSequence", "startOffset", "endOffset", ...stopSockets];
+        return ["sequence", "colorSpace", "angleTraversal", "mode", "reverseSequence", "startOffset", "endOffset", ...stopSockets];
     }
     return [];
 };
@@ -267,7 +267,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, 
     return ["output"];
 };
 
-const sampleGradient = (resolved: { color: NonNullable<Color.Type>; position: number }[], position: number, colorSpaceValue: number, hueTraversalValue: number): DataTypes.AnyEval | null => {
+const sampleGradient = (resolved: { color: NonNullable<Color.Type>; position: number }[], position: number, colorSpaceValue: number, angleTraversalValue: number): DataTypes.AnyEval | null => {
     // Single stop — just return it
     if (resolved.length === 1) {
         return { kind: "color", data: resolved[0].color };
@@ -294,7 +294,7 @@ const sampleGradient = (resolved: { color: NonNullable<Color.Type>; position: nu
     const range = resolved[hi].position - resolved[lo].position;
     const localT = range === 0 ? 0 : (position - resolved[lo].position) / range;
 
-    const result = interpolateColor(resolved[lo].color, resolved[hi].color, localT, colorSpaceValue, hueTraversalValue);
+    const result = interpolateColor(resolved[lo].color, resolved[hi].color, localT, colorSpaceValue, angleTraversalValue);
 
     return { kind: "color", data: result };
 };
@@ -362,7 +362,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket
 
     // Resolve color space and hue traversal
     const colorSpaceValue = Enum.resolve(context.resolve<"enum">(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
-    const hueTraversalValue = Enum.resolve(context.resolve<"enum">(node.id, "hueTraversal")?.data, Enum.Common.hueTraversal) ?? node.payload.hueTraversal ?? 0;
+    const angleTraversalValue = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? 0;
 
     // Resolve all stops: color + position
     const resolved: { color: NonNullable<Color.Type>; position: number }[] = [];
@@ -379,15 +379,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket
     // Sort by position
     resolved.sort((a, b) => a.position - b.position);
 
-    return sampleGradient(resolved, position, colorSpaceValue, hueTraversalValue);
+    return sampleGradient(resolved, position, colorSpaceValue, angleTraversalValue);
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<ColorIteratorDefinition["inputs"], "sequence" | "colorSpace" | "hueTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset">>]: SocketTypes.SocketRule;
+    [key in keyof Required<Pick<ColorIteratorDefinition["inputs"], "sequence" | "colorSpace" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset">>]: SocketTypes.SocketRule;
 } = {
     sequence: { types: ["sequence"], mode: "and" },
     colorSpace: { types: ["enum"], mode: "and" },
-    hueTraversal: { types: ["enum"], mode: "and" },
+    angleTraversal: { types: ["enum"], mode: "and" },
     mode: { types: ["enum"], mode: "and" },
     reverseSequence: { types: ["boolean"], mode: "and" },
     startOffset: { types: ["integer"], mode: "and" },

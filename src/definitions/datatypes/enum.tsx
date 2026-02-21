@@ -251,7 +251,7 @@ export namespace Enum {
             OKLCH: { value: 10, label: "OKLCH" },
         } as const;
 
-        export const hueTraversal = {
+        export const angleTraversal = {
             CLOSEST_CW: { value: 0, label: "Closest CW" },
             CLOSEST_CCW: { value: 1, label: "Closest CCW" },
             FARTHEST_CW: { value: 2, label: "Farthest CW" },

@@ -356,7 +356,7 @@ const CONVERTERS: ColorSpaceConverter[] = [
  * Interpolates hue values (0–360) according to traversal mode.
  * Returns the interpolated hue in [0, 360).
  */
-const lerpHue = (hA: number, hB: number, t: number, traversal: number): number => {
+export const lerpAngle = (hA: number, hB: number, t: number, traversal: number): number => {
     // Normalize inputs to [0, 360)
     hA = ((hA % 360) + 360) % 360;
     hB = ((hB % 360) + 360) % 360;
@@ -369,22 +369,22 @@ const lerpHue = (hA: number, hB: number, t: number, traversal: number): number =
     let delta: number;
 
     switch (traversal) {
-        case Enum.Common.hueTraversal.CLOCKWISE.value:
+        case Enum.Common.angleTraversal.CLOCKWISE.value:
             delta = cwDelta;
             break;
-        case Enum.Common.hueTraversal.COUNTER_CLOCKWISE.value:
+        case Enum.Common.angleTraversal.COUNTER_CLOCKWISE.value:
             delta = -ccwDelta;
             break;
-        case Enum.Common.hueTraversal.CLOSEST_CW.value:
+        case Enum.Common.angleTraversal.CLOSEST_CW.value:
             delta = cwDelta <= 180 ? cwDelta : -ccwDelta;
             break;
-        case Enum.Common.hueTraversal.CLOSEST_CCW.value:
+        case Enum.Common.angleTraversal.CLOSEST_CCW.value:
             delta = ccwDelta <= 180 ? -ccwDelta : cwDelta;
             break;
-        case Enum.Common.hueTraversal.FARTHEST_CW.value:
+        case Enum.Common.angleTraversal.FARTHEST_CW.value:
             delta = cwDelta >= 180 ? cwDelta : -ccwDelta;
             break;
-        case Enum.Common.hueTraversal.FARTHEST_CCW.value:
+        case Enum.Common.angleTraversal.FARTHEST_CCW.value:
             delta = ccwDelta >= 180 ? -ccwDelta : cwDelta;
             break;
         default:
@@ -406,10 +406,10 @@ export type RGBA = { r: number; g: number; b: number; a: number };
  * @param b End color (RGBA, channels 0–1)
  * @param t Interpolation factor (0 = a, 1 = b)
  * @param colorSpaceValue Enum.Common.colorSpace value
- * @param hueTraversalValue Enum.Common.hueTraversal value (used only for hue-based spaces)
+ * @param angleTraversalValue Enum.Common.angleTraversal value (used only for hue-based spaces)
  * @returns Interpolated color (RGBA, channels 0–1)
  */
-export const interpolateColor = (a: RGBA, b: RGBA, t: number, colorSpaceValue: number, hueTraversalValue: number): RGBA => {
+export const interpolateColor = (a: RGBA, b: RGBA, t: number, colorSpaceValue: number, angleTraversalValue: number): RGBA => {
     const converter = CONVERTERS[colorSpaceValue] ?? CONVERTERS[0];
 
     const compA = converter.fromRGB(a.r, a.g, a.b);
@@ -419,7 +419,7 @@ export const interpolateColor = (a: RGBA, b: RGBA, t: number, colorSpaceValue: n
     const result: number[] = [];
     for (let i = 0; i < compA.length; i++) {
         if (i === converter.hueIndex) {
-            result.push(lerpHue(compA[i], compB[i], t, hueTraversalValue));
+            result.push(lerpAngle(compA[i], compB[i], t, angleTraversalValue));
         } else {
             result.push(compA[i] + (compB[i] - compA[i]) * t);
         }
