@@ -212,92 +212,74 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     const { graphId } = node.payload;
     if (!graphId) return null;
 
-    // Build array<layer> inputs from layer groups
-    const inputs: { [key: string]: DataTypes.AnyEval | null } = {};
-    const layerSockets = new Set<string>();
+    // Translate seqData for subgraph boundary crossing
+    const { innerSeqData, strippedKeys } = Resolver.translateInward(context.sequenceData, node.id);
 
-    for (const key of Object.keys(node.payload)) {
-        if (!key.startsWith("layers_")) continue;
-        const inputNodeId = key.slice(7);
-        const layerEntries = (node.payload as Record<string, unknown>)[key] as { socket: string; enabled: boolean; blend: number }[];
+    // Lazy input resolver: called by Input nodes inside the subgraph with the current seqData
+    const resolveInput = (inputNodeId: string, seqData: Resolver.SequenceData): DataTypes.AnyEval | null => {
+        // Translate inner seqData back to parent-level keys
+        const outerSeqData = Resolver.translateOutward(seqData, strippedKeys, node.id, context.sequenceData);
 
-        // Mark supersocket as handled so the normal loop skips it
-        layerSockets.add(inputNodeId);
+        // Layer group handling
+        const layersKey = `layers_${inputNodeId}`;
+        if (layersKey in node.payload) {
+            const layerEntries = (node.payload as Record<string, unknown>)[layersKey] as { socket: string; enabled: boolean; blend: number }[];
 
-        // Check supersocket first — if connected, use its data directly
-        const supersocketEval = context.resolve<"array<layer>">(node.id, inputNodeId);
-        if (supersocketEval) {
-            inputs[inputNodeId] = supersocketEval;
+            // Check supersocket first — if connected, use its data directly
+            const supersocketEval = context.resolve<"array<layer>">(node.id, inputNodeId, outerSeqData);
+            if (supersocketEval) return supersocketEval;
+
+            // Build from individual layer sockets
+            const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
             for (const entry of layerEntries) {
-                layerSockets.add(entry.socket);
-            }
-            continue;
-        }
-
-        // Build from individual layer sockets
-        const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
-        for (const entry of layerEntries) {
-            layerSockets.add(entry.socket);
-            const resolved = context.resolve(node.id, entry.socket) as DataTypes.AnyEval | null;
-            if (!resolved) {
-                layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
-                continue;
-            }
-            if (resolved.kind === "layer") {
-                const data = resolved.data as { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null };
-                layerData.push({
-                    shape: data.shape,
-                    enabled: data.enabled ?? entry.enabled,
-                    blend: data.blend ?? entry.blend,
-                });
-            } else if (resolved.kind === "shape") {
-                layerData.push({
-                    shape: resolved.data,
-                    enabled: entry.enabled,
-                    blend: entry.blend,
-                });
-            }
-        }
-        inputs[inputNodeId] = { kind: "array<layer>", data: layerData };
-    }
-
-    // Build inputs by resolving each input socket, or using stored values when not connected
-    for (const inSocket of Object.keys(node.in)) {
-        if (layerSockets.has(inSocket)) continue;
-        const resolved = context.resolve(node.id, inSocket);
-        if (resolved) {
-            inputs[inSocket] = resolved;
-        } else {
-            const storedValue = node.payload[`value_${inSocket}`];
-            if (storedValue !== undefined) {
-                const inputNode = context.getNode(graphId, inSocket);
-                if (inputNode) {
-                    const eval_ = storedValueToEval(storedValue, inputNode.type);
-                    if (eval_) inputs[inSocket] = eval_;
+                const resolved = context.resolve(node.id, entry.socket, outerSeqData) as DataTypes.AnyEval | null;
+                if (!resolved) {
+                    layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
+                    continue;
+                }
+                if (resolved.kind === "layer") {
+                    const data = resolved.data as { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null };
+                    layerData.push({
+                        shape: data.shape,
+                        enabled: data.enabled ?? entry.enabled,
+                        blend: data.blend ?? entry.blend,
+                    });
+                } else if (resolved.kind === "shape") {
+                    layerData.push({
+                        shape: resolved.data,
+                        enabled: entry.enabled,
+                        blend: entry.blend,
+                    });
                 }
             }
+            return { kind: "array<layer>", data: layerData };
         }
-    }
 
-    // Also include unsocketed input values (not in node.in but have stored values)
-    for (const key of Object.keys(node.payload)) {
-        if (!key.startsWith("value_")) continue;
-        const inputNodeId = key.slice(6);
-        if (inputNodeId in node.in) continue;
-        const storedValue = node.payload[key as StoredValueKey];
+        // Regular socket: resolve in parent graph with translated seqData
+        const resolved = context.resolve(node.id, inputNodeId, outerSeqData);
+        if (resolved) return resolved;
+
+        // Stored value fallback (connected or unsocketed inputs)
+        const storedValue = node.payload[`value_${inputNodeId}`];
         if (storedValue !== undefined) {
             const inputNode = context.getNode(graphId, inputNodeId);
             if (inputNode) {
-                const eval_ = storedValueToEval(storedValue, inputNode.type);
-                if (eval_) inputs[inputNodeId] = eval_;
+                return storedValueToEval(storedValue, inputNode.type);
             }
         }
+
+        return null;
+    };
+
+    // Evaluate just the requested output from the subgraph
+    const raw = context.subgraph(graphId, socket, resolveInput, innerSeqData);
+
+    // Remap sequence token senderIds on output
+    if (raw?.kind === "sequence") {
+        const { senderId, count } = raw.data as { senderId: string; count: number };
+        return { kind: "sequence", data: { senderId: `${node.id}/${senderId}`, count } };
     }
-
-    // Evaluate subgraph and get outputs
-    const outputs = context.subgraph(graphId, inputs);
-
-    return outputs[socket] ?? null;
+    return raw;
 };
 
 const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
@@ -413,6 +395,8 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
     arrayLayerOutput: { types: ["array<layer>"], mode: "and" },
     distributionInput: { types: ["distribution"], mode: "and" },
     distributionOutput: { types: ["distribution"], mode: "and" },
+    sequenceInput: { types: ["sequence"], mode: "and" },
+    sequenceOutput: { types: ["sequence"], mode: "and" },
 };
 
 const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
@@ -516,6 +500,10 @@ const DynamicSlot = ({
             return <InputSlotDistribution host={hostNode} source={sourceNode} />;
         case "arrayLayerOutput":
             return <OutputSlotArrayLayer host={hostNode} source={sourceNode} />;
+        case "sequenceInput":
+            return <InputSlotSequence host={hostNode} source={sourceNode} />;
+        case "sequenceOutput":
+            return <OutputSlotSequence host={hostNode} source={sourceNode} />;
     }
     return null;
 };
@@ -1124,6 +1112,22 @@ const OutputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFo
 const OutputSlotArrayLayer = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
         <SocketOut node={host} socketId={source.id} type={"array<layer>"}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
+        </SocketOut>
+    );
+};
+
+const InputSlotSequence = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketIn node={host} socketId={source.id} type={"sequence"}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
+        </SocketIn>
+    );
+};
+
+const OutputSlotSequence = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketOut node={host} socketId={source.id} type={"sequence"}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
         </SocketOut>
     );

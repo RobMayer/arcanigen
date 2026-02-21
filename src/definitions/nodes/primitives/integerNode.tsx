@@ -73,7 +73,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefi
             </SocketIn>
             <NodeAccordion label={"Conversion"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"mode"} type={"enum integer"} label={"Rounding"}>
-                    <Dropdown value={`${node.payload.roundingMode}`} onValue={(v) => handleUpdate({ roundingMode: Number(v) })} disabled={node.in.mode !== null}>
+                    <Dropdown value={`${node.payload.roundingMode}`} onValue={(v) => handleUpdate({ roundingMode: Number(v) })} disabled={node.in.mode !== null || !isCasting}>
                         {ROUNDING_MODE_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>
                                 {opt.label}

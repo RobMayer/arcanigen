@@ -2,7 +2,6 @@ import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { Resolver } from "../../util/resolver";
 import type { CacheType, GraphId, InterfacesType, LinksType, NodesType } from "./types";
-import { flattenSockets, parseInterface } from "./types";
 
 /** Mutable graph cache used during a rebuild pass */
 type MutableGraphCache = { [nodeId: string]: { [cacheKey: string]: DataTypes.AnyEval | null } };
@@ -42,18 +41,22 @@ export const invalidateDownstream = (cache: CacheType, nodes: NodesType, links: 
     return { ...cache, [graphId]: newGraphCache };
 };
 
-/** Evaluates a subgraph given inputs, returns outputs (demand-driven, not cached) */
+/** Evaluates a single output of a subgraph given a lazy input resolver (demand-driven, not cached) */
 const evaluateSubgraphForCache = (
     nodes: NodesType,
     links: LinksType,
     interfaces: InterfacesType,
     subgraphId: GraphId,
-    inputValues: { [key: string]: DataTypes.AnyEval | null },
+    outputNodeId: string,
+    resolveInput: (inputNodeId: string, seqData: Resolver.SequenceData) => DataTypes.AnyEval | null,
     sequenceData: Resolver.SequenceData,
-): { [key: string]: DataTypes.AnyEval | null } => {
+): DataTypes.AnyEval | null => {
     const subgraphNodes = nodes[subgraphId];
     const subgraphLinks = links[subgraphId];
-    if (!subgraphNodes || !subgraphLinks) return {};
+    if (!subgraphNodes || !subgraphLinks) return null;
+
+    const outputNode = subgraphNodes[outputNodeId];
+    if (!outputNode) return null;
 
     // Helper to evaluate a node's output within this subgraph
     const evaluateNodeInSubgraph = (nodeId: string, outSocket: string, seqData: Resolver.SequenceData): DataTypes.AnyEval | null => {
@@ -63,13 +66,15 @@ const evaluateSubgraphForCache = (
         const evaluate = NodeTypes.getEvaluator(node.type);
         if (!evaluate) return null;
 
+        const getInput = <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
+            return resolveInput(inputNodeId, seqData) as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
+        };
+
         const subContext: Resolver.Context = {
             graphId: subgraphId,
             sequenceData: seqData,
             getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
-            getInput: <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
-                return inputValues[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
-            },
+            getInput,
             resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideSeqData?: Resolver.SequenceData): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
                 const effectiveSeqData = overrideSeqData ?? seqData;
                 const targetNode = subgraphNodes[targetNodeId];
@@ -83,43 +88,22 @@ const evaluateSubgraphForCache = (
 
                 return evaluateNodeInSubgraph(link.fromNode, link.fromSocket, effectiveSeqData) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
             },
-            subgraph: (nestedGraphId: string, nestedInputs: { [key: string]: DataTypes.AnyEval | null }) => {
-                return evaluateSubgraphForCache(nodes, links, interfaces, nestedGraphId, nestedInputs, seqData);
+            subgraph: (nestedGraphId: string, nestedOutputNodeId: string, nestedResolveInput: (inputNodeId: string, nestedSeqData: Resolver.SequenceData) => DataTypes.AnyEval | null, innerSeqData: Resolver.SequenceData) => {
+                return evaluateSubgraphForCache(nodes, links, interfaces, nestedGraphId, nestedOutputNodeId, nestedResolveInput, innerSeqData);
             },
         };
 
         return evaluate(node, outSocket as keyof NodeDefinitions.Any["outputs"], subContext);
     };
 
-    // Get output node IDs by parsing interfaces with "out:" prefix
-    const subgraphSockets = flattenSockets(interfaces[subgraphId] ?? []);
-    const results: { [key: string]: DataTypes.AnyEval | null } = {};
+    // Resolve just the requested output node's "input" socket
+    const linkId = outputNode.in["input"];
+    if (!linkId) return null;
 
-    for (const entry of subgraphSockets) {
-        const parsed = parseInterface(entry);
-        if (parsed.direction !== "out") continue;
+    const link = subgraphLinks[linkId];
+    if (!link) return null;
 
-        const outputNodeId = parsed.nodeId;
-        const outputNode = subgraphNodes[outputNodeId];
-        if (!outputNode) continue;
-
-        // Resolve the "input" socket of the output node
-        const linkId = outputNode.in["input"];
-        if (!linkId) {
-            results[outputNodeId] = null;
-            continue;
-        }
-
-        const link = subgraphLinks[linkId];
-        if (!link) {
-            results[outputNodeId] = null;
-            continue;
-        }
-
-        results[outputNodeId] = evaluateNodeInSubgraph(link.fromNode, link.fromSocket, sequenceData);
-    }
-
-    return results;
+    return evaluateNodeInSubgraph(link.fromNode, link.fromSocket, sequenceData);
 };
 
 /**
@@ -173,8 +157,8 @@ const evaluateSocketCached = (
         graphId,
         sequenceData,
         resolve,
-        subgraph: (subgraphId: string, inputValues: { [key: string]: DataTypes.AnyEval | null }) => {
-            return evaluateSubgraphForCache(nodes, links, interfaces, subgraphId, inputValues, sequenceData);
+        subgraph: (subgraphId: string, subOutputNodeId: string, subResolveInput: (inputNodeId: string, seqData: Resolver.SequenceData) => DataTypes.AnyEval | null, innerSeqData: Resolver.SequenceData) => {
+            return evaluateSubgraphForCache(nodes, links, interfaces, subgraphId, subOutputNodeId, subResolveInput, innerSeqData);
         },
         getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
     };

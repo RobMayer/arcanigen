@@ -3,7 +3,7 @@ import { ArcaneGraph } from "./structs/arcaneGraph";
 import { Length } from "../definitions/datatypes/length";
 import { DataTypes, NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
 import { Color } from "../definitions/datatypes/color";
-import { InterfaceMember, flattenSockets, parseInterface } from "../state/project/types";
+import { InterfaceMember } from "../state/project/types";
 
 export namespace Resolver {
     export namespace EnumMappings {
@@ -43,11 +43,52 @@ export namespace Resolver {
 
     export type SequenceData = Readonly<Record<string, number>>;
 
+    /** Strip `{customNodeId}/` prefix from matching seqData keys when entering a subgraph. */
+    export const translateInward = (parentSeqData: SequenceData, customNodeId: string): { innerSeqData: SequenceData; strippedKeys: Set<string> } => {
+        const result: Record<string, number> = {};
+        const strippedKeys = new Set<string>();
+        const prefix = `${customNodeId}/`;
+        for (const [key, value] of Object.entries(parentSeqData)) {
+            if (key.startsWith(prefix)) {
+                const innerKey = key.slice(prefix.length);
+                result[innerKey] = value;
+                strippedKeys.add(innerKey);
+            } else {
+                result[key] = value; // passthrough
+            }
+        }
+        return { innerSeqData: result, strippedKeys };
+    };
+
+    /** Re-add `{customNodeId}/` prefix to inner-generated keys when calling back to the parent graph. */
+    export const translateOutward = (
+        innerSeqData: SequenceData,
+        strippedKeys: Set<string>,
+        customNodeId: string,
+        originalParentSeqData: SequenceData,
+    ): SequenceData => {
+        const result: Record<string, number> = { ...originalParentSeqData };
+        const prefix = `${customNodeId}/`;
+        for (const [key, value] of Object.entries(innerSeqData)) {
+            if (strippedKeys.has(key)) {
+                // Was stripped from a prefixed parent key — re-add prefix
+                result[`${prefix}${key}`] = value;
+            } else if (key in originalParentSeqData) {
+                // Passthrough key — update value
+                result[key] = value;
+            } else {
+                // Generated inside subgraph — add prefix
+                result[`${prefix}${key}`] = value;
+            }
+        }
+        return result;
+    };
+
     export type Context = {
         graphId: string;
         sequenceData: SequenceData;
         resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, sequenceData?: SequenceData) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
-        subgraph: (graphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => { [key: string]: DataTypes.AnyEval | null };
+        subgraph: (graphId: string, outputNodeId: string, resolveInput: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null, innerSeqData: SequenceData) => DataTypes.AnyEval | null;
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
         getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
         /** Look up a node by graphId and nodeId */
@@ -102,7 +143,7 @@ export namespace Resolver {
         state: State,
         graphId: GraphId,
         sequenceData: SequenceData,
-        getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined,
+        resolveInput?: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null,
     ): Context["resolve"] => {
         const graphNodes = state.nodes[graphId];
         const graphLinks = state.links[graphId];
@@ -113,7 +154,7 @@ export namespace Resolver {
             if (links.length === 0) return null;
             const theLink = graphLinks?.[links[0]];
             if (!theLink) return null;
-            return evaluateNodeOutput<K>(state, graphId, theLink.fromNode, theLink.fromSocket, effectiveSeqData, getInput);
+            return evaluateNodeOutput<K>(state, graphId, theLink.fromNode, theLink.fromSocket, effectiveSeqData, resolveInput);
         };
     };
 
@@ -124,7 +165,7 @@ export namespace Resolver {
         nodeId: ArcaneGraph.NodeId,
         outSocket: string,
         sequenceData: SequenceData,
-        getInput?: <K2 extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K2>> | undefined,
+        resolveInput?: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null,
     ): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
         const node = state.nodes[graphId]?.[nodeId];
         if (!node) return null;
@@ -132,12 +173,17 @@ export namespace Resolver {
         const evaluate = NodeTypes.getEvaluator(node.type);
         if (!evaluate) return null;
 
+        const getInput = resolveInput
+            ? <K2 extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K2>> | undefined =>
+                  resolveInput(inputNodeId, sequenceData) as DataTypes.EvalOf<DataTypes.Use<K2>> | undefined
+            : undefined;
+
         const context: Context = {
             graphId,
             sequenceData,
-            resolve: makeResolve(state, graphId, sequenceData, getInput),
-            subgraph: (subgraphId: string, inputs: { [key: string]: DataTypes.AnyEval | null }) => {
-                return evaluateSubgraph(state, subgraphId, inputs, sequenceData);
+            resolve: makeResolve(state, graphId, sequenceData, resolveInput),
+            subgraph: (subgraphId: string, outputNodeId: string, subResolveInput: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null, innerSeqData: SequenceData) => {
+                return evaluateSubgraph(state, subgraphId, outputNodeId, subResolveInput, innerSeqData);
             },
             getInput,
             getNode: (gId: string, nId: string) => state.nodes[gId]?.[nId],
@@ -149,36 +195,18 @@ export namespace Resolver {
     const evaluateSubgraph = (
         state: State,
         subgraphId: GraphId,
-        inputs: { [key: string]: DataTypes.AnyEval | null },
+        outputNodeId: string,
+        resolveInput: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null,
         sequenceData: SequenceData,
-    ): { [key: string]: DataTypes.AnyEval | null } => {
+    ): DataTypes.AnyEval | null => {
         const subgraphNodes = state.nodes[subgraphId];
         const subgraphLinks = state.links[subgraphId];
-        if (!subgraphNodes || !subgraphLinks) return {};
+        if (!subgraphNodes || !subgraphLinks) return null;
 
-        const getInput = <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
-            return inputs[inputNodeId] as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
-        };
+        const outputNode = subgraphNodes[outputNodeId];
+        if (!outputNode) return null;
 
-        const resolve = makeResolve(state, subgraphId, sequenceData, getInput);
-
-        // Get output node IDs by parsing interfaces with "out:" prefix
-        const subgraphSockets = flattenSockets(state.interfaces[subgraphId] ?? []);
-        const results: { [key: string]: DataTypes.AnyEval | null } = {};
-
-        for (const entry of subgraphSockets) {
-            const parsed = parseInterface(entry);
-            if (parsed.direction !== "out") continue;
-
-            const outputNodeId = parsed.nodeId;
-            const outputNode = subgraphNodes[outputNodeId];
-            if (!outputNode) continue;
-
-            // Resolve the "input" socket of the output node
-            const resolved = resolve(outputNodeId, "input");
-            results[outputNodeId] = resolved;
-        }
-
-        return results;
+        const resolve = makeResolve(state, subgraphId, sequenceData, resolveInput);
+        return resolve(outputNodeId, "input");
     };
 }

@@ -74,6 +74,8 @@ import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interfac
 import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
 import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
+import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/sequenceInputNode";
+import { SequenceOutputDefinition, SequenceOutputType } from "./nodes/interface/sequenceOutputNode";
 import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/logic/switchCaseNode";
 import { ConditionDefinition, ConditionNodeType } from "./nodes/logic/conditionNode";
 import { LogicalNotDefinition, LogicalNotNodeType } from "./nodes/logic/logicalNotNode";
@@ -169,6 +171,8 @@ namespace Registries {
         arrayLayerOutput: ArrayLayerOutputDefinition;
         distributionInput: DistributionInputDefinition;
         distributionOutput: DistributionOutputDefinition;
+        sequenceInput: SequenceInputDefinition;
+        sequenceOutput: SequenceOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -275,6 +279,8 @@ namespace Registries {
         arrayLayerOutput: ArrayLayerOutputType,
         distributionInput: DistributionInputType,
         distributionOutput: DistributionOutputType,
+        sequenceInput: SequenceInputType,
+        sequenceOutput: SequenceOutputType,
         custom: CustomNodeType,
 
         add: AddType,
