@@ -124,6 +124,7 @@ import { PencilEffectDefinition, PencilEffectNodeType } from "./nodes/effects/pe
 import { PenEffectDefinition, PenEffectNodeType } from "./nodes/effects/penEffectNode";
 import { BrushEffectDefinition, BrushEffectNodeType } from "./nodes/effects/brushEffectNode";
 import { RandomSeedDefinition, RandomSeedNodeType } from "./nodes/primitives/randomSeedNode";
+import { NotesDefinition, NotesNodeType } from "./nodes/meta/notesNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -164,6 +165,9 @@ namespace Registries {
         length: LengthDefinition;
         tokensLength: TokensLengthDefinition;
         randomSeed: RandomSeedDefinition;
+
+        // meta
+        notes: NotesDefinition;
 
         //debug
         shapePreview: ShapePreviewDefinition;
@@ -303,6 +307,7 @@ namespace Registries {
         length: LengthPrimitiveType,
         tokensLength: TokensLengthPrimitiveType,
         randomSeed: RandomSeedNodeType,
+        notes: NotesNodeType,
         shapePreview: ShapePreviewType,
 
         floatInput: FloatInputType,

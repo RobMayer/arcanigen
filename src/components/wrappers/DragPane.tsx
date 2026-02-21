@@ -334,6 +334,7 @@ const DragPaneBase = styled(
             let commitTimer: ReturnType<typeof setTimeout>;
 
             const wheel = (evt: globalThis.WheelEvent) => {
+                if (evt.handled || evt.target !== element) return;
                 evt.preventDefault();
                 methods.zoomOnFocal(evt as unknown as WheelEvent);
                 clearTimeout(commitTimer);
@@ -367,7 +368,7 @@ const DragPaneBase = styled(
             };
 
             const mouseDown = (evt: globalThis.MouseEvent) => {
-                if (evt.button === 1) {
+                if (evt.button === 1 && !evt.handled && evt.target === element) {
                     evt.handled = "active";
                     evt.preventDefault();
                     setPanning(true);
