@@ -104,6 +104,7 @@ import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
 import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
+import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/radialArrayNode";
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
@@ -212,6 +213,7 @@ namespace Registries {
         mask: MaskDefinition;
         sequencer: SequencerDefinition;
         polygonArray: PolygonArrayDefinition;
+        radialArray: RadialArrayDefinition;
         pathArray: PathArrayDefinition;
         colorIterator: ColorIteratorDefinition;
         switchCase: SwitchCaseDefinition;
@@ -250,6 +252,7 @@ namespace Registries {
         mask: MaskNodeType,
         sequencer: SequencerNodeType,
         polygonArray: PolygonArrayNodeType,
+        radialArray: RadialArrayNodeType,
         pathArray: PathArrayNodeType,
         colorIterator: ColorIteratorNodeType,
         float: FloatPrimitiveType,
