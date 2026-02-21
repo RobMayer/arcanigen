@@ -1,12 +1,11 @@
 import { nanoid } from "nanoid";
 import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode, useCallback } from "react";
+import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult } from "./numericMath";
 
@@ -19,7 +18,6 @@ export type ReciprocalDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        input: DataTypes.TypeOf<DataTypes.Use<"float">>;
         connectedType: SocketTypes.SocketRule;
         resolvedInTypes: SocketTypes.SocketRule;
     };
@@ -27,14 +25,13 @@ export type ReciprocalDefinition = {
 
 type ReciprocalNode = NodeDefinitions.BuiltNodeOf<"reciprocal", ReciprocalDefinition>;
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ReciprocalDefinition>>, id: string = nanoid()): ReciprocalNode => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ReciprocalDefinition>>, id: string = nanoid()): ReciprocalNode => {
     return {
         id,
         in: { input: null },
         out: { output: [] },
         payload: {
             label: "",
-            input: input.input ?? "1",
             connectedType: SocketTypes.NONE,
             resolvedInTypes: SocketTypes.ANY,
         },
@@ -63,13 +60,6 @@ const queryDownstreamTypes = (node: ReciprocalNode, graphId: string, ctx: NodeTy
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReciprocalDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<ReciprocalDefinition>>) => {
-            methods.update(v);
-        },
-        [methods],
-    );
-
     const t = effectiveType(node.payload.connectedType, node.payload.resolvedInTypes);
 
     return (
@@ -77,9 +67,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReciprocalD
             <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(t)}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(t)} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
-            </SocketIn>
+            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(t)}>Input</SocketIn>
         </TypicalNode>
     );
 };
@@ -96,10 +84,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ReciprocalDefinition>, _in
 const evaluate = (node: NodeDefinitions.NodeFor<ReciprocalDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const val = context.resolve(node.id, "input");
-        const kind = val?.kind ?? "float";
-        const data = val?.data ?? node.payload.input;
-        const { value, unit } = extractSingle(kind, data);
-        return wrapResult(value === 0 ? 0 : 1 / value, kind, unit);
+        if (!val) return null;
+        const { value, unit } = extractSingle(val.kind, val.data);
+        return wrapResult(value === 0 ? 0 : 1 / value, val.kind, unit);
     }
     return null;
 };

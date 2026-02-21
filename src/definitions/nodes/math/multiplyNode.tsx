@@ -1,12 +1,11 @@
 import { nanoid } from "nanoid";
 import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode, useCallback } from "react";
+import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NUMERIC_TYPES, constrainForPartnerMultiplicative, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
 
@@ -20,8 +19,6 @@ export type MultiplyDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        a: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        b: DataTypes.TypeOf<DataTypes.Use<"float">>;
         connectedTypeA: SocketTypes.SocketRule;
         connectedTypeB: SocketTypes.SocketRule;
         resolvedInTypes: SocketTypes.SocketRule;
@@ -30,7 +27,7 @@ export type MultiplyDefinition = {
 
 type MultiplyNode = NodeDefinitions.BuiltNodeOf<"multiply", MultiplyDefinition>;
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<MultiplyDefinition>>, id: string = nanoid()): MultiplyNode => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<MultiplyDefinition>>, id: string = nanoid()): MultiplyNode => {
     return {
         id,
         in: {
@@ -42,8 +39,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<MultiplyDefinition>
         },
         payload: {
             label: "",
-            a: input.a ?? "1",
-            b: input.b ?? "1",
             connectedTypeA: SocketTypes.NONE,
             connectedTypeB: SocketTypes.NONE,
             resolvedInTypes: SocketTypes.ANY,
@@ -79,13 +74,6 @@ const queryDownstreamTypes = (node: MultiplyNode, graphId: string, ctx: NodeType
 // --- Controls ---
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MultiplyDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<MultiplyDefinition>>) => {
-            methods.update(v);
-        },
-        [methods],
-    );
-
     const { connectedTypeA, connectedTypeB, resolvedInTypes } = node.payload;
     const typeA = effectiveInputType(connectedTypeA, connectedTypeB, resolvedInTypes);
     const typeB = effectiveInputType(connectedTypeB, connectedTypeA, resolvedInTypes);
@@ -96,12 +84,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MultiplyDef
             <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(typeOut)}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"} type={SocketTypes.toCSS(typeA)} label={"A"}>
-                <DecimalInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"b"} type={SocketTypes.toCSS(typeB)} label={"B"}>
-                <DecimalInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
-            </SocketIn>
+            <SocketIn node={node} socketId={"a"} type={SocketTypes.toCSS(typeA)}>A</SocketIn>
+            <SocketIn node={node} socketId={"b"} type={SocketTypes.toCSS(typeB)}>B</SocketIn>
         </TypicalNode>
     );
 };
@@ -121,12 +105,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<MultiplyDefinition>, socket: "ou
     if (socket === "output") {
         const aVal = context.resolve(node.id, "a");
         const bVal = context.resolve(node.id, "b");
-        const aKind = aVal?.kind ?? "float";
-        const bKind = bVal?.kind ?? "float";
-        const aData = aVal?.data ?? node.payload.a;
-        const bData = bVal?.data ?? node.payload.b;
-        const { a, b, unit } = extractPair(aKind, aData, bKind, bData);
-        const outputKind = dominantKind(aKind, bKind);
+        if (!aVal || !bVal) return null;
+        const { a, b, unit } = extractPair(aVal.kind, aVal.data, bVal.kind, bVal.data);
+        const outputKind = dominantKind(aVal.kind, bVal.kind);
         return wrapResult(a * b, outputKind, unit);
     }
     return null;

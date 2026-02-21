@@ -6,7 +6,6 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult } from "./numericMath";
 import { Enum } from "../../datatypes/enum";
@@ -24,7 +23,6 @@ export type RoundDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        input: DataTypes.TypeOf<DataTypes.Use<"float">>;
         mode: number;
         connectedType: SocketTypes.SocketRule;
         resolvedInTypes: SocketTypes.SocketRule;
@@ -40,7 +38,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RoundDefinition>>, 
         out: { output: [] },
         payload: {
             label: "",
-            input: input.input ?? "0",
             mode: input.mode ?? Enum.Common.roundingMode.HALF_EXPAND.value,
             connectedType: SocketTypes.NONE,
             resolvedInTypes: SocketTypes.ANY,
@@ -120,9 +117,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RoundDefini
             <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(outType)}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(inType)} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
-            </SocketIn>
+            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(inType)}>Input</SocketIn>
             <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
                 <Dropdown value={`${node.payload.mode}`} onValue={(v) => handleUpdate({ mode: Number(v) })} disabled={node.in.mode !== null}>
                     {ROUNDING_MODE_OPTIONS.map((opt) => (
@@ -149,11 +144,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RoundDefinition>, inSocket
 const evaluate = (node: NodeDefinitions.NodeFor<RoundDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const val = context.resolve(node.id, "input");
-        const kind = val?.kind ?? "float";
-        const data = val?.data ?? node.payload.input;
-        const { value, unit } = extractSingle(kind, data);
+        if (!val) return null;
+        const { value, unit } = extractSingle(val.kind, val.data);
         const mode = Enum.resolve(context.resolve<"enum">(node.id, "mode")?.data, Enum.Common.roundingMode) ?? node.payload.mode;
-        const outputKind = kind === "float" ? "integer" : kind;
+        const outputKind = val.kind === "float" ? "integer" : val.kind;
         return wrapResult(applyRounding(value, mode), outputKind, unit);
     }
     return null;

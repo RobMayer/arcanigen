@@ -8,6 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
+
 import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, extractSingle } from "./numericMath";
 
 const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
@@ -23,8 +24,6 @@ export type LerpDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        a: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        b: DataTypes.TypeOf<DataTypes.Use<"float">>;
         t: DataTypes.TypeOf<DataTypes.Use<"float">>;
         connectedTypeA: SocketTypes.SocketRule;
         connectedTypeB: SocketTypes.SocketRule;
@@ -41,8 +40,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LerpDefinition>>, i
         out: { output: [] },
         payload: {
             label: "",
-            a: input.a ?? "0",
-            b: input.b ?? "1",
             t: input.t ?? "0.5",
             connectedTypeA: SocketTypes.NONE,
             connectedTypeB: SocketTypes.NONE,
@@ -92,12 +89,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LerpDefinit
             <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(typeOut)}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"} type={SocketTypes.toCSS(typeA)} label={"A"}>
-                <DecimalInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"b"} type={SocketTypes.toCSS(typeB)} label={"B"}>
-                <DecimalInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
-            </SocketIn>
+            <SocketIn node={node} socketId={"a"} type={SocketTypes.toCSS(typeA)}>A</SocketIn>
+            <SocketIn node={node} socketId={"b"} type={SocketTypes.toCSS(typeB)}>B</SocketIn>
             <SocketIn node={node} socketId={"t"} type={"float integer"} label={"T"}>
                 <DecimalInput value={node.payload.t} onCommit={(t) => handleUpdate({ t })} disabled={node.in.t !== null} />
             </SocketIn>
@@ -118,17 +111,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<LerpDefinition>, socket: "output
     if (socket === "output") {
         const aVal = context.resolve(node.id, "a");
         const bVal = context.resolve(node.id, "b");
-        const aKind = aVal?.kind ?? "float";
-        const bKind = bVal?.kind ?? "float";
-        const aData = aVal?.data ?? node.payload.a;
-        const bData = bVal?.data ?? node.payload.b;
-        const { a, b, unit } = extractPair(aKind, aData, bKind, bData);
+        if (!aVal || !bVal) return null;
+        const { a, b, unit } = extractPair(aVal.kind, aVal.data, bVal.kind, bVal.data);
 
         const tVal = context.resolve(node.id, "t");
         const tData = tVal?.data ?? node.payload.t;
         const { value: t } = extractSingle(tVal?.kind ?? "float", tData);
 
-        const outputKind = dominantKind(aKind, bKind);
+        const outputKind = dominantKind(aVal.kind, bVal.kind);
         return wrapResult(a + (b - a) * t, outputKind, unit);
     }
     return null;

@@ -1,12 +1,11 @@
 import { nanoid } from "nanoid";
 import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode, useCallback } from "react";
+import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, extractSingle } from "./numericMath";
 
@@ -21,9 +20,6 @@ export type ClampDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        input: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        min: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        max: DataTypes.TypeOf<DataTypes.Use<"float">>;
         connectedTypeInput: SocketTypes.SocketRule;
         connectedTypeMin: SocketTypes.SocketRule;
         connectedTypeMax: SocketTypes.SocketRule;
@@ -41,16 +37,13 @@ const PAYLOAD_KEY: Record<SocketKey, "connectedTypeInput" | "connectedTypeMin" |
     max: "connectedTypeMax",
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>, id: string = nanoid()): ClampNode => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>, id: string = nanoid()): ClampNode => {
     return {
         id,
         in: { input: null, min: null, max: null },
         out: { output: [] },
         payload: {
             label: "",
-            input: input.input ?? "0",
-            min: input.min ?? "0",
-            max: input.max ?? "1",
             connectedTypeInput: SocketTypes.NONE,
             connectedTypeMin: SocketTypes.NONE,
             connectedTypeMax: SocketTypes.NONE,
@@ -108,13 +101,6 @@ const queryDownstreamTypes = (node: ClampNode, graphId: string, ctx: NodeTypes.M
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>) => {
-            methods.update(v);
-        },
-        [methods],
-    );
-
     const { connectedTypeInput, connectedTypeMin, connectedTypeMax, resolvedInTypes } = node.payload;
     const typeInput = effectiveInputType(connectedTypeInput, connectedTypeMin, connectedTypeMax, resolvedInTypes);
     const typeMin = effectiveInputType(connectedTypeMin, connectedTypeInput, connectedTypeMax, resolvedInTypes);
@@ -126,15 +112,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefini
             <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(typeOut)}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(typeInput)} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"min"} type={SocketTypes.toCSS(typeMin)} label={"Min"}>
-                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} disabled={node.in.min !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"max"} type={SocketTypes.toCSS(typeMax)} label={"Max"}>
-                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} disabled={node.in.max !== null} />
-            </SocketIn>
+            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(typeInput)}>Input</SocketIn>
+            <SocketIn node={node} socketId={"min"} type={SocketTypes.toCSS(typeMin)}>Min</SocketIn>
+            <SocketIn node={node} socketId={"max"} type={SocketTypes.toCSS(typeMax)}>Max</SocketIn>
         </TypicalNode>
     );
 };
@@ -153,20 +133,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<ClampDefinition>, socket: "outpu
         const inputVal = context.resolve(node.id, "input");
         const minVal = context.resolve(node.id, "min");
         const maxVal = context.resolve(node.id, "max");
+        if (!inputVal || !minVal || !maxVal) return null;
 
-        const inputKind = inputVal?.kind ?? "float";
-        const inputData = inputVal?.data ?? node.payload.input;
-        const { value, unit } = extractSingle(inputKind, inputData);
+        const { value, unit } = extractSingle(inputVal.kind, inputVal.data);
+        const { value: lo } = extractSingle(minVal.kind, minVal.data);
+        const { value: hi } = extractSingle(maxVal.kind, maxVal.data);
 
-        const minKind = minVal?.kind ?? "float";
-        const minData = minVal?.data ?? node.payload.min;
-        const { value: lo } = extractSingle(minKind, minData);
-
-        const maxKind = maxVal?.kind ?? "float";
-        const maxData = maxVal?.data ?? node.payload.max;
-        const { value: hi } = extractSingle(maxKind, maxData);
-
-        const outputKind = dominantKind(dominantKind(inputKind, minKind), maxKind);
+        const outputKind = dominantKind(dominantKind(inputVal.kind, minVal.kind), maxVal.kind);
         return wrapResult(Math.max(lo, Math.min(hi, value)), outputKind, unit);
     }
     return null;

@@ -20,7 +20,6 @@ export type PowDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        input: DataTypes.TypeOf<DataTypes.Use<"float">>;
         exponent: DataTypes.TypeOf<DataTypes.Use<"float">>;
         connectedType: SocketTypes.SocketRule;
         resolvedInTypes: SocketTypes.SocketRule;
@@ -36,7 +35,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PowDefinition>>, id
         out: { output: [] },
         payload: {
             label: "",
-            input: input.input ?? "0",
             exponent: input.exponent ?? "2",
             connectedType: SocketTypes.NONE,
             resolvedInTypes: SocketTypes.ANY,
@@ -80,9 +78,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PowDefiniti
             <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(inType)}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(inType)} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
-            </SocketIn>
+            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(inType)}>Input</SocketIn>
             <SocketIn node={node} socketId={"exponent"} type={"float integer"} label={"Exponent"}>
                 <DecimalInput value={node.payload.exponent} onCommit={(exponent) => handleUpdate({ exponent })} disabled={node.in.exponent !== null} />
             </SocketIn>
@@ -103,13 +99,12 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PowDefinition>, inSocket: 
 const evaluate = (node: NodeDefinitions.NodeFor<PowDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const val = context.resolve(node.id, "input");
-        const kind = val?.kind ?? "float";
-        const data = val?.data ?? node.payload.input;
-        const { value, unit } = extractSingle(kind, data);
+        if (!val) return null;
+        const { value, unit } = extractSingle(val.kind, val.data);
         const expVal = context.resolve(node.id, "exponent");
         const expData = expVal?.data ?? node.payload.exponent;
         const { value: exp } = extractSingle(expVal?.kind ?? "float", expData);
-        return wrapResult(Math.pow(value, exp), kind, unit);
+        return wrapResult(Math.pow(value, exp), val.kind, unit);
     }
     return null;
 };
