@@ -5,7 +5,7 @@
 - [ ] container/wrapper nodes for spacial organization
 - [ ] drag and drop from node drawer onto viewport
 - [x] resize observer on viewport of drag-pane
-- [ ] sliders for integer and float, already
+- [x] sliders for integer and float, already
 - [ ] allow subgraphs to have a custom icon
 
 # code quality

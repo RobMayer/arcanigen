@@ -8,7 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartnerMultiplicative, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
 
 export type RemainderDefinition = {
     inputs: {
@@ -56,7 +56,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RemainderDefinition
 
 const effectiveInputType = (connectedType: SocketTypes.SocketRule, partnerType: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule): SocketTypes.SocketRule => {
     if (connectedType.types.length > 0) return connectedType;
-    const forward = constrainForPartner(partnerType);
+    const forward = constrainForPartnerMultiplicative(partnerType);
     const backward = constrainForOutput(resolvedInTypes, partnerType);
     return SocketTypes.intersect(forward, backward);
 };

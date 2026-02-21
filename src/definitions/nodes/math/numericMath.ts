@@ -31,11 +31,15 @@ export const queryUpstreamOutType = (node: NodeDefinitions.NodeFor<NodeDefinitio
     return NodeTypes.getSocketType(neighbor, link.fromSocket, "out", ctx);
 };
 
+/** Dimensionless numeric types (float and integer only) */
+export const DIMENSIONLESS: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
+
 // --- Constraint computation ---
 
 /**
  * Given what's connected on one side, compute what types the *partner* socket can accept.
  * If the connected side includes angle, exclude length from partner (and vice versa).
+ * Used by additive operations (add, subtract, min, max, clamp, lerp).
  */
 export const constrainForPartner = (connectedType: SocketTypes.SocketRule): SocketTypes.SocketRule => {
     if (connectedType.types.length === 0) return NUMERIC_TYPES;
@@ -44,6 +48,19 @@ export const constrainForPartner = (connectedType: SocketTypes.SocketRule): Sock
     if (hasAngle && !hasLength) return SocketTypes.intersect(NUMERIC_TYPES, WITHOUT_LENGTH);
     if (hasLength && !hasAngle) return SocketTypes.intersect(NUMERIC_TYPES, WITHOUT_ANGLE);
     // both or neither — no additional constraint
+    return NUMERIC_TYPES;
+};
+
+/**
+ * Stricter constraint for multiplicative operations (multiply, divide, modulo, remainder).
+ * If the partner has angle or length, restrict to float/integer only — you can scale
+ * a dimensional value by a scalar, but can't multiply two dimensional values together.
+ */
+export const constrainForPartnerMultiplicative = (connectedType: SocketTypes.SocketRule): SocketTypes.SocketRule => {
+    if (connectedType.types.length === 0) return NUMERIC_TYPES;
+    const hasAngle = connectedType.types.includes("angle");
+    const hasLength = connectedType.types.includes("length");
+    if (hasAngle || hasLength) return DIMENSIONLESS;
     return NUMERIC_TYPES;
 };
 
