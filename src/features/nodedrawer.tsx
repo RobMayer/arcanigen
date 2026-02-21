@@ -23,8 +23,8 @@ const LocalAccordion = styled(Accordion)`
 
 type DrawerItem = { kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | { kind: "newCustom" };
 
-const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["Shapes", "Primitives", "Collections", "Logic", "Meta", "Math", "Custom"];
-const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["Shapes", "Primitives", "Collections", "Logic", "Meta", "Math", "Inputs", "Outputs", "Custom"];
+const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["Custom", "Shapes", "Primitives", "Collections", "Logic", "Meta", "Math", "Effects"];
+const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["Custom", "Shapes", "Primitives", "Collections", "Logic", "Meta", "Math", "Inputs", "Outputs", "Effects"];
 
 const getForbiddenSubgraphs = (currentGraphId: string, users: UsersType): Set<string> => {
     const forbidden = new Set([currentGraphId]);

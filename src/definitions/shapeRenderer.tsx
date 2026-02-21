@@ -1,6 +1,6 @@
-import { ReactNode, useId, useMemo } from "react";
+import { createElement, ReactNode, useId, useMemo } from "react";
 import { nanoid } from "nanoid";
-import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape } from "./shapeTypes";
+import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, FilteredShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
 // ─── Paint → SVG attributes ─────────────────────────────────────────────────
@@ -91,6 +91,8 @@ export const ShapeElement = ({ shape }: { shape: Shape }): ReactNode => {
             return <SymbolElement shape={shape} />;
         case "masked":
             return <MaskedElement shape={shape} />;
+        case "filtered":
+            return <FilteredElement shape={shape} />;
     }
 };
 
@@ -302,6 +304,26 @@ const MaskedElement = ({ shape }: { shape: MaskedShape }) => {
                 </mask>
             </defs>
             <g mask={`url(#${maskId})`}>
+                <ShapeElement shape={shape.content} />
+            </g>
+        </g>
+    );
+};
+
+// ─── Filtered ─────────────────────────────────────────────────────────────────
+
+const FilteredElement = ({ shape }: { shape: FilteredShape }) => {
+    const id = useId();
+    const filterId = `${id}-filter`;
+
+    return (
+        <g transform={shape.transform || undefined}>
+            <defs>
+                <filter id={filterId} filterUnits="userSpaceOnUse" x="-100%" y="-100%" width="200%" height="200%">
+                    {shape.filter.map((prim, i) => createElement(prim.tag, { key: i, ...prim.attrs }))}
+                </filter>
+            </defs>
+            <g filter={`url(#${filterId})`}>
                 <ShapeElement shape={shape.content} />
             </g>
         </g>

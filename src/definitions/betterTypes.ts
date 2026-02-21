@@ -120,6 +120,10 @@ import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/coll
 import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/collections/lengthIteratorNode";
 import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/collections/angleIteratorNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
+import { PencilEffectDefinition, PencilEffectNodeType } from "./nodes/effects/pencilEffectNode";
+import { PenEffectDefinition, PenEffectNodeType } from "./nodes/effects/penEffectNode";
+import { BrushEffectDefinition, BrushEffectNodeType } from "./nodes/effects/brushEffectNode";
+import { RandomSeedDefinition, RandomSeedNodeType } from "./nodes/primitives/randomSeedNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -159,6 +163,7 @@ namespace Registries {
         integer: IntegerDefinition;
         length: LengthDefinition;
         tokensLength: TokensLengthDefinition;
+        randomSeed: RandomSeedDefinition;
 
         //debug
         shapePreview: ShapePreviewDefinition;
@@ -249,6 +254,11 @@ namespace Registries {
         lessOrEqual: LessOrEqualDefinition;
         within: WithinDefinition;
         between: BetweenDefinition;
+
+        // effects
+        pencilEffect: PencilEffectDefinition;
+        penEffect: PenEffectDefinition;
+        brushEffect: BrushEffectDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -292,6 +302,7 @@ namespace Registries {
         enum: EnumPrimitiveType,
         length: LengthPrimitiveType,
         tokensLength: TokensLengthPrimitiveType,
+        randomSeed: RandomSeedNodeType,
         shapePreview: ShapePreviewType,
 
         floatInput: FloatInputType,
@@ -363,6 +374,10 @@ namespace Registries {
         lessOrEqual: LessOrEqualNodeType,
         within: WithinNodeType,
         between: BetweenNodeType,
+
+        pencilEffect: PencilEffectNodeType,
+        penEffect: PenEffectNodeType,
+        brushEffect: BrushEffectNodeType,
     } as const;
 
     export type DATATYPES = {
@@ -413,6 +428,7 @@ namespace Registries {
         Shapes: "confirm",
         Meta: "emphasis",
         Math: "accent",
+        Effects: "info",
         Custom: "emphasis",
     } as const satisfies { [key: string]: Flavour };
 }

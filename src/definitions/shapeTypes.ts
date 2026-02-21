@@ -178,6 +178,22 @@ export type MaskDef = {
     invert: boolean; // only meaningful when mode is "luminance"
 };
 
+/** An SVG filter primitive: tag name + attributes */
+export type FilterPrimitive = {
+    tag: string;
+    attrs: Record<string, string | number>;
+};
+
+/** A shape with an SVG filter applied */
+export type FilteredShape = {
+    type: "filtered";
+    content: Shape;
+    filter: FilterPrimitive[];
+    signals?: string[];
+    transform: string;
+    preview: BBox;
+};
+
 // ─── Union ───────────────────────────────────────────────────────────────────
 
 export type Shape =
@@ -188,4 +204,5 @@ export type Shape =
     | GroupShape
     | OffsetPathShape
     | SymbolShape
-    | MaskedShape;
+    | MaskedShape
+    | FilteredShape;
