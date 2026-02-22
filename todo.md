@@ -6,7 +6,7 @@
 - [ ] drag and drop from node drawer onto viewport
 - [x] resize observer on viewport of drag-pane
 - [x] sliders for integer and float, already
-- [ ] allow subgraphs to have a custom icon
+- [ ] allow subgraphs to have a custom icon - maybe?
 
 # code quality
 

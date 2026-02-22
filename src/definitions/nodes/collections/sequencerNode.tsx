@@ -408,7 +408,7 @@ export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition>
     type: "sequencer",
     displayName: "Sequencer",
     defaultLabel: "Sequencer",
-    iconNode: <Icon shape={NODE_ICONS.sequence} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.timeline} color={"var(--icon-flavour)"} />,
     category: "Collections",
     create,
     dependsOn,
