@@ -12,18 +12,14 @@ import { Enum } from "../../datatypes/enum";
 import { Angle } from "../../datatypes/angle";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { Dropdown } from "../../../components/inputs/Dropdown";
-import { CheckBox } from "../../../components/buttons/CheckBox";
-import { RadioButton } from "../../../components/buttons/RadioButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Iteration } from "../abstract";
 import { EmptyOr } from "../../../util/misc";
 import { lerpAngle } from "../../../util/colorSpaces";
 import styled from "styled-components";
+import { Dropdown } from "../../../components/inputs/Dropdown";
 
 const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
-const MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 
 export type AngleIteratorDefinition = {
     inputs: {
@@ -32,7 +28,8 @@ export type AngleIteratorDefinition = {
         angleTraversal: DataTypes.Use<"enum">;
     } & Iteration.Definition["inputs"];
     outputs: {
-        output: DataTypes.Use<"angle">;
+        sequencedOutput: DataTypes.Use<"angle">;
+        sampledOutput: DataTypes.Use<"angle">;
     };
     payload: {
         label: string;
@@ -53,13 +50,15 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIteratorDefini
             reverseSequence: null,
             startOffset: null,
             endOffset: null,
+            samplePosition: null,
             [`value_${s0}`]: null,
             [`pos_${s0}`]: null,
             [`value_${s1}`]: null,
             [`pos_${s1}`]: null,
         },
         out: {
-            output: [],
+            sequencedOutput: [],
+            sampledOutput: [],
         },
         payload: {
             label: "",
@@ -68,6 +67,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIteratorDefini
             reverseSequence: input.reverseSequence ?? false,
             startOffset: input.startOffset ?? "0",
             endOffset: input.endOffset ?? "0",
+            samplePosition: input.samplePosition ?? "50",
             stops: [
                 { id: s0, value: "0", position: "0" },
                 { id: s1, value: "360", position: "100" },
@@ -142,13 +142,25 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"sampledOutput"}>
+                Sampled Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
+                <DecimalInput.SliderInput
+                    value={node.payload.samplePosition}
+                    onCommit={(samplePosition) => handleUpdate({ samplePosition })}
+                    disabled={node.in.samplePosition !== null}
+                    min={0}
+                    max={100}
+                />
+            </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"sequencedOutput"}>
+                Sequenced Output
             </SocketOut>
             <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
-
             <hr />
             <ActionButton onClick={handleAddStop} flavour={"accent"}>
                 Add Stop
@@ -176,26 +188,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <SocketIn node={node} socketId={"mode"} label={"Mode"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.mode}`}
-                        onValue={(v) => handleUpdate({ mode: Number(v) })}
-                        disabled={node.in.mode !== null}
-                        options={MODE_OPTIONS}
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"reverseSequence"}>
-                    <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
-                        Reverse Sequence
-                    </CheckBox>
-                </SocketIn>
-                <SocketIn node={node} socketId={"startOffset"} label={"Start Offset"}>
-                    <IntegerInput value={node.payload.startOffset} onCommit={(startOffset) => handleUpdate({ startOffset })} disabled={node.in.startOffset !== null} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endOffset"} label={"End Offset"}>
-                    <IntegerInput value={node.payload.endOffset} onCommit={(endOffset) => handleUpdate({ endOffset })} disabled={node.in.endOffset !== null} />
-                </SocketIn>
+                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
             </NodeAccordion>
         </TypicalNode>
     );
@@ -220,18 +213,6 @@ const StopEntry = styled.div`
         grid-area: remove;
     }
 `;
-
-const dependsOn = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, outSocket: keyof AngleIteratorDefinition["outputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["inputs"])[] => {
-    if (outSocket === "output") {
-        const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof AngleIteratorDefinition["inputs"])[];
-        return ["sequence", "angleTraversal", "mode", "reverseSequence", "startOffset", "endOffset", ...stopSockets];
-    }
-    return [];
-};
-
-const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, _inSocket: keyof AngleIteratorDefinition["inputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["outputs"])[] => {
-    return ["output"];
-};
 
 /** Circular piecewise-linear interpolation between sorted angle stops */
 const sampleAngleStops = (resolved: { value: number; position: number }[], position: number, traversal: number): number => {
@@ -258,11 +239,34 @@ const sampleAngleStops = (resolved: { value: number; position: number }[], posit
     return lerpAngle(resolved[lo].value, resolved[hi].value, localT, traversal);
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket: keyof AngleIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+const dependsOn = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, outSocket: keyof AngleIteratorDefinition["outputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["inputs"])[] => {
+    const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof AngleIteratorDefinition["inputs"])[];
+    if (outSocket === "sequencedOutput") {
+        return [...Iteration.SEQUENCED_DEPS, "angleTraversal", ...stopSockets];
+    }
+    if (outSocket === "sampledOutput") {
+        return [...Iteration.SAMPLED_DEPS, "angleTraversal", ...stopSockets];
+    }
+    return [];
+};
 
-    const result = Iteration.evaluate(node, context);
-    if (result === null) return null;
+const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, inSocket: keyof AngleIteratorDefinition["inputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["outputs"])[] => {
+    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
+    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
+    return ["sequencedOutput", "sampledOutput"];
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket: keyof AngleIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    let position: number;
+    if (socket === "sequencedOutput") {
+        const result = Iteration.evaluate(node, context);
+        if (result === null) return null;
+        position = result.t * 100;
+    } else if (socket === "sampledOutput") {
+        position = Iteration.resolveSamplePosition(node, context);
+    } else {
+        return null;
+    }
 
     const stops = node.payload.stops;
     if (stops.length === 0) return null;
@@ -275,26 +279,29 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket
         const valStr = context.resolve<"angle">(node.id, `value_${stop.id}`)?.data ?? stop.value;
         const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
         const value = NumericString.Emptyable.asNumber(valStr) ?? 0;
-        const position = NumericString.Emptyable.asNumber(posStr) ?? 0;
-        resolved.push({ value, position });
+        const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
+        resolved.push({ value, position: pos });
     }
 
     // Sort by position
     resolved.sort((a, b) => a.position - b.position);
 
-    const value = sampleAngleStops(resolved, result.t * 100, traversal);
+    const value = sampleAngleStops(resolved, position, traversal);
     return { kind: "angle", data: `${value}` };
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<AngleIteratorDefinition["inputs"], "sequence" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset">>]: SocketTypes.SocketRule;
+    [key in keyof Required<
+        Pick<AngleIteratorDefinition["inputs"], "sequence" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">
+    >]: SocketTypes.SocketRule;
 } = {
     ...Iteration.IN_SOCKET_TYPES,
     angleTraversal: { types: ["enum"], mode: "and" },
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<AngleIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["angle"], mode: "and" },
+    sequencedOutput: { types: ["angle"], mode: "and" },
+    sampledOutput: { types: ["angle"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

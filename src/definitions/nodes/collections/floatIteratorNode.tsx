@@ -21,7 +21,8 @@ export type FloatIteratorDefinition = {
         [pos: `pos_${string}`]: DataTypes.Use<"float">;
     } & Iteration.Definition["inputs"];
     outputs: {
-        output: DataTypes.Use<"float">;
+        sequencedOutput: DataTypes.Use<"float">;
+        sampledOutput: DataTypes.Use<"float">;
     };
     payload: {
         label: string;
@@ -40,13 +41,15 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIteratorDefini
             reverseSequence: null,
             startOffset: null,
             endOffset: null,
+            samplePosition: null,
             [`value_${s0}`]: null,
             [`pos_${s0}`]: null,
             [`value_${s1}`]: null,
             [`pos_${s1}`]: null,
         },
         out: {
-            output: [],
+            sequencedOutput: [],
+            sampledOutput: [],
         },
         payload: {
             label: "",
@@ -54,6 +57,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIteratorDefini
             reverseSequence: input.reverseSequence ?? false,
             startOffset: input.startOffset ?? "0",
             endOffset: input.endOffset ?? "0",
+            samplePosition: input.samplePosition ?? "50",
             stops: [
                 { id: s0, value: "0", position: "0" },
                 { id: s1, value: "1", position: "100" },
@@ -128,8 +132,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"sampledOutput"}>
+                Sampled Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
+                <DecimalInput.SliderInput
+                    value={node.payload.samplePosition}
+                    onCommit={(samplePosition) => handleUpdate({ samplePosition })}
+                    disabled={node.in.samplePosition !== null}
+                    min={0}
+                    max={100}
+                />
+            </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"sequencedOutput"}>
+                Sequenced Output
             </SocketOut>
             <SocketIn node={node} socketId={"sequence"}>
                 Sequence
@@ -178,22 +195,33 @@ const StopEntry = styled.div`
 `;
 
 const dependsOn = (node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, outSocket: keyof FloatIteratorDefinition["outputs"], _deps: AllDeps): (keyof FloatIteratorDefinition["inputs"])[] => {
-    if (outSocket === "output") {
-        const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof FloatIteratorDefinition["inputs"])[];
-        return ["sequence", "mode", "reverseSequence", "startOffset", "endOffset", ...stopSockets];
+    const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof FloatIteratorDefinition["inputs"])[];
+    if (outSocket === "sequencedOutput") {
+        return [...Iteration.SEQUENCED_DEPS, ...stopSockets];
+    }
+    if (outSocket === "sampledOutput") {
+        return [...Iteration.SAMPLED_DEPS, ...stopSockets];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, _inSocket: keyof FloatIteratorDefinition["inputs"], _deps: AllDeps): (keyof FloatIteratorDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, inSocket: keyof FloatIteratorDefinition["inputs"], _deps: AllDeps): (keyof FloatIteratorDefinition["outputs"])[] => {
+    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
+    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
+    return ["sequencedOutput", "sampledOutput"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, socket: keyof FloatIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
-
-    const result = Iteration.evaluate(node, context);
-    if (result === null) return null;
+    let position: number;
+    if (socket === "sequencedOutput") {
+        const result = Iteration.evaluate(node, context);
+        if (result === null) return null;
+        position = result.t * 100;
+    } else if (socket === "sampledOutput") {
+        position = Iteration.resolveSamplePosition(node, context);
+    } else {
+        return null;
+    }
 
     const stops = node.payload.stops;
     if (stops.length === 0) return null;
@@ -204,25 +232,26 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, socket
         const valStr = context.resolve<"float">(node.id, `value_${stop.id}`)?.data ?? stop.value;
         const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
         const value = NumericString.Emptyable.asNumber(valStr) ?? 0;
-        const position = NumericString.Emptyable.asNumber(posStr) ?? 0;
-        resolved.push({ value, position });
+        const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
+        resolved.push({ value, position: pos });
     }
 
     // Sort by position
     resolved.sort((a, b) => a.position - b.position);
 
-    const value = Iteration.sampleStops(resolved, result.t * 100);
+    const value = Iteration.sampleStops(resolved, position);
     return { kind: "float", data: `${value}` };
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<FloatIteratorDefinition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset">>]: SocketTypes.SocketRule;
+    [key in keyof Required<Pick<FloatIteratorDefinition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">>]: SocketTypes.SocketRule;
 } = {
     ...Iteration.IN_SOCKET_TYPES,
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<FloatIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["float"], mode: "and" },
+    sequencedOutput: { types: ["float"], mode: "and" },
+    sampledOutput: { types: ["float"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

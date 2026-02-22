@@ -300,6 +300,7 @@ export namespace Iteration {
             reverseSequence: DataTypes.Use<"boolean">;
             startOffset: DataTypes.Use<"integer">;
             endOffset: DataTypes.Use<"integer">;
+            samplePosition: DataTypes.Use<"float" | "integer">;
         };
         outputs: NodeDefinitions.Generic["outputs"];
         payload: {
@@ -307,8 +308,12 @@ export namespace Iteration {
             reverseSequence: boolean;
             startOffset: EmptyOr<NumericString.Type>;
             endOffset: EmptyOr<NumericString.Type>;
+            samplePosition: EmptyOr<NumericString.Type>;
         };
     };
+
+    export const SEQUENCED_DEPS: (keyof Definition["inputs"])[] = ["sequence", "mode", "reverseSequence", "startOffset", "endOffset"];
+    export const SAMPLED_DEPS: (keyof Definition["inputs"])[] = ["samplePosition"];
 
     export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
         sequence: { types: ["sequence"], mode: "and" },
@@ -316,6 +321,7 @@ export namespace Iteration {
         reverseSequence: { types: ["boolean"], mode: "and" },
         startOffset: { types: ["integer"], mode: "and" },
         endOffset: { types: ["integer"], mode: "and" },
+        samplePosition: { types: ["float", "integer"], mode: "and" },
     };
 
     /**
@@ -376,6 +382,15 @@ export namespace Iteration {
         // Compute t (0..1)
         const t = effectiveCount <= 1 ? 0 : effectiveIdx / (effectiveCount - 1);
         return { t };
+    };
+
+    /**
+     * Resolve the sample position input, clamped to 0..100.
+     */
+    export const resolveSamplePosition = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): number => {
+        const raw = context.resolve<"float" | "integer">(node.id, "samplePosition")?.data ?? node.payload.samplePosition;
+        const val = NumericString.Emptyable.asNumber(raw) ?? 0;
+        return Math.max(0, Math.min(100, val));
     };
 
     /**

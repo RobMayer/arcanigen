@@ -5,8 +5,6 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { CheckBox } from "../../../components/buttons/CheckBox";
-import { RadioButton } from "../../../components/buttons/RadioButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { NumericString } from "../../datatypes/numericString";
@@ -16,14 +14,13 @@ import { Resolver } from "../../../util/resolver";
 import { Color } from "../../datatypes/color";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { interpolateColor } from "../../../util/colorSpaces";
+import { Iteration } from "../abstract";
 import styled from "styled-components";
 
 const COLOR_SPACE_OPTIONS = Enum.options(Enum.Common.colorSpace);
 const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
-const MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 
 // Color spaces that have a hue component
 const HUE_SPACES: Set<number> = new Set([
@@ -37,29 +34,21 @@ const HUE_SPACES: Set<number> = new Set([
 
 export type ColorIteratorDefinition = {
     inputs: {
-        sequence: DataTypes.Use<"sequence">;
         colorSpace: DataTypes.Use<"enum">;
         angleTraversal: DataTypes.Use<"enum">;
-        mode: DataTypes.Use<"enum">;
-        reverseSequence: DataTypes.Use<"boolean">;
-        startOffset: DataTypes.Use<"integer">;
-        endOffset: DataTypes.Use<"integer">;
         [color: `color_${string}`]: DataTypes.Use<"color">;
         [pos: `pos_${string}`]: DataTypes.Use<"float">;
-    };
+    } & Iteration.Definition["inputs"];
     outputs: {
-        output: DataTypes.Use<"color">;
+        sequencedOutput: DataTypes.Use<"color">;
+        sampledOutput: DataTypes.Use<"color">;
     };
     payload: {
         label: string;
         colorSpace: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        reverseSequence: boolean;
-        startOffset: EmptyOr<NumericString.Type>;
-        endOffset: EmptyOr<NumericString.Type>;
         stops: { id: string; color: Color.Type; position: EmptyOr<NumericString.Type> }[];
-    };
+    } & Iteration.Definition["payload"];
 };
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorIterator", ColorIteratorDefinition> => {
@@ -75,13 +64,15 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIteratorDefini
             reverseSequence: null,
             startOffset: null,
             endOffset: null,
+            samplePosition: null,
             [`color_${s0}`]: null,
             [`pos_${s0}`]: null,
             [`color_${s1}`]: null,
             [`pos_${s1}`]: null,
         },
         out: {
-            output: [],
+            sequencedOutput: [],
+            sampledOutput: [],
         },
         payload: {
             label: "",
@@ -91,6 +82,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIteratorDefini
             reverseSequence: input.reverseSequence ?? false,
             startOffset: input.startOffset ?? "0",
             endOffset: input.endOffset ?? "0",
+            samplePosition: input.samplePosition ?? "50",
             stops: [
                 { id: s0, color: { r: 0, g: 0, b: 0, a: 1 }, position: "0" },
                 { id: s1, color: { r: 1, g: 1, b: 1, a: 1 }, position: "100" },
@@ -167,8 +159,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"sampledOutput"}>
+                Sampled Output
+            </SocketOut>
+            <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
+                <DecimalInput.SliderInput
+                    value={node.payload.samplePosition}
+                    onCommit={(samplePosition) => handleUpdate({ samplePosition })}
+                    disabled={node.in.samplePosition !== null}
+                    min={0}
+                    max={100}
+                />
+            </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"sequencedOutput"}>
+                Sequenced Output
             </SocketOut>
             <SocketIn node={node} socketId={"sequence"}>
                 Sequence
@@ -210,26 +215,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <SocketIn node={node} socketId={"mode"} label={"Mode"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.mode}`}
-                        onValue={(v) => handleUpdate({ mode: Number(v) })}
-                        disabled={node.in.mode !== null}
-                        options={MODE_OPTIONS}
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"reverseSequence"}>
-                    <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
-                        Reverse Sequence
-                    </CheckBox>
-                </SocketIn>
-                <SocketIn node={node} socketId={"startOffset"} label={"Start Offset"}>
-                    <IntegerInput value={node.payload.startOffset} onCommit={(startOffset) => handleUpdate({ startOffset })} disabled={node.in.startOffset !== null} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endOffset"} label={"End Offset"}>
-                    <IntegerInput value={node.payload.endOffset} onCommit={(endOffset) => handleUpdate({ endOffset })} disabled={node.in.endOffset !== null} />
-                </SocketIn>
+                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
             </NodeAccordion>
         </TypicalNode>
     );
@@ -256,15 +242,20 @@ const StopEntry = styled.div`
 `;
 
 const dependsOn = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, outSocket: keyof ColorIteratorDefinition["outputs"], _deps: AllDeps): (keyof ColorIteratorDefinition["inputs"])[] => {
-    if (outSocket === "output") {
-        const stopSockets = node.payload.stops.flatMap((s) => [`color_${s.id}`, `pos_${s.id}`]) as (keyof ColorIteratorDefinition["inputs"])[];
-        return ["sequence", "colorSpace", "angleTraversal", "mode", "reverseSequence", "startOffset", "endOffset", ...stopSockets];
+    const stopSockets = node.payload.stops.flatMap((s) => [`color_${s.id}`, `pos_${s.id}`]) as (keyof ColorIteratorDefinition["inputs"])[];
+    if (outSocket === "sequencedOutput") {
+        return [...Iteration.SEQUENCED_DEPS, "colorSpace", "angleTraversal", ...stopSockets];
+    }
+    if (outSocket === "sampledOutput") {
+        return [...Iteration.SAMPLED_DEPS, "colorSpace", "angleTraversal", ...stopSockets];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, _inSocket: keyof ColorIteratorDefinition["inputs"], _deps: AllDeps): (keyof ColorIteratorDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, inSocket: keyof ColorIteratorDefinition["inputs"], _deps: AllDeps): (keyof ColorIteratorDefinition["outputs"])[] => {
+    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
+    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
+    return ["sequencedOutput", "sampledOutput"];
 };
 
 const sampleGradient = (resolved: { color: NonNullable<Color.Type>; position: number }[], position: number, colorSpaceValue: number, angleTraversalValue: number): DataTypes.AnyEval | null => {
@@ -300,65 +291,19 @@ const sampleGradient = (resolved: { color: NonNullable<Color.Type>; position: nu
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket: keyof ColorIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
-
-    const sequenceEval = context.resolve<"sequence">(node.id, "sequence");
-    if (!sequenceEval) return null;
-
-    const { senderId, count } = sequenceEval.data;
-    if (count <= 0) return null;
+    let position: number;
+    if (socket === "sequencedOutput") {
+        const result = Iteration.evaluate(node, context);
+        if (result === null) return null;
+        position = result.t * 100;
+    } else if (socket === "sampledOutput") {
+        position = Iteration.resolveSamplePosition(node, context);
+    } else {
+        return null;
+    }
 
     const stops = node.payload.stops;
     if (stops.length === 0) return null;
-
-    // Resolve sequence manipulation parameters
-    const reverseSequence = context.resolve<"boolean">(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
-    const startOffsetStr = context.resolve<"integer">(node.id, "startOffset")?.data ?? node.payload.startOffset;
-    const endOffsetStr = context.resolve<"integer">(node.id, "endOffset")?.data ?? node.payload.endOffset;
-    const startOffset = startOffsetStr === "" ? 0 : parseInt(startOffsetStr as string, 10) || 0;
-    const endOffset = endOffsetStr === "" ? 0 : parseInt(endOffsetStr as string, 10) || 0;
-    const modeEnum = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
-    const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
-
-    let iter = context.sequenceData[senderId] ?? 0;
-
-    // Step 1: Reverse sequence
-    if (reverseSequence) {
-        iter = count - 1 - iter;
-    }
-
-    // Step 2: Compute effective range
-    const effectiveStart = startOffset;
-    const effectiveEnd = count - 1 + endOffset;
-    const effectiveCount = effectiveEnd - effectiveStart + 1;
-    if (effectiveCount <= 0) return null;
-
-    // Step 3: Map iter to position within effective range, applying mode for out-of-range
-    let effectiveIdx = iter - effectiveStart;
-    if (effectiveIdx < 0 || effectiveIdx >= effectiveCount) {
-        switch (modeKey) {
-            case "CLAMP":
-                effectiveIdx = Math.max(0, Math.min(effectiveIdx, effectiveCount - 1));
-                break;
-            case "WRAP":
-                effectiveIdx = ((effectiveIdx % effectiveCount) + effectiveCount) % effectiveCount;
-                break;
-            case "BOUNCE": {
-                const cycle = effectiveCount > 1 ? 2 * (effectiveCount - 1) : 1;
-                const pos = ((effectiveIdx % cycle) + cycle) % cycle;
-                effectiveIdx = pos < effectiveCount ? pos : cycle - pos;
-                break;
-            }
-            case "TRUNCATE":
-                return null;
-            default:
-                effectiveIdx = Math.max(0, Math.min(effectiveIdx, effectiveCount - 1));
-        }
-    }
-
-    // Step 4: Compute t (0..1) → position (0..100)
-    const t = effectiveCount <= 1 ? 0 : effectiveIdx / (effectiveCount - 1);
-    const position = t * 100;
 
     // Resolve color space and hue traversal
     const colorSpaceValue = Enum.resolve(context.resolve<"enum">(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
@@ -383,19 +328,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<ColorIteratorDefinition["inputs"], "sequence" | "colorSpace" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset">>]: SocketTypes.SocketRule;
+    [key in keyof Required<
+        Pick<ColorIteratorDefinition["inputs"], "sequence" | "colorSpace" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">
+    >]: SocketTypes.SocketRule;
 } = {
-    sequence: { types: ["sequence"], mode: "and" },
+    ...Iteration.IN_SOCKET_TYPES,
     colorSpace: { types: ["enum"], mode: "and" },
     angleTraversal: { types: ["enum"], mode: "and" },
-    mode: { types: ["enum"], mode: "and" },
-    reverseSequence: { types: ["boolean"], mode: "and" },
-    startOffset: { types: ["integer"], mode: "and" },
-    endOffset: { types: ["integer"], mode: "and" },
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<ColorIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["color"], mode: "and" },
+    sequencedOutput: { types: ["color"], mode: "and" },
+    sampledOutput: { types: ["color"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
