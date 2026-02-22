@@ -76,6 +76,22 @@ export namespace PaperHelper {
         return booleanOp(pathA, pathB, (a, b) => a.divide(b));
     };
 
+    export const reverseD = (d: string): string | null => {
+        ensurePaper();
+        const p = paper.project.importSVG(`<path d="${d}"/>`, { insert: false }) as paper.Path;
+        if (!p) return null;
+        try {
+            p.reverse();
+            const out = p.pathData;
+            p.remove();
+            return out;
+        } catch (e) {
+            console.warn(e);
+            p.remove();
+            return null;
+        }
+    };
+
     export const healD = (d: string): string | null => {
         ensurePaper();
         const p = paper.project.importSVG(`<path d="${d}"/>`, { insert: false }) as paper.Path;

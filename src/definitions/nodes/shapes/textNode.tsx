@@ -16,6 +16,8 @@ import { AngleInput } from "../../../components/inputs/AngleInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
+import { CheckBox } from "../../../components/buttons/CheckBox";
+import { PaperHelper } from "../../../util/paperHelper";
 
 export type TextPathDefinition = {
     inputs: {
@@ -31,6 +33,7 @@ export type TextPathDefinition = {
         offsetPercent: DataTypes.Use<"float" | "integer">;
         offsetLength: DataTypes.Use<"length">;
         offsetOrigin: DataTypes.Use<"enum">;
+        reversePath: DataTypes.Use<"boolean">;
     } & Stylings.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
@@ -48,6 +51,7 @@ export type TextPathDefinition = {
         offsetPercent: DataTypes.TypeOf<DataTypes.Use<"float">>;
         offsetLength: DataTypes.TypeOf<DataTypes.Use<"length">>;
         offsetOrigin: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        reversePath: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     } & Stylings.Definition["payload"];
 };
 
@@ -71,6 +75,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             offsetPercent: null,
             offsetLength: null,
             offsetOrigin: null,
+            reversePath: null,
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
@@ -94,6 +99,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             offsetPercent: "0",
             offsetLength: "0px",
             offsetOrigin: Enum.Common.offsetOrigin.START.value,
+            reversePath: false,
             // stroke
             strokeWidth: "0px",
             strokeDash: "",
@@ -126,6 +132,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                 <BlockInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} />
             </SocketIn>
             <SocketIn node={node} socketId={"path"} label={"Path"} />
+            <SocketIn node={node} socketId={"reversePath"}>
+                <CheckBox checked={node.payload.reversePath} onToggle={(reversePath) => handleUpdate({ reversePath })} disabled={node.in.reversePath !== null}>
+                    Reverse Path
+                </CheckBox>
+            </SocketIn>
             <SocketIn node={node} socketId={"size"} label={"Font Size"}>
                 <LengthInput value={node.payload.size} onCommit={(size) => handleUpdate({ size })} disabled={node.in.size !== null} min={"0px"} required />
             </SocketIn>
@@ -205,6 +216,7 @@ const ALL_INPUTS: (keyof TextPathDefinition["inputs"])[] = [
     "offsetPercent",
     "offsetLength",
     "offsetOrigin",
+    "reversePath",
     "strokeWidth",
     "strokeColor",
     "strokeCap",
@@ -227,6 +239,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
 
     const pathData = context.resolve<"path">(node.id, "path")?.data;
     if (!pathData) return null;
+
+    const reversePath = context.resolve<"boolean">(node.id, "reversePath")?.data ?? node.payload.reversePath;
+    const pathD = reversePath ? (PaperHelper.reverseD(pathData.d) ?? pathData.d) : pathData.d;
 
     const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
     if (!text) return null;
@@ -267,7 +282,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
             dominantBaseline,
             rotate: rotation !== 0 ? rotation : undefined,
             paint,
-            textPath: { d: pathData.d, startOffset },
+            textPath: { d: pathD, startOffset },
             transform: pathData.transform,
             preview: pathData.preview,
         },
@@ -286,6 +301,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<TextPathDefinition["inputs"]>]: S
     offsetPercent: { types: ["float", "integer"], mode: "or" },
     offsetLength: { types: ["length"], mode: "or" },
     offsetOrigin: { types: ["enum"], mode: "or" },
+    reversePath: { types: ["boolean"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
 };
 
