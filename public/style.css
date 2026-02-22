@@ -76,7 +76,7 @@ html {
 [data-flavour="info"] {
     --flavour: var(--flavour-info);
     --scrollbar-flavour: var(--flavour);
-    --icon-flavour: var(--icon-help);
+    --icon-flavour: var(--icon-info);
 }
 
 /* Scrollbar Styles */

@@ -9,6 +9,7 @@ import { useDragPane } from "./components/wrappers/DragPane";
 import { SvgCanvas } from "./features/svgcanvas";
 import { ResizeHandle } from "./components/containers/ResizeHandle";
 import { SubgraphEditorProvider } from "./features/subgraph";
+import { Toolbar } from "./features/toolbar";
 
 window.onfocus = () => {
     document.dispatchEvent(new CustomEvent("trh:pagefocus"));
@@ -51,7 +52,9 @@ const Primary = () => {
 
     return (
         <Layout ref={layoutRef} style={style} data-state={isDrawerOpen ? "drawer-open" : undefined}>
-            <div data-gridarea={"toolbar"}>I am the toolbar</div>
+            <div data-gridarea={"toolbar"}>
+                <Toolbar />
+            </div>
             <div data-gridarea={"nodegraph"}>
                 <GraphView graphId={"root"} paneControls={graphPaneControls} />
             </div>

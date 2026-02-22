@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { FastContextMember, useFastContextMember, useFastContextState } from "../util/hooks/useFastContext";
-import { ListOf, normalizeList } from "../util/misc";
+import { EmptyOr, ListOf, normalizeList } from "../util/misc";
+import { NumericString } from "../definitions/datatypes/numericString";
 
 export namespace Session {
     export type MarqueeMode = "contain" | "intersect";
@@ -8,6 +9,7 @@ export namespace Session {
     type ContextValue = {
         selection: FastContextMember<Set<string>>;
         marqueeMode: FastContextMember<MarqueeMode>;
+        exportDpi: FastContextMember<EmptyOr<NumericString.Type>>;
         uiState: FastContextMember<{ [key: string]: unknown }>;
     };
 
@@ -16,9 +18,10 @@ export namespace Session {
     export const Provider = ({ children }: { children?: ReactNode }) => {
         const selection = useFastContextMember<Set<string>>(new Set<string>());
         const marqueeMode = useFastContextMember<MarqueeMode>("contain");
+        const exportDpi = useFastContextMember<EmptyOr<NumericString.Type>>("96");
         const uiState = useFastContextMember<{ [key: string]: unknown }>({});
 
-        const value = useMemo(() => ({ uiState, selection, marqueeMode }), []);
+        const value = useMemo(() => ({ uiState, exportDpi, selection, marqueeMode }), []);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -53,6 +56,7 @@ export namespace Session {
     export const useSelectionRef = () => useContext(CTX)!.selection.ref;
 
     export const useMarqueeMode = () => useFastContextState(useContext(CTX)!.marqueeMode);
+    export const useExportDpi = () => useFastContextState(useContext(CTX)!.exportDpi);
 
     export const useSelectionMethods = () => {
         const ctx = useContext(CTX)!;

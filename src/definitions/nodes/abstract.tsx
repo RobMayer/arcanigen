@@ -77,7 +77,7 @@ export namespace Stylings {
         accordion?: boolean;
     }) => {
         return (
-            <AccordionMaybe label={"Stylings"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder"}>
+            <AccordionMaybe label={"Appearance"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder"}>
                 <SocketIn node={node} socketId={"strokeColor"} label={"Stroke Color"}>
                     <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} nullable alpha />
                 </SocketIn>

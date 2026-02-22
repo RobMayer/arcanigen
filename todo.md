@@ -6,7 +6,6 @@
 - [ ] drag and drop from node drawer onto viewport
 - [x] resize observer on viewport of drag-pane
 - [x] sliders for integer and float, already
-- [ ] allow subgraphs to have a custom icon - maybe?
 
 # code quality
 
@@ -32,20 +31,10 @@
     - [x] Flood Fill
     - [x] Custom Glyph
     - [x] Text Path (ugh)
-- [ ] more shapes (new, maybe?)
-    - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
-    - [ ] Banded Burst (circle, polygon, and polygram are to ring, polyring, and knot as burst is to this)
-    - [ ] Banded Arc
-    - [ ] Banded Spiral
-    - [ ] Banded Line
-    - [ ] Merged Knot (like knot but without overlap - complex as fuck)
-- [ ] Figure out Random Seed mechanism
 - [x] Figure out Style Overrides
 - [x] Transform Node (translation, pre-rotation, post-rotation, skew, scale)
 - [x] Radial Array (similar interface as Burst)
 - [x] Figure out Conformal Paths
-- [ ] colorStops datatypes - think colorStops is to ColorIterator as layers datatype is to LayerNode (a collection of multiple color stops that overrides the dynamic list of color stops in the ColorIterator node). Could be recycled for a Gradient node type as well.
-    - [ ] support for gradients in (most?) sockets that currently also take a fill would be nice.
 - [x] Value iterator (float, integer, length) - (should we include angle in this too or have a different node for angles because it has extra gubbins like angular wrap direction - see hue on color iterator?)
 - [x] Equality test (A == B)
 - [x] Within tolerance test (A == B +/- C)
@@ -61,5 +50,20 @@
 
 # componnet improvements
 
-- [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe
 - [x] rework mouse drag to pointer drag
+
+# Nice to haves, maybe
+
+- [ ] colorStops datatypes - think colorStops is to ColorIterator as layers datatype is to LayerNode (a collection of multiple color stops that overrides the dynamic list of color stops in the ColorIterator node). Could be recycled for a Gradient node type as well.
+    - [ ] support for gradients in (most?) sockets that currently also take a fill would be nice.
+
+- [ ] more shapes (new, maybe?)
+    - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
+    - [ ] Banded Burst (circle, polygon, and polygram are to ring, polyring, and knot as burst is to this)
+    - [ ] Banded Arc
+    - [ ] Banded Spiral
+    - [ ] Banded Line
+    - [ ] Merged Knot (like knot but without overlap - complex as fuck)
+- [ ] Figure out Random Seed mechanism
+- [ ] allow subgraphs to have a custom icon or an icon selector, I guess - maybe?
+- [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe

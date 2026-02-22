@@ -10,6 +10,7 @@ export namespace COMMON_STYLES {
         color: oklch(from var(--flavour) calc(1 - round(l - var(--contrast))) 0 0);
         background: var(--flavour);
         --icon: oklch(from var(--flavour) 0.8 calc(c * 0.9) h);
+        text-box: trim-both cap alphabetic;
 
         &:disabled {
             opacity: 0.4;
