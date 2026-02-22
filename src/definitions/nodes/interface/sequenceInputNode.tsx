@@ -46,7 +46,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SequenceInp
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"sequence"}>
+            <SocketOut node={node} socketId={"output"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
         </TypicalNode>

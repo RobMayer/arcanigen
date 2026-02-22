@@ -19,7 +19,6 @@ const SlotBase = styled.div`
 export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"] & string>({
     node,
     socketId,
-    type,
     label,
     children,
     ref,
@@ -28,12 +27,11 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     label?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
     socketId: K;
-    type: string;
     ref?: Ref<HTMLDivElement>;
 }) => {
     return (
         <SlotBase ref={ref}>
-            <Socket side={"in"} socketId={socketId} nodeId={node.id} type={type} connected={node.in[socketId] !== null} />
+            <Socket side={"in"} socketId={socketId} nodeId={node.id} node={node as NodeDefinitions.NodeFor<NodeDefinitions.Any>} connected={node.in[socketId] !== null} />
             {label ? (
                 <LabelSmall label={label} align={"left"}>
                     {children}
@@ -80,7 +78,6 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: Shape 
 export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["outputs"] & string>({
     node,
     socketId,
-    type,
     label,
     children,
     ref,
@@ -89,7 +86,6 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
     label?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
     socketId: K;
-    type: string;
     ref?: Ref<HTMLDivElement>;
 }) => {
     return (
@@ -101,7 +97,7 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
             ) : (
                 <LabelBig align={"right"}>{children}</LabelBig>
             )}
-            <Socket side={"out"} socketId={socketId} nodeId={node.id} type={type} connected={node.out[socketId].length > 0} />
+            <Socket side={"out"} socketId={socketId} nodeId={node.id} node={node as NodeDefinitions.NodeFor<NodeDefinitions.Any>} connected={node.out[socketId].length > 0} />
         </SlotBase>
     );
 };

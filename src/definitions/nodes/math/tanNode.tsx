@@ -49,10 +49,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TanDefiniti
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"float"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"angle float integer"} label={"Input"}>
+            <SocketIn node={node} socketId={"input"} label={"Input"}>
                 <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
             </SocketIn>
         </TypicalNode>

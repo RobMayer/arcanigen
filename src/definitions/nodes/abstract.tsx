@@ -78,13 +78,13 @@ export namespace Stylings {
     }) => {
         return (
             <AccordionMaybe label={"Stylings"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder"}>
-                <SocketIn node={node} socketId={"strokeColor"} type={"color"} label={"Stroke Color"}>
+                <SocketIn node={node} socketId={"strokeColor"} label={"Stroke Color"}>
                     <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} nullable alpha />
                 </SocketIn>
-                <SocketIn node={node} socketId={"strokeWidth"} type={"length"} label={"Stroke Width"}>
+                <SocketIn node={node} socketId={"strokeWidth"} label={"Stroke Width"}>
                     <LengthInput value={node.payload.strokeWidth} onCommit={(strokeWidth) => handleUpdate({ strokeWidth })} disabled={node.in.strokeWidth !== null} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"strokeCap"} type={"enum"} label={"Stroke Cap"}>
+                <SocketIn node={node} socketId={"strokeCap"} label={"Stroke Cap"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.strokeCap}`}
@@ -94,7 +94,7 @@ export namespace Stylings {
                     />
                 </SocketIn>
                 {join && "strokeJoin" in node.payload ? (
-                    <SocketIn node={node} socketId={"strokeJoin"} type={"enum"} label={"Stroke Join"}>
+                    <SocketIn node={node} socketId={"strokeJoin"} label={"Stroke Join"}>
                         <RadioButton.Group
                             orientation={"horizontal"}
                             value={`${node.payload.strokeJoin}`}
@@ -104,18 +104,18 @@ export namespace Stylings {
                         />
                     </SocketIn>
                 ) : null}
-                <SocketIn node={node} socketId={"strokeDash"} type={"tokens<length>"} label={"Stroke Dash"}>
+                <SocketIn node={node} socketId={"strokeDash"} label={"Stroke Dash"}>
                     <TextInput value={node.payload.strokeDash} onCommit={(strokeDash) => handleUpdate({ strokeDash })} disabled={node.in.strokeDash !== null} pattern={Length.TOKENS_REGEX} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"strokeDashOffset"} type={"length"} label={"Stroke Dash Offset"}>
+                <SocketIn node={node} socketId={"strokeDashOffset"} label={"Stroke Dash Offset"}>
                     <LengthInput value={node.payload.strokeDashOffset} onCommit={(strokeDashOffset) => handleUpdate({ strokeDashOffset })} disabled={node.in.strokeDashOffset !== null} required />
                 </SocketIn>
                 {fill && "fillColor" in node.payload ? (
-                    <SocketIn node={node} socketId={"fillColor"} type={"color"} label={"Fill Color"}>
+                    <SocketIn node={node} socketId={"fillColor"} label={"Fill Color"}>
                         <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} nullable alpha />
                     </SocketIn>
                 ) : null}
-                <SocketIn node={node} socketId={"paintOrder"} type={"enum"} label={"Paint Order"}>
+                <SocketIn node={node} socketId={"paintOrder"} label={"Paint Order"}>
                     <Dropdown value={`${node.payload.paintOrder}`} onValue={(v) => handleUpdate({ paintOrder: Number(v) })}>
                         {PAINT_ORDER_OPTIONS.map((each) => {
                             return (
@@ -221,7 +221,7 @@ export namespace Transforms {
 
         return (
             <AccordionMaybe has={accordion} socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta|rotation"} label={"Transforms"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"positionMode"} type={"enum"} label={"Position Mode"}>
+                <SocketIn node={node} socketId={"positionMode"} label={"Position Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.positionMode}`}
@@ -230,13 +230,13 @@ export namespace Transforms {
                         options={POSITION_MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionX"} type={"length"} label={"Position X"}>
+                <SocketIn node={node} socketId={"positionX"} label={"Position X"}>
                     <LengthInput value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={node.in.positionX !== null || isPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionY"} type={"length"} label={"Position Y"}>
+                <SocketIn node={node} socketId={"positionY"} label={"Position Y"}>
                     <LengthInput value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={node.in.positionY !== null || isPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionRadius"} type={"length"} label={"Position Radius"}>
+                <SocketIn node={node} socketId={"positionRadius"} label={"Position Radius"}>
                     <LengthInput
                         value={node.payload.positionRadius}
                         onCommit={(positionRadius) => handleUpdate({ positionRadius })}
@@ -244,10 +244,10 @@ export namespace Transforms {
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionTheta"} type={"angle"} label={"Position Theta"}>
+                <SocketIn node={node} socketId={"positionTheta"} label={"Position Theta"}>
                     <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"rotation"} type={"angle"} label={"Rotation"}>
+                <SocketIn node={node} socketId={"rotation"} label={"Rotation"}>
                     <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
             </AccordionMaybe>
@@ -418,7 +418,7 @@ export namespace Iteration {
     }): ReactNode => {
         return (
             <AccordionMaybe has={accordion} socketsIn={"mode|reverseSequence|startOffset|endOffset"} label={"Options"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.mode}`}
@@ -427,15 +427,15 @@ export namespace Iteration {
                         options={MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"reverseSequence"} type={"boolean"}>
+                <SocketIn node={node} socketId={"reverseSequence"}>
                     <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
                         Reverse Sequence
                     </CheckBox>
                 </SocketIn>
-                <SocketIn node={node} socketId={"startOffset"} type={"integer"} label={"Start Offset"}>
+                <SocketIn node={node} socketId={"startOffset"} label={"Start Offset"}>
                     <IntegerInput value={node.payload.startOffset} onCommit={(startOffset) => handleUpdate({ startOffset })} disabled={node.in.startOffset !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endOffset"} type={"integer"} label={"End Offset"}>
+                <SocketIn node={node} socketId={"endOffset"} label={"End Offset"}>
                     <IntegerInput value={node.payload.endOffset} onCommit={(endOffset) => handleUpdate({ endOffset })} disabled={node.in.endOffset !== null} />
                 </SocketIn>
             </AccordionMaybe>

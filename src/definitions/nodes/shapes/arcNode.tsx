@@ -128,17 +128,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"arcMode"} type={"enum"} label={"Arc Mode"}>
+            <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
                     value={`${node.payload.arcMode}`}
@@ -148,34 +148,34 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
                 />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaStart"} type={"angle"} label={"Start"}>
+            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} />
             </SocketIn>
-            <SocketIn node={node} socketId={"sweep"} type={"angle"} label={"Sweep"}>
+            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
                 <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound min={-360} max={360} />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaFrom"} type={"angle"} label={"From"}>
+            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
                 <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaTo"} type={"angle"} label={"To"}>
+            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
                 <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"pieSlice"} type={"boolean"}>
+            <SocketIn node={node} socketId={"pieSlice"}>
                 <CheckBox checked={node.payload.pieSlice} onToggle={(pieSlice) => handleUpdate({ pieSlice })} disabled={node.in.pieSlice !== null}>
                     Pie Slice
                 </CheckBox>
             </SocketIn>
 
             <NodeAccordion label={"More"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"markerStartShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerStartShape"}>
                     Start Marker
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerEndShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerEndShape"}>
                     End Marker
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>

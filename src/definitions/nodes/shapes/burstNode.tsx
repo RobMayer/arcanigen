@@ -158,17 +158,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"spurCount"} type={"integer"} label={"Spurs"}>
+            <SocketIn node={node} socketId={"spurCount"} label={"Spurs"}>
                 <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null} min={"0"} required />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Radial Mode"}>
+            <SocketIn node={node} socketId={"spanMode"} label={"Radial Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
                     value={`${node.payload.spanMode}`}
@@ -177,19 +177,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} type={"length"} label={"Inner Radius"}>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"outerRadius"} type={"length"} label={"Outer Radius"}>
+            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"spread"} type={"length"} label={"Spread"}>
+            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
                 <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} type={"enum"} label={"Spread Align"}>
+            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
                 <RadioButton.Group
                     options={SPREAD_ALIGN_OPTIONS}
                     value={`${node.payload.spreadAlign}`}
@@ -200,7 +200,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
             </SocketIn>
 
             <hr />
-            <SocketIn node={node} socketId={"thetaMode"} type={"enum"} label={"Theta Mode"}>
+            <SocketIn node={node} socketId={"thetaMode"} label={"Theta Mode"}>
                 <RadioButton.Group
                     options={THETA_MODE_OPTIONS}
                     value={`${node.payload.thetaMode}`}
@@ -210,32 +210,32 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaStart"} type={"angle"} label={"Start Theta"}>
+            <SocketIn node={node} socketId={"thetaStart"} label={"Start Theta"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isIncremental} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaEnd"} type={"angle"} label={"End Theta"}>
+            <SocketIn node={node} socketId={"thetaEnd"} label={"End Theta"}>
                 <AngleInput.SliderInput value={node.payload.thetaEnd} onCommit={(thetaEnd) => handleUpdate({ thetaEnd })} disabled={node.in.thetaEnd !== null || isIncremental} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaInclusive"} type={"boolean"}>
+            <SocketIn node={node} socketId={"thetaInclusive"}>
                 <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isIncremental}>
                     Inclusive End
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaSteps"} type={"angle"} label={"Step Theta"}>
+            <SocketIn node={node} socketId={"thetaSteps"} label={"Step Theta"}>
                 <AngleInput.SliderInput value={node.payload.thetaSteps} onCommit={(thetaSteps) => handleUpdate({ thetaSteps })} disabled={node.in.thetaSteps !== null || isStartStop} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaCurve"} type={"distribution"}>
+            <SocketIn node={node} socketId={"thetaCurve"}>
                 Angular Distribution
             </SocketIn>
 
             <NodeAccordion label={"More"} socketsIn={"markerStart|markerEnd|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"markerStart"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerStart"}>
                     Marker Start
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerEnd"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerEnd"}>
                     Marker End
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>

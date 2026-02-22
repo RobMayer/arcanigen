@@ -84,10 +84,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"enum"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"enum"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <Dropdown value={`${node.payload.value}`} onValue={(v) => handleUpdate({ value: Number(v) })} disabled={node.in.value !== null}>
                     {node.payload.options.map((opt, i) => (
                         <option value={i} key={i}>

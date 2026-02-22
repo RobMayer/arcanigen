@@ -49,10 +49,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"color"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"color"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <ColorHexInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} nullable alpha disabled={node.in.value !== null} />
             </SocketIn>
         </TypicalNode>

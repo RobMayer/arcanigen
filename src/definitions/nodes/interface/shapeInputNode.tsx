@@ -46,7 +46,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ShapeInputD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
         </TypicalNode>

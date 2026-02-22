@@ -65,19 +65,14 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BetweenDefinition>
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BetweenDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const { connectedTypeValue, connectedTypeMin, connectedTypeMax } = node.payload;
-    const typeValue = effectiveInputType(connectedTypeValue, connectedTypeMin, connectedTypeMax);
-    const typeMin = effectiveInputType(connectedTypeMin, connectedTypeValue, connectedTypeMax);
-    const typeMax = effectiveInputType(connectedTypeMax, connectedTypeValue, connectedTypeMin);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={SocketTypes.toCSS(typeValue)}>Value</SocketIn>
-            <SocketIn node={node} socketId={"min"} type={SocketTypes.toCSS(typeMin)}>Min</SocketIn>
-            <SocketIn node={node} socketId={"max"} type={SocketTypes.toCSS(typeMax)}>Max</SocketIn>
+            <SocketIn node={node} socketId={"value"}>Value</SocketIn>
+            <SocketIn node={node} socketId={"min"}>Min</SocketIn>
+            <SocketIn node={node} socketId={"max"}>Max</SocketIn>
         </TypicalNode>
     );
 };

@@ -142,10 +142,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"angle"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
 
@@ -155,10 +155,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
             </ActionButton>
             {node.payload.stops.map((stop, idx) => (
                 <StopEntry key={stop.id}>
-                    <SocketIn node={node} socketId={`value_${stop.id}`} type={"angle"} label={`Stop ${idx}`} data-part="value">
+                    <SocketIn node={node} socketId={`value_${stop.id}`} label={`Stop ${idx}`} data-part="value">
                         <AngleInput.SliderInput value={stop.value} onCommit={(value) => handleStopValue(stop.id, value)} disabled={node.in[`value_${stop.id}`] !== null} unbound />
                     </SocketIn>
-                    <SocketIn node={node} socketId={`pos_${stop.id}`} type={"float"} data-part="position">
+                    <SocketIn node={node} socketId={`pos_${stop.id}`} data-part="position">
                         <DecimalInput value={stop.position} onCommit={(position) => handleStopPosition(stop.id, position)} disabled={node.in[`pos_${stop.id}`] !== null} min={"0"} max={"100"} />
                     </SocketIn>
                     <ActionButton.Lite onClick={() => handleRemoveStop(stop.id)} flavour={"danger"} data-part="remove">
@@ -167,7 +167,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                 </StopEntry>
             ))}
             <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="angleTraversal|mode|reverseSequence|startOffset|endOffset">
-                <SocketIn node={node} socketId={"angleTraversal"} type={"enum"} label={"Traversal"}>
+                <SocketIn node={node} socketId={"angleTraversal"} label={"Traversal"}>
                     <Dropdown value={`${node.payload.angleTraversal}`} onValue={(v) => handleUpdate({ angleTraversal: Number(v) })} disabled={node.in.angleTraversal !== null}>
                         {ANGLE_TRAVERSAL_OPTIONS.map((each) => (
                             <option value={each.value} key={each.value}>
@@ -176,7 +176,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.mode}`}
@@ -185,15 +185,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                         options={MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"reverseSequence"} type={"boolean"}>
+                <SocketIn node={node} socketId={"reverseSequence"}>
                     <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
                         Reverse Sequence
                     </CheckBox>
                 </SocketIn>
-                <SocketIn node={node} socketId={"startOffset"} type={"integer"} label={"Start Offset"}>
+                <SocketIn node={node} socketId={"startOffset"} label={"Start Offset"}>
                     <IntegerInput value={node.payload.startOffset} onCommit={(startOffset) => handleUpdate({ startOffset })} disabled={node.in.startOffset !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endOffset"} type={"integer"} label={"End Offset"}>
+                <SocketIn node={node} socketId={"endOffset"} label={"End Offset"}>
                     <IntegerInput value={node.payload.endOffset} onCommit={(endOffset) => handleUpdate({ endOffset })} disabled={node.in.endOffset !== null} />
                 </SocketIn>
             </NodeAccordion>

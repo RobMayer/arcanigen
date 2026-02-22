@@ -50,10 +50,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"float"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"float angle integer length"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
             </SocketIn>
         </TypicalNode>

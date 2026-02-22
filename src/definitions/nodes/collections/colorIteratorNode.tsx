@@ -167,10 +167,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"color"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
 
@@ -180,10 +180,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
             </ActionButton>
             {node.payload.stops.map((stop, idx) => (
                 <StopEntry key={stop.id}>
-                    <SocketIn node={node} socketId={`color_${stop.id}`} type={"color"} label={`Stop ${idx}`} data-part="color">
+                    <SocketIn node={node} socketId={`color_${stop.id}`} label={`Stop ${idx}`} data-part="color">
                         <ColorHexInput value={stop.color} onCommit={(color) => handleStopColor(stop.id, color)} disabled={node.in[`color_${stop.id}`] !== null} alpha nullable />
                     </SocketIn>
-                    <SocketIn node={node} socketId={`pos_${stop.id}`} type={"float"} data-part="position">
+                    <SocketIn node={node} socketId={`pos_${stop.id}`} data-part="position">
                         <DecimalInput value={stop.position} onCommit={(position) => handleStopPosition(stop.id, position)} disabled={node.in[`pos_${stop.id}`] !== null} min={"0"} max={"100"} />
                     </SocketIn>
                     <ActionButton.Lite onClick={() => handleRemoveStop(stop.id)} flavour={"danger"} data-part="remove">
@@ -192,7 +192,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                 </StopEntry>
             ))}
             <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="colorSpace|angleTraversal|mode|reverseSequence|startOffset|endOffset">
-                <SocketIn node={node} socketId={"colorSpace"} type={"enum"} label={"Color Space"}>
+                <SocketIn node={node} socketId={"colorSpace"} label={"Color Space"}>
                     <Dropdown value={`${node.payload.colorSpace}`} onValue={(v) => handleUpdate({ colorSpace: Number(v) })} disabled={node.in.colorSpace !== null}>
                         {COLOR_SPACE_OPTIONS.map((each) => (
                             <option value={each.value} key={each.value}>
@@ -201,7 +201,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <SocketIn node={node} socketId={"angleTraversal"} type={"enum"} label={"Hue Traversal"}>
+                <SocketIn node={node} socketId={"angleTraversal"} label={"Hue Traversal"}>
                     <Dropdown value={`${node.payload.angleTraversal}`} onValue={(v) => handleUpdate({ angleTraversal: Number(v) })} disabled={node.in.angleTraversal !== null || !hueRelevant}>
                         {ANGLE_TRAVERSAL_OPTIONS.map((each) => (
                             <option value={each.value} key={each.value}>
@@ -210,7 +210,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.mode}`}
@@ -219,15 +219,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         options={MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"reverseSequence"} type={"boolean"}>
+                <SocketIn node={node} socketId={"reverseSequence"}>
                     <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
                         Reverse Sequence
                     </CheckBox>
                 </SocketIn>
-                <SocketIn node={node} socketId={"startOffset"} type={"integer"} label={"Start Offset"}>
+                <SocketIn node={node} socketId={"startOffset"} label={"Start Offset"}>
                     <IntegerInput value={node.payload.startOffset} onCommit={(startOffset) => handleUpdate({ startOffset })} disabled={node.in.startOffset !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endOffset"} type={"integer"} label={"End Offset"}>
+                <SocketIn node={node} socketId={"endOffset"} label={"End Offset"}>
                     <IntegerInput value={node.payload.endOffset} onCommit={(endOffset) => handleUpdate({ endOffset })} disabled={node.in.endOffset !== null} />
                 </SocketIn>
             </NodeAccordion>

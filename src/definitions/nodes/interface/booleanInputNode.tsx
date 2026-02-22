@@ -57,7 +57,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BooleanInpu
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
             <Slot>

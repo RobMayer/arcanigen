@@ -140,15 +140,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
 
             <NodeAccordion label={"Start Point"} socketsIn={"startMode|startX|startY|startRadius|startTheta"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"startMode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"startMode"} label={"Mode"}>
                     <RadioButton.Group
                         options={POSITION_MODE_OPTIONS}
                         value={`${node.payload.startMode}`}
@@ -157,22 +157,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
                         disabled={node.in.startMode !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"startX"} type={"length"} label={"X"}>
+                <SocketIn node={node} socketId={"startX"} label={"X"}>
                     <LengthInput value={node.payload.startX} onCommit={(startX) => handleUpdate({ startX })} disabled={node.in.startX !== null || startIsPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"startY"} type={"length"} label={"Y"}>
+                <SocketIn node={node} socketId={"startY"} label={"Y"}>
                     <LengthInput value={node.payload.startY} onCommit={(startY) => handleUpdate({ startY })} disabled={node.in.startY !== null || startIsPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"startRadius"} type={"length"} label={"Radius"}>
+                <SocketIn node={node} socketId={"startRadius"} label={"Radius"}>
                     <LengthInput value={node.payload.startRadius} onCommit={(startRadius) => handleUpdate({ startRadius })} disabled={node.in.startRadius !== null || startIsCartesian} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"startTheta"} type={"angle"} label={"Theta"}>
+                <SocketIn node={node} socketId={"startTheta"} label={"Theta"}>
                     <AngleInput.SliderInput value={node.payload.startTheta} onCommit={(startTheta) => handleUpdate({ startTheta })} disabled={node.in.startTheta !== null || startIsCartesian} />
                 </SocketIn>
             </NodeAccordion>
 
             <NodeAccordion label={"End Point"} socketsIn={"endMode|endX|endY|endRadius|endTheta"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"endMode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"endMode"} label={"Mode"}>
                     <RadioButton.Group
                         options={POSITION_MODE_OPTIONS}
                         value={`${node.payload.endMode}`}
@@ -181,28 +181,28 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
                         disabled={node.in.endMode !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endX"} type={"length"} label={"X"}>
+                <SocketIn node={node} socketId={"endX"} label={"X"}>
                     <LengthInput value={node.payload.endX} onCommit={(endX) => handleUpdate({ endX })} disabled={node.in.endX !== null || endIsPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endY"} type={"length"} label={"Y"}>
+                <SocketIn node={node} socketId={"endY"} label={"Y"}>
                     <LengthInput value={node.payload.endY} onCommit={(endY) => handleUpdate({ endY })} disabled={node.in.endY !== null || endIsPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endRadius"} type={"length"} label={"Radius"}>
+                <SocketIn node={node} socketId={"endRadius"} label={"Radius"}>
                     <LengthInput value={node.payload.endRadius} onCommit={(endRadius) => handleUpdate({ endRadius })} disabled={node.in.endRadius !== null || endIsCartesian} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"endTheta"} type={"angle"} label={"Theta"}>
+                <SocketIn node={node} socketId={"endTheta"} label={"Theta"}>
                     <AngleInput.SliderInput value={node.payload.endTheta} onCommit={(endTheta) => handleUpdate({ endTheta })} disabled={node.in.endTheta !== null || endIsCartesian} />
                 </SocketIn>
             </NodeAccordion>
 
             <NodeAccordion label={"Markers"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"markerStartShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerStartShape"}>
                     Start Marker
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerEndShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerEndShape"}>
                     End Marker
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>

@@ -29,17 +29,13 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GreaterOrEqualDefi
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GreaterOrEqualDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const { connectedTypeA, connectedTypeB } = node.payload;
-    const typeA = effectiveInputType(connectedTypeA, connectedTypeB);
-    const typeB = effectiveInputType(connectedTypeB, connectedTypeA);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"} type={SocketTypes.toCSS(typeA)}>A</SocketIn>
-            <SocketIn node={node} socketId={"b"} type={SocketTypes.toCSS(typeB)}>B</SocketIn>
+            <SocketIn node={node} socketId={"a"}>A</SocketIn>
+            <SocketIn node={node} socketId={"b"}>B</SocketIn>
         </TypicalNode>
     );
 };

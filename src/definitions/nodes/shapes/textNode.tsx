@@ -119,20 +119,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"text"} type={"string"} label={"Text"}>
+            <SocketIn node={node} socketId={"text"} label={"Text"}>
                 <BlockInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"path"} type={"path"} label={"Path"} />
-            <SocketIn node={node} socketId={"size"} type={"length"} label={"Font Size"}>
+            <SocketIn node={node} socketId={"path"} label={"Path"} />
+            <SocketIn node={node} socketId={"size"} label={"Font Size"}>
                 <LengthInput value={node.payload.size} onCommit={(size) => handleUpdate({ size })} disabled={node.in.size !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"spacing"} type={"length"} label={"Letter Spacing"}>
+            <SocketIn node={node} socketId={"spacing"} label={"Letter Spacing"}>
                 <LengthInput value={node.payload.spacing} onCommit={(spacing) => handleUpdate({ spacing })} disabled={node.in.spacing !== null} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"align"} type={"enum"} label={"Align"}>
+            <SocketIn node={node} socketId={"align"} label={"Align"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.align}`}
@@ -141,7 +141,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     options={TEXT_ALIGN_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"anchor"} type={"enum"} label={"Anchor"}>
+            <SocketIn node={node} socketId={"anchor"} label={"Anchor"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.anchor}`}
@@ -150,10 +150,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     options={TEXT_ANCHOR_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"rotation"} type={"angle"} label={"Letter Rotation"}>
+            <SocketIn node={node} socketId={"rotation"} label={"Letter Rotation"}>
                 <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"offsetMode"} type={"enum"} label={"Offset Mode"}>
+            <SocketIn node={node} socketId={"offsetMode"} label={"Offset Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.offsetMode}`}
@@ -162,7 +162,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     options={OFFSET_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"offsetPercent"} type={"float integer"} label={"Offset %"}>
+            <SocketIn node={node} socketId={"offsetPercent"} label={"Offset %"}>
                 <DecimalInput.SliderInput
                     value={node.payload.offsetPercent}
                     onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
@@ -171,7 +171,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     max={100}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"offsetLength"} type={"length"} label={"Offset Length"}>
+            <SocketIn node={node} socketId={"offsetLength"} label={"Offset Length"}>
                 <LengthInput
                     value={node.payload.offsetLength}
                     onCommit={(offsetLength) => handleUpdate({ offsetLength })}
@@ -179,7 +179,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"offsetOrigin"} type={"enum"} label={"Offset Origin"}>
+            <SocketIn node={node} socketId={"offsetOrigin"} label={"Offset Origin"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.offsetOrigin}`}

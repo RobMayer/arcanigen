@@ -59,13 +59,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"angle"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"angle float integer"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <AngleInput.SliderInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
             </SocketIn>
-            <SocketIn node={node} socketId={"wraps"} type={"boolean"} label={"Wraps"}>
+            <SocketIn node={node} socketId={"wraps"} label={"Wraps"}>
                 <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })} disabled={node.in.wraps !== null}>
                     Wraps value between 0-360
                 </CheckBox>

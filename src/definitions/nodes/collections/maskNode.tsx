@@ -69,21 +69,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MaskDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"content"} type={"shape"}>
+            <SocketIn node={node} socketId={"content"}>
                 Content
             </SocketIn>
-            <SocketIn node={node} socketId={"mask"} type={"shape"}>
+            <SocketIn node={node} socketId={"mask"}>
                 Mask
             </SocketIn>
-            <SocketIn node={node} socketId={"showMask"} type={"boolean"}>
+            <SocketIn node={node} socketId={"showMask"}>
                 <CheckBox checked={node.payload.showMask} onToggle={(showMask) => handleUpdate({ showMask })} disabled={node.in.showMask !== null}>
                     Show Mask on Output
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"maskMode"} type={"enum"} label={"Mask Mode"}>
+            <SocketIn node={node} socketId={"maskMode"} label={"Mask Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.maskMode}`}
@@ -92,7 +92,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MaskDefinit
                     options={MASK_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"invert"} type={"boolean"}>
+            <SocketIn node={node} socketId={"invert"}>
                 <CheckBox checked={node.payload.invert} onToggle={(invert) => handleUpdate({ invert })} disabled={node.in.invert !== null || !isLuminance}>
                     Invert
                 </CheckBox>

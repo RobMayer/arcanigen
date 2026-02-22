@@ -48,13 +48,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PencilEffec
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
-            <SocketIn node={node} socketId={"seed"} type={"integer"} label={"Random Seed"}>
+            <SocketIn node={node} socketId={"seed"} label={"Random Seed"}>
                 <IntegerInput value={node.payload.seed} onCommit={(seed) => handleUpdate({ seed })} disabled={node.in.seed !== null} min={"0"} />
             </SocketIn>
         </TypicalNode>

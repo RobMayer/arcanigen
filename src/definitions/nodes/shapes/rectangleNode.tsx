@@ -112,24 +112,24 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"width"} type={"length"} label={"Width"}>
+            <SocketIn node={node} socketId={"width"} label={"Width"}>
                 <LengthInput value={node.payload.width} onCommit={(width) => handleUpdate({ width })} disabled={node.in.width !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"height"} type={"length"} label={"Height"}>
+            <SocketIn node={node} socketId={"height"} label={"Height"}>
                 <LengthInput value={node.payload.height} onCommit={(height) => handleUpdate({ height })} disabled={node.in.height !== null} min={"0px"} required />
             </SocketIn>
 
             <NodeAccordion label={"More"} socketsIn={"rScribe|cornerRadius|cornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"cornerRadius"} type={"length"} label={"Corner Radius"}>
+                <SocketIn node={node} socketId={"cornerRadius"} label={"Corner Radius"}>
                     <LengthInput value={node.payload.cornerRadius} onCommit={(cornerRadius) => handleUpdate({ cornerRadius })} disabled={node.in.cornerRadius !== null} min={"0px"} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"cornerShape"} type={"enum"} label={"Corner Shape"}>
+                <SocketIn node={node} socketId={"cornerShape"} label={"Corner Shape"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.cornerShape}`}
@@ -138,10 +138,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
                         disabled={node.in.cornerShape !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerShape"}>
                     Markers
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>

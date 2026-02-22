@@ -101,22 +101,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
-            <SocketIn node={node} socketId={"count"} type={"integer"} label={"Count"}>
+            <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"3"} max={"64"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"scribeMode"} type={"enum"} label={"Scribe Mode"}>
+            <SocketIn node={node} socketId={"scribeMode"} label={"Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.scribeMode}`}
@@ -125,23 +125,23 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
+            <SocketIn node={node} socketId={"pointDistro"}>
                 Angular Distribution
             </SocketIn>
-            <SocketIn node={node} socketId={"memberAlign"} type={"boolean"}>
+            <SocketIn node={node} socketId={"memberAlign"}>
                 <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
                     Align to Path
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"memberRotation"} type={"angle"} label={"Member Rotation"}>
+            <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
                 <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
             </SocketIn>
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eCircumradius|eApothem"}>
-                <SocketOut node={node} socketId={"eCircumradius"} type={"length"}>
+                <SocketOut node={node} socketId={"eCircumradius"}>
                     Circumradius
                 </SocketOut>
-                <SocketOut node={node} socketId={"eApothem"} type={"length"}>
+                <SocketOut node={node} socketId={"eApothem"}>
                     Apothem
                 </SocketOut>
             </NodeAccordion>

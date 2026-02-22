@@ -51,7 +51,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ShapePrevie
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Shape
             </SocketIn>
             <ShapePreview shape={svgObject} color={node.payload.backgroundColor} />

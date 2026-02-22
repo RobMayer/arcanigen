@@ -50,10 +50,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloodFillDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"fillColor"} type={"color"} label={"Color"}>
+            <SocketIn node={node} socketId={"fillColor"} label={"Color"}>
                 <ColorHexInput value={node.payload.fillColor} onCommit={(fillColor) => handleUpdate({ fillColor })} disabled={node.in.fillColor !== null} nullable alpha />
             </SocketIn>
         </TypicalNode>

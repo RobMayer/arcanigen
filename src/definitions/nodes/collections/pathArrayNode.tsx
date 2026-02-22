@@ -132,20 +132,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
-            <SocketIn node={node} socketId={"path"} type={"path"} label={"Path"} />
-            <SocketIn node={node} socketId={"count"} type={"integer"} label={"Count"}>
+            <SocketIn node={node} socketId={"path"} label={"Path"} />
+            <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"spacingMode"} type={"enum"} label={"Spacing"}>
+            <SocketIn node={node} socketId={"spacingMode"} label={"Spacing"}>
                 <RadioButton.Group
                     orientation={"vertical"}
                     value={`${node.payload.spacingMode}`}
@@ -154,32 +154,32 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                     options={SPACING_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"spacing"} type={"length"} label={"Spacing"}>
+            <SocketIn node={node} socketId={"spacing"} label={"Spacing"}>
                 <LengthInput value={node.payload.spacing} onCommit={(spacing) => handleUpdate({ spacing })} disabled={node.in.spacing !== null || !isFixedSpacing} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"memberAlign"} type={"boolean"}>
+            <SocketIn node={node} socketId={"memberAlign"}>
                 <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
                     Align to Path
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"memberRotation"} type={"angle"} label={"Member Rotation"}>
+            <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
                 <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
+            <SocketIn node={node} socketId={"pointDistro"}>
                 Distribution
             </SocketIn>
-            <SocketIn node={node} socketId={"skipFirst"} type={"boolean"}>
+            <SocketIn node={node} socketId={"skipFirst"}>
                 <CheckBox checked={node.payload.skipFirst} onToggle={(skipFirst) => handleUpdate({ skipFirst })} disabled={node.in.skipFirst !== null}>
                     Skip First
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"skipLast"} type={"boolean"}>
+            <SocketIn node={node} socketId={"skipLast"}>
                 <CheckBox checked={node.payload.skipLast} onToggle={(skipLast) => handleUpdate({ skipLast })} disabled={node.in.skipLast !== null}>
                     Skip Last
                 </CheckBox>
             </SocketIn>
             <NodeAccordion nodeId={node.id} label={"Overflow & Offset"} socketsIn={"overflowMode|offsetMode|offsetPercent|offsetLength|offsetOrigin|padStart|padEnd"}>
-                <SocketIn node={node} socketId={"overflowMode"} type={"enum"} label={"Overflow"}>
+                <SocketIn node={node} socketId={"overflowMode"} label={"Overflow"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.overflowMode}`}
@@ -188,7 +188,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                         options={OVERFLOW_MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"offsetMode"} type={"enum"} label={"Offset Mode"}>
+                <SocketIn node={node} socketId={"offsetMode"} label={"Offset Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.offsetMode}`}
@@ -197,7 +197,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                         options={OFFSET_MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"offsetPercent"} type={"float integer"} label={"Offset %"}>
+                <SocketIn node={node} socketId={"offsetPercent"} label={"Offset %"}>
                     <DecimalInput.SliderInput
                         value={node.payload.offsetPercent}
                         onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
@@ -206,7 +206,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                         max={100}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"offsetLength"} type={"length"} label={"Offset Length"}>
+                <SocketIn node={node} socketId={"offsetLength"} label={"Offset Length"}>
                     <LengthInput
                         value={node.payload.offsetLength}
                         onCommit={(offsetLength) => handleUpdate({ offsetLength })}
@@ -214,7 +214,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"offsetOrigin"} type={"enum"} label={"Offset Origin"}>
+                <SocketIn node={node} socketId={"offsetOrigin"} label={"Offset Origin"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.offsetOrigin}`}
@@ -223,10 +223,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
                         options={OFFSET_ORIGIN_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"padStart"} type={"length"} label={"Pad Start"}>
+                <SocketIn node={node} socketId={"padStart"} label={"Pad Start"}>
                     <LengthInput value={node.payload.padStart} onCommit={(padStart) => handleUpdate({ padStart })} disabled={node.in.padStart !== null} min={"0px"} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"padEnd"} type={"length"} label={"Pad End"}>
+                <SocketIn node={node} socketId={"padEnd"} label={"Pad End"}>
                     <LengthInput value={node.payload.padEnd} onCommit={(padEnd) => handleUpdate({ padEnd })} disabled={node.in.padEnd !== null} min={"0px"} required />
                 </SocketIn>
             </NodeAccordion>

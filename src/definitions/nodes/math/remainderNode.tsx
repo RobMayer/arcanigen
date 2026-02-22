@@ -74,18 +74,13 @@ const queryDownstreamTypes = (node: RemainderNode, graphId: string, ctx: NodeTyp
 // --- Controls ---
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RemainderDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const { connectedTypeA, connectedTypeB, resolvedInTypes } = node.payload;
-    const typeA = effectiveInputType(connectedTypeA, connectedTypeB, resolvedInTypes);
-    const typeB = effectiveInputType(connectedTypeB, connectedTypeA, resolvedInTypes);
-    const typeOut = computeOutputType(typeA, typeB);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(typeOut)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"} type={SocketTypes.toCSS(typeA)}>A</SocketIn>
-            <SocketIn node={node} socketId={"b"} type={SocketTypes.toCSS(typeB)}>B</SocketIn>
+            <SocketIn node={node} socketId={"a"}>A</SocketIn>
+            <SocketIn node={node} socketId={"b"}>B</SocketIn>
         </TypicalNode>
     );
 };

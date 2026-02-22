@@ -119,17 +119,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SequencerDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(node.payload.resolvedOutTypes)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
             <ActionButton onClick={handleAddStep} flavour={"accent"}>
                 Add Step
             </ActionButton>
             {node.payload.steps.map((entry, idx) => (
-                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `step_${string}`} type={SocketTypes.toCSS(node.payload.resolvedInTypes)}>
+                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `step_${string}`}>
                     Step {idx}
                     <ActionButton.Lite onClick={() => handleRemoveStep(entry.socket)} flavour={"danger"}>
                         <Icon shape={ICONS.Close} />
@@ -137,7 +137,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SequencerDe
                 </SocketIn>
             ))}
             <NodeAccordion nodeId={node.id} label={"Options"} socketsIn="mode|reverseSequence|offset">
-                <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.mode}`}
@@ -146,17 +146,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SequencerDe
                         options={SEQUENCER_MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"reverseSequence"} type={"boolean"}>
+                <SocketIn node={node} socketId={"reverseSequence"}>
                     <CheckBox checked={node.payload.reverseSequence} onToggle={(reverseSequence) => handleUpdate({ reverseSequence })} disabled={node.in.reverseSequence !== null}>
                         Reverse Sequence
                     </CheckBox>
                 </SocketIn>
-                <SocketIn node={node} socketId={"reverseSteps"} type={"boolean"}>
+                <SocketIn node={node} socketId={"reverseSteps"}>
                     <CheckBox checked={node.payload.reverseSteps} onToggle={(reverseSteps) => handleUpdate({ reverseSteps })} disabled={node.in.reverseSteps !== null}>
                         Reverse Steps
                     </CheckBox>
                 </SocketIn>
-                <SocketIn node={node} socketId={"offset"} type={"integer"} label={"Offset"}>
+                <SocketIn node={node} socketId={"offset"} label={"Offset"}>
                     <IntegerInput value={node.payload.offset} onCommit={(offset) => handleUpdate({ offset })} disabled={node.in.offset !== null} />
                 </SocketIn>
             </NodeAccordion>

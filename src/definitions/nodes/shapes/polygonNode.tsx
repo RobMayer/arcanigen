@@ -127,13 +127,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
+            <SocketIn node={node} socketId={"pointCount"} label={"Points"}>
                 <IntegerInput.SliderInput
                     value={node.payload.pointCount}
                     onCommit={(pointCount) => handleUpdate({ pointCount })}
@@ -143,10 +143,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"rScribe"} type={"enum"} label={"Scribe Mode"}>
+            <SocketIn node={node} socketId={"rScribe"} label={"Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.rScribe}`}
@@ -156,13 +156,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
                 />
             </SocketIn>
             <NodeAccordion label={"More"} socketsIn={"cornerRadius|cornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
+                <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
                 </SocketIn>
-                <SocketIn node={node} socketId={"cornerRadius"} type={"length"} label={"Corner Radius"}>
+                <SocketIn node={node} socketId={"cornerRadius"} label={"Corner Radius"}>
                     <LengthInput value={node.payload.cornerRadius} onCommit={(cornerRadius) => handleUpdate({ cornerRadius })} disabled={node.in.cornerRadius !== null} min={"0px"} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"cornerShape"} type={"enum"} label={"Corner Shape"}>
+                <SocketIn node={node} socketId={"cornerShape"} label={"Corner Shape"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.cornerShape}`}
@@ -171,10 +171,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
                         disabled={node.in.cornerShape !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerShape"}>
                     Markers
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>
@@ -183,10 +183,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eCircumradius|eApothem"}>
-                <SocketOut node={node} socketId={"eCircumradius"} type={"length"}>
+                <SocketOut node={node} socketId={"eCircumradius"}>
                     Circumradius
                 </SocketOut>
-                <SocketOut node={node} socketId={"eApothem"} type={"length"}>
+                <SocketOut node={node} socketId={"eApothem"}>
                     Apothem
                 </SocketOut>
             </NodeAccordion>

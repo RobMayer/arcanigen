@@ -71,15 +71,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RootDefinit
         [methods],
     );
 
-    const effectiveType = effectiveInputType(node.payload.connectedType, node.payload.resolvedInTypes);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(effectiveType)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(effectiveType)}>Input</SocketIn>
-            <SocketIn node={node} socketId={"degree"} type={"float integer"} label={"Degree"}>
+            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"degree"} label={"Degree"}>
                 <DecimalInput value={node.payload.degree} onCommit={(degree) => handleUpdate({ degree })} disabled={node.in.degree !== null} />
             </SocketIn>
         </TypicalNode>

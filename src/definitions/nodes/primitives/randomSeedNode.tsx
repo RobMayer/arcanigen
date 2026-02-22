@@ -50,7 +50,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RandomSeedD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"integer"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
             <IntegerInput value={node.payload.seed} onCommit={(seed) => handleUpdate({ seed })} min={"0"} />

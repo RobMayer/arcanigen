@@ -61,22 +61,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PenEffectDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
-            <SocketIn node={node} socketId={"nib"} type={"length"} label={"Pen Nib"}>
+            <SocketIn node={node} socketId={"nib"} label={"Pen Nib"}>
                 <LengthInput value={node.payload.nib} onCommit={(nib) => handleUpdate({ nib })} disabled={node.in.nib !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"smudge"} type={"float"} label={"Smudge"}>
+            <SocketIn node={node} socketId={"smudge"} label={"Smudge"}>
                 <SliderInput value={node.payload.smudge} onCommit={(smudge) => handleUpdate({ smudge })} disabled={node.in.smudge !== null} min={"0"} max={"1"} step={"0.001"} />
             </SocketIn>
-            <SocketIn node={node} socketId={"jitter"} type={"float"} label={"Jitter"}>
+            <SocketIn node={node} socketId={"jitter"} label={"Jitter"}>
                 <SliderInput value={node.payload.jitter} onCommit={(jitter) => handleUpdate({ jitter })} disabled={node.in.jitter !== null} min={"0"} max={"1"} step={"0.001"} />
             </SocketIn>
-            <SocketIn node={node} socketId={"seed"} type={"integer"} label={"Random Seed"}>
+            <SocketIn node={node} socketId={"seed"} label={"Random Seed"}>
                 <IntegerInput value={node.payload.seed} onCommit={(seed) => handleUpdate({ seed })} disabled={node.in.seed !== null} min={"0"} />
             </SocketIn>
         </TypicalNode>

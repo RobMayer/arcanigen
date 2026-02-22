@@ -130,10 +130,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"length"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
 
@@ -143,10 +143,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
             </ActionButton>
             {node.payload.stops.map((stop, idx) => (
                 <StopEntry key={stop.id}>
-                    <SocketIn node={node} socketId={`value_${stop.id}`} type={"length"} label={`Stop ${idx}`} data-part="value">
+                    <SocketIn node={node} socketId={`value_${stop.id}`} label={`Stop ${idx}`} data-part="value">
                         <LengthInput value={stop.value} onCommit={(value) => handleStopValue(stop.id, value)} disabled={node.in[`value_${stop.id}`] !== null} required />
                     </SocketIn>
-                    <SocketIn node={node} socketId={`pos_${stop.id}`} type={"float"} data-part="position">
+                    <SocketIn node={node} socketId={`pos_${stop.id}`} data-part="position">
                         <DecimalInput value={stop.position} onCommit={(position) => handleStopPosition(stop.id, position)} disabled={node.in[`pos_${stop.id}`] !== null} min={"0"} max={"100"} />
                     </SocketIn>
                     <ActionButton.Lite onClick={() => handleRemoveStop(stop.id)} flavour={"danger"} data-part="remove">

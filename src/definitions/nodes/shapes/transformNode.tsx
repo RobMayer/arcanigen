@@ -107,21 +107,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Shape
             </SocketOut>
-            <SocketIn node={node} socketId={"shape"} type={"shape"}>
+            <SocketIn node={node} socketId={"shape"}>
                 Shape
             </SocketIn>
-            <SocketOut node={node} socketId={"pathOutput"} type={"path"}>
+            <SocketOut node={node} socketId={"pathOutput"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"path"} type={"path"}>
+            <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
             <hr />
             <NodeAccordion label={"Translate"} nodeId={node.id} socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta"}>
-                <SocketIn node={node} socketId={"positionMode"} type={"enum"} label={"Mode"}>
+                <SocketIn node={node} socketId={"positionMode"} label={"Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.positionMode}`}
@@ -130,13 +130,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
                         options={POSITION_MODE_OPTIONS}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionX"} type={"length"} label={"X"}>
+                <SocketIn node={node} socketId={"positionX"} label={"X"}>
                     <LengthInput value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={node.in.positionX !== null || isPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionY"} type={"length"} label={"Y"}>
+                <SocketIn node={node} socketId={"positionY"} label={"Y"}>
                     <LengthInput value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={node.in.positionY !== null || isPolar} required />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionRadius"} type={"length"} label={"Radius"}>
+                <SocketIn node={node} socketId={"positionRadius"} label={"Radius"}>
                     <LengthInput
                         value={node.payload.positionRadius}
                         onCommit={(positionRadius) => handleUpdate({ positionRadius })}
@@ -144,31 +144,31 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionTheta"} type={"angle"} label={"Theta"}>
+                <SocketIn node={node} socketId={"positionTheta"} label={"Theta"}>
                     <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
                 </SocketIn>
             </NodeAccordion>
             <NodeAccordion label={"Rotation"} nodeId={node.id} socketsIn={"preRotation|postRotation"}>
-                <SocketIn node={node} socketId={"preRotation"} type={"angle"} label={"Pre-Rotation"}>
+                <SocketIn node={node} socketId={"preRotation"} label={"Pre-Rotation"}>
                     <AngleInput.SliderInput value={node.payload.preRotation} onCommit={(preRotation) => handleUpdate({ preRotation })} disabled={node.in.preRotation !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"postRotation"} type={"angle"} label={"Post-Rotation"}>
+                <SocketIn node={node} socketId={"postRotation"} label={"Post-Rotation"}>
                     <AngleInput.SliderInput value={node.payload.postRotation} onCommit={(postRotation) => handleUpdate({ postRotation })} disabled={node.in.postRotation !== null} />
                 </SocketIn>
             </NodeAccordion>
             <NodeAccordion label={"Skew"} nodeId={node.id} socketsIn={"skewX|skewY"}>
-                <SocketIn node={node} socketId={"skewX"} type={"angle"} label={"Skew X"}>
+                <SocketIn node={node} socketId={"skewX"} label={"Skew X"}>
                     <AngleInput.SliderInput value={node.payload.skewX} onCommit={(skewX) => handleUpdate({ skewX })} disabled={node.in.skewX !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"skewY"} type={"angle"} label={"Skew Y"}>
+                <SocketIn node={node} socketId={"skewY"} label={"Skew Y"}>
                     <AngleInput.SliderInput value={node.payload.skewY} onCommit={(skewY) => handleUpdate({ skewY })} disabled={node.in.skewY !== null} />
                 </SocketIn>
             </NodeAccordion>
             <NodeAccordion label={"Scale"} nodeId={node.id} socketsIn={"scaleX|scaleY"}>
-                <SocketIn node={node} socketId={"scaleX"} type={"float"} label={"Scale X"}>
+                <SocketIn node={node} socketId={"scaleX"} label={"Scale X"}>
                     <DecimalInput value={node.payload.scaleX} onCommit={(scaleX) => handleUpdate({ scaleX })} disabled={node.in.scaleX !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"scaleY"} type={"float"} label={"Scale Y"}>
+                <SocketIn node={node} socketId={"scaleY"} label={"Scale Y"}>
                     <DecimalInput value={node.payload.scaleY} onCommit={(scaleY) => handleUpdate({ scaleY })} disabled={node.in.scaleY !== null} />
                 </SocketIn>
             </NodeAccordion>

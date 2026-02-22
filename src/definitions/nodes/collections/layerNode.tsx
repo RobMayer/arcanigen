@@ -126,10 +126,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"layers"} type={"array<layer>"}>
+            <SocketIn node={node} socketId={"layers"}>
                 Layers
             </SocketIn>
             {supersocketConnected ? null : (
@@ -153,10 +153,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
             )}
             <hr />
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layerCount" socketsIn={"isolate"}>
-                <SocketOut node={node} socketId={"layerCount"} type={"integer"}>
+                <SocketOut node={node} socketId={"layerCount"}>
                     Layer Count
                 </SocketOut>
-                <SocketIn node={node} socketId={"isolate"} type={"boolean"}>
+                <SocketIn node={node} socketId={"isolate"}>
                     <CheckBox checked={node.payload.isolate} onToggle={(blendInternal) => handleUpdate({ isolate: blendInternal })}>
                         Isolate Blending
                     </CheckBox>
@@ -238,7 +238,7 @@ const LayerEntry = ({
 
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
-            <SocketIn node={node} socketId={entry.socket as `layer_${string}`} type={SocketTypes.toCSS(SocketTypes.LAYER_OR_SHAPE)}>
+            <SocketIn node={node} socketId={entry.socket as `layer_${string}`}>
                 <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
                 <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
                     {BLEND_MODE_OPTIONS.map((opt) => (

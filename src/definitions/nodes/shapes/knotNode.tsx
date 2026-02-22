@@ -195,13 +195,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"pointCount"} type={"integer"} label={"Points"}>
+            <SocketIn node={node} socketId={"pointCount"} label={"Points"}>
                 <IntegerInput.SliderInput
                     value={node.payload.pointCount}
                     onCommit={(pointCount) => handleUpdate({ pointCount })}
@@ -211,7 +211,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"skipCount"} type={"integer"} label={"Skip"}>
+            <SocketIn node={node} socketId={"skipCount"} label={"Skip"}>
                 <IntegerInput.SliderInput
                     value={node.payload.skipCount}
                     onCommit={(skipCount) => handleUpdate({ skipCount })}
@@ -222,7 +222,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                 />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Span Mode"}>
+            <SocketIn node={node} socketId={"spanMode"} label={"Span Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
                     value={`${node.payload.spanMode}`}
@@ -231,10 +231,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} type={"length"} label={"Inner Radius"}>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"iScribe"} type={"enum"} label={"Inner Scribe Mode"}>
+            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.iScribe}`}
@@ -243,10 +243,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"outerRadius"} type={"length"} label={"Outer Radius"}>
+            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"oScribe"} type={"enum"} label={"Outer Scribe Mode"}>
+            <SocketIn node={node} socketId={"oScribe"} label={"Outer Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.oScribe}`}
@@ -255,10 +255,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"rScribe"} type={"enum"} label={"Scribe Mode"}>
+            <SocketIn node={node} socketId={"rScribe"} label={"Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.rScribe}`}
@@ -267,10 +267,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"spread"} type={"length"} label={"Spread"}>
+            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
                 <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} type={"enum"} label={"Spread Align"}>
+            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
                 <RadioButton.Group
                     options={SPREAD_ALIGN_OPTIONS}
                     value={`${node.payload.spreadAlign}`}
@@ -279,7 +279,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     disabled={node.in.spreadAlign !== null || isInOut}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"expandMode"} type={"enum"} label={"Expand Mode"}>
+            <SocketIn node={node} socketId={"expandMode"} label={"Expand Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.expandMode}`}
@@ -290,10 +290,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
             </SocketIn>
 
             <NodeAccordion label={"More"} socketsIn={"outerCornerRadius|outerCornerShape|innerCornerRadius|innerCornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"pointDistro"} type={"distribution"}>
+                <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
                 </SocketIn>
-                <SocketIn node={node} socketId={"outerCornerRadius"} type={"length"} label={"Outer Corner Radius"}>
+                <SocketIn node={node} socketId={"outerCornerRadius"} label={"Outer Corner Radius"}>
                     <LengthInput
                         value={node.payload.outerCornerRadius}
                         onCommit={(outerCornerRadius) => handleUpdate({ outerCornerRadius })}
@@ -302,7 +302,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"outerCornerShape"} type={"enum"} label={"Outer Corner Shape"}>
+                <SocketIn node={node} socketId={"outerCornerShape"} label={"Outer Corner Shape"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.outerCornerShape}`}
@@ -311,7 +311,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                         disabled={node.in.outerCornerShape !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"innerCornerRadius"} type={"length"} label={"Inner Corner Radius"}>
+                <SocketIn node={node} socketId={"innerCornerRadius"} label={"Inner Corner Radius"}>
                     <LengthInput
                         value={node.payload.innerCornerRadius}
                         onCommit={(innerCornerRadius) => handleUpdate({ innerCornerRadius })}
@@ -320,7 +320,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"innerCornerShape"} type={"enum"} label={"Inner Corner Shape"}>
+                <SocketIn node={node} socketId={"innerCornerShape"} label={"Inner Corner Shape"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
                         value={`${node.payload.innerCornerShape}`}
@@ -329,10 +329,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                         disabled={node.in.innerCornerShape !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerShape"}>
                     Markers
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>
@@ -341,16 +341,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
-                <SocketOut node={node} socketId={"eOuterCircumradius"} type={"length"}>
+                <SocketOut node={node} socketId={"eOuterCircumradius"}>
                     Outer Circumradius
                 </SocketOut>
-                <SocketOut node={node} socketId={"eOuterApothem"} type={"length"}>
+                <SocketOut node={node} socketId={"eOuterApothem"}>
                     Outer Apothem
                 </SocketOut>
-                <SocketOut node={node} socketId={"eInnerCircumradius"} type={"length"}>
+                <SocketOut node={node} socketId={"eInnerCircumradius"}>
                     Inner Circumradius
                 </SocketOut>
-                <SocketOut node={node} socketId={"eInnerApothem"} type={"length"}>
+                <SocketOut node={node} socketId={"eInnerApothem"}>
                     Inner Apothem
                 </SocketOut>
             </NodeAccordion>

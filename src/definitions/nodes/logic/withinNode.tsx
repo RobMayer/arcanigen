@@ -66,19 +66,14 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<WithinDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const { connectedTypeValue, connectedTypeTarget, connectedTypeTolerance } = node.payload;
-    const typeValue = effectiveInputType(connectedTypeValue, connectedTypeTarget, connectedTypeTolerance);
-    const typeTarget = effectiveInputType(connectedTypeTarget, connectedTypeValue, connectedTypeTolerance);
-    const typeTolerance = effectiveInputType(connectedTypeTolerance, connectedTypeValue, connectedTypeTarget);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={SocketTypes.toCSS(typeValue)}>Value</SocketIn>
-            <SocketIn node={node} socketId={"target"} type={SocketTypes.toCSS(typeTarget)}>Target</SocketIn>
-            <SocketIn node={node} socketId={"tolerance"} type={SocketTypes.toCSS(typeTolerance)}>Tolerance</SocketIn>
+            <SocketIn node={node} socketId={"value"}>Value</SocketIn>
+            <SocketIn node={node} socketId={"target"}>Target</SocketIn>
+            <SocketIn node={node} socketId={"tolerance"}>Tolerance</SocketIn>
         </TypicalNode>
     );
 };

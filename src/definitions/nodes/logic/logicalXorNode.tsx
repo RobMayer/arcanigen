@@ -70,7 +70,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LogicalXorD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
             <hr />
@@ -78,7 +78,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LogicalXorD
                 Add Input
             </ActionButton>
             {node.payload.inputs.map((socket, idx) => (
-                <SocketIn key={socket} node={node} socketId={socket as `input_${string}`} type={"boolean"}>
+                <SocketIn key={socket} node={node} socketId={socket as `input_${string}`}>
                     <span>Input {idx + 1}</span>
                     <ActionButton.Lite onClick={() => handleRemoveInput(socket)} flavour={"danger"}>
                         <Icon shape={ICONS.Close} />

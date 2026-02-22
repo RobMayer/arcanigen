@@ -50,10 +50,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokensLengt
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"tokens<length>"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"tokens<length>"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <TextInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} pattern={Length.TOKENS_REGEX} disabled={node.in.value !== null} />
             </SocketIn>
         </TypicalNode>

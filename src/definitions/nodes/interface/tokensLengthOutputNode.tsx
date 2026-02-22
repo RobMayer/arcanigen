@@ -52,7 +52,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokensLengt
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"} type={"tokens<length>"}>
+            <SocketIn node={node} socketId={"input"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Output name" />
             </SocketIn>
             <Slot label={"Widget"}>

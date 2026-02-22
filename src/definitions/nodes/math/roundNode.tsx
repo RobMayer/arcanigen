@@ -78,16 +78,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RoundDefini
         [methods],
     );
 
-    const inType = effectiveInputType(node.payload.connectedType, node.payload.resolvedInTypes);
-    const outType = roundedOutputType(inType);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(outType)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(inType)}>Input</SocketIn>
-            <SocketIn node={node} socketId={"mode"} type={"enum"} label={"Mode"}>
+            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                 <Dropdown value={`${node.payload.mode}`} onValue={(v) => handleUpdate({ mode: Number(v) })} disabled={node.in.mode !== null}>
                     {ROUNDING_MODE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>

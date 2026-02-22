@@ -81,7 +81,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"enum"}>
+            <SocketOut node={node} socketId={"output"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
             <Slot>

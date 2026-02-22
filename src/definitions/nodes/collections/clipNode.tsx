@@ -54,16 +54,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClipDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"content"} type={"shape"}>
+            <SocketIn node={node} socketId={"content"}>
                 Content
             </SocketIn>
-            <SocketIn node={node} socketId={"clip"} type={"path"}>
+            <SocketIn node={node} socketId={"clip"}>
                 Clip Path
             </SocketIn>
-            <SocketIn node={node} socketId={"showClip"} type={"boolean"}>
+            <SocketIn node={node} socketId={"showClip"}>
                 <CheckBox checked={node.payload.showClip} onToggle={(showClip) => handleUpdate({ showClip })} disabled={node.in.showClip !== null}>
                     Show Clip on Output
                 </CheckBox>

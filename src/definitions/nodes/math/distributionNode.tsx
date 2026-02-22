@@ -77,11 +77,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"distribution"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"func"} type={"enum"} label={"Function"}>
+            <SocketIn node={node} socketId={"func"} label={"Function"}>
                 <Dropdown value={`${node.payload.func}`} onValue={(func) => handleUpdate({ func: Number(func) })} disabled={node.in.func !== null}>
                     {FUNCTION_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -90,7 +90,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
                     ))}
                 </Dropdown>
             </SocketIn>
-            <SocketIn node={node} socketId={"easing"} type={"enum"} label={"Easing"}>
+            <SocketIn node={node} socketId={"easing"} label={"Easing"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.easing}`}
@@ -99,7 +99,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
                     options={EASING_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"intensity"} type={"float integer"} label={"Intensity"}>
+            <SocketIn node={node} socketId={"intensity"} label={"Intensity"}>
                 <DecimalInput.SliderInput
                     value={node.payload.intensity}
                     onCommit={(intensity) => handleUpdate({ intensity })}

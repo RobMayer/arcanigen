@@ -116,23 +116,23 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialArray
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"sequence"} type={"sequence"}>
+            <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
-            <SocketIn node={node} socketId={"count"} type={"integer"} label={"Count"}>
+            <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"thetaMode"} type={"enum"} label={"Theta Mode"}>
+            <SocketIn node={node} socketId={"thetaMode"} label={"Theta Mode"}>
                 <RadioButton.Group
                     options={THETA_MODE_OPTIONS}
                     value={`${node.payload.thetaMode}`}
@@ -141,30 +141,30 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialArray
                     disabled={node.in.thetaMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaStart"} type={"angle"} label={"Start Theta"}>
+            <SocketIn node={node} socketId={"thetaStart"} label={"Start Theta"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isIncremental} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaEnd"} type={"angle"} label={"End Theta"}>
+            <SocketIn node={node} socketId={"thetaEnd"} label={"End Theta"}>
                 <AngleInput.SliderInput value={node.payload.thetaEnd} onCommit={(thetaEnd) => handleUpdate({ thetaEnd })} disabled={node.in.thetaEnd !== null || isIncremental} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaInclusive"} type={"boolean"}>
+            <SocketIn node={node} socketId={"thetaInclusive"}>
                 <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isIncremental}>
                     Inclusive End
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaSteps"} type={"angle"} label={"Step Theta"}>
+            <SocketIn node={node} socketId={"thetaSteps"} label={"Step Theta"}>
                 <AngleInput.SliderInput value={node.payload.thetaSteps} onCommit={(thetaSteps) => handleUpdate({ thetaSteps })} disabled={node.in.thetaSteps !== null || isStartStop} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaCurve"} type={"distribution"}>
+            <SocketIn node={node} socketId={"thetaCurve"}>
                 Angular Distribution
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"memberAlign"} type={"boolean"}>
+            <SocketIn node={node} socketId={"memberAlign"}>
                 <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
                     Align to Radius
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"memberRotation"} type={"angle"} label={"Member Rotation"}>
+            <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
                 <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
             </SocketIn>
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />

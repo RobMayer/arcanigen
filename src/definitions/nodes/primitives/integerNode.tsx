@@ -64,14 +64,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefi
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"integer"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"integer angle float length"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
             </SocketIn>
             <NodeAccordion label={"Conversion"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"mode"} type={"enum integer"} label={"Rounding"}>
+                <SocketIn node={node} socketId={"mode"} label={"Rounding"}>
                     <Dropdown value={`${node.payload.roundingMode}`} onValue={(v) => handleUpdate({ roundingMode: Number(v) })} disabled={node.in.mode !== null || !isCasting}>
                         {ROUNDING_MODE_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>

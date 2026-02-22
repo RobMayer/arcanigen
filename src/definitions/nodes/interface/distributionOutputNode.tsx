@@ -46,7 +46,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<Distributio
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"} type={"distribution"}>
+            <SocketIn node={node} socketId={"input"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Output name" />
             </SocketIn>
         </TypicalNode>

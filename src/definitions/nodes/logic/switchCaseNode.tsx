@@ -58,9 +58,6 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SwitchCaseDefiniti
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
-    const outType = node.payload.resolvedOutTypes;
-    const inType = node.payload.resolvedInTypes;
-
     const handleCaseLabelUpdate = useCallback(
         (socket: string, label: string) => {
             methods.update<NodeDefinitions.PayloadTypeOf<SwitchCaseDefinition>>({
@@ -105,10 +102,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"result"} type={SocketTypes.toCSS(outType)}>
+            <SocketOut node={node} socketId={"result"}>
                 Result
             </SocketOut>
-            <SocketIn node={node} socketId={"switch"} type={"enum"}>
+            <SocketIn node={node} socketId={"switch"}>
                 Switch
             </SocketIn>
             <hr />
@@ -116,7 +113,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
                 Add Case
             </ActionButton>
             {node.payload.cases.map((entry, idx) => (
-                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `case_${string}`} type={SocketTypes.toCSS(inType)}>
+                <SocketIn key={entry.socket} node={node} socketId={entry.socket as `case_${string}`}>
                     {idx}
                     <TextInput value={entry.label} onCommit={(label) => handleCaseLabelUpdate(entry.socket, label)} placeholder={`Case ${idx}`} />
                     <ActionButton.Lite onClick={() => handleRemoveCase(entry.socket)} flavour={"danger"}>
@@ -125,7 +122,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SwitchCaseD
                 </SocketIn>
             ))}
             <hr />
-            <SocketIn node={node} socketId={"default"} type={SocketTypes.toCSS(inType)}>
+            <SocketIn node={node} socketId={"default"}>
                 Default
             </SocketIn>
         </TypicalNode>

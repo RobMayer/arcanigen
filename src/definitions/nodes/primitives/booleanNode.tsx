@@ -49,10 +49,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BooleanDefi
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} type={"boolean"} label={"Value"}>
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <CheckBox checked={node.payload.value} onToggle={(value) => handleUpdate({ value })} disabled={node.in.value !== null}>
                     Value
                 </CheckBox>

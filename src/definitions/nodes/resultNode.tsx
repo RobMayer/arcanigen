@@ -65,23 +65,23 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
             <NodeAccordion socketsIn={"w|h|x|y|color"} label={"Canvas"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"w"} type={"length"} label={"Canvas Width"}>
+                <SocketIn node={node} socketId={"w"} label={"Canvas Width"}>
                     <LengthInput value={node.payload.w} onCommit={(w) => handleUpdate({ w })} disabled={node.in.w !== null} required min={"0px"} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"h"} type={"length"} label={"Canvas Height"}>
+                <SocketIn node={node} socketId={"h"} label={"Canvas Height"}>
                     <LengthInput value={node.payload.h} onCommit={(h) => handleUpdate({ h })} disabled={node.in.h !== null} required min={"0px"} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"x"} type={"length"} label={"Origin X"}>
+                <SocketIn node={node} socketId={"x"} label={"Origin X"}>
                     <LengthInput value={node.payload.x} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"y"} type={"length"} label={"Origin Y"}>
+                <SocketIn node={node} socketId={"y"} label={"Origin Y"}>
                     <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"color"} type={"color"} label={"Color"}>
+                <SocketIn node={node} socketId={"color"} label={"Color"}>
                     <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
                 </SocketIn>
             </NodeAccordion>

@@ -33,10 +33,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LogicalNotDefiniti
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LogicalNotDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"boolean"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"boolean"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
         </TypicalNode>

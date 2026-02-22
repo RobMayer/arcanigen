@@ -49,9 +49,6 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ConditionDefinitio
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ConditionDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const outType = node.payload.resolvedOutTypes;
-    const inType = node.payload.resolvedInTypes;
-
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<ConditionDefinition>>) => {
             methods.update(v);
@@ -61,19 +58,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ConditionDe
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"result"} type={SocketTypes.toCSS(outType)}>
+            <SocketOut node={node} socketId={"result"}>
                 Result
             </SocketOut>
-            <SocketIn node={node} socketId={"if"} type={"boolean"}>
+            <SocketIn node={node} socketId={"if"}>
                 <CheckBox checked={node.payload.if} onToggle={(v) => handleUpdate({ if: v })} disabled={node.in.if !== null}>
                     If
                 </CheckBox>
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"then"} type={SocketTypes.toCSS(inType)}>
+            <SocketIn node={node} socketId={"then"}>
                 Then
             </SocketIn>
-            <SocketIn node={node} socketId={"else"} type={SocketTypes.toCSS(inType)}>
+            <SocketIn node={node} socketId={"else"}>
                 Else
             </SocketIn>
         </TypicalNode>

@@ -71,15 +71,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PowDefiniti
         [methods],
     );
 
-    const inType = effectiveInputType(node.payload.connectedType, node.payload.resolvedInTypes);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(inType)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(inType)}>Input</SocketIn>
-            <SocketIn node={node} socketId={"exponent"} type={"float integer"} label={"Exponent"}>
+            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"exponent"} label={"Exponent"}>
                 <DecimalInput value={node.payload.exponent} onCommit={(exponent) => handleUpdate({ exponent })} disabled={node.in.exponent !== null} />
             </SocketIn>
         </TypicalNode>

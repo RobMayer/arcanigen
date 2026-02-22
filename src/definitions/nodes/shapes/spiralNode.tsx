@@ -145,14 +145,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
 
-            <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Radial Mode"}>
+            <SocketIn node={node} socketId={"spanMode"} label={"Radial Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
                     value={`${node.payload.spanMode}`}
@@ -161,20 +161,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} type={"length"} label={"Inner Radius"}>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"outerRadius"} type={"length"} label={"Outer Radius"}>
+            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"deviation"} type={"length"} label={"Deviation"}>
+            <SocketIn node={node} socketId={"deviation"} label={"Deviation"}>
                 <LengthInput value={node.payload.deviation} onCommit={(deviation) => handleUpdate({ deviation })} disabled={node.in.deviation !== null || isInOut} min={"0px"} required />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"arcMode"} type={"enum"} label={"Angle Mode"}>
+            <SocketIn node={node} socketId={"arcMode"} label={"Angle Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
                     value={`${node.payload.arcMode}`}
@@ -184,28 +184,28 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                 />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaStart"} type={"angle"} label={"Start"}>
+            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} />
             </SocketIn>
-            <SocketIn node={node} socketId={"sweep"} type={"angle"} label={"Sweep"}>
+            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
                 <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaFrom"} type={"angle"} label={"From"}>
+            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
                 <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaTo"} type={"angle"} label={"To"}>
+            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
                 <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
             </SocketIn>
 
             <NodeAccordion label={"More"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"markerStartShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerStartShape"}>
                     Start Marker
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerEndShape"} type={"shape"}>
+                <SocketIn node={node} socketId={"markerEndShape"}>
                     End Marker
                 </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"} type={"boolean"}>
+                <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
                     </CheckBox>

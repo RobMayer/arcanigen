@@ -101,20 +101,14 @@ const queryDownstreamTypes = (node: ClampNode, graphId: string, ctx: NodeTypes.M
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const { connectedTypeInput, connectedTypeMin, connectedTypeMax, resolvedInTypes } = node.payload;
-    const typeInput = effectiveInputType(connectedTypeInput, connectedTypeMin, connectedTypeMax, resolvedInTypes);
-    const typeMin = effectiveInputType(connectedTypeMin, connectedTypeInput, connectedTypeMax, resolvedInTypes);
-    const typeMax = effectiveInputType(connectedTypeMax, connectedTypeInput, connectedTypeMin, resolvedInTypes);
-    const typeOut = computeOutputType3(typeInput, typeMin, typeMax);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(typeOut)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(typeInput)}>Input</SocketIn>
-            <SocketIn node={node} socketId={"min"} type={SocketTypes.toCSS(typeMin)}>Min</SocketIn>
-            <SocketIn node={node} socketId={"max"} type={SocketTypes.toCSS(typeMax)}>Max</SocketIn>
+            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"min"}>Min</SocketIn>
+            <SocketIn node={node} socketId={"max"}>Max</SocketIn>
         </TypicalNode>
     );
 };

@@ -59,18 +59,18 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerCompos
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"layer"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"shape"} type={"shape"}>
+            <SocketIn node={node} socketId={"shape"}>
                 Shape
             </SocketIn>
-            <SocketIn node={node} socketId={"enabled"} type={"boolean"}>
+            <SocketIn node={node} socketId={"enabled"}>
                 <CheckBox checked={node.payload.enabled} onToggle={(enabled) => handleUpdate({ enabled })} disabled={node.in.enabled !== null}>
                     Enabled
                 </CheckBox>
             </SocketIn>
-            <SocketIn node={node} socketId={"blend"} type={"enum"} label={"Blend Mode"}>
+            <SocketIn node={node} socketId={"blend"} label={"Blend Mode"}>
                 <Dropdown value={`${node.payload.blend}`} onValue={(v) => handleUpdate({ blend: Number(v) })} disabled={node.in.blend !== null}>
                     {BLEND_MODE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>

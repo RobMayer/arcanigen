@@ -58,19 +58,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BrushEffect
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={"shape"}>
+            <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
-            <SocketIn node={node} socketId={"brushTip"} type={"length"} label={"Brush Tip"}>
+            <SocketIn node={node} socketId={"brushTip"} label={"Brush Tip"}>
                 <LengthInput value={node.payload.brushTip} onCommit={(brushTip) => handleUpdate({ brushTip })} disabled={node.in.brushTip !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"shake"} type={"float"} label={"Shake"}>
+            <SocketIn node={node} socketId={"shake"} label={"Shake"}>
                 <SliderInput value={node.payload.shake} onCommit={(shake) => handleUpdate({ shake })} disabled={node.in.shake !== null} min={"0"} max={"1"} step={"0.001"} />
             </SocketIn>
-            <SocketIn node={node} socketId={"seed"} type={"integer"} label={"Random Seed"}>
+            <SocketIn node={node} socketId={"seed"} label={"Random Seed"}>
                 <IntegerInput value={node.payload.seed} onCommit={(seed) => handleUpdate({ seed })} disabled={node.in.seed !== null} min={"0"} />
             </SocketIn>
         </TypicalNode>

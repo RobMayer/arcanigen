@@ -117,31 +117,31 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"path"} type={"string"} label={"Path Data"}>
+            <SocketIn node={node} socketId={"path"} label={"Path Data"}>
                 <BlockInput value={node.payload.path} onCommit={(path) => handleUpdate({ path })} />
             </SocketIn>
-            <SocketIn node={node} socketId={"width"} type={"length"} label={"Width"}>
+            <SocketIn node={node} socketId={"width"} label={"Width"}>
                 <LengthInput value={node.payload.width} onCommit={(width) => handleUpdate({ width })} disabled={node.in.width !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"height"} type={"length"} label={"Height"}>
+            <SocketIn node={node} socketId={"height"} label={"Height"}>
                 <LengthInput value={node.payload.height} onCommit={(height) => handleUpdate({ height })} disabled={node.in.height !== null} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewX"} type={"float integer"} label={"ViewBox X"}>
+            <SocketIn node={node} socketId={"viewX"} label={"ViewBox X"}>
                 <DecimalInput value={node.payload.viewX} onCommit={(viewX) => handleUpdate({ viewX })} disabled={node.in.viewX !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewY"} type={"float integer"} label={"ViewBox Y"}>
+            <SocketIn node={node} socketId={"viewY"} label={"ViewBox Y"}>
                 <DecimalInput value={node.payload.viewY} onCommit={(viewY) => handleUpdate({ viewY })} disabled={node.in.viewY !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewW"} type={"float integer"} label={"ViewBox W"}>
+            <SocketIn node={node} socketId={"viewW"} label={"ViewBox W"}>
                 <DecimalInput value={node.payload.viewW} onCommit={(viewW) => handleUpdate({ viewW })} disabled={node.in.viewW !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"viewH"} type={"float integer"} label={"ViewBox H"}>
+            <SocketIn node={node} socketId={"viewH"} label={"ViewBox H"}>
                 <DecimalInput value={node.payload.viewH} onCommit={(viewH) => handleUpdate({ viewH })} disabled={node.in.viewH !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"dpi"} type={"float integer"} label={"DPI"}>
+            <SocketIn node={node} socketId={"dpi"} label={"DPI"}>
                 <DecimalInput value={node.payload.dpi} onCommit={(dpi) => handleUpdate({ dpi })} min={1} required />
             </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />

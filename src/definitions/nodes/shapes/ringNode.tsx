@@ -113,13 +113,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={"shape"}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"path"} type={"path"}>
+            <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"spanMode"} type={"enum"} label={"Span Mode"}>
+            <SocketIn node={node} socketId={"spanMode"} label={"Span Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
                     value={`${node.payload.spanMode}`}
@@ -128,7 +128,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} type={"length"} label={"Inner Radius"}>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput
                     value={node.payload.innerRadius}
                     onCommit={(innerRadius) => handleUpdate({ innerRadius })}
@@ -137,7 +137,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"outerRadius"} type={"length"} label={"Outer Radius"}>
+            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput
                     value={node.payload.outerRadius}
                     onCommit={(outerRadius) => handleUpdate({ outerRadius })}
@@ -146,7 +146,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"radius"} type={"length"} label={"Radius"}>
+            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput
                     value={node.payload.radius}
                     onCommit={(radius) => handleUpdate({ radius })}
@@ -155,7 +155,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"spread"} type={"length"} label={"Spread"}>
+            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
                 <LengthInput
                     value={node.payload.spread}
                     onCommit={(spread) => handleUpdate({ spread })}
@@ -164,7 +164,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     required
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} type={"enum"} label={"Spread Align"}>
+            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
                 <RadioButton.Group
                     options={SPREAD_ALIGN_OPTIONS}
                     value={`${node.payload.spreadAlign}`}

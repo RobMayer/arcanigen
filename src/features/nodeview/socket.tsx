@@ -3,8 +3,8 @@ import { Project } from "../../state/project";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
-import { NodeTypes, SocketTypes } from "../../definitions/betterTypes";
-import { useGraphId } from "../../state/graphId";
+import { NodeDefinitions, NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+// useGraphId removed — Socket now receives node directly
 
 type GraphConnectionControls = {
     start: (nodeId: string, socketId: string, side: "in" | "out") => void;
@@ -67,12 +67,42 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
 };
 
 export const Socket = styled(
-    ({ side, socketId, nodeId, className, type, connected = false }: { side: "in" | "out"; socketId: string; nodeId: string; className?: string; type: string; connected?: boolean }) => {
+    ({
+        side,
+        socketId,
+        nodeId,
+        node,
+        className,
+        connected = false,
+    }: {
+        side: "in" | "out";
+        socketId: string;
+        nodeId: string;
+        node: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
+        className?: string;
+        connected?: boolean;
+    }) => {
         const socketRef = useRef<HTMLDivElement>(null);
 
         const [pendingConnection] = Project.usePendingConnection();
         const mc = Project.useMC();
-        const graphId = useGraphId();
+
+        const rule = useMemo(() => NodeTypes.getSocketType(node, socketId, side, mc), [node, socketId, side, mc]);
+        const [type, title] = useMemo(() => {
+            const tp = SocketTypes.toCSS(rule);
+            const anyCSS = SocketTypes.toCSS(SocketTypes.ANY);
+
+            const sep = rule.mode === "and" ? " & " : " | ";
+            let ti = tp.split(" ").join(sep);
+            if (tp === "") {
+                ti = "« unknown »";
+            }
+            if (tp === anyCSS) {
+                ti = "« any »";
+            }
+
+            return [tp, ti];
+        }, [rule]);
 
         const canConnect = useMemo(() => {
             if (pendingConnection === null) {
@@ -81,8 +111,6 @@ export const Socket = styled(
             if (pendingConnection.side === side) {
                 return false;
             }
-            const node = mc.getNode(graphId, nodeId);
-            const rule = node ? NodeTypes.getSocketType(node, socketId, side, mc) : SocketTypes.NONE;
             const [outType, inType] = pendingConnection.side === "out" ? [pendingConnection.type, rule] : [rule, pendingConnection.type];
             if (!SocketTypes.canFlow(outType, inType)) {
                 return false;
@@ -91,7 +119,7 @@ export const Socket = styled(
                 return false;
             }
             return true;
-        }, [nodeId, pendingConnection, side, socketId, mc, graphId]);
+        }, [nodeId, pendingConnection, side, socketId, rule]);
 
         const canConnectRef = useStable(canConnect);
 
@@ -130,9 +158,6 @@ export const Socket = styled(
             return r.length > 0 ? r.join(" ") : undefined;
         }, [pendingConnection, canConnect, nodeId, socketId, connected]);
 
-        const anyCSS = SocketTypes.toCSS(SocketTypes.ANY);
-        const titleType = useMemo(() => (type === "" ? "« unknown »" : type === anyCSS ? "« any »" : type.split(" ").join(" | ")), [type, anyCSS]);
-
         return (
             <div
                 ref={socketRef}
@@ -140,9 +165,9 @@ export const Socket = styled(
                 data-socketid={`--socket_${nodeId}_${socketId}`}
                 data-socketside={side}
                 data-sockettype={type}
-                data-typeany={type === anyCSS ? "" : undefined}
+                data-typeany={title === "« any »"}
                 data-state={state}
-                title={titleType}
+                title={title}
             />
         );
     },

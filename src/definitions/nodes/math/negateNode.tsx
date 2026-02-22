@@ -60,14 +60,12 @@ const queryDownstreamTypes = (node: NegateNode, graphId: string, ctx: NodeTypes.
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NegateDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const t = effectiveType(node.payload.connectedType, node.payload.resolvedInTypes);
-
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} type={SocketTypes.toCSS(t)}>
+            <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"} type={SocketTypes.toCSS(t)}>Input</SocketIn>
+            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
         </TypicalNode>
     );
 };
