@@ -120,13 +120,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
 
     return (
         <NoteWrapper position={localPosition} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <NoteTitle ref={handleRef} onDoubleClick={startEdit}>
+            <NoteTitle>
                 <Icon shape={NODE_ICONS.note} />
-                {isEditing ? (
-                    <TitleInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} />
-                ) : (
-                    <TitleSpan>{displayLabel}</TitleSpan>
-                )}
+                <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                    {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} /> : <span>{displayLabel}</span>}
+                </div>
                 <ActionButton.Lite onClick={removeNode}>
                     <Icon shape={ICONS.Close} />
                 </ActionButton.Lite>
@@ -173,22 +171,27 @@ export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
 const NoteWrapper = styled(DragMove.Item)`
     display: grid;
     background: #000c;
-    border: 1px solid #444;
+    border: 1px solid #666;
     width: max-content;
-    min-width: 240px;
+    min-width: 280px;
     outline: 1px solid transparent;
     transform: translate(-50%, 0);
     anchor-name: attr(data-node type(<custom-ident>));
     outline-offset: 4px;
     border-radius: 2px;
+    corner-shape: bevel;
     padding: 2px;
     transition: outline-color 0.25s;
     box-shadow: 0px 4px 8px black;
 
+    & hr {
+        border-color: #666;
+        margin-block: 0.5em;
+    }
+
     &:focus-within,
     &[data-state~="selected"] {
         outline-color: white;
-        opacity: 1;
     }
 `;
 
@@ -197,41 +200,39 @@ const NoteTitle = styled.div`
     align-items: center;
     padding: 0.125em;
     gap: 0.25em;
-    background: #111;
+    background: #222;
     border: 1px solid #444;
     margin: 2px;
-    cursor: move;
-
-    & > svg {
-        color: #ccc;
-    }
 
     & > button {
-        color: #ccc;
+        color: oklch(from var(--flavour) 0.8 calc(c + 0.01) h);
     }
-`;
 
-const TitleSpan = styled.span`
-    flex: 1 1 0;
-    text-align: center;
-    font-weight: bold;
-    font-variant: small-caps;
-    font-size: 1.1em;
-    color: #ccc;
-    border: 1px solid transparent;
-`;
-
-const TitleInput = styled(TextInput)`
-    flex: 1 1 0;
-    width: 0;
-    min-width: 0;
-    text-align: center;
-    font-weight: bold;
-    font-variant: small-caps;
-    font-size: 1.1em;
-    background: transparent;
-    border-color: transparent;
-    color: #ccc;
+    & > div[data-part="handle"] {
+        & > svg {
+            color: oklch(from var(--flavour) calc(l + 0.1) c h);
+        }
+        cursor: move;
+        display: flex;
+        align-self: stretch;
+        flex: 1 1 0;
+        align-items: center;
+        text-align: center;
+        & > input {
+            flex: 1 1 0;
+            width: 0;
+            min-width: 0;
+            text-align: inherit;
+            font-weight: bold;
+        }
+        & > span {
+            font-size: 16pt;
+            font-variant: small-caps;
+            flex: 1 1 0;
+            border: 1px solid transparent;
+            color: white;
+        }
+    }
 `;
 
 const NoteBody = styled.div`

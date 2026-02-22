@@ -165,7 +165,7 @@ export const Socket = styled(
                 data-socketid={`--socket_${nodeId}_${socketId}`}
                 data-socketside={side}
                 data-sockettype={type}
-                data-typeany={title === "« any »"}
+                data-socketmod={title === "« any »" ? "any" : undefined}
                 data-state={state}
                 title={title}
             />
@@ -221,7 +221,7 @@ export const Socket = styled(
         --flavour: var(--flavour-confirm);
     }
 
-    &[data-typeany] {
+    &[data-socketmod="any"] {
         --flavour: var(--flavour-base);
     }
 
