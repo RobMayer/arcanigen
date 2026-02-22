@@ -1,5 +1,5 @@
 import { createElement, ReactNode, useId, useMemo } from "react";
-import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, FilteredShape } from "./shapeTypes";
+import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, ClippedShape, FilteredShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
 // ─── Paint → SVG attributes ─────────────────────────────────────────────────
@@ -83,6 +83,8 @@ export const ShapeElement = ({ shape }: { shape: Shape }): ReactNode => {
             return <SymbolElement shape={shape} />;
         case "masked":
             return <MaskedElement shape={shape} />;
+        case "clipped":
+            return <ClippedElement shape={shape} />;
         case "filtered":
             return <FilteredElement shape={shape} />;
     }
@@ -292,6 +294,26 @@ const MaskedElement = ({ shape }: { shape: MaskedShape }) => {
                 </mask>
             </defs>
             <g mask={`url(#${maskId})`}>
+                <ShapeElement shape={shape.content} />
+            </g>
+        </g>
+    );
+};
+
+// ─── Clipped ──────────────────────────────────────────────────────────────────
+
+const ClippedElement = ({ shape }: { shape: ClippedShape }) => {
+    const id = useId();
+    const clipId = `${id}-clip`;
+
+    return (
+        <g transform={shape.transform || undefined}>
+            <defs>
+                <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+                    <path d={shape.clipPath} />
+                </clipPath>
+            </defs>
+            <g clipPath={`url(#${clipId})`}>
                 <ShapeElement shape={shape.content} />
             </g>
         </g>

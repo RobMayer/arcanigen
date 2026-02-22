@@ -185,6 +185,16 @@ export type FilterPrimitive = {
     attrs: Record<string, string | number>;
 };
 
+/** A shape clipped by an SVG <clipPath> */
+export type ClippedShape = {
+    type: "clipped";
+    content: Shape;
+    clipPath: string; // SVG path d attribute
+    transform: string;
+    signals?: string[];
+    preview: BBox;
+};
+
 /** A shape with an SVG filter applied */
 export type FilteredShape = {
     type: "filtered";
@@ -206,4 +216,5 @@ export type Shape =
     | OffsetPathShape
     | SymbolShape
     | MaskedShape
+    | ClippedShape
     | FilteredShape;

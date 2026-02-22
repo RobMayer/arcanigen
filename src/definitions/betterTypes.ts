@@ -109,6 +109,7 @@ import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
 import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
+import { ClipDefinition, ClipNodeType } from "./nodes/collections/clipNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
 import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
 import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/radialArrayNode";
@@ -232,6 +233,7 @@ namespace Registries {
         layerCompose: LayerComposeDefinition;
         layers: LayerDefinition;
         mask: MaskDefinition;
+        clip: ClipDefinition;
         sequencer: SequencerDefinition;
         polygonArray: PolygonArrayDefinition;
         radialArray: RadialArrayDefinition;
@@ -288,6 +290,7 @@ namespace Registries {
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
         mask: MaskNodeType,
+        clip: ClipNodeType,
         sequencer: SequencerNodeType,
         polygonArray: PolygonArrayNodeType,
         radialArray: RadialArrayNodeType,

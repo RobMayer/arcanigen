@@ -181,6 +181,8 @@ const restyleShape = (shape: Shape, newPaint: Paint, overrides: OverrideFlags): 
             return { ...shape, symbol: { ...shape.symbol, content: restyleShape(shape.symbol.content, newPaint, overrides) } };
         case "masked":
             return { ...shape, content: restyleShape(shape.content, newPaint, overrides) };
+        case "clipped":
+            return { ...shape, content: restyleShape(shape.content, newPaint, overrides) };
         case "filtered":
             return { ...shape, content: restyleShape(shape.content, newPaint, overrides) };
     }
