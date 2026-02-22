@@ -432,9 +432,9 @@ namespace Registries {
         Collections: "danger",
         Shapes: "confirm",
         Meta: "emphasis",
-        Math: "accent",
-        Effects: "info",
-        Custom: "emphasis",
+        Math: "help",
+        Effects: "emphasis",
+        Custom: "info",
     } as const satisfies { [key: string]: Flavour };
 }
 

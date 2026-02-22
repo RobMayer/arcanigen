@@ -5,8 +5,9 @@ import { FastContextMember, useFastContextMember } from "../../util/hooks/useFas
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { useGraphId } from "../graphId";
 import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, InterfaceMember } from "./types";
-import { invalidateDownstream, rebuildDownstream } from "./cache";
-import { INITIAL_STATE } from "./storage";
+import { nanoid } from "nanoid";
+import { buildInitialCache, invalidateDownstream, rebuildDownstream } from "./cache";
+import { buildInitialDeps, INITIAL_STATE } from "./storage";
 import { MethodContextImpl } from "./methodContext";
 
 export namespace Project {
@@ -445,6 +446,187 @@ export namespace Project {
             };
 
             return { create, rename, remove, alterInterface };
+        }, [ctx]);
+    };
+
+    export type SavedProject = {
+        version: 1;
+        nodes: NodesType;
+        links: LinksType;
+        positions: { [graphId: string]: { [nodeId: string]: XY } };
+        users: UsersType;
+        interfaces: InterfacesType;
+        meta: MetaType;
+    };
+
+    export const useProjectIO = () => {
+        const ctx = useContext(CTX)!;
+
+        return useMemo(() => {
+            const save = (): SavedProject => ({
+                version: 1,
+                nodes: ctx.nodes.ref.current,
+                links: ctx.links.ref.current,
+                positions: ctx.positions.ref.current,
+                users: ctx.users.ref.current,
+                interfaces: ctx.interfaces.ref.current,
+                meta: ctx.meta.ref.current,
+            });
+
+            const load = (data: SavedProject) => {
+                const { nodes, links, positions, users, interfaces, meta } = data;
+
+                const nodeList = Object.fromEntries(Object.entries(nodes).map(([gid, g]) => [gid, Object.keys(g)]));
+                const linkList = Object.fromEntries(Object.entries(links).map(([gid, g]) => [gid, Object.keys(g)]));
+                const cache = buildInitialCache(nodes, links, interfaces);
+                const deps = buildInitialDeps(nodes, links, interfaces, users);
+
+                ctx.nodes.ref.current = nodes;
+                ctx.nodeList.ref.current = nodeList;
+                ctx.links.ref.current = links;
+                ctx.linkList.ref.current = linkList;
+                ctx.positions.ref.current = positions;
+                ctx.users.ref.current = users;
+                ctx.interfaces.ref.current = interfaces;
+                ctx.cache.ref.current = cache;
+                ctx.deps.ref.current = deps;
+                ctx.meta.ref.current = meta;
+
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+                ctx.positions.notify();
+                ctx.users.notify();
+                ctx.interfaces.notify();
+                ctx.cache.notify();
+                ctx.deps.notify();
+                ctx.meta.notify();
+            };
+
+            const importSubgraphs = (data: SavedProject) => {
+                // Build ID mapping for non-root graphs
+                const idMap = new Map<string, string>();
+                for (const graphId of Object.keys(data.nodes)) {
+                    if (graphId === "root") continue;
+                    idMap.set(graphId, nanoid());
+                }
+
+                if (idMap.size === 0) return [];
+
+                let currentNodes = ctx.nodes.ref.current;
+                let currentLinks = ctx.links.ref.current;
+                let currentPositions = ctx.positions.ref.current;
+                let currentUsers = ctx.users.ref.current;
+                let currentInterfaces = ctx.interfaces.ref.current;
+                let currentMeta = ctx.meta.ref.current;
+
+                for (const [oldId, newId] of idMap) {
+                    // Remap custom node payload.graphId references
+                    const srcNodes = data.nodes[oldId] ?? {};
+                    const remappedNodes: typeof srcNodes = {};
+                    for (const [nodeId, node] of Object.entries(srcNodes)) {
+                        if (node.type === "custom") {
+                            const payload = node.payload as { graphId?: string };
+                            const mappedGraphId = payload.graphId ? (idMap.get(payload.graphId) ?? payload.graphId) : undefined;
+                            remappedNodes[nodeId] = { ...node, payload: { ...node.payload, graphId: mappedGraphId } as typeof node.payload };
+                        } else {
+                            remappedNodes[nodeId] = node;
+                        }
+                    }
+
+                    currentNodes = { ...currentNodes, [newId]: remappedNodes };
+                    currentLinks = { ...currentLinks, [newId]: data.links[oldId] ?? {} };
+                    currentPositions = { ...currentPositions, [newId]: data.positions[oldId] ?? {} };
+                    currentInterfaces = { ...currentInterfaces, [newId]: data.interfaces[oldId] ?? [] };
+                    currentMeta = { ...currentMeta, [newId]: data.meta[oldId] ?? { name: "Imported" } };
+                    currentUsers = { ...currentUsers, [newId]: [] };
+                }
+
+                // Rebuild users from custom node references across all imported graphs
+                for (const [, newId] of idMap) {
+                    const graphNodes = currentNodes[newId] ?? {};
+                    for (const [nodeId, node] of Object.entries(graphNodes)) {
+                        if (node.type === "custom") {
+                            const targetGraphId = (node.payload as { graphId?: string }).graphId;
+                            if (targetGraphId && currentUsers[targetGraphId]) {
+                                currentUsers = {
+                                    ...currentUsers,
+                                    [targetGraphId]: [...currentUsers[targetGraphId], { node: nodeId, scope: newId }],
+                                };
+                            }
+                        }
+                    }
+                }
+
+                // Apply state
+                ctx.nodes.ref.current = currentNodes;
+                ctx.links.ref.current = currentLinks;
+                ctx.positions.ref.current = currentPositions;
+                ctx.users.ref.current = currentUsers;
+                ctx.interfaces.ref.current = currentInterfaces;
+                ctx.meta.ref.current = currentMeta;
+
+                // Rebuild derived state
+                const nodeList = Object.fromEntries(Object.entries(currentNodes).map(([gid, g]) => [gid, Object.keys(g)]));
+                const linkList = Object.fromEntries(Object.entries(currentLinks).map(([gid, g]) => [gid, Object.keys(g)]));
+                ctx.nodeList.ref.current = nodeList;
+                ctx.linkList.ref.current = linkList;
+
+                ctx.cache.ref.current = buildInitialCache(currentNodes, currentLinks, currentInterfaces);
+                ctx.deps.ref.current = buildInitialDeps(currentNodes, currentLinks, currentInterfaces, currentUsers);
+
+                // Notify
+                ctx.nodes.notify();
+                ctx.nodeList.notify();
+                ctx.links.notify();
+                ctx.linkList.notify();
+                ctx.positions.notify();
+                ctx.users.notify();
+                ctx.interfaces.notify();
+                ctx.cache.notify();
+                ctx.deps.notify();
+                ctx.meta.notify();
+
+                return [...idMap.values()];
+            };
+
+            const saveSubgraph = (graphId: string): SavedProject => {
+                // Collect the target graph and all transitive subgraph dependencies
+                const collected = new Set<string>();
+                const queue = [graphId];
+                while (queue.length > 0) {
+                    const gid = queue.pop()!;
+                    if (collected.has(gid)) continue;
+                    collected.add(gid);
+                    // Find custom nodes that reference other subgraphs
+                    const graphNodes = ctx.nodes.ref.current[gid] ?? {};
+                    for (const node of Object.values(graphNodes)) {
+                        if (node.type === "custom") {
+                            const target = (node.payload as { graphId?: string }).graphId;
+                            if (target && !collected.has(target)) queue.push(target);
+                        }
+                    }
+                }
+
+                const nodes: NodesType = {};
+                const links: LinksType = {};
+                const positions: { [g: string]: { [n: string]: XY } } = {};
+                const users: UsersType = {};
+                const interfaces: InterfacesType = {};
+                const meta: MetaType = {};
+                for (const gid of collected) {
+                    nodes[gid] = ctx.nodes.ref.current[gid] ?? {};
+                    links[gid] = ctx.links.ref.current[gid] ?? {};
+                    positions[gid] = ctx.positions.ref.current[gid] ?? {};
+                    users[gid] = (ctx.users.ref.current[gid] ?? []).filter((u) => collected.has(u.scope));
+                    interfaces[gid] = ctx.interfaces.ref.current[gid] ?? [];
+                    meta[gid] = ctx.meta.ref.current[gid] ?? { name: "Untitled" };
+                }
+                return { version: 1, nodes, links, positions, users, interfaces, meta };
+            };
+
+            return { save, load, importSubgraphs, saveSubgraph };
         }, [ctx]);
     };
 }

@@ -23,7 +23,7 @@ const STARTING_STATE = {
 };
 
 /** Builds initial deps for all graphs, processing in topological order (inside-out) */
-const buildInitialDeps = (nodes: NodesType, links: LinksType, interfaces: InterfacesType, users: UsersType): DepsType => {
+export const buildInitialDeps = (nodes: NodesType, links: LinksType, interfaces: InterfacesType, users: UsersType): DepsType => {
     const deps: DepsType = {};
 
     // Build dependency graph from users: scope depends on targetGraphId

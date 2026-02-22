@@ -22,12 +22,12 @@ const BaseTitle = styled.div`
     grid-auto-column: auto;
     grid-auto-flow: column;
     margin: 1px;
-    background: var(--flavour-plate-layer);
-    corner-shape: bevel;
-    border-radius: 7px 7px 0px 0px;
-    color: var(--flavour-plate-title);
+    background: oklch(from var(--flavour) 0.37 calc(c * 0.65) h);
+    color: #fffc;
     padding: 4px;
     padding-left: 8px;
+    font-variant: small-caps;
+    font-size: 125%;
 `;
 
 export function Modal({ flavour = "base", ...props }: Modal.Props) {
@@ -44,7 +44,7 @@ export namespace Modal {
 
     export function Title({ flavour = "inherit", children, options, ...rest }: DivProps & { options?: ReactNode; flavour?: Flavour }) {
         return (
-            <BaseTitle {...rest}>
+            <BaseTitle {...rest} data-flavour={flavour}>
                 <div data-part={"title"}>{children}</div>
                 {options ? <div data-part={"options"}>{options}</div> : null}
             </BaseTitle>

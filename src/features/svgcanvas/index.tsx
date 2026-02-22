@@ -21,7 +21,7 @@ export const SvgCanvas = styled(({ className, paneControls }: SvgCanvasProps) =>
     return (
         <CanvasViewPane className={className} controls={paneControls} minZoom={0.1} maxZoom={10} boundsRef={boundsRef}>
             <SvgCanvasContent>
-                <svg viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`} width={canvas.width} height={canvas.height} style={{ background: canvas.background }}>
+                <svg data-export-svg viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`} width={canvas.width} height={canvas.height} style={{ background: canvas.background }}>
                     {contents && <ShapeElement shape={contents} />}
                 </svg>
             </SvgCanvasContent>

@@ -10,7 +10,6 @@ import { useDragPane } from "../components/wrappers/DragPane";
 import { ResizeHandle } from "../components/containers/ResizeHandle";
 import { parseInterface, InterfaceMember, InterfaceAccordion } from "../state/project/types";
 import { Session } from "../state/session";
-import { CheckBox } from "../components/buttons/CheckBox";
 import { Icon, ICONS } from "../components/Icon";
 import { ActionButton } from "../components/buttons/ActionButton";
 import { nanoid } from "nanoid";
@@ -44,7 +43,7 @@ export const SubgraphEditorProvider = ({ children }: { children: ReactNode }) =>
     return (
         <SubgraphEditorContext value={ctx}>
             {children}
-            <Modal controls={modalControls} onClose={handleClose} onCancel={handleClose} size={"90vw 90vh"}>
+            <Modal controls={modalControls} onClose={handleClose} onCancel={handleClose} size={"90vw 90vh"} force>
                 {editingGraphId && <SubgraphEditorInner graphId={editingGraphId} />}
             </Modal>
         </SubgraphEditorContext>
@@ -94,8 +93,15 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
 
     return (
         <GraphIdContext value={graphId}>
-            <Modal.Title options={<CloseButton onClick={handleClose}>&times;</CloseButton>}>
-                <TitleInput value={name} onCommit={handleRename} placeholder="Subgraph name" />
+            <Modal.Title
+                flavour={"accent"}
+                options={
+                    <ActionButton.Lite onClick={handleClose}>
+                        <Icon shape={ICONS.Close} />
+                    </ActionButton.Lite>
+                }
+            >
+                Editing Subgraph
             </Modal.Title>
             <EditorLayout ref={layoutRef} style={style} data-state={isDrawerOpen ? "drawer-open" : undefined}>
                 <div data-area={"toolbar"}>
@@ -105,6 +111,7 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
                     <GraphView graphId={graphId} paneControls={paneControls} />
                 </div>
                 <div data-area={"interfacelist"}>
+                    <TextInput value={name} onCommit={handleRename} placeholder="Subgraph name" />
                     <InterfaceMemberList graphId={graphId} />
                 </div>
                 <div data-area={"rowResize"}>
@@ -133,9 +140,9 @@ const Toolbar = () => {
 
     return (
         <ToolbarWrapper>
-            <CheckBox checked={marqueeMode === "contain"} onToggle={() => setMarqueeMode(marqueeMode === "contain" ? "intersect" : "contain")}>
-                {marqueeMode === "contain" ? "Contain" : "Intersect"}
-            </CheckBox>
+            <ActionButton onClick={() => setMarqueeMode((p) => (p === "contain" ? "intersect" : "contain"))} tooltip={`Selection Mode: ${marqueeMode === "contain" ? "Contain" : "Intersect"}`}>
+                <Icon shape={marqueeMode === "contain" ? ICONS.SelectBounds.Contain : ICONS.SelectBounds.Intersect} />
+            </ActionButton>
         </ToolbarWrapper>
     );
 };
@@ -527,30 +534,14 @@ const AccordionItemEntry = ({
 
 /* ==================== Styled Components ==================== */
 
-const TitleInput = styled(TextInput)`
-    color: inherit;
-    font: inherit;
-`;
-
-const CloseButton = styled.button`
-    background: none;
-    border: none;
-    color: inherit;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 0 4px;
-    line-height: 1;
-    &:hover {
-        color: #fff;
-    }
-`;
-
 const ToolbarWrapper = styled.div`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 2px 8px;
-    font-variant: small-caps;
+    gap: 6px;
+    padding: 2px;
+    & > button {
+        padding: 0.25em;
+    }
 `;
 
 const EditorLayout = styled.div`
@@ -559,11 +550,11 @@ const EditorLayout = styled.div`
     display: grid;
     padding: 4px;
     gap: 2px;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 300px 1fr;
     grid-template-rows: min-content 1fr 2px auto;
     grid-template-areas:
         "toolbar toolbar"
-        "graphview interfacelist"
+        "interfacelist graphview"
         "rowResize rowResize"
         "drawer drawer";
     &[data-state~="drawer-open"] {
@@ -578,7 +569,7 @@ const EditorLayout = styled.div`
         background: #222;
         border: 1px solid var(--flavour);
         display: grid;
-        grid-template-rows: 1fr;
+        grid-template-rows: auto 1fr;
         grid-auto-rows: auto;
         gap: 4px;
         padding: 4px;

@@ -14,6 +14,7 @@ import { useSubgraphEditor } from "./subgraph";
 import { ContextPopup } from "../components/popups/ContextPopup";
 import { ActionButton } from "../components/buttons/ActionButton";
 import { RadioButton } from "../components/buttons/RadioButton";
+import { downloadBlob } from "../util/fileIO";
 
 const LocalAccordion = styled(Accordion)`
     padding: 0.25em;
@@ -263,6 +264,7 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
     }, [subgraphMethods, subgraphEditor]);
 
     const users = Project.useUsers();
+    const io = Project.useProjectIO();
 
     const contextControls = ContextPopup.useControls();
     const [menuTarget, setMenuTarget] = useState<{ kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | null>(null);
@@ -300,6 +302,16 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
         contextControls.close();
     }, [menuTarget, subgraphMethods, contextControls]);
 
+    const handleMenuSave = useCallback(() => {
+        if (menuTarget?.kind === "subgraph") {
+            const data = io.saveSubgraph(menuTarget.id);
+            const json = JSON.stringify(data);
+            const name = menuTarget.name || "custom-node";
+            downloadBlob(new Blob([json], { type: "application/json" }), `${name}.json`);
+        }
+        contextControls.close();
+    }, [menuTarget, io, contextControls]);
+
     const hasUsers = menuTarget?.kind === "subgraph" && (users[menuTarget.id] ?? []).length > 0;
 
     return (
@@ -307,6 +319,7 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
             <ContextPopup controls={contextControls}>
                 <ActionButton.Option onClick={handleMenuAdd}>Add Node</ActionButton.Option>
                 {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuEdit}>Edit Custom Node</ActionButton.Option>}
+                {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuSave}>Save Custom Node</ActionButton.Option>}
                 {menuTarget?.kind === "subgraph" && (
                     <ActionButton.Option flavour={"danger"} onClick={handleMenuDelete} disabled={hasUsers}>
                         Delete Custom Node
