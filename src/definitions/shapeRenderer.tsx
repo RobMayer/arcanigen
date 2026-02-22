@@ -279,18 +279,11 @@ const SymbolElement = ({ shape }: { shape: SymbolShape }) => {
 const MaskedElement = ({ shape }: { shape: MaskedShape }) => {
     const id = useId();
     const maskId = `${id}-mask`;
-    const isLuminance = shape.mask.mode === "luminance";
-
     return (
         <g transform={shape.transform || undefined}>
             <defs>
                 <mask id={maskId} maskContentUnits="userSpaceOnUse" style={{ maskType: shape.mask.mode }}>
-                    {/* Background rect: black for luminance (default hidden), transparent for alpha */}
-                    <rect x="-5000%" y="-5000%" width="10000%" height="10000%" fill={isLuminance ? "black" : "transparent"} />
-                    {/* The mask shape */}
                     <ShapeElement shape={shape.mask.shape} />
-                    {/* Invert overlay: a white rect with difference blending flips luminance values */}
-                    {isLuminance && shape.mask.invert && <rect x="-5000%" y="-5000%" width="10000%" height="10000%" fill="white" style={{ mixBlendMode: "difference" }} />}
                 </mask>
             </defs>
             <g mask={`url(#${maskId})`}>

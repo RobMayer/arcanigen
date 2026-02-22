@@ -2,7 +2,7 @@
 
 - [ ] Finish cleaning up component namespaces
     - [ ] Consolidate ColorInput and ColorInputHex into one ColorInput namespace (add picker, too)
-- [ ] container/wrapper nodes for spacial organization
+- [ ] container/wrapper nodes for spacial organization - maybe?
 - [ ] drag and drop from node drawer onto viewport
 - [x] resize observer on viewport of drag-pane
 - [x] sliders for integer and float, already
@@ -21,8 +21,6 @@
         - [ ] is cycleDetection really even in the right place?
     - [x] the initial state parser is rather hamfisted and should probably be properly re-written
         - [ ] load, save, merge
-- [ ] dependency resolver feels weird to pass in graph and deps seperately, and how the dependsOn and contributesTo of nodeTypes can have the deps, but not the graph.
-- [ ] figure out seeded "random" functionality (example: distribution node)
 
 # tasks that will get completed as the system gets fleshed out
 
@@ -34,7 +32,7 @@
     - [x] Flood Fill
     - [x] Custom Glyph
     - [x] Text Path (ugh)
-- [ ] more shapes (new)
+- [ ] more shapes (new, maybe?)
     - [ ] Banded Star (circle, polygon, and polygram are to ring, polyring, and knot as star is to this)
     - [ ] Banded Burst (circle, polygon, and polygram are to ring, polyring, and knot as burst is to this)
     - [ ] Banded Arc
@@ -64,4 +62,4 @@
 # componnet improvements
 
 - [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe
-- [ ] rework mouse drag to pointer drag
+- [x] rework mouse drag to pointer drag

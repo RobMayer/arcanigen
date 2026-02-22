@@ -18,7 +18,6 @@ export type MaskDefinition = {
         mask: DataTypes.Use<"shape">;
         showMask: DataTypes.Use<"boolean">;
         maskMode: DataTypes.Use<"enum">;
-        invert: DataTypes.Use<"boolean">;
     };
     outputs: {
         output: DataTypes.Use<"shape">;
@@ -27,7 +26,6 @@ export type MaskDefinition = {
         label: string;
         showMask: boolean;
         maskMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        invert: boolean;
     };
 };
 
@@ -41,7 +39,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<MaskDefinition>>, i
             mask: null,
             showMask: null,
             maskMode: null,
-            invert: null,
         },
         out: {
             output: [],
@@ -50,7 +47,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<MaskDefinition>>, i
             label: "",
             showMask: input.showMask ?? false,
             maskMode: input.maskMode ?? Enum.Common.maskMode.LUMINANCE.value,
-            invert: input.invert ?? false,
         },
         type: "mask",
     };
@@ -63,9 +59,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MaskDefinit
         },
         [methods],
     );
-
-    const maskMode = node.payload.maskMode;
-    const isLuminance = maskMode === Enum.Common.maskMode.LUMINANCE.value;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -92,17 +85,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MaskDefinit
                     options={MASK_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"invert"}>
-                <CheckBox checked={node.payload.invert} onToggle={(invert) => handleUpdate({ invert })} disabled={node.in.invert !== null || !isLuminance}>
-                    Invert
-                </CheckBox>
-            </SocketIn>
         </TypicalNode>
     );
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<MaskDefinition>, _outSocket: keyof MaskDefinition["outputs"], _deps: AllDeps): (keyof MaskDefinition["inputs"])[] => {
-    return ["content", "mask", "showMask", "maskMode", "invert"];
+    return ["content", "mask", "showMask", "maskMode"];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<MaskDefinition>, _inSocket: keyof MaskDefinition["inputs"], _deps: AllDeps): (keyof MaskDefinition["outputs"])[] => {
@@ -125,7 +113,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
         }
 
         const maskModeEnum = context.resolve<"enum">(node.id, "maskMode")?.data ?? node.payload.maskMode;
-        const invert = context.resolve<"boolean">(node.id, "invert")?.data ?? node.payload.invert;
 
         const mode = Enum.keyOf(Enum.Common.maskMode, maskModeEnum) === "LUMINANCE" ? "luminance" : "alpha";
 
@@ -135,7 +122,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
             mask: {
                 shape: maskShape,
                 mode,
-                invert: mode === "luminance" && invert,
             },
             transform: "",
             preview: contentShape.preview,
@@ -152,7 +138,6 @@ const SOCKETTYPES_IN: { [key in keyof Required<MaskDefinition["inputs"]>]: Socke
     mask: { types: ["shape"], mode: "or" },
     showMask: { types: ["boolean"], mode: "or" },
     maskMode: { types: ["enum"], mode: "or" },
-    invert: { types: ["boolean"], mode: "or" },
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<MaskDefinition["outputs"]>]: SocketTypes.SocketRule } = {

@@ -104,7 +104,6 @@ import { BurstDefinition, BurstNodeType } from "./nodes/shapes/burstNode";
 import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
 import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
 import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
-import { FloodFillDefinition, FloodFillNodeType } from "./nodes/shapes/floodFillNode";
 import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
 import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
@@ -151,7 +150,6 @@ namespace Registries {
         arc: ArcDefinition;
         spiral: SpiralDefinition;
         line: LineDefinition;
-        floodFill: FloodFillDefinition;
         textPath: TextPathDefinition;
         alongPath: AlongPathDefinition;
         glyph: GlyphDefinition;
@@ -281,7 +279,6 @@ namespace Registries {
         arc: ArcNodeType,
         spiral: SpiralNodeType,
         line: LineNodeType,
-        floodFill: FloodFillNodeType,
         textPath: TextPathNodeType,
         alongPath: AlongPathNodeType,
         glyph: GlyphNodeType,

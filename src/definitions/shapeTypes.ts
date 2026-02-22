@@ -176,7 +176,6 @@ export type MaskedShape = {
 export type MaskDef = {
     shape: Shape;
     mode: "luminance" | "alpha";
-    invert: boolean; // only meaningful when mode is "luminance"
 };
 
 /** An SVG filter primitive: tag name + attributes */
