@@ -333,8 +333,22 @@ const DragPaneBase = styled(
 
             let commitTimer: ReturnType<typeof setTimeout>;
 
+            const hasScrollableAncestor = (target: EventTarget | null): boolean => {
+                let el = target instanceof Element ? target : null;
+                while (el && el !== element) {
+                    if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) {
+                        const style = getComputedStyle(el);
+                        if (style.overflowY === "auto" || style.overflowY === "scroll" || style.overflowX === "auto" || style.overflowX === "scroll") {
+                            return true;
+                        }
+                    }
+                    el = el.parentElement;
+                }
+                return false;
+            };
+
             const wheel = (evt: globalThis.WheelEvent) => {
-                if (evt.handled || evt.target !== element) return;
+                if (evt.handled || hasScrollableAncestor(evt.target)) return;
                 evt.preventDefault();
                 methods.zoomOnFocal(evt as unknown as WheelEvent);
                 clearTimeout(commitTimer);
@@ -368,7 +382,7 @@ const DragPaneBase = styled(
             };
 
             const mouseDown = (evt: globalThis.MouseEvent) => {
-                if (evt.button === 1 && !evt.handled && evt.target === element) {
+                if (evt.button === 1 && !evt.handled) {
                     evt.handled = "active";
                     evt.preventDefault();
                     setPanning(true);

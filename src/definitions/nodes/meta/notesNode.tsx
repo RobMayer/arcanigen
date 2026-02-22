@@ -132,7 +132,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
                 </ActionButton.Lite>
             </NoteTitle>
             <NoteBody>
-                <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} placeholder={"Write notes here..."} />
+                <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
             </NoteBody>
         </NoteWrapper>
     );

@@ -164,13 +164,6 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, _inS
     return ["output"];
 };
 
-const wrapDistance = (raw: string, overflowMode: number): string => {
-    if (overflowMode === Enum.Common.overflowMode.WRAP.value) {
-        return `mod(${raw}, 100%)`;
-    }
-    return `clamp(0%, ${raw}, 100%)`;
-};
-
 const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: keyof AlongPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
@@ -186,25 +179,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
 
     const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
     const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
-    const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
+    const originPct = [0, 50, 100][offsetOrigin] ?? 0;
 
-    let rawDistance: string;
+    let distance: { percent: number; px: number };
     if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
         const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
-        rawDistance = `${originPct} + ${pct}%`;
+        distance = { percent: originPct + pct, px: 0 };
     } else {
         const len = context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
         const lenNum = Length.Emptyable.asNumber(len) ?? 0;
-        rawDistance = `${originPct} + ${lenNum}px`;
-    }
-
-    const offsetDistance = `calc(${wrapDistance(rawDistance, overflowMode)})`;
-
-    let rotate: string;
-    if (memberAlign) {
-        rotate = memberRotation !== 0 ? `auto ${memberRotation}deg` : "auto";
-    } else {
-        rotate = memberRotation !== 0 ? `${memberRotation}deg` : "0deg";
+        distance = { percent: originPct, px: lenNum };
     }
 
     return {
@@ -214,8 +198,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
             shape: shapeData,
             path: {
                 d: pathData.d,
-                distance: offsetDistance,
-                rotate,
+                distance,
+                overflow: overflowMode === Enum.Common.overflowMode.WRAP.value ? "wrap" : "clamp",
+                rotate: { auto: memberAlign, degrees: memberRotation },
             },
             transform: pathData.transform,
             preview: pathData.preview,

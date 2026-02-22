@@ -97,7 +97,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition
         payload: {
             label: "",
             count: "5",
-            spacingMode: Enum.Common.spacingMode.EVEN.value,
+            spacingMode: Enum.Common.spacingMode.SPACE_BETWEEN.value,
             spacing: "20px",
             overflowMode: Enum.Common.overflowMode.CLAMP.value,
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
@@ -124,7 +124,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
         [methods],
     );
 
-    const isFixedSpacing = node.payload.spacingMode !== Enum.Common.spacingMode.EVEN.value;
+    const isFixedSpacing =
+        node.payload.spacingMode !== Enum.Common.spacingMode.SPACE_BETWEEN.value &&
+        node.payload.spacingMode !== Enum.Common.spacingMode.SPACE_AROUND.value &&
+        node.payload.spacingMode !== Enum.Common.spacingMode.SPACE_AFTER.value &&
+        node.payload.spacingMode !== Enum.Common.spacingMode.SPACE_BEFORE.value;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -143,7 +147,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
             </SocketIn>
             <SocketIn node={node} socketId={"spacingMode"} type={"enum"} label={"Spacing"}>
                 <RadioButton.Group
-                    orientation={"horizontal"}
+                    orientation={"vertical"}
                     value={`${node.payload.spacingMode}`}
                     onValue={(v) => handleUpdate({ spacingMode: Number(v) })}
                     disabled={node.in.spacingMode !== null}
@@ -267,13 +271,6 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, inSo
     return ["output"];
 };
 
-const wrapDistance = (raw: string, overflowMode: number): string => {
-    if (overflowMode === Enum.Common.overflowMode.WRAP.value) {
-        return `mod(${raw}, 100%)`;
-    }
-    return `clamp(0%, ${raw}, 100%)`;
-};
-
 const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: keyof PathArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = NumericString.Emptyable.asNumber(countStr);
@@ -302,15 +299,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     // Offset
     const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
     const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
-    const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
+    const originPct = [0, 50, 100][offsetOrigin] ?? 0;
 
-    let offsetExpr: string;
+    let offset: { percent: number; px: number };
     if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
         const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
-        offsetExpr = pct !== 0 || originPct !== "0%" ? `${originPct} + ${pct}%` : "";
+        offset = { percent: originPct + pct, px: 0 };
     } else {
         const lenNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength) ?? 0;
-        offsetExpr = lenNum !== 0 || originPct !== "0%" ? `${originPct} + ${lenNum}px` : "";
+        offset = { percent: originPct, px: lenNum };
     }
 
     // Distribution (only for Even mode)
@@ -324,13 +321,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     // Spacing
     const spacingNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
 
-    // Rotate string
-    let rotate: string;
-    if (memberAlign) {
-        rotate = memberRotation !== 0 ? `auto ${memberRotation}deg` : "auto";
-    } else {
-        rotate = memberRotation !== 0 ? `${memberRotation}deg` : "0deg";
-    }
+    const overflow: "clamp" | "wrap" = overflowModeEnum === Enum.Common.overflowMode.WRAP.value ? "wrap" : "clamp";
+    const rotate = { auto: memberAlign, degrees: memberRotation };
 
     const children: OffsetPathShape[] = [];
     for (let i = 0; i < count; i++) {
@@ -340,33 +332,41 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
         const shape = context.resolve<"shape">(node.id, "input", { ...context.sequenceData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
-        // Compute spacing expression for this index
-        let spacingExpr: string;
+        // Compute spacing for this index
+        let spacing: { percent: number; px: number };
 
-        if (spacingModeEnum === Enum.Common.spacingMode.EVEN.value) {
+        if (spacingModeEnum === Enum.Common.spacingMode.SPACE_BETWEEN.value) {
             const segments = count - 1;
             const t = segments > 0 ? distroLerper(i / segments) : 0.5;
-            spacingExpr = `${padStartNum}px + ${t} * (100% - ${padStartNum}px - ${padEndNum}px)`;
+            spacing = { percent: t * 100, px: padStartNum * (1 - t) - padEndNum * t };
+        } else if (spacingModeEnum === Enum.Common.spacingMode.SPACE_AROUND.value) {
+            const t = count > 0 ? distroLerper((i + 0.5) / count) : 0.5;
+            spacing = { percent: t * 100, px: padStartNum * (1 - t) - padEndNum * t };
+        } else if (spacingModeEnum === Enum.Common.spacingMode.SPACE_AFTER.value) {
+            const t = count > 0 ? distroLerper(i / count) : 0;
+            spacing = { percent: t * 100, px: padStartNum * (1 - t) - padEndNum * t };
+        } else if (spacingModeEnum === Enum.Common.spacingMode.SPACE_BEFORE.value) {
+            const t = count > 0 ? distroLerper((i + 1) / count) : 1;
+            spacing = { percent: t * 100, px: padStartNum * (1 - t) - padEndNum * t };
         } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_START.value) {
-            spacingExpr = `${padStartNum + i * spacingNum}px`;
+            spacing = { percent: 0, px: padStartNum + i * spacingNum };
         } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_CENTER.value) {
             const delta = (i - (count - 1) / 2) * spacingNum;
-            spacingExpr = `50% + ${(padStartNum - padEndNum) / 2 + delta}px`;
+            spacing = { percent: 50, px: (padStartNum - padEndNum) / 2 + delta };
         } else {
             // FixedEnd
-            spacingExpr = `100% - ${padEndNum + (count - 1 - i) * spacingNum}px`;
+            spacing = { percent: 100, px: -(padEndNum + (count - 1 - i) * spacingNum) };
         }
 
-        // Combine spacing + offset
-        const rawDistance = offsetExpr ? `${spacingExpr} + ${offsetExpr}` : spacingExpr;
-        const finalDistance = `calc(${wrapDistance(rawDistance, overflowModeEnum)})`;
+        const distance = { percent: spacing.percent + offset.percent, px: spacing.px + offset.px };
 
         children.push({
             type: "offsetPath",
             shape,
             path: {
                 d: pathData.d,
-                distance: finalDistance,
+                distance,
+                overflow,
                 rotate,
             },
             transform: pathData.transform ?? "",

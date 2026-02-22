@@ -155,10 +155,13 @@ export namespace Enum {
         } as const;
 
         export const spacingMode = {
-            EVEN: { value: 0, label: "Even" },
-            FIXED_START: { value: 1, label: "Fixed Start" },
-            FIXED_CENTER: { value: 2, label: "Fixed Center" },
-            FIXED_END: { value: 3, label: "Fixed End" },
+            SPACE_BETWEEN: { value: 0, label: "Space Between" },
+            SPACE_AROUND: { value: 1, label: "Space Around" },
+            SPACE_AFTER: { value: 5, label: "Space After" },
+            SPACE_BEFORE: { value: 6, label: "Space Before" },
+            FIXED_START: { value: 2, label: "Fixed Start" },
+            FIXED_CENTER: { value: 3, label: "Fixed Center" },
+            FIXED_END: { value: 4, label: "Fixed End" },
         } as const;
 
         export const overflowMode = {

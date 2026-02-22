@@ -53,12 +53,13 @@ export type TextPathDef = {
 };
 
 // ─── Offset path (along-path positioning) ────────────────────────────────────
-// Renderer creates a <path> def and sets style.offsetPath, offsetDistance, offsetRotate.
+// Renderer computes position via getPointAtLength and emits a transform attribute.
 
 export type OffsetPathDef = {
     d: string; // path data
-    distance?: string; // e.g. "50%", "calc(...)"
-    rotate?: string; // "auto" or "0deg"
+    distance: { percent: number; px: number }; // resolved as: percent/100 * totalLength + px
+    overflow: "clamp" | "wrap";
+    rotate: { auto: boolean; degrees: number }; // auto=true: follow tangent + degrees offset
 };
 
 // ─── Symbol / instancing ─────────────────────────────────────────────────────

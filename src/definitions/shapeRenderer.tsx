@@ -1,5 +1,4 @@
 import { createElement, ReactNode, useId, useMemo } from "react";
-import { nanoid } from "nanoid";
 import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, FilteredShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
@@ -24,7 +23,7 @@ const paintAttrs = (paint: Paint): Record<string, string | undefined> => {
     if (paint.stroke) {
         Object.assign(attrs, strokeAttrs(paint.stroke));
     }
-    attrs.fill = paint.fill === null ? "none" : paint.fill ?? "none";
+    attrs.fill = paint.fill === null ? "none" : (paint.fill ?? "none");
     if (paint.paintOrder) {
         attrs.paintOrder = paint.paintOrder;
     }
@@ -35,14 +34,7 @@ const paintAttrs = (paint: Paint): Record<string, string | undefined> => {
 
 const MarkerDefElement = ({ def, id }: { def: MarkerDef; id: string }) => {
     return (
-        <marker
-            id={id}
-            markerUnits="userSpaceOnUse"
-            markerWidth="100%"
-            markerHeight="100%"
-            overflow="visible"
-            orient={def.orient}
-        >
+        <marker id={id} markerUnits="userSpaceOnUse" markerWidth="100%" markerHeight="100%" overflow="visible" orient={def.orient}>
             <ShapeElement shape={def.shape} />
         </marker>
     );
@@ -153,9 +145,7 @@ const LineElement = ({ shape }: { shape: LineShape }) => {
         markerAttrs = m.attrs;
     }
 
-    const el = (
-        <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} {...paintAttrs(shape.paint)} {...markerAttrs} transform={shape.transform || undefined} />
-    );
+    const el = <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} {...paintAttrs(shape.paint)} {...markerAttrs} transform={shape.transform || undefined} />;
 
     if (defsNode) {
         return (
@@ -171,18 +161,7 @@ const LineElement = ({ shape }: { shape: LineShape }) => {
 // ─── Rect ────────────────────────────────────────────────────────────────────
 
 const RectElement = ({ shape }: { shape: RectShape }) => {
-    return (
-        <rect
-            x={shape.x}
-            y={shape.y}
-            width={shape.width}
-            height={shape.height}
-            rx={shape.rx}
-            ry={shape.ry}
-            {...paintAttrs(shape.paint)}
-            transform={shape.transform || undefined}
-        />
-    );
+    return <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} ry={shape.ry} {...paintAttrs(shape.paint)} transform={shape.transform || undefined} />;
 };
 
 // ─── Text ────────────────────────────────────────────────────────────────────
@@ -239,25 +218,36 @@ const GroupElement = ({ shape }: { shape: GroupShape }) => {
 
 // ─── Offset Path ─────────────────────────────────────────────────────────────
 
-const OffsetPathElement = ({ shape }: { shape: OffsetPathShape }) => {
-    const pathId = useMemo(() => `op-${nanoid()}`, [shape.path.d]);
+const resolveOffsetPath = (def: OffsetPathShape["path"]): string => {
+    const tempPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    tempPath.setAttribute("d", def.d);
+    const totalLength = tempPath.getTotalLength();
 
-    const style: Record<string, string> = {
-        offsetPath: `url(#${pathId})`,
-    };
-    if (shape.path.distance) {
-        style.offsetDistance = shape.path.distance;
+    let dist = (def.distance.percent / 100) * totalLength + def.distance.px;
+    if (def.overflow === "wrap") {
+        dist = ((dist % totalLength) + totalLength) % totalLength;
+    } else {
+        dist = Math.max(0, Math.min(totalLength, dist));
     }
-    if (shape.path.rotate) {
-        style.offsetRotate = shape.path.rotate;
+
+    const pt = tempPath.getPointAtLength(dist);
+
+    let angle = def.rotate.degrees;
+    if (def.rotate.auto) {
+        const epsilon = Math.min(0.1, totalLength * 0.001);
+        const pt2 = tempPath.getPointAtLength(Math.min(dist + epsilon, totalLength));
+        angle += Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * (180 / Math.PI);
     }
+
+    return `translate(${pt.x}, ${pt.y}) rotate(${angle})`;
+};
+
+const OffsetPathElement = ({ shape }: { shape: OffsetPathShape }) => {
+    const childTransform = useMemo(() => resolveOffsetPath(shape.path), [shape.path]);
 
     return (
         <g transform={shape.transform || undefined}>
-            <defs>
-                <path id={pathId} d={shape.path.d} />
-            </defs>
-            <g style={style}>
+            <g transform={childTransform}>
                 <ShapeElement shape={shape.shape} />
             </g>
         </g>
@@ -298,9 +288,7 @@ const MaskedElement = ({ shape }: { shape: MaskedShape }) => {
                     {/* The mask shape */}
                     <ShapeElement shape={shape.mask.shape} />
                     {/* Invert overlay: a white rect with difference blending flips luminance values */}
-                    {isLuminance && shape.mask.invert && (
-                        <rect x="-5000%" y="-5000%" width="10000%" height="10000%" fill="white" style={{ mixBlendMode: "difference" }} />
-                    )}
+                    {isLuminance && shape.mask.invert && <rect x="-5000%" y="-5000%" width="10000%" height="10000%" fill="white" style={{ mixBlendMode: "difference" }} />}
                 </mask>
             </defs>
             <g mask={`url(#${maskId})`}>
