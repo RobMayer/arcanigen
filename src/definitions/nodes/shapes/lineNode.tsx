@@ -16,7 +16,6 @@ import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
 
-
 export type LineDefinition = {
     inputs: {
         startMode: DataTypes.Use<"enum">;
@@ -215,7 +214,27 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
     );
 };
 
-const GEOMETRY_INPUTS: (keyof LineDefinition["inputs"])[] = ["startMode", "startX", "startY", "startRadius", "startTheta", "endMode", "endX", "endY", "endRadius", "endTheta", "markerStartShape", "markerEndShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof LineDefinition["inputs"])[] = [
+    "startMode",
+    "startX",
+    "startY",
+    "startRadius",
+    "startTheta",
+    "endMode",
+    "endX",
+    "endY",
+    "endRadius",
+    "endTheta",
+    "markerStartShape",
+    "markerEndShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof LineDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<LineDefinition>, outSocket: keyof LineDefinition["outputs"], _deps: AllDeps): (keyof LineDefinition["inputs"])[] => {
@@ -285,12 +304,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
         const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const markers = (markerStartShape || markerEndShape)
-            ? {
-                  start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                  end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-              }
-            : undefined;
+        const markers =
+            markerStartShape || markerEndShape
+                ? {
+                      start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                      end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  }
+                : undefined;
 
         const minX = Math.min(sx, ex);
         const minY = Math.min(sy, ey);
@@ -349,8 +369,7 @@ export const LineNodeType: NodeTypes.Type<"line", LineDefinition> = {
     type: "line",
     displayName: "Line",
     defaultLabel: "Line",
-    iconNode: <Icon shape={NODE_ICONS.segmentShape.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.segmentShape.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.shapeLine} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,

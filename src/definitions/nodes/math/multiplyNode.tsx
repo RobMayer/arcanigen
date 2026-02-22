@@ -79,8 +79,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MultiplyDef
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>A</SocketIn>
-            <SocketIn node={node} socketId={"b"}>B</SocketIn>
+            <SocketIn node={node} socketId={"a"}>
+                A
+            </SocketIn>
+            <SocketIn node={node} socketId={"b"}>
+                B
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -148,7 +152,13 @@ const onConnect = (node: MultiplyNode, linkId: string, direction: "in" | "out", 
     }
 };
 
-const onDisconnect = (node: MultiplyNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: MultiplyNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         const socket = link.toSocket as "a" | "b";
         const otherSocket = socket === "a" ? "b" : "a";
@@ -223,8 +233,7 @@ export const MultiplyType: NodeTypes.Type<"multiply", MultiplyDefinition> = {
     type: "multiply",
     displayName: "Multiply",
     defaultLabel: "Multiply",
-    iconNode: <Icon shape={NODE_ICONS.mulValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.mulValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.asterisk} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

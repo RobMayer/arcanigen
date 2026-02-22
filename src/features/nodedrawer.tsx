@@ -421,7 +421,7 @@ const NodeCard = styled(
                 <div data-part={"title"} title={nodeType.displayName}>
                     {nodeType.displayName}
                 </div>
-                <div data-part={"icon"}>{nodeType.iconCard ?? nodeType.iconNode}</div>
+                <div data-part={"icon"}>{nodeType.iconNode}</div>
             </button>
         );
     },

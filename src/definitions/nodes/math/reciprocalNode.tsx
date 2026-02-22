@@ -65,7 +65,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReciprocalD
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Input
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -120,7 +122,13 @@ const onConnect = (node: ReciprocalNode, linkId: string, direction: "in" | "out"
     }
 };
 
-const onDisconnect = (node: ReciprocalNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: ReciprocalNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
         setPayload(node.id, { connectedType: SocketTypes.NONE }, graphId, ctx);
@@ -169,8 +177,7 @@ export const ReciprocalType: NodeTypes.Type<"reciprocal", ReciprocalDefinition> 
     type: "reciprocal",
     displayName: "Reciprocal",
     defaultLabel: "Reciprocal",
-    iconNode: <Icon shape={NODE_ICONS.divValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.divValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.divide} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

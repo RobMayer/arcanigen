@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -116,7 +116,7 @@ export const PencilEffectNodeType: NodeTypes.Type<"pencilEffect", PencilEffectDe
     type: "pencilEffect",
     displayName: "Pencil",
     defaultLabel: "Pencil",
-    iconNode: <Icon shape={ICONS.Blank} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.pencil} color={"var(--icon-flavour)"} />,
     category: "Effects",
     create,
     dependsOn,

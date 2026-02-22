@@ -154,7 +154,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RectangleDefinition["inputs"])[] = ["width", "height", "cornerRadius", "cornerShape", "markerShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof RectangleDefinition["inputs"])[] = [
+    "width",
+    "height",
+    "cornerRadius",
+    "cornerShape",
+    "markerShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof RectangleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, outSocket: keyof RectangleDefinition["outputs"], _deps: AllDeps): (keyof RectangleDefinition["inputs"])[] => {
@@ -285,8 +298,7 @@ export const RectangleNodeType: NodeTypes.Type<"rectangle", RectangleDefinition>
     type: "rectangle",
     displayName: "Rectangle",
     defaultLabel: "Rectangle",
-    iconNode: <Icon shape={NODE_ICONS.rectangleShape.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.rectangleShape.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.shapeRect} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,

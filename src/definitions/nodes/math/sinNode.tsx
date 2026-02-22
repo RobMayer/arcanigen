@@ -75,7 +75,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SinDefinition>, socket: "output"
         const data = val?.data ?? node.payload.input;
         const { value } = extractSingle(kind, data);
         const radians = kind === "angle" ? (value * Math.PI) / 180 : value;
-        return { kind: "float", data: `${Math.sin(radians)}` as `${number}` };
+        return { kind: "float", data: `${Math.sin(radians)}` };
     }
     return null;
 };
@@ -95,8 +95,7 @@ export const SinType: NodeTypes.Type<"sin", SinDefinition> = {
     type: "sin",
     displayName: "Sin",
     defaultLabel: "Sin",
-    iconNode: <Icon shape={NODE_ICONS.wave.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.wave.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.sine} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon } from "../../../components/Icon";
+import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -47,7 +47,6 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<EnumInputDefinitio
 };
 
 const WIDGET_OPTIONS = Enum.options(Enum.Common.enumInputWidget);
-
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -176,7 +175,7 @@ export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     type: "enumInput",
     displayName: "Enum Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={ICONS.List.OL} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
+    iconNode: <Icon shape={NODE_ICONS.list} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
     category: "Inputs",
     evaluate,
     Controls,

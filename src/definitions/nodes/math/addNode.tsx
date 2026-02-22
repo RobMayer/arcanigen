@@ -81,8 +81,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefiniti
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>A</SocketIn>
-            <SocketIn node={node} socketId={"b"}>B</SocketIn>
+            <SocketIn node={node} socketId={"a"}>
+                A
+            </SocketIn>
+            <SocketIn node={node} socketId={"b"}>
+                B
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -151,7 +155,13 @@ const onConnect = (node: AddNode, linkId: string, direction: "in" | "out", graph
     }
 };
 
-const onDisconnect = (node: AddNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: AddNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         const socket = link.toSocket as "a" | "b";
         const otherSocket = socket === "a" ? "b" : "a";
@@ -236,8 +246,7 @@ export const AddType: NodeTypes.Type<"add", AddDefinition> = {
     type: "add",
     displayName: "Add",
     defaultLabel: "Add",
-    iconNode: <Icon shape={NODE_ICONS.addValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.addValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.plus} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

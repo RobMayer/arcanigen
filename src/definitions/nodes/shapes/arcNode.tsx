@@ -188,7 +188,24 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
     );
 };
 
-const GEOMETRY_INPUTS: (keyof ArcDefinition["inputs"])[] = ["radius", "arcMode", "thetaStart", "sweep", "thetaFrom", "thetaTo", "pieSlice", "markerStartShape", "markerEndShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof ArcDefinition["inputs"])[] = [
+    "radius",
+    "arcMode",
+    "thetaStart",
+    "sweep",
+    "thetaFrom",
+    "thetaTo",
+    "pieSlice",
+    "markerStartShape",
+    "markerEndShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof ArcDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<ArcDefinition>, outSocket: keyof ArcDefinition["outputs"], _deps: AllDeps): (keyof ArcDefinition["inputs"])[] => {
@@ -291,12 +308,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
         const useStartMarker = !pieSlice && !!markerStartShape;
         const useEndMarker = !pieSlice && !!markerEndShape;
 
-        const markers = (useStartMarker || useEndMarker)
-            ? {
-                  start: useStartMarker ? { shape: markerStartShape!, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                  end: useEndMarker ? { shape: markerEndShape!, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-              }
-            : undefined;
+        const markers =
+            useStartMarker || useEndMarker
+                ? {
+                      start: useStartMarker ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                      end: useEndMarker ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  }
+                : undefined;
 
         return {
             kind: "shape",
@@ -347,8 +365,7 @@ export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     type: "arc",
     displayName: "Arc",
     defaultLabel: "Arc",
-    iconNode: <Icon shape={NODE_ICONS.arcShape.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.arcShape.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.shapeArc} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,

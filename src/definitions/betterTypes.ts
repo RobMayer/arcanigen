@@ -523,7 +523,6 @@ export namespace NodeTypes {
         displayName: string;
         defaultLabel: string;
         iconNode: ReactNode;
-        iconCard?: ReactNode;
         category: Category;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;

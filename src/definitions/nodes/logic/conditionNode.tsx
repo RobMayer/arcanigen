@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -272,7 +272,7 @@ export const ConditionNodeType: NodeTypes.Type<"condition", ConditionDefinition>
     type: "condition",
     displayName: "Condition",
     defaultLabel: "Condition",
-    iconNode: <Icon shape={ICONS.Option} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.option} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,

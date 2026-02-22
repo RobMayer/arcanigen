@@ -83,7 +83,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RoundDefini
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Input
+            </SocketIn>
             <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                 <Dropdown value={`${node.payload.mode}`} onValue={(v) => handleUpdate({ mode: Number(v) })} disabled={node.in.mode !== null}>
                     {ROUNDING_MODE_OPTIONS.map((opt) => (
@@ -213,8 +215,7 @@ export const RoundType: NodeTypes.Type<"round", RoundDefinition> = {
     type: "round",
     displayName: "Round",
     defaultLabel: "Round",
-    iconNode: <Icon shape={NODE_ICONS.roundValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.roundValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.round} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

@@ -110,16 +110,17 @@ type OverrideFlags = {
     paintOrder: boolean;
 };
 
-const OVERRIDE_KEYS: { socket: keyof Stylings.Definition["inputs"]; flag: keyof OverrideFlags; payloadFlag: keyof RestyleDefinition["payload"]; overrideSocket: keyof RestyleDefinition["inputs"] }[] = [
-    { socket: "strokeColor", flag: "strokeColor", payloadFlag: "overrideStrokeColor", overrideSocket: "overrideStrokeColor" },
-    { socket: "strokeWidth", flag: "strokeWidth", payloadFlag: "overrideStrokeWidth", overrideSocket: "overrideStrokeWidth" },
-    { socket: "strokeCap", flag: "strokeCap", payloadFlag: "overrideStrokeCap", overrideSocket: "overrideStrokeCap" },
-    { socket: "strokeJoin", flag: "strokeJoin", payloadFlag: "overrideStrokeJoin", overrideSocket: "overrideStrokeJoin" },
-    { socket: "strokeDash", flag: "strokeDash", payloadFlag: "overrideStrokeDash", overrideSocket: "overrideStrokeDash" },
-    { socket: "strokeDashOffset", flag: "strokeDashOffset", payloadFlag: "overrideStrokeDashOffset", overrideSocket: "overrideStrokeDashOffset" },
-    { socket: "fillColor", flag: "fillColor", payloadFlag: "overrideFillColor", overrideSocket: "overrideFillColor" },
-    { socket: "paintOrder", flag: "paintOrder", payloadFlag: "overridePaintOrder", overrideSocket: "overridePaintOrder" },
-];
+const OVERRIDE_KEYS: { socket: keyof Stylings.Definition["inputs"]; flag: keyof OverrideFlags; payloadFlag: keyof RestyleDefinition["payload"]; overrideSocket: keyof RestyleDefinition["inputs"] }[] =
+    [
+        { socket: "strokeColor", flag: "strokeColor", payloadFlag: "overrideStrokeColor", overrideSocket: "overrideStrokeColor" },
+        { socket: "strokeWidth", flag: "strokeWidth", payloadFlag: "overrideStrokeWidth", overrideSocket: "overrideStrokeWidth" },
+        { socket: "strokeCap", flag: "strokeCap", payloadFlag: "overrideStrokeCap", overrideSocket: "overrideStrokeCap" },
+        { socket: "strokeJoin", flag: "strokeJoin", payloadFlag: "overrideStrokeJoin", overrideSocket: "overrideStrokeJoin" },
+        { socket: "strokeDash", flag: "strokeDash", payloadFlag: "overrideStrokeDash", overrideSocket: "overrideStrokeDash" },
+        { socket: "strokeDashOffset", flag: "strokeDashOffset", payloadFlag: "overrideStrokeDashOffset", overrideSocket: "overrideStrokeDashOffset" },
+        { socket: "fillColor", flag: "fillColor", payloadFlag: "overrideFillColor", overrideSocket: "overrideFillColor" },
+        { socket: "paintOrder", flag: "paintOrder", payloadFlag: "overridePaintOrder", overrideSocket: "overridePaintOrder" },
+    ];
 
 const getOverrideFlags = (node: NodeDefinitions.NodeFor<RestyleDefinition>, context: Resolver.Context): OverrideFlags => {
     const flags: Record<string, boolean> = {};
@@ -215,7 +216,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
             </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"overrideStrokeColor"}>
-                <CheckBox checked={strokeColorActive} onToggle={(overrideStrokeColor) => handleUpdate({ overrideStrokeColor })} disabled={node.in.overrideStrokeColor !== null || node.in.strokeColor !== null}>
+                <CheckBox
+                    checked={strokeColorActive}
+                    onToggle={(overrideStrokeColor) => handleUpdate({ overrideStrokeColor })}
+                    disabled={node.in.overrideStrokeColor !== null || node.in.strokeColor !== null}
+                >
                     Stroke Color
                 </CheckBox>
             </SocketIn>
@@ -223,7 +228,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={!strokeColorActive} nullable alpha />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeWidth"}>
-                <CheckBox checked={strokeWidthActive} onToggle={(overrideStrokeWidth) => handleUpdate({ overrideStrokeWidth })} disabled={node.in.overrideStrokeWidth !== null || node.in.strokeWidth !== null}>
+                <CheckBox
+                    checked={strokeWidthActive}
+                    onToggle={(overrideStrokeWidth) => handleUpdate({ overrideStrokeWidth })}
+                    disabled={node.in.overrideStrokeWidth !== null || node.in.strokeWidth !== null}
+                >
                     Stroke Width
                 </CheckBox>
             </SocketIn>
@@ -245,7 +254,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeJoin"}>
-                <CheckBox checked={strokeJoinActive} onToggle={(overrideStrokeJoin) => handleUpdate({ overrideStrokeJoin })} disabled={node.in.overrideStrokeJoin !== null || node.in.strokeJoin !== null}>
+                <CheckBox
+                    checked={strokeJoinActive}
+                    onToggle={(overrideStrokeJoin) => handleUpdate({ overrideStrokeJoin })}
+                    disabled={node.in.overrideStrokeJoin !== null || node.in.strokeJoin !== null}
+                >
                     Stroke Join
                 </CheckBox>
             </SocketIn>
@@ -259,7 +272,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeDash"}>
-                <CheckBox checked={strokeDashActive} onToggle={(overrideStrokeDash) => handleUpdate({ overrideStrokeDash })} disabled={node.in.overrideStrokeDash !== null || node.in.strokeDash !== null}>
+                <CheckBox
+                    checked={strokeDashActive}
+                    onToggle={(overrideStrokeDash) => handleUpdate({ overrideStrokeDash })}
+                    disabled={node.in.overrideStrokeDash !== null || node.in.strokeDash !== null}
+                >
                     Stroke Dash
                 </CheckBox>
             </SocketIn>
@@ -267,7 +284,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 <TextInput value={node.payload.strokeDash} onCommit={(strokeDash) => handleUpdate({ strokeDash })} disabled={!strokeDashActive} pattern={Length.TOKENS_REGEX} />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeDashOffset"}>
-                <CheckBox checked={strokeDashOffsetActive} onToggle={(overrideStrokeDashOffset) => handleUpdate({ overrideStrokeDashOffset })} disabled={node.in.overrideStrokeDashOffset !== null || node.in.strokeDashOffset !== null}>
+                <CheckBox
+                    checked={strokeDashOffsetActive}
+                    onToggle={(overrideStrokeDashOffset) => handleUpdate({ overrideStrokeDashOffset })}
+                    disabled={node.in.overrideStrokeDashOffset !== null || node.in.strokeDashOffset !== null}
+                >
                     Dash Offset
                 </CheckBox>
             </SocketIn>
@@ -283,7 +304,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={!fillColorActive} nullable alpha />
             </SocketIn>
             <SocketIn node={node} socketId={"overridePaintOrder"}>
-                <CheckBox checked={paintOrderActive} onToggle={(overridePaintOrder) => handleUpdate({ overridePaintOrder })} disabled={node.in.overridePaintOrder !== null || node.in.paintOrder !== null}>
+                <CheckBox
+                    checked={paintOrderActive}
+                    onToggle={(overridePaintOrder) => handleUpdate({ overridePaintOrder })}
+                    disabled={node.in.overridePaintOrder !== null || node.in.paintOrder !== null}
+                >
                     Paint Order
                 </CheckBox>
             </SocketIn>
@@ -300,7 +325,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
     );
 };
 
-const OVERRIDE_INPUTS: (keyof RestyleDefinition["inputs"])[] = ["overrideStrokeColor", "overrideStrokeWidth", "overrideStrokeCap", "overrideStrokeJoin", "overrideStrokeDash", "overrideStrokeDashOffset", "overrideFillColor", "overridePaintOrder"];
+const OVERRIDE_INPUTS: (keyof RestyleDefinition["inputs"])[] = [
+    "overrideStrokeColor",
+    "overrideStrokeWidth",
+    "overrideStrokeCap",
+    "overrideStrokeJoin",
+    "overrideStrokeDash",
+    "overrideStrokeDashOffset",
+    "overrideFillColor",
+    "overridePaintOrder",
+];
 const STYLING_INPUTS: (keyof RestyleDefinition["inputs"])[] = ["strokeColor", "strokeWidth", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RestyleDefinition>, outSocket: keyof RestyleDefinition["outputs"], _deps: AllDeps): (keyof RestyleDefinition["inputs"])[] => {
@@ -361,8 +395,7 @@ export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     type: "restyle",
     displayName: "Re-style",
     defaultLabel: "Re-style",
-    iconNode: <Icon shape={NODE_ICONS.overrideStyles.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.overrideStyles.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.restyle} color={"var(--icon-flavour)"} />,
     category: "Collections",
     create,
     dependsOn,

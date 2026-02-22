@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon } from "../../../components/Icon";
+import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -122,7 +122,7 @@ export const LogicalOrNodeType: NodeTypes.Type<"logicalOr", LogicalOrDefinition>
     type: "logicalOr",
     displayName: "Or",
     defaultLabel: "Or",
-    iconNode: <Icon shape={ICONS.Blank} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.logicalOr} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,

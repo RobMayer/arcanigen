@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -13,7 +13,6 @@ import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { FilterPrimitive } from "../../shapeTypes";
-import { EmptyOr } from "../../../util/misc";
 
 export type BrushEffectDefinition = {
     inputs: {
@@ -168,7 +167,7 @@ export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefin
     type: "brushEffect",
     displayName: "Brush Stroke",
     defaultLabel: "Brush Stroke",
-    iconNode: <Icon shape={ICONS.Blank} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.brush} color={"var(--icon-flavour)"} />,
     category: "Effects",
     create,
     dependsOn,

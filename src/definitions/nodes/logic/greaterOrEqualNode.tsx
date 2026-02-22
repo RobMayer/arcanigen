@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -34,8 +34,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GreaterOrEq
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>A</SocketIn>
-            <SocketIn node={node} socketId={"b"}>B</SocketIn>
+            <SocketIn node={node} socketId={"a"}>
+                A
+            </SocketIn>
+            <SocketIn node={node} socketId={"b"}>
+                B
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -45,7 +49,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<GreaterOrEqualDefinition>, out
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<GreaterOrEqualDefinition>, _inSocket: keyof GreaterOrEqualDefinition["inputs"], _deps: AllDeps): (keyof GreaterOrEqualDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<GreaterOrEqualDefinition>,
+    _inSocket: keyof GreaterOrEqualDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof GreaterOrEqualDefinition["outputs"])[] => {
     return ["output"];
 };
 
@@ -75,7 +83,13 @@ const onConnect = (node: GreaterOrEqualNode, linkId: string, direction: "in" | "
     ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
 };
 
-const onDisconnect = (node: GreaterOrEqualNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: GreaterOrEqualNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "out") return;
 
     const socket = link.toSocket as "a" | "b";
@@ -125,7 +139,7 @@ export const GreaterOrEqualNodeType: NodeTypes.Type<"greaterOrEqual", GreaterOrE
     type: "greaterOrEqual",
     displayName: "Greater or Equal",
     defaultLabel: "Greater or Equal",
-    iconNode: <Icon shape={ICONS.Blank} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.greaterEqual} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,

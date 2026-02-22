@@ -75,8 +75,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MinDefiniti
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>A</SocketIn>
-            <SocketIn node={node} socketId={"b"}>B</SocketIn>
+            <SocketIn node={node} socketId={"a"}>
+                A
+            </SocketIn>
+            <SocketIn node={node} socketId={"b"}>
+                B
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -140,7 +144,13 @@ const onConnect = (node: MinNode, linkId: string, direction: "in" | "out", graph
     }
 };
 
-const onDisconnect = (node: MinNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: MinNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         const socket = link.toSocket as "a" | "b";
         const otherSocket = socket === "a" ? "b" : "a";
@@ -213,8 +223,7 @@ export const MinType: NodeTypes.Type<"min", MinDefinition> = {
     type: "min",
     displayName: "Min",
     defaultLabel: "Min",
-    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.min} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

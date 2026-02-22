@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -71,9 +71,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<WithinDefin
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"}>Value</SocketIn>
-            <SocketIn node={node} socketId={"target"}>Target</SocketIn>
-            <SocketIn node={node} socketId={"tolerance"}>Tolerance</SocketIn>
+            <SocketIn node={node} socketId={"value"}>
+                Value
+            </SocketIn>
+            <SocketIn node={node} socketId={"target"}>
+                Target
+            </SocketIn>
+            <SocketIn node={node} socketId={"tolerance"}>
+                Tolerance
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -96,7 +102,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<WithinDefinition>, socket: "outp
     if (!valEval || !tgtEval || !tolEval) return null;
 
     // Extract value and target as a pair (handles length unit conversion)
-    const { a: val, b: tgt, unit } = extractPair(valEval.kind, valEval.data, tgtEval.kind, tgtEval.data);
+    const { a: val, b: tgt } = extractPair(valEval.kind, valEval.data, tgtEval.kind, tgtEval.data);
     // Extract tolerance — also paired with value for unit conversion
     const { a: _, b: tol } = extractPair(valEval.kind, valEval.data, tolEval.kind, tolEval.data);
 
@@ -130,7 +136,13 @@ const onConnect = (node: WithinNode, linkId: string, direction: "in" | "out", gr
     }
 };
 
-const onDisconnect = (node: WithinNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: WithinNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "out") return;
 
     const socket = link.toSocket as InputSocket;
@@ -191,7 +203,7 @@ export const WithinNodeType: NodeTypes.Type<"within", WithinDefinition> = {
     type: "within",
     displayName: "Within",
     defaultLabel: "Within",
-    iconNode: <Icon shape={ICONS.Blank} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.plusMinus} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,

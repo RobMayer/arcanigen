@@ -76,7 +76,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RootDefinit
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Input
+            </SocketIn>
             <SocketIn node={node} socketId={"degree"} label={"Degree"}>
                 <DecimalInput value={node.payload.degree} onCommit={(degree) => handleUpdate({ degree })} disabled={node.in.degree !== null} />
             </SocketIn>
@@ -140,7 +142,13 @@ const onConnect = (node: RootNode, linkId: string, direction: "in" | "out", grap
     }
 };
 
-const onDisconnect = (node: RootNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: RootNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         if (link.toSocket === "degree") return;
         ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
@@ -196,8 +204,7 @@ export const RootType: NodeTypes.Type<"root", RootDefinition> = {
     type: "root",
     displayName: "Root",
     defaultLabel: "Root",
-    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.root} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

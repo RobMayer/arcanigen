@@ -121,7 +121,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
     return (
         <NoteWrapper position={localPosition} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
             <NoteTitle ref={handleRef} onDoubleClick={startEdit}>
-                <Icon shape={NODE_ICONS.note.Item} />
+                <Icon shape={NODE_ICONS.note} />
                 {isEditing ? (
                     <TitleInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} />
                 ) : (
@@ -158,7 +158,7 @@ export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
     type: "notes",
     displayName: "Note",
     defaultLabel: "Note",
-    iconNode: <Icon shape={NODE_ICONS.note.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.note} color={"var(--icon-flavour)"} />,
     category: "Meta",
     evaluate,
     Controls,

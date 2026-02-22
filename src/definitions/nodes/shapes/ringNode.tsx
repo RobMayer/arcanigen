@@ -179,7 +179,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = ["radius", "spread", "spreadAlign", "spanMode", "innerRadius", "outerRadius", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = [
+    "radius",
+    "spread",
+    "spreadAlign",
+    "spanMode",
+    "innerRadius",
+    "outerRadius",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof RingDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RingDefinition>, outSocket: keyof RingDefinition["outputs"], _deps: AllDeps): (keyof RingDefinition["inputs"])[] => {
@@ -292,8 +305,7 @@ export const RingNodeType: NodeTypes.Type<"ring", RingDefinition> = {
     type: "ring",
     displayName: "Ring",
     defaultLabel: "Ring",
-    iconNode: <Icon shape={NODE_ICONS.ringShape.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.ringShape.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.shapeRing} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,

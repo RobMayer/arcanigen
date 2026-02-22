@@ -218,7 +218,27 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
     );
 };
 
-const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["spanMode", "innerRadius", "outerRadius", "radius", "deviation", "arcMode", "thetaStart", "sweep", "thetaFrom", "thetaTo", "markerStartShape", "markerEndShape", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = [
+    "spanMode",
+    "innerRadius",
+    "outerRadius",
+    "radius",
+    "deviation",
+    "arcMode",
+    "thetaStart",
+    "sweep",
+    "thetaFrom",
+    "thetaTo",
+    "markerStartShape",
+    "markerEndShape",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, outSocket: keyof SpiralDefinition["outputs"], _deps: AllDeps): (keyof SpiralDefinition["inputs"])[] => {
@@ -334,12 +354,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
         const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const markers = (markerStartShape || markerEndShape)
-            ? {
-                  start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                  end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-              }
-            : undefined;
+        const markers =
+            markerStartShape || markerEndShape
+                ? {
+                      start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                      end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  }
+                : undefined;
 
         const maxR = Math.max(Math.abs(rI), Math.abs(rO));
 
@@ -395,8 +416,7 @@ export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     type: "spiral",
     displayName: "Spiral",
     defaultLabel: "Spiral",
-    iconNode: <Icon shape={NODE_ICONS.spiralShape.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.spiralShape.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.shapeSpiral} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,

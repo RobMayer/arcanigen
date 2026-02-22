@@ -71,7 +71,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<SequenceOutputDefinition>, _ou
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<SequenceOutputDefinition>, _inSocket: keyof SequenceOutputDefinition["inputs"], _deps: AllDeps): (keyof SequenceOutputDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<SequenceOutputDefinition>,
+    _inSocket: keyof SequenceOutputDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof SequenceOutputDefinition["outputs"])[] => {
     return [];
 };
 
@@ -99,8 +103,7 @@ export const SequenceOutputType: NodeTypes.Type<"sequenceOutput", SequenceOutput
     type: "sequenceOutput",
     displayName: "Sequence Output",
     defaultLabel: "Output",
-    iconNode: <Icon shape={NODE_ICONS.spreadValue.Item} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
-    iconCard: <Icon shape={NODE_ICONS.spreadValue.Card} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
+    iconNode: <Icon shape={NODE_ICONS.timeline} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
     category: "Outputs",
     evaluate,
     Controls,

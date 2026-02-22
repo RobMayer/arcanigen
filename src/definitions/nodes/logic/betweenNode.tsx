@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -70,9 +70,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BetweenDefi
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"value"}>Value</SocketIn>
-            <SocketIn node={node} socketId={"min"}>Min</SocketIn>
-            <SocketIn node={node} socketId={"max"}>Max</SocketIn>
+            <SocketIn node={node} socketId={"value"}>
+                Value
+            </SocketIn>
+            <SocketIn node={node} socketId={"min"}>
+                Min
+            </SocketIn>
+            <SocketIn node={node} socketId={"max"}>
+                Max
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -129,7 +135,13 @@ const onConnect = (node: BetweenNode, linkId: string, direction: "in" | "out", g
     }
 };
 
-const onDisconnect = (node: BetweenNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: BetweenNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "out") return;
 
     const socket = link.toSocket as InputSocket;
@@ -190,7 +202,7 @@ export const BetweenNodeType: NodeTypes.Type<"between", BetweenDefinition> = {
     type: "between",
     displayName: "Between",
     defaultLabel: "Between",
-    iconNode: <Icon shape={ICONS.Blank} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.tilde} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,

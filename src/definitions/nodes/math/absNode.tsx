@@ -65,7 +65,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AbsDefiniti
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Input
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -120,7 +122,13 @@ const onConnect = (node: AbsNode, linkId: string, direction: "in" | "out", graph
     }
 };
 
-const onDisconnect = (node: AbsNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: AbsNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
         setPayload(node.id, { connectedType: SocketTypes.NONE }, graphId, ctx);
@@ -169,8 +177,7 @@ export const AbsType: NodeTypes.Type<"abs", AbsDefinition> = {
     type: "abs",
     displayName: "Abs",
     defaultLabel: "Abs",
-    iconNode: <Icon shape={NODE_ICONS.absValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.absValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.abs} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

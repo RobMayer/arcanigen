@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, extractSingle } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, queryUpstreamOutType, dominantKind, wrapResult, extractSingle } from "./numericMath";
 
 export type ClampDefinition = {
     inputs: {
@@ -82,7 +82,7 @@ const computeOutputType3 = (a: SocketTypes.SocketRule, b: SocketTypes.SocketRule
             }
         }
     }
-    return { types: [...result].sort() as DataTypes.Kind[], mode: "or" };
+    return { types: [...result].sort(), mode: "or" };
 };
 
 const queryDownstreamTypes = (node: ClampNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
@@ -106,9 +106,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefini
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
-            <SocketIn node={node} socketId={"min"}>Min</SocketIn>
-            <SocketIn node={node} socketId={"max"}>Max</SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Input
+            </SocketIn>
+            <SocketIn node={node} socketId={"min"}>
+                Min
+            </SocketIn>
+            <SocketIn node={node} socketId={"max"}>
+                Max
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -175,7 +181,13 @@ const onConnect = (node: ClampNode, linkId: string, direction: "in" | "out", gra
     }
 };
 
-const onDisconnect = (node: ClampNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: ClampNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         const socket = link.toSocket as SocketKey;
         for (const other of SOCKET_KEYS) {
@@ -249,8 +261,7 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     type: "clamp",
     displayName: "Clamp",
     defaultLabel: "Clamp",
-    iconNode: <Icon shape={NODE_ICONS.spreadValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.spreadValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.round} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

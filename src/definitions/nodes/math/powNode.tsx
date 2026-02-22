@@ -76,7 +76,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PowDefiniti
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>Input</SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Input
+            </SocketIn>
             <SocketIn node={node} socketId={"exponent"} label={"Exponent"}>
                 <DecimalInput value={node.payload.exponent} onCommit={(exponent) => handleUpdate({ exponent })} disabled={node.in.exponent !== null} />
             </SocketIn>
@@ -139,7 +141,13 @@ const onConnect = (node: PowNode, linkId: string, direction: "in" | "out", graph
     }
 };
 
-const onDisconnect = (node: PowNode, link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string }, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onDisconnect = (
+    node: PowNode,
+    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    direction: "in" | "out",
+    graphId: string,
+    ctx: NodeTypes.MethodContext,
+): void => {
     if (direction === "in") {
         if (link.toSocket === "exponent") return;
         ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
@@ -195,8 +203,7 @@ export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     type: "pow",
     displayName: "Pow",
     defaultLabel: "Pow",
-    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.pow} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS } from "../../../components/Icon";
+import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -86,7 +86,7 @@ export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefini
     type: "shapePreview",
     displayName: "Preview",
     defaultLabel: "Preview",
-    iconNode: <Icon shape={ICONS.Zoom} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.zoom} color={"var(--icon-flavour)"} />,
     category: "Meta",
     evaluate,
     Controls,

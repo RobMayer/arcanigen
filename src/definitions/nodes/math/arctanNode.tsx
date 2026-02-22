@@ -75,7 +75,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArctanDefinition>, socket: "outp
         const data = val?.data ?? node.payload.input;
         const { value } = extractSingle(kind, data);
         const degrees = (Math.atan(value) * 180) / Math.PI;
-        return { kind: "angle", data: `${degrees}` as `${number}` };
+        return { kind: "angle", data: `${degrees}` };
     }
     return null;
 };
@@ -95,8 +95,7 @@ export const ArctanType: NodeTypes.Type<"arctan", ArctanDefinition> = {
     type: "arctan",
     displayName: "Arctan",
     defaultLabel: "Arctan",
-    iconNode: <Icon shape={NODE_ICONS.wave.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.wave.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.sine} color={"var(--icon-flavour)"} />,
     category: "Math",
     evaluate,
     Controls,

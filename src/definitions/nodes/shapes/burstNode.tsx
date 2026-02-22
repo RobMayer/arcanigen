@@ -18,7 +18,6 @@ import { Stylings, Transforms } from "../abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 
-
 export type BurstDefinition = {
     inputs: {
         spurCount: DataTypes.Use<"integer">;
@@ -247,7 +246,30 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
     );
 };
 
-const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = ["spurCount", "radius", "spread", "innerRadius", "outerRadius", "spanMode", "spreadAlign", "thetaMode", "thetaStart", "thetaEnd", "thetaSteps", "thetaInclusive", "thetaCurve", "markerStart", "markerEnd", "markerAlign", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
+    "spurCount",
+    "radius",
+    "spread",
+    "innerRadius",
+    "outerRadius",
+    "spanMode",
+    "spreadAlign",
+    "thetaMode",
+    "thetaStart",
+    "thetaEnd",
+    "thetaSteps",
+    "thetaInclusive",
+    "thetaCurve",
+    "markerStart",
+    "markerEnd",
+    "markerAlign",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
+    "rotation",
+];
 const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
@@ -335,12 +357,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const paint = Stylings.evaluate(node, context);
-        const markers = (markerStartShape || markerEndShape)
-            ? {
-                  start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                  end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-              }
-            : undefined;
+        const markers =
+            markerStartShape || markerEndShape
+                ? {
+                      start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                      end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  }
+                : undefined;
 
         const children = lineCoords.map((l) => ({
             type: "line" as const,
@@ -407,8 +430,7 @@ export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
     type: "burst",
     displayName: "Burst",
     defaultLabel: "Burst",
-    iconNode: <Icon shape={NODE_ICONS.burstShape.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.burstShape.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.shapeBurst} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,

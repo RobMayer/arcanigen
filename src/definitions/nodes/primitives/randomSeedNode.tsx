@@ -11,6 +11,7 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 
 export type RandomSeedDefinition = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     inputs: {};
     outputs: {
         output: DataTypes.Use<"integer">;
@@ -89,8 +90,7 @@ export const RandomSeedNodeType: NodeTypes.Type<"randomSeed", RandomSeedDefiniti
     type: "randomSeed",
     displayName: "Random Seed",
     defaultLabel: "Random Seed",
-    iconNode: <Icon shape={NODE_ICONS.numericValue.Item} color={"var(--icon-flavour)"} />,
-    iconCard: <Icon shape={NODE_ICONS.numericValue.Card} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.random} color={"var(--icon-flavour)"} />,
     category: "Primitives",
     evaluate,
     Controls,

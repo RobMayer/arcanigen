@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon } from "../../../components/Icon";
+import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -344,7 +344,7 @@ export const SwitchCaseNodeType: NodeTypes.Type<"switchCase", SwitchCaseDefiniti
     type: "switchCase",
     displayName: "Switch Case",
     defaultLabel: "Switch Case",
-    iconNode: <Icon shape={ICONS.Option} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.alt} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,
