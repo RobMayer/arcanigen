@@ -16,6 +16,7 @@ import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, gcd, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
 import { Stylings, Transforms } from "../abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { PaperHelper } from "../../../util/paperHelper";
 
 export type KnotDefinition = {
     inputs: {
@@ -38,6 +39,7 @@ export type KnotDefinition = {
         innerCornerShape: DataTypes.Use<"enum">;
         markerShape: DataTypes.Use<"shape">;
         markerAlign: DataTypes.Use<"boolean">;
+        removeCrossings: DataTypes.Use<"boolean">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
@@ -67,6 +69,7 @@ export type KnotDefinition = {
         innerCornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
         innerCornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        removeCrossings: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     } & Stylings.Definition["payload"] &
         Transforms.Definition["payload"];
 };
@@ -95,6 +98,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<KnotDefinition>>, i
 
             markerShape: null,
             markerAlign: null,
+            removeCrossings: null,
 
             strokeWidth: null,
             strokeColor: null,
@@ -141,6 +145,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<KnotDefinition>>, i
             expandMode: 0,
 
             markerAlign: false,
+            removeCrossings: false,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
@@ -289,7 +294,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                 />
             </SocketIn>
 
-            <NodeAccordion label={"More"} socketsIn={"outerCornerRadius|outerCornerShape|innerCornerRadius|innerCornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
+            <NodeAccordion label={"More"} socketsIn={"outerCornerRadius|outerCornerShape|innerCornerRadius|innerCornerShape|pointDistro|markerShape|markerAlign|removeCrossings"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
                 </SocketIn>
@@ -337,6 +342,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                         Align Markers
                     </CheckBox>
                 </SocketIn>
+                <SocketIn node={node} socketId={"removeCrossings"}>
+                    <CheckBox checked={node.payload.removeCrossings} onToggle={(removeCrossings) => handleUpdate({ removeCrossings })} disabled={node.in.removeCrossings !== null}>
+                        Remove Crossings
+                    </CheckBox>
+                </SocketIn>
             </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
@@ -378,6 +388,7 @@ const GEOMETRY_INPUTS: (keyof KnotDefinition["inputs"])[] = [
     "innerCornerShape",
     "markerShape",
     "markerAlign",
+    "removeCrossings",
     "positionMode",
     "positionX",
     "positionY",
@@ -610,7 +621,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         // Build inner subpaths (reversed winding for hole cutting)
         const innerSubpaths = tI > 0 ? innerCycles.map((cycle) => buildSubpath([...cycle].reverse(), innerCornerR, innerCornerShape, true)) : [];
 
-        const d = [...outerSubpaths, ...innerSubpaths].join(" ");
+        let d = [...outerSubpaths, ...innerSubpaths].join(" ");
+        const removeCrossings = context.resolve<"boolean">(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings;
+        if (removeCrossings) {
+            d = PaperHelper.healD(d) ?? d;
+        }
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         if (socket === "path") {
@@ -712,6 +727,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<KnotDefinition["inputs"]>]: Socke
     innerCornerShape: { types: ["enum"], mode: "and" },
     markerShape: { types: ["shape"], mode: "and" },
     markerAlign: { types: ["boolean"], mode: "and" },
+    removeCrossings: { types: ["boolean"], mode: "and" },
     ...Stylings.IN_SOCKET_TYPES,
     ...Transforms.IN_SOCKET_TYPES,
 };

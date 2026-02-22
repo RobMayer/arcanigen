@@ -16,6 +16,7 @@ import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, gcd, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
 import { Stylings, Transforms } from "../abstract";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { PaperHelper } from "../../../util/paperHelper";
 
 export type PolygramDefinition = {
     inputs: {
@@ -28,6 +29,7 @@ export type PolygramDefinition = {
         cornerShape: DataTypes.Use<"enum">;
         markerShape: DataTypes.Use<"shape">;
         markerAlign: DataTypes.Use<"boolean">;
+        removeCrossings: DataTypes.Use<"boolean">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
@@ -45,6 +47,7 @@ export type PolygramDefinition = {
         cornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
         cornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
+        removeCrossings: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     } & Stylings.Definition["payload"] &
         Transforms.Definition["payload"];
 };
@@ -63,6 +66,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygramDefinition>
 
             markerShape: null,
             markerAlign: null,
+            removeCrossings: null,
 
             strokeWidth: null,
             strokeColor: null,
@@ -96,6 +100,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygramDefinition>
             cornerShape: 0,
 
             markerAlign: false,
+            removeCrossings: false,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
@@ -182,7 +187,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <NodeAccordion label={"More"} socketsIn={"cornerRadius|cornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
+            <NodeAccordion label={"More"} socketsIn={"cornerRadius|cornerShape|pointDistro|markerShape|markerAlign|removeCrossings"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
                 </SocketIn>
@@ -204,6 +209,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
                 <SocketIn node={node} socketId={"markerAlign"}>
                     <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
                         Align Markers
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"removeCrossings"}>
+                    <CheckBox checked={node.payload.removeCrossings} onToggle={(removeCrossings) => handleUpdate({ removeCrossings })} disabled={node.in.removeCrossings !== null}>
+                        Remove Crossings
                     </CheckBox>
                 </SocketIn>
             </NodeAccordion>
@@ -231,6 +241,7 @@ const GEOMETRY_INPUTS: (keyof PolygramDefinition["inputs"])[] = [
     "cornerShape",
     "markerShape",
     "markerAlign",
+    "removeCrossings",
     "positionMode",
     "positionX",
     "positionY",
@@ -398,7 +409,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             }
         }
 
-        const d = subpaths.join(" ");
+        let d = subpaths.join(" ");
+        const removeCrossings = context.resolve<"boolean">(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings;
+        if (removeCrossings) {
+            d = PaperHelper.healD(d) ?? d;
+        }
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         if (socket === "path") {
@@ -459,6 +474,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<PolygramDefinition["inputs"]>]: S
     cornerShape: { types: ["enum"], mode: "or" },
     markerShape: { types: ["shape"], mode: "or" },
     markerAlign: { types: ["boolean"], mode: "or" },
+    removeCrossings: { types: ["boolean"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
     ...Transforms.IN_SOCKET_TYPES,
 };

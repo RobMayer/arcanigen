@@ -125,6 +125,13 @@ import { PenEffectDefinition, PenEffectNodeType } from "./nodes/effects/penEffec
 import { BrushEffectDefinition, BrushEffectNodeType } from "./nodes/effects/brushEffectNode";
 import { RandomSeedDefinition, RandomSeedNodeType } from "./nodes/primitives/randomSeedNode";
 import { NotesDefinition, NotesNodeType } from "./nodes/meta/notesNode";
+import { PathUnifyDefinition, PathUnitfyNodeType } from "./nodes/math/pathUnifyNode";
+import { FromPathDefinition, FromPathNodeType } from "./nodes/shapes/fromPathNode";
+import { PathSubtractDefinition, PathSubtractNodeType } from "./nodes/math/pathSubtractNode";
+import { PathExcludeDefinition, PathExcludeNodeType } from "./nodes/math/pathExcludeNode";
+import { PathIntersectDefinition, PathIntersectNodeType } from "./nodes/math/pathIntersectNode";
+import { PathHealNodeDefinition, PathHealNodeType } from "./nodes/math/pathHealNode";
+import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivideNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -154,6 +161,7 @@ namespace Registries {
         alongPath: AlongPathDefinition;
         glyph: GlyphDefinition;
         transform: TransformDefinition;
+        fromPath: FromPathDefinition;
 
         angle: AngleDefinition;
         boolean: BooleanDefinition;
@@ -259,6 +267,13 @@ namespace Registries {
         within: WithinDefinition;
         between: BetweenDefinition;
 
+        pathUnify: PathUnifyDefinition;
+        pathSubtract: PathSubtractDefinition;
+        pathExclude: PathExcludeDefinition;
+        pathIntersect: PathIntersectDefinition;
+        pathHeal: PathHealNodeDefinition;
+        pathDivide: PathDivideDefinition;
+
         // effects
         pencilEffect: PencilEffectDefinition;
         penEffect: PenEffectDefinition;
@@ -283,6 +298,7 @@ namespace Registries {
         alongPath: AlongPathNodeType,
         glyph: GlyphNodeType,
         transform: TransformType,
+        fromPath: FromPathNodeType,
 
         layerCompose: LayerComposeNodeType,
         layers: LayerNodeType,
@@ -379,6 +395,13 @@ namespace Registries {
         lessOrEqual: LessOrEqualNodeType,
         within: WithinNodeType,
         between: BetweenNodeType,
+
+        pathUnify: PathUnitfyNodeType,
+        pathSubtract: PathSubtractNodeType,
+        pathExclude: PathExcludeNodeType,
+        pathIntersect: PathIntersectNodeType,
+        pathHeal: PathHealNodeType,
+        pathDivide: PathDivideNodeType,
 
         pencilEffect: PencilEffectNodeType,
         penEffect: PenEffectNodeType,

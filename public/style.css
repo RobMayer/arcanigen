@@ -90,7 +90,6 @@ html {
     corner-shape: bevel;
     background: oklch(from var(--scrollbar-flavour) 0.23 calc(c * 0.1) h);
     overflow: hidden;
-    corner-shape: bevel;
     border-radius: 100vw;
 }
 

@@ -125,7 +125,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
         return null;
     }
 
-    const d = `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1}`;
+    const d = `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1} z`;
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
     if (socket === "path") {
