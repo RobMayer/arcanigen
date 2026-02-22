@@ -395,14 +395,17 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, inSoc
     return ["output", "path"];
 };
 
-const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, cornerShape: number, reversed: boolean): string => {
+const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, cornerShape: number, reversed: boolean): [string, boolean] => {
     const N = vertices.length;
 
     if (cornerR <= 0) {
-        return `M ${vertices[0][0]},${vertices[0][1]} ${vertices
-            .slice(1)
-            .map(([x, y]) => `L ${x},${y}`)
-            .join(" ")} Z`;
+        return [
+            `M ${vertices[0][0]},${vertices[0][1]} ${vertices
+                .slice(1)
+                .map(([x, y]) => `L ${x},${y}`)
+                .join(" ")} Z`,
+            false,
+        ];
     }
 
     const edgeLengths = vertices.map((v, i) => {
@@ -437,13 +440,19 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
     }
 
     if (r <= 0) {
-        return `M ${vertices[0][0]},${vertices[0][1]} ${vertices
-            .slice(1)
-            .map(([x, y]) => `L ${x},${y}`)
-            .join(" ")} Z`;
+        return [
+            `M ${vertices[0][0]},${vertices[0][1]} ${vertices
+                .slice(1)
+                .map(([x, y]) => `L ${x},${y}`)
+                .join(" ")} Z`,
+            false,
+        ];
     }
 
     const parts: string[] = [];
+    let hasCut = false;
+    let firstApX = 0,
+        firstApY = 0;
     for (let i = 0; i < N; i++) {
         const { ax, ay, bx, by, lenA, lenB, halfAlpha } = vertexData[i];
         const curr = vertices[i];
@@ -454,6 +463,10 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
         const lpX = curr[0] + (bx / lenB) * t;
         const lpY = curr[1] + (by / lenB) * t;
 
+        if (i === 0) {
+            firstApX = apX;
+            firstApY = apY;
+        }
         parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
 
         switch (cornerShape) {
@@ -470,13 +483,21 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
                 parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
                 break;
             }
+            case 4: // Cut
+                parts.push(`M ${lpX},${lpY}`);
+                hasCut = true;
+                break;
             default: // Bevel
                 parts.push(`L ${lpX},${lpY}`);
                 break;
         }
     }
-    parts.push("Z");
-    return parts.join(" ");
+    if (hasCut) {
+        parts.push(`L ${firstApX},${firstApY}`);
+    } else {
+        parts.push("Z");
+    }
+    return [parts.join(" "), hasCut];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: keyof PolyringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -554,9 +575,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         const innerVerts = angles.map((a) => [tI * Math.cos(a), tI * Math.sin(a)] as const).reverse();
 
         // Build subpaths
-        const outerPath = buildSubpath(outerVerts, outerCornerR, outerCornerShape, false);
-        const innerPath = tI > 0 ? buildSubpath(innerVerts, innerCornerR, innerCornerShape, true) : "";
+        const [outerPath, outerCut] = buildSubpath(outerVerts, outerCornerR, outerCornerShape, false);
+        const [innerPath, innerCut] = tI > 0 ? buildSubpath(innerVerts, innerCornerR, innerCornerShape, true) : ["", false] as const;
 
+        const hasCut = outerCut || innerCut;
         const d = innerPath ? `${outerPath} ${innerPath}` : outerPath;
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
@@ -567,12 +589,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
             };
         }
 
+        const paint = Stylings.evaluate(node, context);
+        if (hasCut) paint.fill = null;
+
         return {
             kind: "shape",
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint,
+                signals: hasCut ? ["noFill"] : undefined,
                 markers: markerShape
                     ? {
                           mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },

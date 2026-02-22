@@ -435,14 +435,17 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<KnotDefinition>, inSocket:
     return ["output", "path"];
 };
 
-const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, cornerShape: number, reversed: boolean): string => {
+const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, cornerShape: number, reversed: boolean): [string, boolean] => {
     const N = vertices.length;
 
     if (cornerR <= 0) {
-        return `M ${vertices[0][0]},${vertices[0][1]} ${vertices
-            .slice(1)
-            .map(([x, y]) => `L ${x},${y}`)
-            .join(" ")} Z`;
+        return [
+            `M ${vertices[0][0]},${vertices[0][1]} ${vertices
+                .slice(1)
+                .map(([x, y]) => `L ${x},${y}`)
+                .join(" ")} Z`,
+            false,
+        ];
     }
 
     const edgeLengths = vertices.map((v, i) => {
@@ -477,13 +480,19 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
     }
 
     if (r <= 0) {
-        return `M ${vertices[0][0]},${vertices[0][1]} ${vertices
-            .slice(1)
-            .map(([x, y]) => `L ${x},${y}`)
-            .join(" ")} Z`;
+        return [
+            `M ${vertices[0][0]},${vertices[0][1]} ${vertices
+                .slice(1)
+                .map(([x, y]) => `L ${x},${y}`)
+                .join(" ")} Z`,
+            false,
+        ];
     }
 
     const parts: string[] = [];
+    let hasCut = false;
+    let firstApX = 0,
+        firstApY = 0;
     for (let i = 0; i < N; i++) {
         const { ax, ay, bx, by, lenA, lenB, halfAlpha } = vertexData[i];
         const curr = vertices[i];
@@ -494,6 +503,10 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
         const lpX = curr[0] + (bx / lenB) * t;
         const lpY = curr[1] + (by / lenB) * t;
 
+        if (i === 0) {
+            firstApX = apX;
+            firstApY = apY;
+        }
         parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
 
         switch (cornerShape) {
@@ -510,13 +523,21 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
                 parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
                 break;
             }
+            case 4: // Cut
+                parts.push(`M ${lpX},${lpY}`);
+                hasCut = true;
+                break;
             default: // Bevel
                 parts.push(`L ${lpX},${lpY}`);
                 break;
         }
     }
-    parts.push("Z");
-    return parts.join(" ");
+    if (hasCut) {
+        parts.push(`L ${firstApX},${firstApY}`);
+    } else {
+        parts.push("Z");
+    }
+    return [parts.join(" "), hasCut];
 };
 
 /** Collect star-pattern vertices for a given radius using GCD-based cycles */
@@ -616,12 +637,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         const innerCycles = collectStarVertices(innerAll, N, step);
 
         // Build outer subpaths (forward winding)
-        const outerSubpaths = outerCycles.map((cycle) => buildSubpath(cycle, outerCornerR, outerCornerShape, false));
+        const outerResults = outerCycles.map((cycle) => buildSubpath(cycle, outerCornerR, outerCornerShape, false));
 
         // Build inner subpaths (reversed winding for hole cutting)
-        const innerSubpaths = tI > 0 ? innerCycles.map((cycle) => buildSubpath([...cycle].reverse(), innerCornerR, innerCornerShape, true)) : [];
+        const innerResults = tI > 0 ? innerCycles.map((cycle) => buildSubpath([...cycle].reverse(), innerCornerR, innerCornerShape, true)) : [];
 
-        let d = [...outerSubpaths, ...innerSubpaths].join(" ");
+        const hasCut = outerResults.some(([, cut]) => cut) || innerResults.some(([, cut]) => cut);
+        let d = [...outerResults.map(([s]) => s), ...innerResults.map(([s]) => s)].join(" ");
         const removeCrossings = context.resolve<"boolean">(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings;
         if (removeCrossings) {
             d = PaperHelper.healD(d) ?? d;
@@ -635,14 +657,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
             };
         }
 
-        const hasInner = innerSubpaths.length > 0;
+        const hasInner = innerResults.length > 0;
+        const paint = Stylings.evaluate(node, context);
+        if (hasCut) paint.fill = null;
 
         return {
             kind: "shape",
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint,
+                signals: hasCut ? ["noFill"] : undefined,
                 markers: markerShape
                     ? {
                           mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },

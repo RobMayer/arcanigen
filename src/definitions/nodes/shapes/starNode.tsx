@@ -337,14 +337,17 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<StarDefinition>, inSocket:
 };
 
 /** Build a star path with per-vertex corner params (alternating outer tips and inner valleys) */
-const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: number, outerCornerShape: number, innerCornerR: number, innerCornerShape: number): string => {
+const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: number, outerCornerShape: number, innerCornerR: number, innerCornerShape: number): [string, boolean] => {
     const N = vertices.length; // 2 * pointCount
 
     if (outerCornerR <= 0 && innerCornerR <= 0) {
-        return `M ${vertices[0][0]},${vertices[0][1]} ${vertices
-            .slice(1)
-            .map(([x, y]) => `L ${x},${y}`)
-            .join(" ")} Z`;
+        return [
+            `M ${vertices[0][0]},${vertices[0][1]} ${vertices
+                .slice(1)
+                .map(([x, y]) => `L ${x},${y}`)
+                .join(" ")} Z`,
+            false,
+        ];
     }
 
     const edgeLengths = vertices.map((v, i) => {
@@ -379,11 +382,20 @@ const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: nu
     });
 
     const parts: string[] = [];
+    let hasCut = false;
+    let firstApX = 0,
+        firstApY = 0;
+    let firstSet = false;
     for (let i = 0; i < N; i++) {
         const r = clampedR[i];
         const cornerShape = i % 2 === 0 ? outerCornerShape : innerCornerShape;
 
         if (r <= 0) {
+            if (!firstSet) {
+                firstApX = vertices[i][0];
+                firstApY = vertices[i][1];
+                firstSet = true;
+            }
             parts.push(i === 0 ? `M ${vertices[i][0]},${vertices[i][1]}` : `L ${vertices[i][0]},${vertices[i][1]}`);
             continue;
         }
@@ -397,6 +409,11 @@ const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: nu
         const lpX = curr[0] + (bx / lenB) * t;
         const lpY = curr[1] + (by / lenB) * t;
 
+        if (!firstSet) {
+            firstApX = apX;
+            firstApY = apY;
+            firstSet = true;
+        }
         parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
 
         switch (cornerShape) {
@@ -413,13 +430,21 @@ const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: nu
                 parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
                 break;
             }
+            case 4: // Cut
+                parts.push(`M ${lpX},${lpY}`);
+                hasCut = true;
+                break;
             default: // Bevel
                 parts.push(`L ${lpX},${lpY}`);
                 break;
         }
     }
-    parts.push("Z");
-    return parts.join(" ");
+    if (hasCut) {
+        parts.push(`L ${firstApX},${firstApY}`);
+    } else {
+        parts.push("Z");
+    }
+    return [parts.join(" "), hasCut];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof StarDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
@@ -495,7 +520,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
             vertices.push([tI * Math.cos(innerAngle), tI * Math.sin(innerAngle)] as const);
         }
 
-        const d = buildStarPath(vertices, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape);
+        const [d, hasCut] = buildStarPath(vertices, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape);
         const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
         if (socket === "path") {
@@ -505,12 +530,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
             };
         }
 
+        const paint = Stylings.evaluate(node, context);
+        if (hasCut) paint.fill = null;
+
         return {
             kind: "shape",
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint,
+                signals: hasCut ? ["noFill"] : undefined,
                 markers: markerShape
                     ? {
                           mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },

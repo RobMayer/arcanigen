@@ -124,6 +124,7 @@ export namespace Enum {
             BEVEL: { value: 1, label: "Bevel" },
             SCOOP: { value: 2, label: "Scoop" },
             NOTCH: { value: 3, label: "Notch" },
+            CUT: { value: 4, label: "Cut" },
         } as const;
 
         export const textAlign = {

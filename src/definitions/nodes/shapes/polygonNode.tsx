@@ -265,6 +265,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
         const cornerShape = Enum.resolve(context.resolve<"enum">(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
 
         let d: string;
+        let hasCut = false;
         if (cornerR <= 0) {
             d = `M ${vertices[0][0]},${vertices[0][1]} ${vertices
                 .slice(1)
@@ -310,6 +311,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                     .join(" ")} Z`;
             } else {
                 const parts: string[] = [];
+                let firstApX = 0,
+                    firstApY = 0;
                 for (let i = 0; i < N; i++) {
                     const { ax, ay, bx, by, lenA, lenB, halfAlpha } = vertexData[i];
                     const curr = vertices[i];
@@ -320,6 +323,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                     const lpX = curr[0] + (bx / lenB) * t;
                     const lpY = curr[1] + (by / lenB) * t;
 
+                    if (i === 0) {
+                        firstApX = apX;
+                        firstApY = apY;
+                    }
                     parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
 
                     switch (cornerShape) {
@@ -335,12 +342,20 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
                             parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
                             break;
                         }
+                        case 4: // Cut
+                            parts.push(`M ${lpX},${lpY}`);
+                            hasCut = true;
+                            break;
                         default: // Bevel
                             parts.push(`L ${lpX},${lpY}`);
                             break;
                     }
                 }
-                parts.push("Z");
+                if (hasCut) {
+                    parts.push(`L ${firstApX},${firstApY}`);
+                } else {
+                    parts.push("Z");
+                }
                 d = parts.join(" ");
             }
         }
@@ -357,12 +372,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
         const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
+        const paint = Stylings.evaluate(node, context);
+        if (hasCut) paint.fill = null;
+
         return {
             kind: "shape",
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint,
+                signals: hasCut ? ["noFill"] : undefined,
                 markers: markerShape
                     ? {
                           mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },

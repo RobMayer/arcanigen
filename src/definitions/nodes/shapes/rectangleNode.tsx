@@ -198,6 +198,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
     const r = Math.min(cornerRadius, hw, hh);
 
     let d: string;
+    const hasCut = cornerShape === 4 && r > 0;
     if (r === 0) {
         d = `M ${-hw},${-hh} H ${hw} V ${hh} H ${-hw} z`;
     } else {
@@ -221,6 +222,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
                 blCorner = `L ${-hw + r},${hh - r} L ${-hw},${hh - r}`;
                 tlCorner = `L ${-hw + r},${-hh + r} L ${-hw + r},${-hh}`;
                 break;
+            case 4: // Cut
+                trCorner = `M ${hw},${-hh + r}`;
+                brCorner = `M ${hw - r},${hh}`;
+                blCorner = `M ${-hw},${hh - r}`;
+                tlCorner = `M ${-hw + r},${-hh}`;
+                break;
             default: // Bevel (1)
                 trCorner = `L ${hw},${-hh + r}`;
                 brCorner = `L ${hw - r},${hh}`;
@@ -228,7 +235,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
                 tlCorner = `L ${-hw + r},${-hh}`;
                 break;
         }
-        d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} Z`;
+        const close = hasCut ? `L ${-hw},${-hh + r}` : "Z";
+        d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} ${close}`;
     }
 
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
@@ -248,12 +256,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         const diag = Math.sqrt(width * width + height * height);
         const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
 
+        const paint = Stylings.evaluate(node, context);
+        if (hasCut) paint.fill = null;
+
         return {
             kind: "shape",
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint,
+                signals: hasCut ? ["noFill"] : undefined,
                 markers: markerShape
                     ? {
                           mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },

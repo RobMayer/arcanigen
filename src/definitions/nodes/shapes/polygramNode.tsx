@@ -315,6 +315,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         const cycleLen = N / g;
 
         const subpaths: string[] = [];
+        let hasCut = false;
 
         for (let c = 0; c < g; c++) {
             const cycleVerts: (readonly [number, number])[] = [];
@@ -372,6 +373,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
                     );
                 } else {
                     const parts: string[] = [];
+                    let firstApX = 0,
+                        firstApY = 0;
+                    let cycleCut = false;
                     for (let i = 0; i < cN; i++) {
                         const { ax, ay, bx, by, lenA, lenB, halfAlpha } = vertexData[i];
                         const curr = cycleVerts[i];
@@ -382,6 +386,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
                         const lpX = curr[0] + (bx / lenB) * t;
                         const lpY = curr[1] + (by / lenB) * t;
 
+                        if (i === 0) {
+                            firstApX = apX;
+                            firstApY = apY;
+                        }
                         parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
 
                         switch (cornerShape) {
@@ -398,12 +406,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
                                 parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
                                 break;
                             }
+                            case 4: // Cut
+                                parts.push(`M ${lpX},${lpY}`);
+                                cycleCut = true;
+                                break;
                             default: // Bevel
                                 parts.push(`L ${lpX},${lpY}`);
                                 break;
                         }
                     }
-                    parts.push("Z");
+                    if (cycleCut) {
+                        parts.push(`L ${firstApX},${firstApY}`);
+                        hasCut = true;
+                    } else {
+                        parts.push("Z");
+                    }
                     subpaths.push(parts.join(" "));
                 }
             }
@@ -423,12 +440,16 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             };
         }
 
+        const paint = Stylings.evaluate(node, context);
+        if (hasCut) paint.fill = null;
+
         return {
             kind: "shape",
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint,
+                signals: hasCut ? ["noFill"] : undefined,
                 markers: markerShape
                     ? {
                           mid: { shape: markerShape, orient: markerAlign ? "auto-start-reverse" : undefined },
