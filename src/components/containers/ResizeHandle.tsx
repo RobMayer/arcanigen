@@ -42,35 +42,37 @@ export const ResizeHandle = styled(
                 let startPos = 0;
                 let startRatio = 0;
 
-                const getRatio = (evt: MouseEvent) => {
+                const getRatio = (evt: PointerEvent) => {
                     const rect = container.getBoundingClientRect();
                     const delta = horizontal ? (evt.clientX - startPos) / rect.width : (evt.clientY - startPos) / rect.height;
                     return Math.max(min, Math.min(max, startRatio + delta * (mode === "single" ? 2 : 1)));
                 };
 
-                const mouseMove = (evt: MouseEvent) => {
+                const pointerMove = (evt: PointerEvent) => {
                     onValueRef.current?.(getRatio(evt));
                 };
 
-                const mouseUp = (evt: MouseEvent) => {
+                const pointerUp = (evt: PointerEvent) => {
                     onCommitRef.current?.(getRatio(evt));
-                    document.removeEventListener("mousemove", mouseMove);
-                    document.removeEventListener("mouseup", mouseUp);
+                    el.removeEventListener("pointermove", pointerMove);
+                    el.removeEventListener("pointerup", pointerUp);
+                    el.releasePointerCapture(evt.pointerId);
                 };
 
-                const mouseDown = (evt: MouseEvent) => {
+                const pointerDown = (evt: PointerEvent) => {
                     if (evt.detail > 1 || disabledRef.current) return;
                     startPos = horizontal ? evt.clientX : evt.clientY;
                     startRatio = valueRef.current;
-                    document.addEventListener("mousemove", mouseMove);
-                    document.addEventListener("mouseup", mouseUp);
+                    el.setPointerCapture(evt.pointerId);
+                    el.addEventListener("pointermove", pointerMove);
+                    el.addEventListener("pointerup", pointerUp);
                 };
 
-                el.addEventListener("mousedown", mouseDown);
+                el.addEventListener("pointerdown", pointerDown);
                 return () => {
-                    el.removeEventListener("mousedown", mouseDown);
-                    document.removeEventListener("mouseup", mouseUp);
-                    document.removeEventListener("mousemove", mouseMove);
+                    el.removeEventListener("pointerdown", pointerDown);
+                    el.removeEventListener("pointerup", pointerUp);
+                    el.removeEventListener("pointermove", pointerMove);
                 };
             }
         }, [containerRef, orientation, min, max, mode]);

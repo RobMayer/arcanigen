@@ -56,7 +56,7 @@
 - [ ] Color Split
 - [ ] Color Join
 - [ ] Color Adjust?
-- [ ] Can we make the type prop on <SocketIn/> and <SocketOut/> redundant by using a properly memoized return of getSocketType(...) - with the idea that we could concat the list of types with either " | " or " & " depending on that socket rule's mode? _THIS MUST NOT CAUSE RE-RENDER CHURN_
+- [x] Can we make the type prop on <SocketIn/> and <SocketOut/> redundant by using a properly memoized return of getSocketType(...) - with the idea that we could concat the list of types with either " | " or " & " depending on that socket rule's mode? _THIS MUST NOT CAUSE RE-RENDER CHURN_
 - [x] Note Node
 - [x] remove reliance on "offset-path" and other css properties in the svg output
 - [x] clip Node (like mask, but uses a Path input instead)

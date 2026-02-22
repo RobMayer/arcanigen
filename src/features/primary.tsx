@@ -181,7 +181,7 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
         const container = scopeRef.current;
         if (!container) return;
 
-        const onMouseMove = (moveEvt: MouseEvent) => {
+        const onPointerMove = (moveEvt: PointerEvent) => {
             const start = startPos.current;
             if (!start) {
                 return;
@@ -206,18 +206,19 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
             rect.style.height = `${h}px`;
         };
 
-        const cleanup = () => {
-            document.removeEventListener("mousemove", onMouseMove);
-            document.removeEventListener("mouseup", onMouseUp);
+        const cleanup = (evt?: PointerEvent) => {
+            container.removeEventListener("pointermove", onPointerMove);
+            container.removeEventListener("pointerup", onPointerUp);
+            if (evt) container.releasePointerCapture(evt.pointerId);
 
             startPos.current = null;
             setIsActive(false);
         };
 
-        const onMouseUp = (upEvt: MouseEvent) => {
+        const onPointerUp = (upEvt: PointerEvent) => {
             const start = startPos.current;
             if (!start) {
-                cleanup();
+                cleanup(upEvt);
                 return;
             }
 
@@ -229,7 +230,7 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
             // Too small — treat as a click on empty space
             if (mx2 - mx1 < 4 && my2 - my1 < 4) {
                 selectionMethods.clear();
-                cleanup();
+                cleanup(upEvt);
                 return;
             }
 
@@ -250,10 +251,10 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
             }
 
             selectionMethods[selectionActionRef.current](matched);
-            cleanup();
+            cleanup(upEvt);
         };
 
-        const onMouseDown = (evt: MouseEvent) => {
+        const onPointerDown = (evt: PointerEvent) => {
             if (evt.button !== 0 || evt.handled) return;
             if (evt.target !== evt.currentTarget) {
                 return;
@@ -261,15 +262,16 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
 
             startPos.current = { x: evt.clientX, y: evt.clientY };
 
-            document.addEventListener("mousemove", onMouseMove);
-            document.addEventListener("mouseup", onMouseUp);
+            container.setPointerCapture(evt.pointerId);
+            container.addEventListener("pointermove", onPointerMove);
+            container.addEventListener("pointerup", onPointerUp);
         };
 
-        container.addEventListener("mousedown", onMouseDown);
+        container.addEventListener("pointerdown", onPointerDown);
         return () => {
-            container.removeEventListener("mousedown", onMouseDown);
-            document.removeEventListener("mousemove", onMouseMove);
-            document.removeEventListener("mouseup", onMouseUp);
+            container.removeEventListener("pointerdown", onPointerDown);
+            container.removeEventListener("pointermove", onPointerMove);
+            container.removeEventListener("pointerup", onPointerUp);
         };
     }, [selectionMethods, marqueeMode, scopeRef]);
 

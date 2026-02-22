@@ -115,7 +115,7 @@ export namespace DragMove {
             const handle = handleRef.current;
 
             if (handle) {
-                const mouseMove = (evt: globalThis.MouseEvent) => {
+                const pointerMove = (evt: PointerEvent) => {
                     const zoom = handle.currentCSSZoom * devicePixelRatio;
                     const dX = evt.movementX / zoom;
                     const dY = evt.movementY / zoom;
@@ -125,25 +125,27 @@ export namespace DragMove {
                     onDeltaRef.current?.({ x: dX, y: dY });
                 };
 
-                const mouseUp = () => {
+                const pointerUp = (evt: PointerEvent) => {
                     onFinishRef.current?.(internalRef.current);
-                    document.removeEventListener("mousemove", mouseMove);
-                    document.removeEventListener("mouseup", mouseUp);
+                    handle.removeEventListener("pointermove", pointerMove);
+                    handle.removeEventListener("pointerup", pointerUp);
+                    handle.releasePointerCapture(evt.pointerId);
                 };
 
-                const mouseDown = (evt: globalThis.MouseEvent) => {
+                const pointerDown = (evt: PointerEvent) => {
                     if (button === "any" || evt.button === button) {
                         evt.handled = "active";
-                        document.addEventListener("mousemove", mouseMove);
-                        document.addEventListener("mouseup", mouseUp);
+                        handle.setPointerCapture(evt.pointerId);
+                        handle.addEventListener("pointermove", pointerMove);
+                        handle.addEventListener("pointerup", pointerUp);
                     }
                 };
 
-                handle.addEventListener("mousedown", mouseDown);
+                handle.addEventListener("pointerdown", pointerDown);
                 return () => {
-                    handle.removeEventListener("mousedown", mouseDown);
-                    document.removeEventListener("mousemove", mouseMove);
-                    document.removeEventListener("mouseup", mouseUp);
+                    handle.removeEventListener("pointerdown", pointerDown);
+                    handle.removeEventListener("pointermove", pointerMove);
+                    handle.removeEventListener("pointerup", pointerUp);
                 };
             }
         }, [handleChange, handleRef, button]);

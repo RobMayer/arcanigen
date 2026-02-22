@@ -50,9 +50,9 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
     }, [setPendingConnection, graphMethods, graphId, mc]);
 
     useEffect(() => {
-        document.addEventListener("mouseup", connectionContextValue.clear);
+        document.addEventListener("pointerup", connectionContextValue.clear);
         return () => {
-            document.removeEventListener("mouseup", connectionContextValue.clear);
+            document.removeEventListener("pointerup", connectionContextValue.clear);
         };
     }, [connectionContextValue]);
 
@@ -128,7 +128,7 @@ export const Socket = styled(
         useEffect(() => {
             const socket = socketRef.current;
             if (socket) {
-                const connectStart = (evt: globalThis.MouseEvent) => {
+                const connectStart = (evt: globalThis.PointerEvent) => {
                     if (evt.button === 0) {
                         evt.handled = "active";
                         connectionContext.start(nodeId, socketId, side);
@@ -140,11 +140,11 @@ export const Socket = styled(
                     }
                 };
 
-                socket.addEventListener("mousedown", connectStart);
-                socket.addEventListener("mouseup", finishConnection);
+                socket.addEventListener("pointerdown", connectStart);
+                socket.addEventListener("pointerup", finishConnection);
                 return () => {
-                    socket.removeEventListener("mousedown", connectStart);
-                    socket.removeEventListener("mouseup", finishConnection);
+                    socket.removeEventListener("pointerdown", connectStart);
+                    socket.removeEventListener("pointerup", finishConnection);
                 };
             }
         }, [nodeId, socketId, connectionContext, side]);
@@ -273,14 +273,14 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     const mousePos = useRef<{ x: number; y: number } | null>(null);
 
     useEffect(() => {
-        const onMouseMove = (evt: MouseEvent) => {
+        const onPointerMove = (evt: PointerEvent) => {
             mousePos.current = { x: evt.clientX, y: evt.clientY };
             updatePath();
         };
 
-        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("pointermove", onPointerMove);
         return () => {
-            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("pointermove", onPointerMove);
         };
     }, [updatePath]);
 

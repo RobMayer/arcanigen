@@ -1,4 +1,4 @@
-import { CSSProperties, DetailedHTMLProps, HTMLAttributes, MouseEvent, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState, WheelEvent } from "react";
+import { CSSProperties, DetailedHTMLProps, HTMLAttributes, PointerEvent, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState, WheelEvent } from "react";
 import styled from "styled-components";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
@@ -13,7 +13,7 @@ export type DragPaneControls = {
     set: (value: SetStateAction<XYZ>) => void;
     panTo: (value: SetStateAction<XY>) => void;
     panBy: (value: Partial<XY>) => void; // relative pan; zoom compensation should happen internally; if all thre are zero, or not provided, no-op.
-    panOn: ((event: MouseEvent | MouseEvent<unknown>) => void) & { committed: (event: MouseEvent | MouseEvent<unknown>) => void; commit: () => void };
+    panOn: ((event: PointerEvent | PointerEvent<unknown>) => void) & { committed: (event: PointerEvent | PointerEvent<unknown>) => void; commit: () => void };
     panFor: (element: HTMLElement) => void;
     center: () => void; // pan to center of bounds (if bounds is not provided, no-op)
     extents: () => void; // pan to center of bounds and zoom to contain (as best as possible) (if bounds is not provided, no-op)
@@ -187,13 +187,13 @@ const DragPaneBase = styled(
 
         // control methods
         const methods = useMemo<DragPaneControls>(() => {
-            const panOnBase = (evt: MouseEvent | MouseEvent<unknown>, passive: boolean) => {
+            const panOnBase = (evt: PointerEvent | PointerEvent<unknown>, passive: boolean) => {
                 const zoom = offsetRef.current?.currentCSSZoom ?? 1;
                 const { x, y, z } = member.ref.current;
                 handleChange({ x: x + evt.movementX / zoom, y: y + evt.movementY / zoom, z }, passive);
             };
-            const panOn = Object.assign((evt: MouseEvent | MouseEvent<unknown>) => panOnBase(evt, true), {
-                committed: (evt: MouseEvent | MouseEvent<unknown>) => panOnBase(evt, false),
+            const panOn = Object.assign((evt: PointerEvent | PointerEvent<unknown>) => panOnBase(evt, true), {
+                committed: (evt: PointerEvent | PointerEvent<unknown>) => panOnBase(evt, false),
                 commit: () => {
                     setPosition(member.ref.current); // reconcile React state with DOM
                     onFinishRef.current?.(member.ref.current);
@@ -370,32 +370,34 @@ const DragPaneBase = styled(
             const element = viewportRef.current;
             if (!element) return;
 
-            const mouseMove = (evt: globalThis.MouseEvent) => {
-                methods.panOn(evt as unknown as MouseEvent);
+            const pointerMove = (evt: globalThis.PointerEvent) => {
+                methods.panOn(evt as unknown as PointerEvent);
             };
 
-            const mouseUp = () => {
-                document.removeEventListener("mousemove", mouseMove);
-                document.removeEventListener("mouseup", mouseUp);
+            const pointerUp = (evt: globalThis.PointerEvent) => {
+                element.removeEventListener("pointermove", pointerMove);
+                element.removeEventListener("pointerup", pointerUp);
+                element.releasePointerCapture(evt.pointerId);
                 methods.panOn.commit();
                 setPanning(false);
             };
 
-            const mouseDown = (evt: globalThis.MouseEvent) => {
+            const pointerDown = (evt: globalThis.PointerEvent) => {
                 if (evt.button === 1 && !evt.handled) {
                     evt.handled = "active";
                     evt.preventDefault();
                     setPanning(true);
-                    document.addEventListener("mousemove", mouseMove);
-                    document.addEventListener("mouseup", mouseUp);
+                    element.setPointerCapture(evt.pointerId);
+                    element.addEventListener("pointermove", pointerMove);
+                    element.addEventListener("pointerup", pointerUp);
                 }
             };
 
-            element.addEventListener("mousedown", mouseDown);
+            element.addEventListener("pointerdown", pointerDown);
             return () => {
-                element.removeEventListener("mousedown", mouseDown);
-                document.removeEventListener("mousemove", mouseMove);
-                document.removeEventListener("mouseup", mouseUp);
+                element.removeEventListener("pointerdown", pointerDown);
+                element.removeEventListener("pointermove", pointerMove);
+                element.removeEventListener("pointerup", pointerUp);
             };
         }, [methods, viewportRef]);
 
