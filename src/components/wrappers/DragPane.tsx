@@ -164,9 +164,9 @@ const DragPaneBase = styled(
                     }
                     const vp = viewportRef.current;
                     if (vp) {
-                        vp.dataset.x = `${next.x}`;
-                        vp.dataset.y = `${next.y}`;
-                        vp.dataset.z = `${next.z}`;
+                        vp.style.setProperty("--x", `${next.x}px`);
+                        vp.style.setProperty("--y", `${next.y}px`);
+                        vp.style.setProperty("--z", `${next.z}`);
                     }
                 } else {
                     setPosition(next);
@@ -411,6 +411,17 @@ const DragPaneBase = styled(
             [x, y, z],
         );
 
+        const outerStyle = useMemo(
+            () =>
+                ({
+                    ...style,
+                    "--x": `${x}px`,
+                    "--y": `${y}px`,
+                    "--z": `${z}`,
+                }) as CSSProperties,
+            [style, x, y, z],
+        );
+
         const dataState = useMemo(() => {
             const tokens: string[] = incomingDataState ? [incomingDataState] : [];
             if (panning) tokens.push("panning");
@@ -422,7 +433,7 @@ const DragPaneBase = styled(
         }, [panning, breach, incomingDataState]);
 
         return (
-            <div className={className} ref={makeViewportRef} style={style} {...rest} data-state={dataState} data-x={x} data-y={y} data-z={z}>
+            <div className={className} ref={makeViewportRef} {...rest} data-state={dataState} style={outerStyle}>
                 <Controller state={member} controls={controls} methods={methods}>
                     <DragPaneOrigin>
                         <DragPaneOffset style={offsetStyle} ref={offsetRef}>

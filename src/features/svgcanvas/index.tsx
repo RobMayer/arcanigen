@@ -47,7 +47,13 @@ export const SvgCanvas = styled(({ className, paneControls }: SvgCanvasProps) =>
     return (
         <CanvasViewPane className={className} controls={paneControls} minZoom={0.1} maxZoom={10} boundsRef={boundsRef}>
             <SvgCanvasContent>
-                <svg data-export-svg viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`} width={canvas.width} height={canvas.height} style={{ background: canvas.background }}>
+                <svg
+                    data-export-svg
+                    viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`}
+                    width={canvas.width}
+                    height={canvas.height}
+                    style={{ background: canvas.background }}
+                >
                     {contents && <ShapeElement shape={contents} />}
                 </svg>
             </SvgCanvasContent>
@@ -63,8 +69,8 @@ const CanvasViewPane = styled(DragPane)`
     background-image: url("hexgrid.svg");
     background-blend-mode: overlay;
     border: 3px solid transparent;
-    background-position: calc(50% + attr(data-x px) * attr(data-z number)) calc(50% + attr(data-y px) * attr(data-z number));
-    background-size: calc(attr(data-z number) * 83.14px) calc(attr(data-z number) * 48px);
+    background-position: calc(50% + var(--x) * var(--z)) calc(50% + var(--y) * var(--z));
+    background-size: calc(var(--z) * 83.14px) calc(var(--z) * 48px);
     &[data-state~="breach_top"] {
         border-top-color: red;
     }

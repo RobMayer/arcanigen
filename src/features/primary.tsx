@@ -152,13 +152,13 @@ const GraphViewPane = styled(DragPane)`
     background-image: url("hexgrid.svg");
     background-blend-mode: overlay;
     border: 3px solid transparent;
-    background-position: calc(50% + attr(data-x px) * attr(data-z number)) calc(50% + attr(data-y px) * attr(data-z number));
-    background-size: calc(attr(data-z number) * 83.14px) calc(attr(data-z number) * 48px);
+    background-position: calc(50% + var(--x) * var(--z)) calc(50% + var(--y) * var(--z));
+    background-size: calc(var(--z) * 83.14px) calc(var(--z) * 48px);
     &:not([data-graph="root"]) {
         background-color: #090e13;
         background-image: url("boxgrid.svg");
         background-blend-mode: soft-light;
-        background-size: calc(attr(data-z number) * 48px) calc(attr(data-z number) * 48px);
+        background-size: calc(var(--z) * 48px) calc(var(--z) * 48px);
     }
     &[data-state~="breach_top"] {
         border-top-color: red;

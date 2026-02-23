@@ -113,9 +113,25 @@ const Layout = styled.div`
     &[data-state~="drawer-open"] {
         grid-template-rows: min-content 1fr 2px minmax(min-content, var(--ratio_B));
     }
-    & > div {
-        grid-area: attr(data-gridarea type(<custom-ident>));
+    & > [data-gridarea="colResize"] {
+        grid-area: colResize;
     }
+    & > [data-gridarea="rowResize"] {
+        grid-area: rowResize;
+    }
+    & > [data-gridarea="toolbar"] {
+        grid-area: toolbar;
+    }
+    & > [data-gridarea="nodegraph"] {
+        grid-area: nodegraph;
+    }
+    & > [data-gridarea="drawer"] {
+        grid-area: drawer;
+    }
+    & > [data-gridarea="canvas"] {
+        grid-area: canvas;
+    }
+
     & > div[data-gridarea="colResize"],
     & > div[data-gridarea="rowResize"] {
         display: flex;

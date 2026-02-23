@@ -62,8 +62,8 @@ export namespace DragMove {
 
     const TheDiv = styled.div`
         position: absolute;
-        top: attr(data-y px, 0px);
-        left: attr(data-x px, 0px);
+        top: var(--y, 0px);
+        left: var(--x, 0px);
     `;
 
     export const Item = ({ position, onFocus, style, ...props }: DragMoveProps) => {
@@ -72,8 +72,8 @@ export namespace DragMove {
         const [zIndex, setToTop] = useDragMoveContext(id);
 
         const mergedStyle = useMemo(() => {
-            return { ...style, zIndex };
-        }, [style, zIndex]);
+            return { ...style, zIndex, "--x": `${position.x}px`, "--y": `${position.y}px` };
+        }, [style, zIndex, position.x, position.y]);
 
         const handleFocus = useCallback(
             (event: FocusEvent<HTMLDivElement>) => {
@@ -83,7 +83,7 @@ export namespace DragMove {
             [setToTop],
         );
 
-        return <TheDiv {...props} style={mergedStyle} data-x={position.x} data-y={position.y} data-trhmarker={"dragmove"} onFocus={handleFocus} tabIndex={-1} />;
+        return <TheDiv {...props} style={mergedStyle} data-trhmarker={"dragmove"} onFocus={handleFocus} tabIndex={-1} />;
     };
 
     export const useHandle = (handleRef: RefObject<HTMLElement | null>, value: XY, { onChange, onFinish, onDelta, button = 0 }: UseHandleOptions) => {

@@ -158,11 +158,15 @@ export const Socket = styled(
             return r.length > 0 ? r.join(" ") : undefined;
         }, [pendingConnection, canConnect, nodeId, socketId, connected]);
 
+        const style = useMemo(() => {
+            return { "--socket": `--socket_${nodeId}_${socketId}` } as CSSProperties;
+        }, [nodeId, socketId]);
+
         return (
             <div
                 ref={socketRef}
                 className={className}
-                data-socketid={`--socket_${nodeId}_${socketId}`}
+                style={style}
                 data-socketside={side}
                 data-sockettype={type}
                 data-socketmod={title === "« any »" ? "any" : undefined}
@@ -177,7 +181,7 @@ export const Socket = styled(
     aspect-ratio: 1;
     background: oklch(from var(--flavour) l c h);
     border-radius: 100%;
-    anchor-name: attr(data-socketid type(<custom-ident>));
+    anchor-name: var(--socket);
     transition:
         background-color 0.25s,
         outline-color 0.25s;

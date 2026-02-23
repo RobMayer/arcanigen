@@ -580,8 +580,20 @@ const EditorLayout = styled.div`
         grid-template-rows: min-content 1fr 2px minmax(min-content, var(--ratio_B));
     }
 
-    & > div {
-        grid-area: attr(data-area type(<custom-ident>));
+    & > div[data-area="interfacelist"] {
+        grid-area: interfacelist;
+    }
+    & > div[data-area="toolbar"] {
+        grid-area: toolbar;
+    }
+    & > div[data-area="graphview"] {
+        grid-area: graphview;
+    }
+    & > div[data-area="rowResize"] {
+        grid-area: rowResize;
+    }
+    & > div[data-area="drawer"] {
+        grid-area: drawer;
     }
 
     & > div[data-area="interfacelist"] {

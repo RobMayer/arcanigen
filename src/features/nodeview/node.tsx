@@ -1,4 +1,4 @@
-import { useRef, useCallback, Ref, useState, KeyboardEvent, FocusEvent, useMemo, ReactNode, MouseEvent } from "react";
+import { useRef, useCallback, Ref, useState, KeyboardEvent, FocusEvent, useMemo, ReactNode, MouseEvent, CSSProperties } from "react";
 import styled from "styled-components";
 import { DragMove } from "../../components/wrappers/DragMove";
 import { Project } from "../../state/project";
@@ -74,9 +74,13 @@ export const TypicalNode = styled(
             cloneNode(nodeId);
         }, [cloneNode, nodeId]);
 
+        const style = useMemo(() => {
+            return { "--node": `--node_${nodeId}` } as CSSProperties;
+        }, [nodeId]);
+
         return (
             <DragMove.Item position={localPosition} className={className}>
-                <div data-part={"body"} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+                <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
                     <NodeTitle
                         handleRef={handleRef}
                         node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
@@ -110,7 +114,7 @@ export const TypicalNode = styled(
         width: max-content;
         min-width: 280px;
         outline: 1px solid transparent;
-        anchor-name: attr(data-node type(<custom-ident>));
+        anchor-name: var(--node);
         outline-offset: 4px;
         border-radius: 2px;
         corner-shape: bevel;

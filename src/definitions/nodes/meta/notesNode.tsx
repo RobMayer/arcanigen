@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
-import { FocusEvent, KeyboardEvent, ReactNode, useCallback, useRef, useState } from "react";
+import { CSSProperties, FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { DragMove } from "../../../components/wrappers/DragMove";
@@ -116,11 +116,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
         setIsEditing(false);
     }, []);
 
+    const style = useMemo(() => {
+        return { "--node": `--node_${nodeId}` } as CSSProperties;
+    }, [nodeId]);
+
     const displayLabel = node.payload.label === "" ? "Note" : node.payload.label;
 
     return (
         <NoteWrapper position={localPosition}>
-            <div data-part={"body"} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+            <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
                 <NoteTitle>
                     <Icon shape={NODE_ICONS.note} />
                     <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
@@ -190,7 +194,7 @@ const NoteWrapper = styled(DragMove.Item)`
         min-width: 280px;
         outline: 1px solid transparent;
         transform: translate(-50%, 0);
-        anchor-name: attr(data-node type(<custom-ident>));
+        anchor-name: var(--node);
         outline-offset: 4px;
         border-radius: 2px;
         corner-shape: bevel;

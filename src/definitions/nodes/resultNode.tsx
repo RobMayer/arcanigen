@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { Icon, ICONS, NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { CSSProperties, FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { DragMove } from "../../components/wrappers/DragMove";
@@ -145,9 +145,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
 
     const displayLabel = node.payload.label === "" ? "Result" : node.payload.label;
 
+    const style = useMemo(() => {
+        return { "--node": `--node_${nodeId}` } as CSSProperties;
+    }, [nodeId]);
+
     return (
         <ResultWrapper position={localPosition}>
-            <div data-part={"body"} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+            <div data-part={"body"} style={style} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
                 <ResultTitle data-flavour="emphasis">
                     <ResultFallback nodeId={nodeId} side={"in"} />
                     <ActionButton.Lite onClick={toggle} flavour={"inherit"}>
@@ -254,7 +258,7 @@ const ResultWrapper = styled(DragMove.Item)`
         width: max-content;
         min-width: 280px;
         outline: 1px solid transparent;
-        anchor-name: attr(data-node type(<custom-ident>));
+        anchor-name: var(--node);
         outline-offset: 4px;
         border-radius: 2px;
         corner-shape: bevel;
