@@ -51,6 +51,7 @@ export namespace AbstractPopup {
     const Base = ({
         className,
         backdrop = "click",
+        backdropWheel = "pass",
         escape = "close",
         trapFocus = false,
         handle,
@@ -282,6 +283,14 @@ export namespace AbstractPopup {
             return { pointerEvents: backdrop === "pass" ? "none" : "auto" } as CSSProperties;
         }, [backdrop]);
 
+        const handleBackdropWheel = useMemo(() => {
+            if (!isOpen || backdropWheel === "pass") return undefined;
+            return (e: WheelEvent<HTMLDivElement>) => {
+                e.preventDefault();
+                if (backdropWheel === "close") doCancel();
+            };
+        }, [isOpen, backdropWheel, doCancel]);
+
         const safezoneStyle = useMemo(() => {
             return {
                 positionAnchor: `--trh-metaanchor-${internalAnchorId}`,
@@ -317,11 +326,11 @@ export namespace AbstractPopup {
                 <div data-part={"bounds"} ref={boundsRef} />
                 <div
                     data-part={"capture"}
-                    // onPointerDown={isOpen && backdrop === "click" ? doCancel : undefined}
-                    onClick={isOpen && backdrop === "click" ? doCancel : undefined}
+                    onPointerDown={isOpen && backdrop === "click" ? doCancel : undefined}
+                    // onClick={isOpen && backdrop === "click" ? doCancel : undefined}
                     onMouseMove={isOpen && backdrop === "hover" && ((safeZone && safeZonePath) || !safeZone) ? doCancel : undefined}
-                    onAuxClick={isOpen && backdrop === "click" ? doCancel : undefined}
-                    // onWheel={isOpen ? doCancel : undefined}
+                    // onAuxClick={isOpen && backdrop === "click" ? doCancel : undefined}
+                    onWheel={handleBackdropWheel}
                     style={captureStyles}
                 />
                 <div data-part={"contents"} style={contentsStyle} ref={combinedRef} {...props} onFocusCapture={handleFocus} tabIndex={-1}>
@@ -431,7 +440,7 @@ export namespace AbstractPopup {
         return (
             <ContextController state={state} controls={controls} methods={popupMethods}>
                 <PositionAnchor style={anchorStyle} ref={anchorRef} />
-                <BaseWithFallback trapFocus={trapFocus} handle={popoverHandle} backdrop={"click"} escape={"close"} onCancel={handleCancel} style={contentsStyle} {...props} />
+                <BaseWithFallback trapFocus={trapFocus} handle={popoverHandle} backdrop={"click"} backdropWheel={"close"} escape={"close"} onCancel={handleCancel} style={contentsStyle} {...props} />
             </ContextController>
         );
     }
@@ -741,6 +750,7 @@ export namespace AbstractPopup {
                         boundsRef={boundsRef}
                         handle={popoverHandle}
                         backdrop="pass"
+                        backdropWheel="pass"
                         escape="none"
                         trapFocus={false}
                         onCancel={handleCancel}
@@ -803,7 +813,19 @@ export namespace AbstractPopup {
         Controller: FlyoutController,
     } = createController<HTMLElement | null, Anchored.Controls>();
 
-    export function Anchored({ controls, placement = "bottom right", force = false, backdrop = "click", onOpen, onClose, onPopupToggle, style, trapFocus, ...props }: Anchored.Props) {
+    export function Anchored({
+        controls,
+        placement = "bottom right",
+        force = false,
+        backdrop = "click",
+        onOpen,
+        onClose,
+        onPopupToggle,
+        style,
+        trapFocus,
+        backdropWheel = "close",
+        ...props
+    }: Anchored.Props) {
         const [, setAnchorElement, state] = useFlyoutController(null);
         const popoverHandle = useRef<AbstractPopupHandle>(null);
         const anchorElementRef = useRef<HTMLElement>(null);
@@ -864,12 +886,14 @@ export namespace AbstractPopup {
             };
         }, [anchorId, placement, style]);
 
+        const resolvedWheel = force ? "block" : backdropWheel;
         const resolvedBackdrop = force ? "block" : backdrop;
         const resolvedEscape = force ? "none" : "close";
 
         return (
             <FlyoutController state={state} controls={controls} methods={flyoutMethods}>
                 <BaseWithFallback
+                    backdropWheel={resolvedWheel}
                     handle={popoverHandle}
                     backdrop={resolvedBackdrop}
                     escape={resolvedEscape}
@@ -896,6 +920,7 @@ export namespace AbstractPopup {
             placement?: Placement;
             force?: boolean; // when true, prevents closing via backdrop click or escape
             backdrop?: "click" | "hover";
+            backdropWheel?: "close" | "pass";
             onPopupToggle?: (state: boolean) => void;
             onOpen?: () => void;
             onClose?: () => void;
@@ -1077,6 +1102,7 @@ type AbstractPopupHandle = {
 type AbstractPopupProps = {
     trapFocus?: boolean;
     backdrop?: "click" | "block" | "pass" | "hover"; // click = "cancel on click", "block" = "intercept click, but do nothing", "pass" = "do not intercept click", "hover" = "cancel when backdrop is hovered" - note that this doesn't style the backdrop (except for pointer-events) - the backdrop always renders, styling of the backdrop is the responsibility of the component
+    backdropWheel?: "close" | "block" | "pass"; // close = "cancel on wheel", block = "prevent wheel propagation", pass = "ignore wheel events"
     safeZone?: RefObject<HTMLElement | null>; // if provided, will add a safe-zone (see current flyout implementation) that surrounds the "contents" and the element provided in the ref
     escape?: "close" | "none"; // what happens when you press escape?
     children?: ReactNode;
