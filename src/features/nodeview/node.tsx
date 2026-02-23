@@ -75,50 +75,59 @@ export const TypicalNode = styled(
         }, [cloneNode, nodeId]);
 
         return (
-            <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-                <NodeTitle
-                    handleRef={handleRef}
-                    node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
-                    isOpen={!isClosed}
-                    toggleOpen={toggle}
-                    setLabel={setLabel}
-                    onDelete={removeNode}
-                    onClone={handleClone}
-                />
-                {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
+            <DragMove.Item position={localPosition} className={className}>
+                <div data-part={"body"} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+                    <NodeTitle
+                        handleRef={handleRef}
+                        node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
+                        isOpen={!isClosed}
+                        toggleOpen={toggle}
+                        setLabel={setLabel}
+                        onDelete={removeNode}
+                        onClone={handleClone}
+                    />
+                    {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
+                </div>
             </DragMove.Item>
         );
     },
 )`
     display: grid;
-    background: #333;
-    border: 1px solid #666;
-    width: max-content;
-    min-width: 280px;
-    outline: 1px solid transparent;
-    transform: translate(-50%, 0);
-    anchor-name: attr(data-node type(<custom-ident>));
-    outline-offset: 4px;
-    border-radius: 2px;
-    corner-shape: bevel;
-    padding: 2px;
-    transition: outline-color 0.25s;
-    box-shadow: 0px 4px 8px black;
+    place-content: start center;
+    place-items: start center;
+    width: 0px;
+    height: 0px;
 
-    & hr {
-        border-color: #666;
-        margin-block: 0.5em;
+    &:focus-within > [data-part="body"],
+    & > [data-part="body"][data-state~="selected"] {
+        outline-color: white;
     }
 
-    &:focus-within,
-    &[data-state~="selected"] {
-        outline-color: white;
+    & > [data-part="body"] {
+        display: grid;
+        background: #333;
+        border: 1px solid #666;
+        width: max-content;
+        min-width: 280px;
+        outline: 1px solid transparent;
+        anchor-name: attr(data-node type(<custom-ident>));
+        outline-offset: 4px;
+        border-radius: 2px;
+        corner-shape: bevel;
+        padding: 2px;
+        transition: outline-color 0.25s;
+        box-shadow: 0px 4px 8px black;
+
+        & hr {
+            border-color: #666;
+            margin-block: 0.5em;
+        }
     }
 `;
 
 const NodeSlots = styled.div`
     display: grid;
-    gap: 4px;
+    gap: 8px;
     margin: 8px;
 `;
 
@@ -215,12 +224,12 @@ const NodeTitle = styled(
                     <Icon shape={ICONS.Close} />
                 </ActionButton.Lite>
                 <NodeFallback nodeId={node.id} side={"out"} />
-                <ContextPopup controls={contextControls}>
+                <ZoomCompedContextPopup controls={contextControls}>
                     <ActionButton.Option onClick={handleCloneAndClose}>Clone</ActionButton.Option>
                     <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
                         Delete
                     </ActionButton.Option>
-                </ContextPopup>
+                </ZoomCompedContextPopup>
             </div>
         );
     },
@@ -265,6 +274,10 @@ const NodeTitle = styled(
 
     background-color: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
     border-color: oklch(from var(--flavour) calc(l - 0.05) c h);
+`;
+
+const ZoomCompedContextPopup = styled(ContextPopup)`
+    zoom: calc(1 / var(--dragpane_zoom));
 `;
 
 const NodeFallback = styled(({ nodeId, className, side }: { nodeId: string; className?: string; side: "in" | "out" }) => {

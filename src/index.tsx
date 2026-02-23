@@ -125,7 +125,8 @@ const Layout = styled.div`
     }
     & > div[data-gridarea="nodegraph"],
     & > div[data-gridarea="canvas"] {
-        contain: paint;
+        position: relative;
+        overflow: clip;
         border: 1px solid var(--flavour);
     }
     & > div[data-gridarea="drawer"] {

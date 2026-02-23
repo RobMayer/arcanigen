@@ -119,19 +119,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
     const displayLabel = node.payload.label === "" ? "Note" : node.payload.label;
 
     return (
-        <NoteWrapper position={localPosition} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <NoteTitle>
-                <Icon shape={NODE_ICONS.note} />
-                <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
-                    {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} /> : <span>{displayLabel}</span>}
-                </div>
-                <ActionButton.Lite onClick={removeNode}>
-                    <Icon shape={ICONS.Close} />
-                </ActionButton.Lite>
-            </NoteTitle>
-            <NoteBody>
-                <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
-            </NoteBody>
+        <NoteWrapper position={localPosition}>
+            <div data-part={"body"} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+                <NoteTitle>
+                    <Icon shape={NODE_ICONS.note} />
+                    <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                        {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} /> : <span>{displayLabel}</span>}
+                    </div>
+                    <ActionButton.Lite onClick={removeNode}>
+                        <Icon shape={ICONS.Close} />
+                    </ActionButton.Lite>
+                </NoteTitle>
+                <NoteBody>
+                    <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
+                </NoteBody>
+            </div>
         </NoteWrapper>
     );
 };
@@ -170,28 +172,36 @@ export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
 
 const NoteWrapper = styled(DragMove.Item)`
     display: grid;
-    background: #000c;
-    border: 1px solid #666;
-    width: max-content;
-    min-width: 280px;
-    outline: 1px solid transparent;
-    transform: translate(-50%, 0);
-    anchor-name: attr(data-node type(<custom-ident>));
-    outline-offset: 4px;
-    border-radius: 2px;
-    corner-shape: bevel;
-    padding: 2px;
-    transition: outline-color 0.25s;
-    box-shadow: 0px 4px 8px black;
+    place-content: start center;
+    place-items: start center;
+    width: 0px;
+    height: 0px;
 
-    & hr {
-        border-color: #666;
-        margin-block: 0.5em;
+    &:focus-within > [data-part="body"],
+    & > [data-part="body"][data-state~="selected"] {
+        outline-color: white;
     }
 
-    &:focus-within,
-    &[data-state~="selected"] {
-        outline-color: white;
+    & > [data-part="body"] {
+        display: grid;
+        background: #000c;
+        border: 1px solid #666;
+        width: max-content;
+        min-width: 280px;
+        outline: 1px solid transparent;
+        transform: translate(-50%, 0);
+        anchor-name: attr(data-node type(<custom-ident>));
+        outline-offset: 4px;
+        border-radius: 2px;
+        corner-shape: bevel;
+        padding: 2px;
+        transition: outline-color 0.25s;
+        box-shadow: 0px 4px 8px black;
+
+        & hr {
+            border-color: #666;
+            margin-block: 0.5em;
+        }
     }
 `;
 

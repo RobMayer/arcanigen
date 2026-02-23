@@ -17,6 +17,7 @@ import {
     MouseEvent,
     createContext,
     useContext,
+    WheelEvent,
 } from "react";
 import styled from "styled-components";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
@@ -316,9 +317,11 @@ export namespace AbstractPopup {
                 <div data-part={"bounds"} ref={boundsRef} />
                 <div
                     data-part={"capture"}
+                    // onPointerDown={isOpen && backdrop === "click" ? doCancel : undefined}
                     onClick={isOpen && backdrop === "click" ? doCancel : undefined}
                     onMouseMove={isOpen && backdrop === "hover" && ((safeZone && safeZonePath) || !safeZone) ? doCancel : undefined}
                     onAuxClick={isOpen && backdrop === "click" ? doCancel : undefined}
+                    // onWheel={isOpen ? doCancel : undefined}
                     style={captureStyles}
                 />
                 <div data-part={"contents"} style={contentsStyle} ref={combinedRef} {...props} onFocusCapture={handleFocus} tabIndex={-1}>
@@ -370,7 +373,6 @@ export namespace AbstractPopup {
                 if (anchorRef.current) {
                     anchorRef.current.style.left = `${x}px`;
                     anchorRef.current.style.top = `${y}px`;
-                    anchorRef.current.showPopover();
                 }
                 onPopupToggleRef.current?.(true);
                 onOpenRef.current?.();
@@ -381,14 +383,12 @@ export namespace AbstractPopup {
 
         const closePopup = useCallback(() => {
             popoverHandle.current?.close();
-            anchorRef.current?.hidePopover();
             onPopupToggleRef.current?.(false);
             onCloseRef.current?.();
             setLocation(null);
         }, [setLocation]);
 
         const handleCancel = useCallback(() => {
-            anchorRef.current?.hidePopover();
             onPopupToggleRef.current?.(false);
             onCloseRef.current?.();
             setLocation(null);
@@ -430,7 +430,7 @@ export namespace AbstractPopup {
 
         return (
             <ContextController state={state} controls={controls} methods={popupMethods}>
-                <PositionAnchor style={anchorStyle} ref={anchorRef} popover="manual" />
+                <PositionAnchor style={anchorStyle} ref={anchorRef} />
                 <BaseWithFallback trapFocus={trapFocus} handle={popoverHandle} backdrop={"click"} escape={"close"} onCancel={handleCancel} style={contentsStyle} {...props} />
             </ContextController>
         );

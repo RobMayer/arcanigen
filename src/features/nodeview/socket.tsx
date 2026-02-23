@@ -295,7 +295,6 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
         </div>
     );
 })`
-    position: fixed;
     width: auto;
     height: auto;
     z-index: 0;
@@ -309,7 +308,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     min-height: 1px;
 
     & > .markerFrom {
-        position: fixed;
+        position: absolute;
         width: 1px;
         height: 1px;
         top: var(--anchorFrom);

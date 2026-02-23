@@ -101,7 +101,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         </>
     );
 })`
-    position: fixed;
+    position: absolute;
     width: auto;
     height: auto;
     z-index: -1;
@@ -121,7 +121,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         position: fixed;
         width: 1px;
         height: 1px;
-        background: red;
+        pointer-events: none;
     }
 
     & > [data-part="markerFrom"] {

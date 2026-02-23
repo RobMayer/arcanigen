@@ -146,44 +146,50 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     const displayLabel = node.payload.label === "" ? "Result" : node.payload.label;
 
     return (
-        <ResultWrapper position={localPosition} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-            <ResultTitle>
-                <ResultFallback nodeId={nodeId} side={"in"} />
-                <ActionButton.Lite onClick={toggle} flavour={NodeTypes.CATEGORY_FLAVOURS.Result}>
-                    <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
-                </ActionButton.Lite>
-                <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
-                    <Icon shape={NODE_ICONS.result} color={"var(--icon-flavour)"} />
-                    {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Result"} /> : <span>{displayLabel}</span>}
+        <ResultWrapper position={localPosition}>
+            <div data-part={"body"} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+                <ResultTitle data-flavour="emphasis">
+                    <ResultFallback nodeId={nodeId} side={"in"} />
+                    <ActionButton.Lite onClick={toggle} flavour={"inherit"}>
+                        <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
+                    </ActionButton.Lite>
+                    <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                        <Icon shape={NODE_ICONS.result} color={"var(--icon-flavour)"} />
+                        {isEditing ? (
+                            <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Result"} />
+                        ) : (
+                            <span>{displayLabel}</span>
+                        )}
+                        <Icon shape={ICONS.Blank} />
+                    </div>
                     <Icon shape={ICONS.Blank} />
-                </div>
-                <Icon shape={ICONS.Blank} />
-                <ResultFallback nodeId={nodeId} side={"out"} />
-            </ResultTitle>
-            {isClosed ? null : (
-                <ResultSlots>
-                    <SocketIn node={node} socketId={"input"}>
-                        Input
-                    </SocketIn>
-                    <NodeAccordion socketsIn={"w|h|x|y|color"} label={"Canvas"} nodeId={node.id}>
-                        <SocketIn node={node} socketId={"w"} label={"Canvas Width"}>
-                            <LengthInput value={node.payload.w} onCommit={(w) => handleUpdate({ w })} disabled={node.in.w !== null} required min={"0px"} />
+                    <ResultFallback nodeId={nodeId} side={"out"} />
+                </ResultTitle>
+                {isClosed ? null : (
+                    <ResultSlots>
+                        <SocketIn node={node} socketId={"input"}>
+                            Input
                         </SocketIn>
-                        <SocketIn node={node} socketId={"h"} label={"Canvas Height"}>
-                            <LengthInput value={node.payload.h} onCommit={(h) => handleUpdate({ h })} disabled={node.in.h !== null} required min={"0px"} />
-                        </SocketIn>
-                        <SocketIn node={node} socketId={"x"} label={"Origin X"}>
-                            <LengthInput value={node.payload.x} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
-                        </SocketIn>
-                        <SocketIn node={node} socketId={"y"} label={"Origin Y"}>
-                            <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
-                        </SocketIn>
-                        <SocketIn node={node} socketId={"color"} label={"Color"}>
-                            <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
-                        </SocketIn>
-                    </NodeAccordion>
-                </ResultSlots>
-            )}
+                        <NodeAccordion socketsIn={"w|h|x|y|color"} label={"Canvas"} nodeId={node.id}>
+                            <SocketIn node={node} socketId={"w"} label={"Canvas Width"}>
+                                <LengthInput value={node.payload.w} onCommit={(w) => handleUpdate({ w })} disabled={node.in.w !== null} required min={"0px"} />
+                            </SocketIn>
+                            <SocketIn node={node} socketId={"h"} label={"Canvas Height"}>
+                                <LengthInput value={node.payload.h} onCommit={(h) => handleUpdate({ h })} disabled={node.in.h !== null} required min={"0px"} />
+                            </SocketIn>
+                            <SocketIn node={node} socketId={"x"} label={"Origin X"}>
+                                <LengthInput value={node.payload.x} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
+                            </SocketIn>
+                            <SocketIn node={node} socketId={"y"} label={"Origin Y"}>
+                                <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
+                            </SocketIn>
+                            <SocketIn node={node} socketId={"color"} label={"Color"}>
+                                <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
+                            </SocketIn>
+                        </NodeAccordion>
+                    </ResultSlots>
+                )}
+            </div>
         </ResultWrapper>
     );
 };
@@ -231,28 +237,35 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
 
 const ResultWrapper = styled(DragMove.Item)`
     display: grid;
-    background: #333;
-    border: 1px solid #666;
-    width: max-content;
-    min-width: 280px;
-    outline: 1px solid transparent;
-    transform: translate(-50%, 0);
-    anchor-name: attr(data-node type(<custom-ident>));
-    outline-offset: 4px;
-    border-radius: 2px;
-    corner-shape: bevel;
-    padding: 2px;
-    transition: outline-color 0.25s;
-    box-shadow: 0px 4px 8px black;
+    place-content: start center;
+    place-items: start center;
+    width: 0px;
+    height: 0px;
 
-    & hr {
-        border-color: #666;
-        margin-block: 0.5em;
+    &:focus-within > [data-part="body"],
+    & > [data-part="body"][data-state~="selected"] {
+        outline-color: white;
     }
 
-    &:focus-within,
-    &[data-state~="selected"] {
-        outline-color: white;
+    & > [data-part="body"] {
+        display: grid;
+        background: #333;
+        border: 1px solid #666;
+        width: max-content;
+        min-width: 280px;
+        outline: 1px solid transparent;
+        anchor-name: attr(data-node type(<custom-ident>));
+        outline-offset: 4px;
+        border-radius: 2px;
+        corner-shape: bevel;
+        padding: 2px;
+        transition: outline-color 0.25s;
+        box-shadow: 0px 4px 8px black;
+
+        & hr {
+            border-color: #666;
+            margin-block: 0.5em;
+        }
     }
 `;
 

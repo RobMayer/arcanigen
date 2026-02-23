@@ -102,10 +102,15 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
             const { x: panX, y: panY, z: zoom } = paneControls.get();
             const graphX = (e.clientX - rect.left - rect.width / 2) / zoom - panX;
             const graphY = (e.clientY - rect.top - rect.height / 2) / zoom - panY;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const data = JSON.parse(raw);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (data.kind === "node") {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 addNodeByType(NodeTypes.get(data.type), {}, { x: graphX, y: graphY });
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             } else if (data.kind === "subgraph") {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 addNodeByType(NodeTypes.get("custom"), { graphId: data.id, label: data.name }, { x: graphX, y: graphY });
             }
         },
@@ -113,20 +118,32 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
     );
 
     return (
-        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`} data-graph={graphId} controls={paneControls} onDragOver={handleDragOver} onDrop={handleDrop}>
-            <GraphConnectionProvider graphId={graphId}>
-                <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
-                <NodeWrapper>
-                    <DragMove.Provider>
-                        {nodes.map((nodeId) => {
-                            return <GraphNode key={nodeId} nodeId={nodeId} />;
-                        })}
-                    </DragMove.Provider>
-                </NodeWrapper>
-                <Links />
-            </GraphConnectionProvider>
-            <Bounds ref={boundsRef} nodeList={nodes} />
-        </GraphViewPane>
+        <>
+            <GraphViewPane
+                ref={paneRef}
+                boundsRef={boundsRef}
+                minZoom={0.1}
+                maxZoom={2}
+                data-state={`select_${selectionAction}`}
+                data-graph={graphId}
+                controls={paneControls}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+            >
+                <GraphConnectionProvider graphId={graphId}>
+                    <NodeWrapper>
+                        <DragMove.Provider>
+                            {nodes.map((nodeId) => {
+                                return <GraphNode key={nodeId} nodeId={nodeId} />;
+                            })}
+                        </DragMove.Provider>
+                    </NodeWrapper>
+                    <Links />
+                </GraphConnectionProvider>
+                <Bounds ref={boundsRef} nodeList={nodes} />
+            </GraphViewPane>
+            <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
+        </>
     );
 };
 
@@ -342,7 +359,7 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
         </svg>
     );
 })`
-    position: fixed;
+    position: absolute;
     pointer-events: none;
     z-index: 1;
     overflow: visible;

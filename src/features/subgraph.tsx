@@ -596,7 +596,7 @@ const EditorLayout = styled.div`
     }
 
     & > div[data-area="graphview"] {
-        contain: paint;
+        position: relative;
         border: 1px solid var(--flavour);
     }
 
