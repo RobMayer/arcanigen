@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { FastContextMember } from "../../util/hooks/useFastContext";
 import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
@@ -192,6 +193,7 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
     removeNode(graphId: string, nodeId: string): void {
         const node = this.refs.nodes.ref.current[graphId]?.[nodeId];
         if (!node) return;
+        if (node.type === "result") return;
 
         // Fire onDelete hook BEFORE removal
         const nodeType = NodeTypes.get(node.type);
@@ -277,6 +279,49 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
                 this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, scope, customNodeId);
             }
         }
+    }
+
+    cloneNode(graphId: string, nodeId: string, position?: XY): void {
+        const node = this.refs.nodes.ref.current[graphId]?.[nodeId];
+        if (!node) return;
+        if (node.type === "result") return;
+
+        const nodeType = NodeTypes.get(node.type);
+        const cloneFn = (nodeType as NodeTypes.Any).clone as ((node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) | undefined;
+        let cloned: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
+        if (cloneFn) {
+            cloned = cloneFn(node);
+        } else {
+            cloned = structuredClone(node);
+            cloned.id = nanoid();
+            for (const key of Object.keys(cloned.in)) {
+                cloned.in[key] = null;
+            }
+            for (const key of Object.keys(cloned.out)) {
+                cloned.out[key] = [];
+            }
+        }
+
+        const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
+        const { nodes } = ArcaneGraph.importNodes(oldGraph, [cloned]);
+        this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [graphId]: nodes };
+        this.dirty.add("nodes");
+        this.dirtyNodeGraphs.add(graphId);
+
+        if (nodeType.onCreate) {
+            const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, graphId: string, ctx: NodeTypes.MethodContext) => void;
+            onCreate(cloned, graphId, this);
+        }
+
+        const origPos = this.refs.positions.ref.current[graphId]?.[nodeId] ?? { x: 0, y: 0 };
+        this.refs.positions.ref.current = {
+            ...this.refs.positions.ref.current,
+            [graphId]: {
+                ...this.refs.positions.ref.current[graphId],
+                [cloned.id]: position ?? { x: origPos.x + 40, y: origPos.y + 40 },
+            },
+        };
+        this.dirty.add("positions");
     }
 
     addNodeByType(graphId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): void {

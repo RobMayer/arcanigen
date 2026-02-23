@@ -556,6 +556,7 @@ export namespace NodeTypes {
         onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], graphId: string, ctx: MethodContext) => void;
         onRefreshRequest?: (node: NodeDefinitions.BuiltNodeOf<T, D>, socketId: string, side: "in" | "out", reason: RefreshReason, graphId: string, ctx: MethodContext) => void;
         getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => SocketTypes.SocketRule;
+        clone?: (node: NodeDefinitions.BuiltNodeOf<T, D>) => NodeDefinitions.BuiltNodeOf<T, D>;
     }
 
     export const get = <K extends Key>(key: K): (typeof Registries.NODETYPES)[K] => {

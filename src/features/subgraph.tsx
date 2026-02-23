@@ -13,6 +13,7 @@ import { Session } from "../state/session";
 import { Icon, ICONS } from "../components/Icon";
 import { ActionButton } from "../components/buttons/ActionButton";
 import { nanoid } from "nanoid";
+import { downloadBlob } from "../util/fileIO";
 
 type SubgraphEditorContextValue = {
     open: (graphId: string) => void;
@@ -105,7 +106,7 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
             </Modal.Title>
             <EditorLayout ref={layoutRef} style={style} data-state={isDrawerOpen ? "drawer-open" : undefined}>
                 <div data-area={"toolbar"}>
-                    <Toolbar />
+                    <Toolbar graphId={graphId} />
                 </div>
                 <div data-area={"graphview"}>
                     <GraphView graphId={graphId} paneControls={paneControls} />
@@ -135,17 +136,35 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
     );
 };
 
-const Toolbar = () => {
+const Toolbar = ({ graphId }: { graphId: string }) => {
     const [marqueeMode, setMarqueeMode] = Session.useMarqueeMode();
+    const io = Project.useProjectIO();
+    const meta = Project.useMeta();
+
+    const handleSave = useCallback(() => {
+        const data = io.saveSubgraph(graphId);
+        const json = JSON.stringify(data);
+        const name = meta[graphId]?.name || "custom-node";
+        downloadBlob(new Blob([json], { type: "application/json" }), `${name}.json`);
+    }, [io, graphId, meta]);
 
     return (
         <ToolbarWrapper>
+            <ActionButton onClick={handleSave}>Export Custom Node</ActionButton>
+            <Sep />
             <ActionButton onClick={() => setMarqueeMode((p) => (p === "contain" ? "intersect" : "contain"))} tooltip={`Selection Mode: ${marqueeMode === "contain" ? "Contain" : "Intersect"}`}>
                 <Icon shape={marqueeMode === "contain" ? ICONS.SelectBounds.Contain : ICONS.SelectBounds.Intersect} />
             </ActionButton>
         </ToolbarWrapper>
     );
 };
+
+const Sep = styled.div`
+    align-self: stretch;
+    width: 1px;
+    border-left: 1px solid #666;
+    margin-inline: 6px;
+`;
 
 /* ==================== Unified Interface List ==================== */
 

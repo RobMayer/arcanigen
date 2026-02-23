@@ -63,7 +63,7 @@
     - [ ] Banded Arc
     - [ ] Banded Spiral
     - [ ] Banded Line
-    - [ ] Merged Knot (like knot but without overlap - complex as fuck)
+    - [x] Merged Knot (like knot but without overlap - complex as fuck)
 - [ ] Figure out Random Seed mechanism
 - [ ] allow subgraphs to have a custom icon or an icon selector, I guess - maybe?
 - [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe

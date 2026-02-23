@@ -1,14 +1,19 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../components/Icon";
+import { Icon, ICONS, NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { ReactNode, useCallback } from "react";
+import { FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import styled from "styled-components";
 
-import { TypicalNode } from "../../features/nodeview/node";
+import { DragMove } from "../../components/wrappers/DragMove";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { LengthInput } from "../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../betterTypes";
 import { Project } from "../../state/project";
+import { Session } from "../../state/session";
+import { useGraphId } from "../../state/graphId";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
+import { TextInput } from "../../components/inputs/TextInput";
+import { ActionButton } from "../../components/buttons/ActionButton";
 
 export type ResultDefinition = {
     outputs: never;
@@ -56,36 +61,130 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>,
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>) => {
-            methods.update(v);
+    const nodeId = node.id;
+    const { update: updateNode } = methods;
+    const graphId = useGraphId();
+    const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
+    const handleRef = useRef<HTMLDivElement>(null);
+    const selectionRef = Session.useSelectionRef();
+    const positionsRef = Project.usePositionsRef();
+    const positionMethods = Project.usePositionMethods();
+
+    const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
+    const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${nodeId}]`);
+    const [isEditing, setIsEditing] = useState(false);
+
+    const handleDragDelta = useCallback(
+        (delta: { x: number; y: number }) => {
+            if (!selectionRef.current.has(`node_${nodeId}`)) {
+                return;
+            }
+            const compiled: { [key: string]: { x: number; y: number } } = {};
+            for (const id of selectionRef.current) {
+                if (id.startsWith("node_")) {
+                    const nId = id.substring(5);
+                    if (positionsRef.current["root"]?.[nId]) {
+                        compiled[nId] = { x: positionsRef.current["root"][nId].x + delta.x, y: positionsRef.current["root"][nId].y + delta.y };
+                    }
+                }
+            }
+            for (const [nId, toSet] of Object.entries(compiled)) {
+                const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+                element?.setAttribute("data-x", `${toSet.x}`);
+                element?.setAttribute("data-y", `${toSet.y}`);
+            }
+            positionMethods.setMany.passive(compiled);
         },
-        [methods],
+        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
     );
 
+    const handleFinish = useCallback(
+        (pos: { x: number; y: number }) => {
+            if (!selectionRef.current.has(`node_${nodeId}`)) {
+                setPosition(pos);
+                return;
+            }
+            positionMethods.setMany.commit();
+        },
+        [nodeId, positionMethods.setMany, selectionRef, setPosition],
+    );
+
+    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
+
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>) => {
+            updateNode(v);
+        },
+        [updateNode],
+    );
+
+    const toggle = useCallback(() => {
+        setIsClosed((p) => (p ? undefined : true));
+    }, [setIsClosed]);
+
+    const startEdit = useCallback(() => {
+        setIsEditing(true);
+    }, []);
+
+    const finishEdit = useCallback(
+        (value: string) => {
+            handleUpdate({ label: value });
+        },
+        [handleUpdate],
+    );
+
+    const onKeyPress = useCallback((evt: KeyboardEvent<HTMLInputElement>) => {
+        if (evt.key === "Escape" || evt.key === "Enter") {
+            setIsEditing(false);
+        }
+    }, []);
+
+    const onBlur = useCallback((_evt: FocusEvent<HTMLInputElement>) => {
+        setIsEditing(false);
+    }, []);
+
+    const displayLabel = node.payload.label === "" ? "Result" : node.payload.label;
+
     return (
-        <TypicalNode node={node} methods={methods}>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
-            <NodeAccordion socketsIn={"w|h|x|y|color"} label={"Canvas"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"w"} label={"Canvas Width"}>
-                    <LengthInput value={node.payload.w} onCommit={(w) => handleUpdate({ w })} disabled={node.in.w !== null} required min={"0px"} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"h"} label={"Canvas Height"}>
-                    <LengthInput value={node.payload.h} onCommit={(h) => handleUpdate({ h })} disabled={node.in.h !== null} required min={"0px"} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"x"} label={"Origin X"}>
-                    <LengthInput value={node.payload.x} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"y"} label={"Origin Y"}>
-                    <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"color"} label={"Color"}>
-                    <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
-                </SocketIn>
-            </NodeAccordion>
-        </TypicalNode>
+        <ResultWrapper position={localPosition} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+            <ResultTitle>
+                <ResultFallback nodeId={nodeId} side={"in"} />
+                <ActionButton.Lite onClick={toggle} flavour={NodeTypes.CATEGORY_FLAVOURS.Result}>
+                    <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
+                </ActionButton.Lite>
+                <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                    <Icon shape={NODE_ICONS.result} color={"var(--icon-flavour)"} />
+                    {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Result"} /> : <span>{displayLabel}</span>}
+                    <Icon shape={ICONS.Blank} />
+                </div>
+                <Icon shape={ICONS.Blank} />
+                <ResultFallback nodeId={nodeId} side={"out"} />
+            </ResultTitle>
+            {isClosed ? null : (
+                <ResultSlots>
+                    <SocketIn node={node} socketId={"input"}>
+                        Input
+                    </SocketIn>
+                    <NodeAccordion socketsIn={"w|h|x|y|color"} label={"Canvas"} nodeId={node.id}>
+                        <SocketIn node={node} socketId={"w"} label={"Canvas Width"}>
+                            <LengthInput value={node.payload.w} onCommit={(w) => handleUpdate({ w })} disabled={node.in.w !== null} required min={"0px"} />
+                        </SocketIn>
+                        <SocketIn node={node} socketId={"h"} label={"Canvas Height"}>
+                            <LengthInput value={node.payload.h} onCommit={(h) => handleUpdate({ h })} disabled={node.in.h !== null} required min={"0px"} />
+                        </SocketIn>
+                        <SocketIn node={node} socketId={"x"} label={"Origin X"}>
+                            <LengthInput value={node.payload.x} onCommit={(x) => handleUpdate({ x })} disabled={node.in.x !== null} required min={"0px"} />
+                        </SocketIn>
+                        <SocketIn node={node} socketId={"y"} label={"Origin Y"}>
+                            <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
+                        </SocketIn>
+                        <SocketIn node={node} socketId={"color"} label={"Color"}>
+                            <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
+                        </SocketIn>
+                    </NodeAccordion>
+                </ResultSlots>
+            )}
+        </ResultWrapper>
     );
 };
 
@@ -127,3 +226,90 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     Controls,
     getSocketType,
 };
+
+// ─── Styled Components ──────────────────────────────────────────────────────
+
+const ResultWrapper = styled(DragMove.Item)`
+    display: grid;
+    background: #333;
+    border: 1px solid #666;
+    width: max-content;
+    min-width: 280px;
+    outline: 1px solid transparent;
+    transform: translate(-50%, 0);
+    anchor-name: attr(data-node type(<custom-ident>));
+    outline-offset: 4px;
+    border-radius: 2px;
+    corner-shape: bevel;
+    padding: 2px;
+    transition: outline-color 0.25s;
+    box-shadow: 0px 4px 8px black;
+
+    & hr {
+        border-color: #666;
+        margin-block: 0.5em;
+    }
+
+    &:focus-within,
+    &[data-state~="selected"] {
+        outline-color: white;
+    }
+`;
+
+const ResultTitle = styled.div`
+    display: flex;
+    align-items: center;
+    padding: 0.125em;
+    gap: 0.25em;
+    border: 1px solid #666;
+    margin: 2px;
+
+    & > button {
+        color: oklch(from var(--flavour) 0.8 calc(c + 0.01) h);
+    }
+
+    & > div[data-part="handle"] {
+        & > svg {
+            color: oklch(from var(--flavour) calc(l + 0.1) c h);
+        }
+        cursor: move;
+        display: flex;
+        align-self: stretch;
+        flex: 1 1 0;
+        align-items: center;
+        text-align: center;
+        & > input {
+            flex: 1 1 0;
+            width: 0;
+            min-width: 0;
+            text-align: inherit;
+            font-weight: bold;
+        }
+        & > span {
+            font-size: 16pt;
+            font-variant: small-caps;
+            flex: 1 1 0;
+            border: 1px solid transparent;
+            color: white;
+        }
+    }
+
+    background-color: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
+    border-color: oklch(from var(--flavour) calc(l - 0.05) c h);
+`;
+
+const ResultSlots = styled.div`
+    display: grid;
+    gap: 4px;
+    margin: 8px;
+`;
+
+const ResultFallback = styled(({ nodeId, className, side }: { nodeId: string; className?: string; side: "in" | "out" }) => {
+    const style = useMemo(() => {
+        return { anchorName: `--nodeFB_${nodeId}_${side}` };
+    }, [nodeId, side]);
+
+    return <div className={className} style={style} />;
+})`
+    background: blue;
+`;

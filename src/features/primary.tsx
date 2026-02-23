@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { Project } from "../state/project";
-import { Ref, RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { DragEvent as ReactDragEvent, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DragPane, DragPaneControls } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
@@ -9,6 +9,8 @@ import { GraphConnectionProvider } from "./nodeview/socket";
 import { GraphNode } from "./nodeview/node";
 import { GraphIdContext } from "../state/graphId";
 import { GraphLink } from "./nodeview/link";
+import { NODE_DRAG_MIME } from "./nodedrawer";
+import { NodeTypes } from "../definitions/betterTypes";
 
 export const GraphView = ({ graphId, paneControls }: { graphId: string; paneControls?: DragPaneControls }) => {
     return (
@@ -53,8 +55,65 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
 
     const [selectionAction, setSelectionAction] = useState<SelectionAction>("set");
 
+    const { addNodeByType, removeNode } = Project.useMethods();
+    const selectionRef = Session.useSelectionRef();
+    const nodesRef = Project.useNodesRef();
+
+    useEffect(() => {
+        const onDeleteKey = (evt: KeyboardEvent) => {
+            if (evt.key !== "Delete") return;
+            const active = document.activeElement;
+            if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || (active as HTMLElement).isContentEditable)) return;
+
+            const toDelete: string[] = [];
+            for (const id of selectionRef.current) {
+                if (!id.startsWith("node_")) continue;
+                const nodeId = id.substring(5);
+                const node = nodesRef.current[graphId]?.[nodeId];
+                if (node && node.type !== "result") {
+                    toDelete.push(nodeId);
+                }
+            }
+            if (toDelete.length === 0) return;
+            evt.preventDefault();
+            for (const nodeId of toDelete) {
+                removeNode(nodeId);
+            }
+        };
+
+        document.addEventListener("keydown", onDeleteKey);
+        return () => document.removeEventListener("keydown", onDeleteKey);
+    }, [removeNode, selectionRef, nodesRef, graphId]);
+
+    const handleDragOver = useCallback((e: ReactDragEvent) => {
+        if (!e.dataTransfer.types.includes(NODE_DRAG_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+    }, []);
+
+    const handleDrop = useCallback(
+        (e: ReactDragEvent) => {
+            const raw = e.dataTransfer.getData(NODE_DRAG_MIME);
+            if (!raw) return;
+            e.preventDefault();
+            const paneEl = paneRef.current;
+            if (!paneEl || !paneControls) return;
+            const rect = paneEl.getBoundingClientRect();
+            const { x: panX, y: panY, z: zoom } = paneControls.get();
+            const graphX = (e.clientX - rect.left - rect.width / 2) / zoom - panX;
+            const graphY = (e.clientY - rect.top - rect.height / 2) / zoom - panY;
+            const data = JSON.parse(raw);
+            if (data.kind === "node") {
+                addNodeByType(NodeTypes.get(data.type), {}, { x: graphX, y: graphY });
+            } else if (data.kind === "subgraph") {
+                addNodeByType(NodeTypes.get("custom"), { graphId: data.id, label: data.name }, { x: graphX, y: graphY });
+            }
+        },
+        [addNodeByType, paneControls],
+    );
+
     return (
-        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`} data-graph={graphId} controls={paneControls}>
+        <GraphViewPane ref={paneRef} boundsRef={boundsRef} minZoom={0.1} maxZoom={2} data-state={`select_${selectionAction}`} data-graph={graphId} controls={paneControls} onDragOver={handleDragOver} onDrop={handleDrop}>
             <GraphConnectionProvider graphId={graphId}>
                 <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
                 <NodeWrapper>

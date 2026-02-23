@@ -196,7 +196,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
 
 const StopEntry = styled.div`
     display: grid;
-    gap: 0px 4px;
+    gap: 2px 4px;
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
     grid-template-areas:

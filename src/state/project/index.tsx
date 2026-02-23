@@ -150,6 +150,7 @@ export namespace Project {
                     ctx.mc.run(() => ctx.mc.addNodeByType(graphId, nodeType, params, position)),
                 alterNode: (id: ArcaneGraph.NodeId, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) =>
                     ctx.mc.run(() => ctx.mc.alterNode(graphId, id, fn)),
+                cloneNode: (nodeId: string) => ctx.mc.run(() => ctx.mc.cloneNode(graphId, nodeId)),
             }),
             [ctx.mc, graphId],
         );

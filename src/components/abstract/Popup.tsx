@@ -367,6 +367,11 @@ export namespace AbstractPopup {
         const openPopup = useCallback(
             (x: number, y: number) => {
                 setLocation({ x, y });
+                if (anchorRef.current) {
+                    anchorRef.current.style.left = `${x}px`;
+                    anchorRef.current.style.top = `${y}px`;
+                    anchorRef.current.showPopover();
+                }
                 onPopupToggleRef.current?.(true);
                 onOpenRef.current?.();
                 popoverHandle.current?.open();
@@ -376,12 +381,14 @@ export namespace AbstractPopup {
 
         const closePopup = useCallback(() => {
             popoverHandle.current?.close();
+            anchorRef.current?.hidePopover();
             onPopupToggleRef.current?.(false);
             onCloseRef.current?.();
             setLocation(null);
         }, [setLocation]);
 
         const handleCancel = useCallback(() => {
+            anchorRef.current?.hidePopover();
             onPopupToggleRef.current?.(false);
             onCloseRef.current?.();
             setLocation(null);
@@ -423,7 +430,7 @@ export namespace AbstractPopup {
 
         return (
             <ContextController state={state} controls={controls} methods={popupMethods}>
-                <PositionAnchor style={anchorStyle} ref={anchorRef} />
+                <PositionAnchor style={anchorStyle} ref={anchorRef} popover="manual" />
                 <BaseWithFallback trapFocus={trapFocus} handle={popoverHandle} backdrop={"click"} escape={"close"} onCancel={handleCancel} style={contentsStyle} {...props} />
             </ContextController>
         );
@@ -1170,6 +1177,7 @@ const PositionAnchor = styled.div`
     width: 1px;
     height: 1px;
     pointer-events: none;
+    background: transparent;
 `;
 
 //#endregion

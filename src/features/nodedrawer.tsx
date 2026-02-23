@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { Accordion } from "../components/containers/Accordion";
 import { GraphIdContext } from "../state/graphId";
 import { Icon, ICONS } from "../components/Icon";
-import { Dispatch, MouseEvent, SetStateAction, useCallback, useMemo, useState } from "react";
+import { Dispatch, DragEvent, MouseEvent, SetStateAction, useCallback, useMemo, useState } from "react";
 import { Project } from "../state/project";
 import { DragPaneControls } from "../components/wrappers/DragPane";
 import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
@@ -15,6 +15,8 @@ import { ContextPopup } from "../components/popups/ContextPopup";
 import { ActionButton } from "../components/buttons/ActionButton";
 import { RadioButton } from "../components/buttons/RadioButton";
 import { downloadBlob } from "../util/fileIO";
+
+export const NODE_DRAG_MIME = "application/x-nodegraph-drawer-item";
 
 const LocalAccordion = styled(Accordion)`
     padding: 0.25em;
@@ -312,6 +314,15 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
         contextControls.close();
     }, [menuTarget, io, contextControls]);
 
+    const handleDragStart = useCallback((e: DragEvent<HTMLElement>, item: DrawerItem) => {
+        if (item.kind === "newCustom") return;
+        e.dataTransfer.effectAllowed = "copy";
+        e.dataTransfer.setData(
+            NODE_DRAG_MIME,
+            JSON.stringify(item.kind === "node" ? { kind: "node", type: item.nodeType.type } : { kind: "subgraph", id: item.id, name: item.name }),
+        );
+    }, []);
+
     const hasUsers = menuTarget?.kind === "subgraph" && (users[menuTarget.id] ?? []).length > 0;
 
     return (
@@ -342,16 +353,25 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
                             );
                         case "node":
                             return (
-                                <NodeCard key={item.nodeType.type} nodeType={item.nodeType} handleAdd={addNode} onContextMenu={(e) => openContextMenu(e, { kind: "node", nodeType: item.nodeType })} />
+                                <NodeCard
+                                    key={item.nodeType.type}
+                                    nodeType={item.nodeType}
+                                    handleAdd={addNode}
+                                    onContextMenu={(e) => openContextMenu(e, { kind: "node", nodeType: item.nodeType })}
+                                    onDragStart={(e) => handleDragStart(e, item)}
+                                />
                             );
-                        case "subgraph":
+                        case "subgraph": {
+                            const isForbidden = forbidden.has(item.id);
                             return (
                                 <SubgraphCard
                                     key={item.id}
-                                    disabled={forbidden.has(item.id)}
+                                    disabled={isForbidden}
                                     onClick={() => addSubgraph(item.id, item.name)}
                                     onContextMenu={(e) => openContextMenu(e, { kind: "subgraph", id: item.id, name: item.name })}
                                     data-flavour={NodeTypes.CATEGORY_FLAVOURS.Custom}
+                                    draggable={!isForbidden}
+                                    onDragStart={(e) => handleDragStart(e, item)}
                                 >
                                     <div data-part={"title"} title={item.name || item.id}>
                                         {item.name || item.id}
@@ -361,6 +381,7 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
                                     </div>
                                 </SubgraphCard>
                             );
+                        }
                     }
                 })}
             </div>
@@ -419,18 +440,20 @@ const NodeCard = styled(
         disabled,
         handleAdd,
         onContextMenu,
+        onDragStart,
     }: {
         nodeType: NodeTypes.Any;
         className?: string;
         disabled?: boolean;
         handleAdd: (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>) => void;
         onContextMenu?: (e: MouseEvent<HTMLElement>) => void;
+        onDragStart?: (e: DragEvent<HTMLElement>) => void;
     }) => {
         const doAdd = useCallback(() => {
             handleAdd(nodeType, {});
         }, [nodeType, handleAdd]);
         return (
-            <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu}>
+            <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu} draggable onDragStart={onDragStart}>
                 <div data-part={"title"} title={nodeType.displayName}>
                     {nodeType.displayName}
                 </div>

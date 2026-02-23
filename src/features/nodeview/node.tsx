@@ -1,4 +1,4 @@
-import { useRef, useCallback, Ref, useState, KeyboardEvent, FocusEvent, useMemo, ReactNode } from "react";
+import { useRef, useCallback, Ref, useState, KeyboardEvent, FocusEvent, useMemo, ReactNode, MouseEvent } from "react";
 import styled from "styled-components";
 import { DragMove } from "../../components/wrappers/DragMove";
 import { Project } from "../../state/project";
@@ -8,6 +8,7 @@ import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { ContextPopup } from "../../components/popups/ContextPopup";
 
 export const GraphNode = ({ nodeId }: { nodeId: string }) => {
     const graphId = useGraphId();
@@ -22,6 +23,7 @@ export const TypicalNode = styled(
     ({ className, node, methods, children }: { methods: ReturnType<typeof Project.useNode>[1]; node: NodeDefinitions.NodeFor<NodeDefinitions.Any>; className?: string; children?: ReactNode }) => {
         const nodeId = node.id;
         const { update: updateNode, remove: removeNode } = methods;
+        const { cloneNode } = Project.useMethods();
         const graphId = useGraphId();
         const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
         const handleRef = useRef<HTMLDivElement>(null);
@@ -68,9 +70,21 @@ export const TypicalNode = styled(
             [updateNode],
         );
 
+        const handleClone = useCallback(() => {
+            cloneNode(nodeId);
+        }, [cloneNode, nodeId]);
+
         return (
             <DragMove.Item position={localPosition} className={className} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
-                <NodeTitle handleRef={handleRef} node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>} isOpen={!isClosed} toggleOpen={toggle} setLabel={setLabel} onDelete={removeNode} />
+                <NodeTitle
+                    handleRef={handleRef}
+                    node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
+                    isOpen={!isClosed}
+                    toggleOpen={toggle}
+                    setLabel={setLabel}
+                    onDelete={removeNode}
+                    onClone={handleClone}
+                />
                 {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
             </DragMove.Item>
         );
@@ -117,6 +131,7 @@ const NodeTitle = styled(
         toggleOpen,
         setLabel,
         onDelete,
+        onClone,
     }: {
         className?: string;
         handleRef: Ref<HTMLDivElement>;
@@ -125,8 +140,10 @@ const NodeTitle = styled(
         toggleOpen: () => void;
         setLabel: (v: string) => void;
         onDelete: () => void;
+        onClone: () => void;
     }) => {
         const [isEditing, setIsEditing] = useState<boolean>(false);
+        const contextControls = ContextPopup.useControls();
 
         const nodeType = useMemo(() => {
             return NodeTypes.get(node.type);
@@ -159,6 +176,25 @@ const NodeTitle = styled(
             setIsEditing(false);
         }, []);
 
+        const handleContextMenu = useCallback(
+            (evt: MouseEvent<HTMLDivElement>) => {
+                evt.preventDefault();
+                const zoom = (evt.target as HTMLElement).currentCSSZoom ?? 1;
+                contextControls.openAt(evt.clientX / zoom, evt.clientY / zoom);
+            },
+            [contextControls],
+        );
+
+        const handleCloneAndClose = useCallback(() => {
+            onClone();
+            contextControls.close();
+        }, [onClone, contextControls]);
+
+        const handleDeleteAndClose = useCallback(() => {
+            onDelete();
+            contextControls.close();
+        }, [onDelete, contextControls]);
+
         return (
             <div className={className} data-nodecategory={nodeType.category} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
                 <NodeFallback nodeId={node.id} side={"in"} />
@@ -166,7 +202,7 @@ const NodeTitle = styled(
                     <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
                 </ActionButton.Lite>
 
-                <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit} onContextMenu={handleContextMenu}>
                     {nodeType.iconNode}
                     {isEditing ? (
                         <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={nodeType.defaultLabel} />
@@ -175,14 +211,16 @@ const NodeTitle = styled(
                     )}
                     <Icon shape={ICONS.Blank} />
                 </div>
-                {node.type === "result" ? (
-                    <Icon shape={ICONS.Blank} />
-                ) : (
-                    <ActionButton.Lite onClick={onDelete} flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
-                        <Icon shape={ICONS.Close} />
-                    </ActionButton.Lite>
-                )}
+                <ActionButton.Lite onClick={onDelete} flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
+                    <Icon shape={ICONS.Close} />
+                </ActionButton.Lite>
                 <NodeFallback nodeId={node.id} side={"out"} />
+                <ContextPopup controls={contextControls}>
+                    <ActionButton.Option onClick={handleCloneAndClose}>Clone</ActionButton.Option>
+                    <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
+                        Delete
+                    </ActionButton.Option>
+                </ContextPopup>
             </div>
         );
     },
