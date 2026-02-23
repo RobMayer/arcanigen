@@ -93,6 +93,7 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
 
     const handleDrop = useCallback(
         (e: ReactDragEvent) => {
+            if (e.nativeEvent.handled) return;
             const raw = e.dataTransfer.getData(NODE_DRAG_MIME);
             if (!raw) return;
             e.preventDefault();

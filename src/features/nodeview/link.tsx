@@ -1,10 +1,13 @@
-import { useMemo, CSSProperties, useRef, useCallback, KeyboardEvent } from "react";
+import { useMemo, CSSProperties, useRef, useCallback, KeyboardEvent, useState, DragEvent } from "react";
 import styled, { keyframes } from "styled-components";
 import { Project } from "../../state/project";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { Icon, ICONS } from "../../components/Icon";
-import { SocketTypes } from "../../definitions/betterTypes";
+import { NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { NODE_DRAG_MIME, NODE_TYPE_MIME_PREFIX } from "../nodedrawer";
+import { useGraphId } from "../../state/graphId";
+import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 
 const keyframesMarch = keyframes`
 to {
@@ -14,7 +17,10 @@ to {
 
 export const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
     const link = Project.useLink(linkId);
-    const { removeLinks } = Project.useMethods();
+    const { removeLinks, interjectNode } = Project.useMethods();
+    const graphId = useGraphId();
+    const mc = Project.useMC();
+    const [, paneControls] = useDragPaneInternal();
 
     const style = useMemo(() => {
         if (!link) {
@@ -69,6 +75,64 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         [deleteMe],
     );
 
+    const [isDropping, setIsDropping] = useState(false);
+
+    const handleDragEnter = useCallback(
+        (e: DragEvent) => {
+            if (!e.dataTransfer.types.includes(NODE_DRAG_MIME)) return;
+            if (!link) return;
+            const typeKey = e.dataTransfer.types.find((t) => t.startsWith(NODE_TYPE_MIME_PREFIX));
+            if (!typeKey) return;
+            const nodeTypeKey = typeKey.slice((NODE_TYPE_MIME_PREFIX as string).length) as NodeTypes.Key;
+            const nodeType = NodeTypes.get(nodeTypeKey);
+            if (!nodeType.canInterject?.(link, graphId, mc)) return;
+            setIsDropping(true);
+        },
+        [link, graphId, mc],
+    );
+
+    const handleDragLeave = useCallback(() => {
+        setIsDropping(false);
+    }, []);
+
+    const handleDrop = useCallback(
+        (e: DragEvent) => {
+            setIsDropping(false);
+            const raw = e.dataTransfer.getData(NODE_DRAG_MIME);
+            if (!raw) return;
+
+            const paneEl = ref.current?.closest<HTMLElement>("[data-graph]");
+            let position: { x: number; y: number } | undefined;
+            if (paneEl) {
+                const rect = paneEl.getBoundingClientRect();
+                const { x: panX, y: panY, z: zoom } = paneControls.get();
+                position = {
+                    x: (e.clientX - rect.left - rect.width / 2) / zoom - panX,
+                    y: (e.clientY - rect.top - rect.height / 2) / zoom - panY,
+                };
+            }
+
+            let did = false;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const data = JSON.parse(raw);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            if (data.kind === "node") {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+                did = interjectNode(linkId, NodeTypes.get(data.type), {}, position);
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            } else if (data.kind === "subgraph") {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                did = interjectNode(linkId, NodeTypes.get("custom"), { graphId: data.id, label: data.name }, position);
+            }
+
+            if (did) {
+                e.preventDefault();
+                e.nativeEvent.handled = "active";
+            }
+        },
+        [interjectNode, linkId, paneControls],
+    );
+
     if (!link) {
         return null;
     }
@@ -83,6 +147,10 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 data-linktype={link.type}
                 data-typeany={link.type === SocketTypes.toCSS(SocketTypes.ANY) ? "" : undefined}
                 onKeyDown={handleKeyDown}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                data-state={isDropping ? "dropping" : undefined}
             >
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
@@ -213,6 +281,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         }
     }
 
+    &[data-state~="dropping"] > svg > g > path[data-part="select"],
     &:focus-within > svg > g > path[data-part="select"] {
         stroke: #fff6;
     }

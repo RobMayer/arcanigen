@@ -350,6 +350,42 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("positions");
     }
 
+    interjectNode(graphId: string, linkId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): boolean {
+        const link = this.getLink(graphId, linkId);
+        if (!link) return false;
+
+        if (!nodeType.canInterject || !nodeType.onInterject) return false;
+        if (!nodeType.canInterject(link, graphId, this)) return false;
+
+        // Create the new node
+        const newNode = nodeType.create(params as Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>);
+        const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
+        const { nodes } = ArcaneGraph.importNodes(oldGraph, [newNode]);
+        this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [graphId]: nodes };
+        this.dirty.add("nodes");
+        this.dirtyNodeGraphs.add(graphId);
+
+        if (nodeType.onCreate) {
+            const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, graphId: string, ctx: NodeTypes.MethodContext) => void;
+            onCreate(newNode, graphId, this);
+        }
+
+        // Set position
+        this.refs.positions.ref.current = {
+            ...this.refs.positions.ref.current,
+            [graphId]: {
+                ...this.refs.positions.ref.current[graphId],
+                [newNode.id]: position ?? { x: 0, y: 0 },
+            },
+        };
+        this.dirty.add("positions");
+
+        // Let the node type handle the wiring
+        const onInterject = nodeType.onInterject as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext) => void;
+        onInterject(newNode, link, graphId, this);
+        return true;
+    }
+
     alterNode(graphId: string, nodeId: string, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>): void {
         const node = this.refs.nodes.ref.current[graphId]?.[nodeId];
         if (!node) return;

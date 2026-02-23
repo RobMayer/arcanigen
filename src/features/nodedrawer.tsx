@@ -17,6 +17,7 @@ import { RadioButton } from "../components/buttons/RadioButton";
 import { downloadBlob } from "../util/fileIO";
 
 export const NODE_DRAG_MIME = "application/x-nodegraph-drawer-item";
+export const NODE_TYPE_MIME_PREFIX = "application/x-nodegraph-type:";
 
 const LocalAccordion = styled(Accordion)`
     padding: 0.25em;
@@ -321,6 +322,7 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
             NODE_DRAG_MIME,
             JSON.stringify(item.kind === "node" ? { kind: "node", type: item.nodeType.type } : { kind: "subgraph", id: item.id, name: item.name }),
         );
+        e.dataTransfer.setData(`${NODE_TYPE_MIME_PREFIX}${item.kind === "node" ? item.nodeType.type : "custom"}`, "");
     }, []);
 
     const hasUsers = menuTarget?.kind === "subgraph" && (users[menuTarget.id] ?? []).length > 0;

@@ -12,6 +12,7 @@ import { ActionButton } from "../../../components/buttons/ActionButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 
 export type LayerDefinition = {
     inputs: {
@@ -467,6 +468,28 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<LayerDefinition>, socketId
     return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
+const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
+    const fromNode = ctx.getNode(graphId, link.fromNode);
+    const toNode = ctx.getNode(graphId, link.toNode);
+    if (!fromNode || !toNode) return false;
+
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
+    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
+    const layerIn: SocketTypes.SocketRule = { types: ["layer", "shape"], mode: "or" };
+    const layerOut: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+
+    return SocketTypes.canFlow(sourceOut, layerIn) && SocketTypes.canFlow(layerOut, destIn);
+};
+
+const onInterject = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const firstLayerSocket = node.payload.layers[0]?.socket;
+    if (!firstLayerSocket) return;
+
+    ctx.removeLinks(graphId, link.id);
+    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, firstLayerSocket, link.type);
+    ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket, "shape");
+};
+
 export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     type: "layers",
     displayName: "Layers",
@@ -479,5 +502,7 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     evaluate,
     Controls,
     onConnect,
+    canInterject,
+    onInterject,
     getSocketType,
 };

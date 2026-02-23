@@ -534,6 +534,7 @@ export namespace NodeTypes {
         setInterfaces(graphId: string, interfaces: InterfaceMember[]): void;
         setUsers(graphId: string, users: { node: string; scope: string }[]): void;
         // High-level operations (fire hooks, rebuild cache)
+        connect(graphId: string, fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string): void;
         removeLinks(graphId: string, ...linkIds: string[]): void;
         requestRefresh(graphId: string, nodeId: string, socketId: string, side: "in" | "out", reason: RefreshReason): void;
     }
@@ -555,6 +556,8 @@ export namespace NodeTypes {
         onDisconnect?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: MethodContext) => void;
         onPayloadChange?: (node: NodeDefinitions.NodeFor<D>, prev: D["payload"], graphId: string, ctx: MethodContext) => void;
         onRefreshRequest?: (node: NodeDefinitions.BuiltNodeOf<T, D>, socketId: string, side: "in" | "out", reason: RefreshReason, graphId: string, ctx: MethodContext) => void;
+        canInterject?: (link: ArcaneGraph.Link, graphId: string, ctx: MethodContext) => boolean;
+        onInterject?: (node: NodeDefinitions.BuiltNodeOf<T, D>, link: ArcaneGraph.Link, graphId: string, ctx: MethodContext) => void;
         getSocketType: (node: NodeDefinitions.NodeFor<D>, socketId: string, side: "in" | "out", ctx: MethodContext) => SocketTypes.SocketRule;
         clone?: (node: NodeDefinitions.BuiltNodeOf<T, D>) => NodeDefinitions.BuiltNodeOf<T, D>;
     }

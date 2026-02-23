@@ -151,6 +151,11 @@ export namespace Project {
                 alterNode: (id: ArcaneGraph.NodeId, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) =>
                     ctx.mc.run(() => ctx.mc.alterNode(graphId, id, fn)),
                 cloneNode: (nodeId: string) => ctx.mc.run(() => ctx.mc.cloneNode(graphId, nodeId)),
+                interjectNode: (linkId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) => {
+                    let result = false;
+                    ctx.mc.run(() => { result = ctx.mc.interjectNode(graphId, linkId, nodeType, params, position); });
+                    return result;
+                },
             }),
             [ctx.mc, graphId],
         );
