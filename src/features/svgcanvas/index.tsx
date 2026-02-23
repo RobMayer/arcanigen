@@ -1,9 +1,13 @@
 import { useMemo, useRef } from "react";
 import { Project } from "../../state/project";
-import { Resolver } from "../../util/resolver";
 import styled from "styled-components";
 import { DragPane, DragPaneControls } from "../../components/wrappers/DragPane";
 import { ShapeElement } from "../../definitions/shapeRenderer";
+import { ResultDefinition } from "../../definitions/nodes/resultNode";
+import { NodeDefinitions } from "../../definitions/betterTypes";
+import { Length } from "../../definitions/datatypes/length";
+import { Color } from "../../definitions/datatypes/color";
+import { Shape } from "../../definitions/shapeTypes";
 
 type SvgCanvasProps = {
     className?: string;
@@ -11,10 +15,32 @@ type SvgCanvasProps = {
 };
 
 export const SvgCanvas = styled(({ className, paneControls }: SvgCanvasProps) => {
-    const resolverState = Project.useResolverState();
+    const [resultNode] = Project.useNode("root", "RESULT");
+
+    const node = resultNode as unknown as NodeDefinitions.NodeFor<ResultDefinition>;
+    const shapeEval = Project.useCachedInput<ResultDefinition, "input">("root", node, "input");
+    const wEval = Project.useCachedInput<ResultDefinition, "w">("root", node, "w");
+    const hEval = Project.useCachedInput<ResultDefinition, "h">("root", node, "h");
+    const xEval = Project.useCachedInput<ResultDefinition, "x">("root", node, "x");
+    const yEval = Project.useCachedInput<ResultDefinition, "y">("root", node, "y");
+    const colorEval = Project.useCachedInput<ResultDefinition, "color">("root", node, "color");
+
+    const payload = resultNode.payload as ResultDefinition["payload"];
+
     const { canvas, contents } = useMemo(() => {
-        return Resolver.evaluateRootResult(resolverState);
-    }, [resolverState]);
+        const width = Length.Emptyable.asNumber(wEval?.data ?? payload.w ?? "800px") ?? 800;
+        const height = Length.Emptyable.asNumber(hEval?.data ?? payload.h ?? "800px") ?? 800;
+        const originX = Length.Emptyable.asNumber(xEval?.data ?? payload.x ?? "0px") ?? 0;
+        const originY = Length.Emptyable.asNumber(yEval?.data ?? payload.y ?? "0px") ?? 0;
+        const backgroundColor = colorEval?.data ?? payload.color ?? null;
+        const background = backgroundColor === null ? "none" : Color.toHex(backgroundColor);
+        const contents: Shape | null = shapeEval?.data ?? null;
+
+        return {
+            canvas: { width, height, originX: width / 2 + originX, originY: height / 2 + originY, background },
+            contents,
+        };
+    }, [shapeEval, wEval, hEval, xEval, yEval, colorEval, payload.w, payload.h, payload.x, payload.y, payload.color]);
 
     const boundsRef = useRef<HTMLDivElement>(null);
 

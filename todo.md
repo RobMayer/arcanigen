@@ -10,7 +10,7 @@
 # code quality
 
 - [x] Redesign the DragPane API
-- [ ] svgCanvas resolver should use cache - eventually
+- [x] svgCanvas resolver should use cache - eventually
 - [x] project state file is starting to get unwieldy - should we move cache into it's own file?
 - [x] cyclical checks
     - [x] properly implement depemdsOn

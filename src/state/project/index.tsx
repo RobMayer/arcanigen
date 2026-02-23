@@ -217,21 +217,6 @@ export namespace Project {
     export const useNodesRef = () => useContext(CTX)!.nodes.ref;
     export const useMC = () => useContext(CTX)!.mc;
 
-    export const useResolverState = () => {
-        const ctx = useContext(CTX)!;
-
-        const nodes = useSyncExternalStore(ctx.nodes.subscribe, ctx.nodes.get);
-        const links = useSyncExternalStore(ctx.links.subscribe, ctx.links.get);
-        const interfaces = useSyncExternalStore(ctx.interfaces.subscribe, ctx.interfaces.get);
-        const users = useSyncExternalStore(ctx.users.subscribe, ctx.users.get);
-
-        const value = useMemo(() => {
-            return { links, nodes, interfaces, users };
-        }, [links, nodes, interfaces, users]);
-
-        return value;
-    };
-
     export const useCachedOutput = <D extends NodeDefinitions.Generic, K extends keyof D["outputs"]>(
         graphId: GraphId,
         { id: nodeId }: NodeDefinitions.NodeFor<D>,
