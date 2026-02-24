@@ -74,7 +74,7 @@ export const ShapeElement = ({ shape }: { shape: Shape }): ReactNode => {
         case "rect":
             return <RectElement shape={shape} />;
         case "text":
-            return <TextElement shape={shape} />;
+            return <TextElement shape={shape} key={shape.textPath?.d} />;
         case "group":
             return <GroupElement shape={shape} />;
         case "offsetPath":
@@ -172,6 +172,7 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
     const id = useId();
 
     const attrs: Record<string, string | number | undefined> = {
+        fontFamily: shape.fontFamily,
         fontSize: shape.fontSize,
         letterSpacing: shape.letterSpacing,
         textAnchor: shape.textAnchor,

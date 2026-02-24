@@ -18,11 +18,13 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { PaperHelper } from "../../../util/paperHelper";
+import { Dropdown } from "../../../components/inputs/Dropdown";
+import { Fonts } from "../../fonts";
 
 export type TextPathDefinition = {
     inputs: {
         text: DataTypes.Use<"string">;
-        // font: DataTypes.Use<"enum">; // for later
+        font: DataTypes.Use<"enum">;
         path: DataTypes.Use<"path">;
         size: DataTypes.Use<"length">; // font size
         spacing: DataTypes.Use<"length">; // font spacing
@@ -40,7 +42,7 @@ export type TextPathDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        // font: DataTypes.TypeOf<DataTypes.Use<"enum">>; // later
+        font: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         text: DataTypes.TypeOf<DataTypes.Use<"string">>;
         size: DataTypes.TypeOf<DataTypes.Use<"length">>;
         spacing: DataTypes.TypeOf<DataTypes.Use<"length">>;
@@ -59,12 +61,14 @@ const TEXT_ALIGN_OPTIONS = Enum.options(Enum.Common.textAlign);
 const TEXT_ANCHOR_OPTIONS = Enum.options(Enum.Common.textAnchor);
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
 const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.offsetOrigin);
+const FONT_OPTIONS = Enum.options(Fonts.ENUM);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"textPath", TextPathDefinition> => {
     return {
         id,
         in: {
             text: null,
+            font: null,
             path: null,
             size: null,
             spacing: null,
@@ -89,6 +93,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
         },
         payload: {
             label: "",
+            font: 0,
             text: "Text",
             size: "16px",
             spacing: "0px",
@@ -130,6 +135,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
             </SocketOut>
             <SocketIn node={node} socketId={"text"} label={"Text"}>
                 <BlockInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} />
+            </SocketIn>
+            <SocketIn node={node} socketId={"font"} label={"Font"}>
+                <Dropdown value={`${node.payload.font}`} onValue={(v) => handleUpdate({ font: Number(v) })} disabled={node.in.font !== null}>
+                    {FONT_OPTIONS.map((each) => (
+                        <option value={`${each.value}`} key={`${each.value}`}>
+                            {each.label}
+                        </option>
+                    ))}
+                </Dropdown>
             </SocketIn>
             <SocketIn node={node} socketId={"path"} label={"Path"} />
             <SocketIn node={node} socketId={"reversePath"}>
@@ -206,6 +220,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
 
 const ALL_INPUTS: (keyof TextPathDefinition["inputs"])[] = [
     "text",
+    "font",
     "path",
     "size",
     "spacing",
@@ -246,6 +261,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
     if (!text) return null;
 
+    const fontVal = Enum.resolve(context.resolve<"enum">(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
+    const fontFamily = Fonts.familyOf(fontVal);
+
     const size = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16;
     const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
     const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
@@ -276,6 +294,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
         data: {
             type: "text",
             text,
+            fontFamily,
             fontSize: size,
             letterSpacing: spacing !== 0 ? spacing : undefined,
             textAnchor: textAnchorValue as "start" | "middle" | "end",
@@ -291,6 +310,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
 
 const SOCKETTYPES_IN: { [key in keyof Required<TextPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     text: { types: ["string"], mode: "or" },
+    font: { types: ["enum"], mode: "or" },
     path: { types: ["path"], mode: "or" },
     size: { types: ["length"], mode: "or" },
     spacing: { types: ["length"], mode: "or" },

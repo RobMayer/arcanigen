@@ -108,3 +108,41 @@ html {
 *::-webkit-scrollbar-corner {
     background: transparent;
 }
+
+/* Fantasy Fonts */
+
+@font-face { font-family: "Anayanka"; src: url("/fonts/anayanka.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Angerthas"; src: url("/fonts/angerthas.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Aurebesh"; src: url("/fonts/aurebesh.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Barazhad"; src: url("/fonts/barazhad.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Cardosan"; src: url("/fonts/cardosan.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Clynese"; src: url("/fonts/clynese.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Coremaic"; src: url("/fonts/coremaic.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Daedra"; src: url("/fonts/daedra.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Davek"; src: url("/fonts/davek.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Dottage"; src: url("/fonts/dottage.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Dwemer"; src: url("/fonts/dwemer.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Eladrin"; src: url("/fonts/eladrin.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Exodite"; src: url("/fonts/exodite.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Falmer"; src: url("/fonts/falmer.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Futhark"; src: url("/fonts/futhark.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Gargish"; src: url("/fonts/gargish.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Huttese"; src: url("/fonts/huttese.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Iokharic"; src: url("/fonts/iokharic.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Kargi"; src: url("/fonts/kargi.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Kehdrai"; src: url("/fonts/kehdrai.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Kitisakkullian"; src: url("/fonts/kitisakkullian.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Klinzhai"; src: url("/fonts/klinzhai.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Mage"; src: url("/fonts/mage.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Maraseye"; src: url("/fonts/maraseye.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Moria"; src: url("/fonts/moria.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Noldor"; src: url("/fonts/noldor.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Qijomi"; src: url("/fonts/qijomi.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Qonos"; src: url("/fonts/qonos.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Quenya"; src: url("/fonts/quenya.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Reanaarian"; src: url("/fonts/reanaarian.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Rellanic"; src: url("/fonts/rellanic.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Rhesimol"; src: url("/fonts/rhesimol.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Sigali"; src: url("/fonts/sigali.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Sindarin"; src: url("/fonts/sindarin.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Warden"; src: url("/fonts/warden.woff2") format("woff2"); font-display: swap; }

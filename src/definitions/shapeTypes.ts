@@ -121,6 +121,7 @@ export type RectShape = {
 export type TextShape = {
     type: "text";
     text: string;
+    fontFamily?: string;
     fontSize: number;
     letterSpacing?: number;
     textAnchor?: "start" | "middle" | "end";

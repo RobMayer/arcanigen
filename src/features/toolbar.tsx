@@ -6,6 +6,7 @@ import { Icon, ICONS } from "../components/Icon";
 import { DecimalInput } from "../components/inputs/DecimalInput";
 import { Project } from "../state/project";
 import { downloadBlob, uploadFile } from "../util/fileIO";
+import { buildExportSvg } from "../util/fontEmbed";
 
 export const Toolbar = styled(({ className }: { className?: string }) => {
     const [marqueeMode, setMarqueeMode] = Session.useMarqueeMode();
@@ -35,11 +36,11 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
     }, [io]);
 
     const handleExportSvg = useCallback(() => {
-        const svg = document.querySelector("[data-export-svg]");
+        const svg = document.querySelector("[data-export-svg]") as SVGSVGElement;
         if (!svg) return;
-        const serializer = new XMLSerializer();
-        const svgString = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(svg);
-        downloadBlob(new Blob([svgString], { type: "image/svg+xml" }), "export.svg");
+        void buildExportSvg(svg).then((svgString) => {
+            downloadBlob(new Blob([svgString], { type: "image/svg+xml" }), "export.svg");
+        });
     }, []);
 
     const handleExportPng = useCallback(() => {
@@ -49,24 +50,24 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
         const h = svg.height.baseVal.value;
         const scale = Number(dpi) / 96;
 
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
+        void buildExportSvg(svg).then((svgString) => {
+            const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
 
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = Math.round(w * scale);
-            canvas.height = Math.round(h * scale);
-            const ctx = canvas.getContext("2d")!;
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            URL.revokeObjectURL(url);
-            canvas.toBlob((pngBlob) => {
-                if (pngBlob) downloadBlob(pngBlob, "export.png");
-            }, "image/png");
-        };
-        img.src = url;
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(w * scale);
+                canvas.height = Math.round(h * scale);
+                const ctx = canvas.getContext("2d")!;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                canvas.toBlob((pngBlob) => {
+                    if (pngBlob) downloadBlob(pngBlob, "export.png");
+                }, "image/png");
+            };
+            img.src = url;
+        });
     }, [dpi]);
 
     return (
