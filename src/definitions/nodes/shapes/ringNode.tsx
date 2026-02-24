@@ -86,7 +86,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
-            fillColor: null,
+            fillColor: { r: 0, g: 0, b: 0, a: 0 },
             paintOrder: 0,
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,

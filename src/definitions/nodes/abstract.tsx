@@ -79,7 +79,7 @@ export namespace Stylings {
         return (
             <AccordionMaybe label={"Appearance"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder"}>
                 <SocketIn node={node} socketId={"strokeColor"} label={"Stroke Color"}>
-                    <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} nullable alpha />
+                    <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} required alpha />
                 </SocketIn>
                 <SocketIn node={node} socketId={"strokeWidth"} label={"Stroke Width"}>
                     <LengthInput value={node.payload.strokeWidth} onCommit={(strokeWidth) => handleUpdate({ strokeWidth })} disabled={node.in.strokeWidth !== null} required />
@@ -112,7 +112,7 @@ export namespace Stylings {
                 </SocketIn>
                 {fill && "fillColor" in node.payload ? (
                     <SocketIn node={node} socketId={"fillColor"} label={"Fill Color"}>
-                        <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} nullable alpha />
+                        <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} required alpha />
                     </SocketIn>
                 ) : null}
                 <SocketIn node={node} socketId={"paintOrder"} label={"Paint Order"}>

@@ -70,16 +70,16 @@ type ColorHexInputProps = {
     onValue?: (v: Color.Type) => void;
     onCommit?: (v: Color.Type) => void;
     onConfirm?: (v: Color.Type) => void; // fires when you hit enter, even if no change was made
-    nullable?: boolean;
+    required?: boolean;
     alpha?: boolean;
     disabled?: boolean;
     flavour?: Flavour;
 };
 
-export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, alpha, disabled, flavour }: ColorHexInputProps) => {
+export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, required, alpha, disabled, flavour }: ColorHexInputProps) => {
     // Internal hex string cache for display
     const [hexCache, setHexCache] = useState<string>(() => {
-        if (value === null) return "transparent";
+        if (value === null) return "";
         const hex = Color.toHex(value);
         return alpha ? hex : hex.slice(0, 7);
     });
@@ -96,7 +96,7 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, a
     // Sync with incoming prop
     useEffect(() => {
         if (value === null) {
-            setHexCache("transparent");
+            setHexCache("");
         } else {
             const hex = Color.toHex(value);
             setHexCache(alpha ? hex : hex.slice(0, 7));
@@ -106,28 +106,25 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, a
     // Normalize text input
     const normalize = useCallback(
         (v: string): string => {
-            if (v === "") {
-                return nullable ? "transparent" : "";
+            if (v === "") return "";
+            if (v.toLowerCase() === "transparent" || v.toLowerCase() === "none") {
+                return alpha ? "#00000000" : v;
             }
-            if (v === "transparent") return "transparent";
             return normalizeHexString(v, alpha ?? false);
         },
-        [nullable, alpha],
+        [alpha],
     );
 
     // Pattern for validation
-    const pattern = useMemo(() => {
-        return `${nullable ? "(transparent)|" : ""}${alpha ? "#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})" : "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"}`;
-    }, [nullable, alpha]);
+    const pattern = useMemo(() => (alpha ? "(transparent|none|#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))" : "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"), [alpha]);
 
     const handleValue = useCallback(
         (v: string) => {
             setHexCache(v);
-            if (v === "" || v === "transparent") {
+            if (v === "") {
                 onValueRef.current?.(null);
             } else {
-                const rgba = Color.fromHex(v);
-                onValueRef.current?.(rgba);
+                onValueRef.current?.(Color.fromHex(v));
             }
         },
         [onValueRef],
@@ -136,11 +133,10 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, a
     const handleCommit = useCallback(
         (v: string) => {
             setHexCache(v);
-            if (v === "" || v === "transparent") {
+            if (v === "") {
                 onCommitRef.current?.(null);
             } else {
-                const rgba = Color.fromHex(v);
-                onCommitRef.current?.(rgba);
+                onCommitRef.current?.(Color.fromHex(v));
             }
         },
         [onCommitRef],
@@ -149,11 +145,10 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, a
     const handleConfirm = useCallback(
         (v: string) => {
             setHexCache(v);
-            if (v === "" || v === "transparent") {
+            if (v === "") {
                 onConfirmRef.current?.(null);
             } else {
-                const rgba = Color.fromHex(v);
-                onConfirmRef.current?.(rgba);
+                onConfirmRef.current?.(Color.fromHex(v));
             }
         },
         [onConfirmRef],
@@ -171,7 +166,7 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, nullable, a
                 onConfirm={handleConfirm}
                 pattern={pattern}
                 normalize={normalize}
-                required={!nullable}
+                required={required}
                 disabled={disabled}
             />
         </BaseDiv>

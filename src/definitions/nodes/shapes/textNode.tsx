@@ -108,7 +108,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             // stroke
             strokeWidth: "0px",
             strokeDash: "",
-            strokeColor: null,
+            strokeColor: { r: 0, g: 0, b: 0, a: 0 },
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill

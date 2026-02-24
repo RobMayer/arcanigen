@@ -88,7 +88,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             strokeDash: null,
             strokeDashOffset: null,
             strokeCap: null,
-            fillColor: null,
             paintOrder: null,
             // transforms
             positionMode: null,
@@ -123,8 +122,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.BUTT.value,
-            // fill
-            fillColor: null,
             paintOrder: 0,
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,

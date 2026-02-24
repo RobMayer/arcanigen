@@ -145,7 +145,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
             strokeCap: Enum.Common.strokeCap.BUTT.value,
             strokeJoin: Enum.Common.strokeJoin.MITER.value,
             // fill
-            fillColor: null,
+            fillColor: { r: 0, g: 0, b: 0, a: 0 },
             paintOrder: 0,
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,
@@ -576,7 +576,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
 
         // Build subpaths
         const [outerPath, outerCut] = buildSubpath(outerVerts, outerCornerR, outerCornerShape, false);
-        const [innerPath, innerCut] = tI > 0 ? buildSubpath(innerVerts, innerCornerR, innerCornerShape, true) : ["", false] as const;
+        const [innerPath, innerCut] = tI > 0 ? buildSubpath(innerVerts, innerCornerR, innerCornerShape, true) : (["", false] as const);
 
         const hasCut = outerCut || innerCut;
         const d = innerPath ? `${outerPath} ${innerPath}` : outerPath;

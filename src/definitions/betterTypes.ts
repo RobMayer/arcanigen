@@ -94,6 +94,7 @@ import { LessThanDefinition, LessThanNodeType } from "./nodes/logic/lessThanNode
 import { LessOrEqualDefinition, LessOrEqualNodeType } from "./nodes/logic/lessOrEqualNode";
 import { WithinDefinition, WithinNodeType } from "./nodes/logic/withinNode";
 import { BetweenDefinition, BetweenNodeType } from "./nodes/logic/betweenNode";
+import { IsNullishDefinition, IsNullishNodeType } from "./nodes/logic/isNullishNode";
 import { RingDefinition, RingNodeType } from "./nodes/shapes/ringNode";
 import { RectangleDefinition, RectangleNodeType } from "./nodes/shapes/rectangleNode";
 import { PolygramDefinition, PolygramNodeType } from "./nodes/shapes/polygramNode";
@@ -266,6 +267,7 @@ namespace Registries {
         lessOrEqual: LessOrEqualDefinition;
         within: WithinDefinition;
         between: BetweenDefinition;
+        isNullish: IsNullishDefinition;
 
         pathUnify: PathUnifyDefinition;
         pathSubtract: PathSubtractDefinition;
@@ -395,6 +397,7 @@ namespace Registries {
         lessOrEqual: LessOrEqualNodeType,
         within: WithinNodeType,
         between: BetweenNodeType,
+        isNullish: IsNullishNodeType,
 
         pathUnify: PathUnitfyNodeType,
         pathSubtract: PathSubtractNodeType,

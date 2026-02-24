@@ -186,7 +186,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
             {node.payload.stops.map((stop, idx) => (
                 <StopEntry key={stop.id}>
                     <SocketIn node={node} socketId={`color_${stop.id}`} label={`Stop ${idx}`} data-part="color">
-                        <ColorHexInput value={stop.color} onCommit={(color) => handleStopColor(stop.id, color)} disabled={node.in[`color_${stop.id}`] !== null} alpha nullable />
+                        <ColorHexInput value={stop.color} onCommit={(color) => handleStopColor(stop.id, color)} disabled={node.in[`color_${stop.id}`] !== null} alpha />
                     </SocketIn>
                     <SocketIn node={node} socketId={`pos_${stop.id}`} data-part="position">
                         <DecimalInput value={stop.position} onCommit={(position) => handleStopPosition(stop.id, position)} disabled={node.in[`pos_${stop.id}`] !== null} min={"0"} max={"100"} />

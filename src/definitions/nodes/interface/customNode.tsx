@@ -875,7 +875,7 @@ const InputSlotColor = ({ host, source, handleValue }: InputWidgetProps<ColorInp
                         onCommit={(v) => handleValue({ [`value_${source.id}`]: v })}
                         disabled={disabled}
                         alpha={source.payload.alpha}
-                        nullable={source.payload.nullable}
+                        required={source.payload.required}
                     />
                 </InputSocketOrSlot>
             );

@@ -25,7 +25,7 @@ export type ColorInputDefinition = {
         initialValue: DataTypes.TypeOf<DataTypes.Use<"color">>;
         widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         alpha: boolean;
-        nullable: boolean;
+        required: boolean;
         socketed: boolean;
     };
 };
@@ -42,7 +42,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorInputDefiniti
             initialValue: Color.fromHex("#ffffffff"),
             widget: Enum.Common.colorInputWidget.HEX.value,
             alpha: true,
-            nullable: true,
+            required: true,
             socketed: true,
         },
         type: "colorInput",
@@ -82,7 +82,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorInputD
             </Slot>
             <hr />
             <Slot label={"Initial Value"}>
-                <ColorHexInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} alpha={node.payload.alpha} nullable={node.payload.nullable} />
+                <ColorHexInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} alpha={node.payload.alpha} required={node.payload.required} />
             </Slot>
             <Slot>
                 <CheckBox checked={node.payload.alpha} onToggle={(alpha) => handleUpdate({ alpha })}>
@@ -90,8 +90,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorInputD
                 </CheckBox>
             </Slot>
             <Slot>
-                <CheckBox checked={node.payload.nullable} onToggle={(nullable) => handleUpdate({ nullable })}>
-                    Nullable
+                <CheckBox checked={node.payload.required} onToggle={(required) => handleUpdate({ required })}>
+                    Required
                 </CheckBox>
             </Slot>
         </TypicalNode>

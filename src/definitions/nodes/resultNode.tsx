@@ -188,7 +188,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
                                 <LengthInput value={node.payload.y} onCommit={(y) => handleUpdate({ y })} disabled={node.in.y !== null} required min={"0px"} />
                             </SocketIn>
                             <SocketIn node={node} socketId={"color"} label={"Color"}>
-                                <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} nullable alpha disabled={node.in.color !== null} />
+                                <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} required alpha disabled={node.in.color !== null} />
                             </SocketIn>
                         </NodeAccordion>
                     </ResultSlots>
