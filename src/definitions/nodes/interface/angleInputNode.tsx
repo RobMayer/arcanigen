@@ -14,6 +14,7 @@ import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { NumericString } from "../../datatypes/numericString";
 
 export type AngleInputDefinition = {
     inputs: never;
@@ -122,10 +123,22 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, _in
 const evaluate = (node: NodeDefinitions.NodeFor<AngleInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const providedInput = context.getInput?.<"angle">(node.id);
-        return {
-            kind: "angle",
-            data: providedInput?.data ?? node.payload.initialValue,
-        };
+        let data = providedInput?.data ?? node.payload.initialValue;
+        let v = NumericString.Emptyable.asNumber(data);
+        if (v !== null) {
+            const snap = NumericString.Emptyable.asNumber(node.payload.snap);
+            if (snap !== null && snap > 0) v = Math.round(v / snap) * snap;
+            if (node.payload.wraps) {
+                v = ((v % 360) + 360) % 360;
+            } else {
+                const min = NumericString.Emptyable.asNumber(node.payload.min);
+                const max = NumericString.Emptyable.asNumber(node.payload.max);
+                if (min !== null) v = Math.max(min, v);
+                if (max !== null) v = Math.min(max, v);
+            }
+            data = `${v}`;
+        }
+        return { kind: "angle", data };
     }
     return null;
 };

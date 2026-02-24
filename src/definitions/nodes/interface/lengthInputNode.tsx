@@ -13,6 +13,7 @@ import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { Length } from "../../datatypes/length";
 
 export type LengthInputDefinition = {
     inputs: never;
@@ -114,10 +115,18 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LengthInputDefinition>, _i
 const evaluate = (node: NodeDefinitions.NodeFor<LengthInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         const providedInput = context.getInput?.<"length">(node.id);
-        return {
-            kind: "length",
-            data: providedInput?.data ?? node.payload.initialValue,
-        };
+        let data = providedInput?.data ?? node.payload.initialValue;
+        let v = Length.Emptyable.asNumber(data);
+        if (v !== null) {
+            const snap = Length.Emptyable.asNumber(node.payload.snap);
+            if (snap !== null && snap > 0) v = Math.round(v / snap) * snap;
+            const min = Length.Emptyable.asNumber(node.payload.min);
+            const max = Length.Emptyable.asNumber(node.payload.max);
+            if (min !== null) v = Math.max(min, v);
+            if (max !== null) v = Math.min(max, v);
+            data = `${v}px`;
+        }
+        return { kind: "length", data };
     }
     return null;
 };

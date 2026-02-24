@@ -73,6 +73,6 @@ export namespace Length {
         // todo: fix.
         export const min = (a: EmptyOr<Type>, b: EmptyOr<Type>): EmptyOr<Type> => (a === "" || b === "" ? "" : Length.asNumber(b) < Length.asNumber(a) ? b : a);
         export const max = (a: EmptyOr<Type>, b: EmptyOr<Type>): EmptyOr<Type> => (a === "" || b === "" ? "" : Length.asNumber(b) > Length.asNumber(a) ? b : a);
-        export const clamp = (a: EmptyOr<Type>, theMin: EmptyOr<Type>, theMax: EmptyOr<Type>): EmptyOr<Type> => max(min(a, theMax), theMin);
+        export const clamp = (a: EmptyOr<Type>, theMin: EmptyOr<Type>, theMax: EmptyOr<Type>): EmptyOr<Type> => (a === "" ? "" : theMax === "" || theMin === "" ? a : max(min(a, theMax), theMin));
     }
 }
