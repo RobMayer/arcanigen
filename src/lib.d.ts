@@ -3,3 +3,4 @@ declare interface Event {
 }
 
 declare const APP_VERSION: string;
+declare const BUILD_DATE: string;

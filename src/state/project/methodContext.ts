@@ -154,8 +154,8 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.fireOnConnect(graphId, fromNode, newLink, "out");
         this.fireOnConnect(graphId, toNode, newLink, "in");
 
-        // Cache: rebuild from toNode downstream (evaluate-on-miss handles fromNode if needed)
-        this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, toNode);
+        // Cache: rebuild from fromNode downstream (ensures source outputs are cached; toNode is downstream via the new link)
+        this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, fromNode);
         this.dirty.add("cache");
 
         this.recomputeDeps(graphId);

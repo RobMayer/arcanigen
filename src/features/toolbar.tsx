@@ -88,7 +88,9 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
                 <Icon shape={marqueeMode === "contain" ? ICONS.SelectBounds.Contain : ICONS.SelectBounds.Intersect} />
             </ActionButton>
             <Spacer />
-            <div>v{APP_VERSION}</div>
+            <div>
+                v{APP_VERSION} [{BUILD_DATE}]
+            </div>
         </div>
     );
 })`
