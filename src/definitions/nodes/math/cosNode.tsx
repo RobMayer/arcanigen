@@ -8,7 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { extractSingle } from "./numericMath";
+import { extractSingle, makeCanInterject, makeOnInterject } from "./numericMath";
 
 const TRIG_IN: SocketTypes.SocketRule = { types: ["angle", "float", "integer"], mode: "or" };
 const FLOAT_OUT: SocketTypes.SocketRule = { types: ["float"], mode: "or" };
@@ -103,4 +103,6 @@ export const CosType: NodeTypes.Type<"cos", CosDefinition> = {
     contributesTo,
     create,
     getSocketType,
+    canInterject: makeCanInterject(TRIG_IN, FLOAT_OUT),
+    onInterject: makeOnInterject("input", "output"),
 };

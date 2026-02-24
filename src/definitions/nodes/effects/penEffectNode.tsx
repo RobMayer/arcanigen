@@ -13,6 +13,7 @@ import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { FilterPrimitive } from "../../shapeTypes";
+import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 
 export type PenEffectDefinition = {
     inputs: {
@@ -155,4 +156,6 @@ export const PenEffectNodeType: NodeTypes.Type<"penEffect", PenEffectDefinition>
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    onInterject: makeOnInterject("input", "output"),
 };

@@ -10,6 +10,7 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { FilterPrimitive } from "../../shapeTypes";
+import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 
 export type PencilEffectDefinition = {
     inputs: {
@@ -124,4 +125,6 @@ export const PencilEffectNodeType: NodeTypes.Type<"pencilEffect", PencilEffectDe
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    onInterject: makeOnInterject("input", "output"),
 };

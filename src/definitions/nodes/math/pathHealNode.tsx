@@ -7,6 +7,7 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
+import { makeCanInterject, makeOnInterject } from "./numericMath";
 
 export type PathHealNodeDefinition = {
     inputs: {
@@ -95,4 +96,6 @@ export const PathHealNodeType: NodeTypes.Type<"pathHeal", PathHealNodeDefinition
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SOCKETTYPES_IN.path, SOCKETTYPES_OUT.output),
+    onInterject: makeOnInterject("path", "output"),
 };

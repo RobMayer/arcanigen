@@ -13,6 +13,7 @@ import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { FilterPrimitive } from "../../shapeTypes";
+import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 
 export type BrushEffectDefinition = {
     inputs: {
@@ -175,4 +176,6 @@ export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefin
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    onInterject: makeOnInterject("input", "output"),
 };

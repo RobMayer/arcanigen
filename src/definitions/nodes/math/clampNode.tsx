@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, queryUpstreamOutType, dominantKind, wrapResult, extractSingle } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, queryUpstreamOutType, dominantKind, wrapResult, extractSingle, numericCanInterject, makeOnInterject } from "./numericMath";
 
 export type ClampDefinition = {
     inputs: {
@@ -272,4 +272,6 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
+    canInterject: numericCanInterject,
+    onInterject: makeOnInterject("input", "output"),
 };

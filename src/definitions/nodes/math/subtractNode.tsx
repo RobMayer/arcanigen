@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, numericCanInterject, makeOnInterject } from "./numericMath";
 
 export type SubtractDefinition = {
     inputs: {
@@ -244,4 +244,6 @@ export const SubtractType: NodeTypes.Type<"subtract", SubtractDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
+    canInterject: numericCanInterject,
+    onInterject: makeOnInterject("a", "output"),
 };

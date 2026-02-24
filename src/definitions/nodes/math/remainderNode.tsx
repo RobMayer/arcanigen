@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, constrainForPartnerMultiplicative, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartnerMultiplicative, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, numericCanInterject, makeOnInterject } from "./numericMath";
 
 export type RemainderDefinition = {
     inputs: {
@@ -244,4 +244,6 @@ export const RemainderType: NodeTypes.Type<"remainder", RemainderDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
+    canInterject: numericCanInterject,
+    onInterject: makeOnInterject("a", "output"),
 };

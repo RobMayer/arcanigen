@@ -5,6 +5,7 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Length } from "../../datatypes/length";
@@ -297,6 +298,36 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<TransformDefinition>, sock
     return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
 };
 
+const SHAPE_IN: SocketTypes.SocketRule = { types: ["shape"], mode: "or" };
+const SHAPE_OUT: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+const PATH_IN: SocketTypes.SocketRule = { types: ["path"], mode: "or" };
+const PATH_OUT: SocketTypes.SocketRule = { types: ["path"], mode: "and" };
+
+const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
+    const fromNode = ctx.getNode(graphId, link.fromNode);
+    const toNode = ctx.getNode(graphId, link.toNode);
+    if (!fromNode || !toNode) return false;
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
+    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
+    if (SocketTypes.canFlow(sourceOut, SHAPE_IN) && SocketTypes.canFlow(SHAPE_OUT, destIn)) return true;
+    if (SocketTypes.canFlow(sourceOut, PATH_IN) && SocketTypes.canFlow(PATH_OUT, destIn)) return true;
+    return false;
+};
+
+const onInterjectTransform = (node: NodeDefinitions.NodeFor<NodeDefinitions.Generic>, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const fromNode = ctx.getNode(graphId, link.fromNode);
+    if (!fromNode) return;
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
+    ctx.removeLinks(graphId, link.id);
+    if (SocketTypes.canFlow(sourceOut, PATH_IN)) {
+        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, "path", link.type);
+        ctx.connect(graphId, node.id, link.toNode, "pathOutput", link.toSocket, link.type);
+    } else {
+        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, "shape", link.type);
+        ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket, link.type);
+    }
+};
+
 export const TransformType: NodeTypes.Type<"transform", TransformDefinition> = {
     type: "transform",
     displayName: "Transform",
@@ -309,4 +340,6 @@ export const TransformType: NodeTypes.Type<"transform", TransformDefinition> = {
     contributesTo,
     create,
     getSocketType,
+    canInterject,
+    onInterject: onInterjectTransform,
 };

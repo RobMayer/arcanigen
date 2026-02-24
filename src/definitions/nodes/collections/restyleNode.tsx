@@ -9,6 +9,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings } from "../abstract";
+import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 import { Paint, Shape } from "../../shapeTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
@@ -391,6 +392,9 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<RestyleDefinition>, socket
     }
 };
 
+const SHAPE_RULE_IN: SocketTypes.SocketRule = { types: ["shape"], mode: "or" };
+const SHAPE_RULE_OUT: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+
 export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     type: "restyle",
     displayName: "Re-style",
@@ -403,4 +407,6 @@ export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
+    onInterject: makeOnInterject("shape", "output"),
 };

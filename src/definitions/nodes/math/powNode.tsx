@@ -8,7 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult } from "./numericMath";
+import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, numericCanInterject, makeOnInterject } from "./numericMath";
 
 export type PowDefinition = {
     inputs: {
@@ -214,4 +214,6 @@ export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
+    canInterject: numericCanInterject,
+    onInterject: makeOnInterject("input", "output"),
 };

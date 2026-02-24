@@ -1,4 +1,5 @@
 import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { Enum } from "../../datatypes/enum";
 import { Length } from "../../datatypes/length";
 import { NumericString } from "../../datatypes/numericString";
@@ -222,6 +223,34 @@ export const wrapResult = (value: number, outputKind: string, unit: Length.Unit 
 /**
  * Apply a rounding mode to a number. Used by round node and integer cast.
  */
+// --- Interjection helpers ---
+
+/** Factory: canInterject that checks if a link's data types are compatible with given input/output rules */
+export const makeCanInterject =
+    (inRule: SocketTypes.SocketRule, outRule: SocketTypes.SocketRule) =>
+    (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
+        const fromNode = ctx.getNode(graphId, link.fromNode);
+        const toNode = ctx.getNode(graphId, link.toNode);
+        if (!fromNode || !toNode) return false;
+        const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
+        const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
+        return SocketTypes.canFlow(sourceOut, inRule) && SocketTypes.canFlow(outRule, destIn);
+    };
+
+/** Factory: onInterject that removes existing link and wires through given sockets */
+export const makeOnInterject =
+    (inSocket: string, outSocket: string) =>
+    (node: NodeDefinitions.NodeFor<NodeDefinitions.Generic>, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): void => {
+        ctx.removeLinks(graphId, link.id);
+        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, inSocket, link.type);
+        ctx.connect(graphId, node.id, link.toNode, outSocket, link.toSocket, link.type);
+    };
+
+/** Pre-built canInterject for numeric pass-through nodes */
+export const numericCanInterject = makeCanInterject(NUMERIC_TYPES, NUMERIC_TYPES);
+
+// --- Rounding ---
+
 export const applyRounding = (value: number, mode: number): number => {
     switch (mode) {
         case Enum.Common.roundingMode.CEIL.value:

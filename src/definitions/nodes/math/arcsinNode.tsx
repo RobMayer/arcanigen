@@ -8,7 +8,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { extractSingle } from "./numericMath";
+import { extractSingle, makeCanInterject, makeOnInterject } from "./numericMath";
 
 const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
 const ANGLE_OUT: SocketTypes.SocketRule = { types: ["angle"], mode: "or" };
@@ -104,4 +104,6 @@ export const ArcsinType: NodeTypes.Type<"arcsin", ArcsinDefinition> = {
     contributesTo,
     create,
     getSocketType,
+    canInterject: makeCanInterject(DIMENSIONLESS_IN, ANGLE_OUT),
+    onInterject: makeOnInterject("input", "output"),
 };

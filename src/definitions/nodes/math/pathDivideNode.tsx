@@ -8,6 +8,7 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
+import { makeCanInterject, makeOnInterject } from "./numericMath";
 
 export type PathDivideDefinition = {
     inputs: {
@@ -123,4 +124,6 @@ export const PathDivideNodeType: NodeTypes.Type<"pathDivide", PathDivideDefiniti
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SOCKETTYPES_IN.pathA, SOCKETTYPES_OUT.output),
+    onInterject: makeOnInterject("pathA", "output"),
 };

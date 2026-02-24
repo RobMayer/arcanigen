@@ -10,6 +10,7 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 import { MaskedShape } from "../../shapeTypes";
 
 export type MaskDefinition = {
@@ -153,6 +154,9 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<MaskDefinition>, socketId:
     }
 };
 
+const SHAPE_RULE_IN: SocketTypes.SocketRule = { types: ["shape"], mode: "or" };
+const SHAPE_RULE_OUT: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+
 export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     type: "mask",
     displayName: "Mask",
@@ -165,4 +169,6 @@ export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     evaluate,
     Controls,
     getSocketType,
+    canInterject: makeCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
+    onInterject: makeOnInterject("content", "output"),
 };

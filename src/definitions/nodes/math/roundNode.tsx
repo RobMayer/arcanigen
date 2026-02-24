@@ -7,7 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, applyRounding } from "./numericMath";
+import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, applyRounding, numericCanInterject, makeOnInterject } from "./numericMath";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 
@@ -226,4 +226,6 @@ export const RoundType: NodeTypes.Type<"round", RoundDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
+    canInterject: numericCanInterject,
+    onInterject: makeOnInterject("input", "output"),
 };
