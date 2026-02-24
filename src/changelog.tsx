@@ -4,6 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-02-24"} version={"3.1.0"}>
+                <Improvement>Changed how transparent color values are handled with inputs</Improvement>
+                <Feature>Added &quot;isNullish&quot; boolean node</Feature>
+            </Build>
             <Build date={"2026-02-24"} version={"3.0.5"}>
                 <Feature>Added Changelog</Feature>
                 <Bugfix>Certain shapes would not render when first connected.</Bugfix>
