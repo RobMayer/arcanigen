@@ -193,8 +193,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, i
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket: keyof PolygonArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
-    const count = NumericString.Emptyable.asNumber(countStr);
-    if (count === null || count < 3) return null;
+    const count = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
+    if (!isFinite(count)) return null;
 
     if (socket === "sequence") {
         return { kind: "sequence", data: { senderId: node.id, count } };

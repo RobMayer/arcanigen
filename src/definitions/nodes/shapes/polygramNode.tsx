@@ -277,8 +277,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, inSoc
 const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: keyof PolygramDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output" || socket === "path") {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
-        const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
-        if (radius === null || pointCount === null) {
+        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
+        if (radius === null || !isFinite(pointCount)) {
             return null;
         }
 
@@ -306,7 +306,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         const cornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
         const cornerShape = Enum.resolve(context.resolve<"enum">(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
 
-        const tempSkipCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0;
+        const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
         const skipCount = Math.min(tempSkipCount, Math.ceil(pointCount / 2) - 2);
         const step = skipCount + 1;
 

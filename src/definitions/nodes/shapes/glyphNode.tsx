@@ -190,7 +190,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const viewH = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
-    const dpi = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "dpi" as never)?.data ?? node.payload.dpi) ?? 96;
+    const dpi = Math.max(1, NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "dpi" as never)?.data ?? node.payload.dpi) ?? 96);
     const dpiScale = 72 / dpi;
 
     // Scale viewbox by DPI conversion

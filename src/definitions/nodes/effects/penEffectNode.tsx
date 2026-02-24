@@ -98,10 +98,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PenEffectDefinition>, socket: "o
     const inputShape = context.resolve<"shape">(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const seed = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0;
+    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
     const nibPx = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "nib")?.data ?? node.payload.nib) ?? 0;
-    const smudge = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "smudge")?.data ?? node.payload.smudge) ?? 0;
-    const jitter = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "jitter")?.data ?? node.payload.jitter) ?? 0;
+    const smudge = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "smudge")?.data ?? node.payload.smudge) ?? 0));
+    const jitter = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "jitter")?.data ?? node.payload.jitter) ?? 0));
 
     const nibRadius = nibPx / 4;
 

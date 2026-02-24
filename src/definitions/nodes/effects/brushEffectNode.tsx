@@ -92,9 +92,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<BrushEffectDefinition>, socket: 
     const inputShape = context.resolve<"shape">(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const seed = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0;
+    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
     const tipPx = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "brushTip")?.data ?? node.payload.brushTip) ?? 0;
-    const shake = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "shake")?.data ?? node.payload.shake) ?? 0;
+    const shake = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "shake")?.data ?? node.payload.shake) ?? 0));
 
     const tipRadius = tipPx / 4;
     const shakeScale = shake * 10;

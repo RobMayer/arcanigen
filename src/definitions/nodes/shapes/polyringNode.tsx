@@ -502,8 +502,8 @@ const buildSubpath = (vertices: (readonly [number, number])[], cornerR: number, 
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: keyof PolyringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output" || socket === "path") {
-        const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
-        if (pointCount === null) return null;
+        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
+        if (!isFinite(pointCount)) return null;
 
         const N = pointCount;
         const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;

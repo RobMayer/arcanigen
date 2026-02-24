@@ -287,8 +287,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BurstDefinition>, inSocket
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof BurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spurCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? null;
-    if (spurCount === null || spurCount <= 0) return null;
+    const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
+    if (!isFinite(spurCount) || spurCount <= 0) return null;
 
     const N = spurCount;
     const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;

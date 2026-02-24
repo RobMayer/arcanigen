@@ -273,8 +273,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, inSo
 
 const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: keyof PathArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
-    const count = NumericString.Emptyable.asNumber(countStr);
-    if (count === null || count < 1) return null;
+    const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
+    if (!isFinite(count)) return null;
 
     if (socket === "sequence") {
         return { kind: "sequence", data: { senderId: node.id, count } };

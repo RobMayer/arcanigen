@@ -264,7 +264,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     const fontVal = Enum.resolve(context.resolve<"enum">(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
     const fontFamily = Fonts.familyOf(fontVal);
 
-    const size = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16;
+    const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16);
     const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
     const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
     const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.textAlign) ?? node.payload.align;

@@ -77,7 +77,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PencilEffectDefinition>, socket:
     const inputShape = context.resolve<"shape">(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const seed = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0;
+    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
 
     const filter: FilterPrimitive[] = [
         { tag: "feTurbulence", attrs: { type: "fractalNoise", baseFrequency: 1, numOctaves: 8, stitchTiles: "stitch", result: "f1", seed } },

@@ -557,8 +557,8 @@ const collectStarVertices = (allVertices: (readonly [number, number])[], N: numb
 
 const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof KnotDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output" || socket === "path") {
-        const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? null;
-        if (pointCount === null) return null;
+        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
+        if (!isFinite(pointCount)) return null;
 
         const N = pointCount;
         const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
@@ -600,7 +600,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         tI = Math.max(0, tI);
 
         // Skip count
-        const tempSkipCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0;
+        const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
         const skipCount = Math.min(tempSkipCount, Math.ceil(N / 2) - 2);
         const step = skipCount + 1;
 

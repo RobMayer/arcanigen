@@ -293,7 +293,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
 
     if (spanMode === Enum.Common.spanMode.SPREAD.value) {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-        const deviation = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "deviation")?.data ?? node.payload.deviation) ?? 0;
+        const deviation = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "deviation")?.data ?? node.payload.deviation) ?? 0);
         rI = radius - deviation / 2;
         rO = radius + deviation / 2;
     } else {
