@@ -101,6 +101,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
             strokeJoin: null,
             fillColor: null,
             paintOrder: null,
+            opacity: null,
             // transforms
             positionMode: null,
             positionX: null,
@@ -147,6 +148,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
             // fill
             fillColor: { r: 0, g: 0, b: 0, a: 0 },
             paintOrder: 0,
+            opacity: "100",
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",

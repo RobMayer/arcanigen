@@ -27,6 +27,9 @@ const paintAttrs = (paint: Paint): Record<string, string | undefined> => {
     if (paint.paintOrder) {
         attrs.paintOrder = paint.paintOrder;
     }
+    if (paint.opacity !== undefined && paint.opacity < 1) {
+        attrs.opacity = `${paint.opacity}`;
+    }
     return attrs;
 };
 
@@ -116,6 +119,7 @@ const PathElement = ({ shape }: { shape: PathShape }) => {
             strokeDasharray={pa.strokeDasharray}
             strokeDashoffset={pa.strokeDashoffset}
             paintOrder={pa.paintOrder}
+            opacity={pa.opacity}
             vectorEffect={shape.vectorEffect as "none" | "non-scaling-stroke" | undefined}
             transform={shape.transform || undefined}
             {...markerAttrs}

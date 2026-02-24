@@ -87,6 +87,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             strokeCap: null,
             fillColor: null,
             paintOrder: null,
+            opacity: null,
         },
         out: {
             output: [],
@@ -114,6 +115,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             // fill
             fillColor: { r: 0, g: 0, b: 0, a: 1 },
             paintOrder: 0,
+            opacity: "100",
             ...input,
         },
         type: "textPath",

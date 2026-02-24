@@ -17,7 +17,9 @@ import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Length } from "../../datatypes/length";
+import { NumericString } from "../../datatypes/numericString";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
@@ -34,6 +36,7 @@ export type RestyleDefinition = {
         overrideStrokeDashOffset: DataTypes.Use<"boolean">;
         overrideFillColor: DataTypes.Use<"boolean">;
         overridePaintOrder: DataTypes.Use<"boolean">;
+        overrideOpacity: DataTypes.Use<"boolean">;
     } & Stylings.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
@@ -48,6 +51,7 @@ export type RestyleDefinition = {
         overrideStrokeDashOffset: boolean;
         overrideFillColor: boolean;
         overridePaintOrder: boolean;
+        overrideOpacity: boolean;
     } & Stylings.Definition["payload"];
 };
 
@@ -64,6 +68,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<RestyleDefinition>
             overrideStrokeDashOffset: null,
             overrideFillColor: null,
             overridePaintOrder: null,
+            overrideOpacity: null,
             strokeColor: null,
             strokeWidth: null,
             strokeCap: null,
@@ -72,6 +77,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<RestyleDefinition>
             strokeDashOffset: null,
             fillColor: null,
             paintOrder: null,
+            opacity: null,
         },
         out: {
             output: [],
@@ -86,6 +92,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<RestyleDefinition>
             overrideStrokeDashOffset: false,
             overrideFillColor: false,
             overridePaintOrder: false,
+            overrideOpacity: false,
             // styling defaults
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeWidth: "1px",
@@ -95,6 +102,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<RestyleDefinition>
             strokeDashOffset: "0px",
             fillColor: { r: 0, g: 0, b: 0, a: 0 },
             paintOrder: 0,
+            opacity: "100",
         },
         type: "restyle",
     };
@@ -109,6 +117,7 @@ type OverrideFlags = {
     strokeDashOffset: boolean;
     fillColor: boolean;
     paintOrder: boolean;
+    opacity: boolean;
 };
 
 const OVERRIDE_KEYS: { socket: keyof Stylings.Definition["inputs"]; flag: keyof OverrideFlags; payloadFlag: keyof RestyleDefinition["payload"]; overrideSocket: keyof RestyleDefinition["inputs"] }[] =
@@ -121,6 +130,7 @@ const OVERRIDE_KEYS: { socket: keyof Stylings.Definition["inputs"]; flag: keyof 
         { socket: "strokeDashOffset", flag: "strokeDashOffset", payloadFlag: "overrideStrokeDashOffset", overrideSocket: "overrideStrokeDashOffset" },
         { socket: "fillColor", flag: "fillColor", payloadFlag: "overrideFillColor", overrideSocket: "overrideFillColor" },
         { socket: "paintOrder", flag: "paintOrder", payloadFlag: "overridePaintOrder", overrideSocket: "overridePaintOrder" },
+        { socket: "opacity", flag: "opacity", payloadFlag: "overrideOpacity", overrideSocket: "overrideOpacity" },
     ];
 
 const getOverrideFlags = (node: NodeDefinitions.NodeFor<RestyleDefinition>, context: Resolver.Context): OverrideFlags => {
@@ -138,6 +148,7 @@ const mergePaint = (original: Paint, resolved: Paint, overrides: OverrideFlags, 
 
     if (overrides.fillColor && !noFill) result.fill = resolved.fill;
     if (overrides.paintOrder) result.paintOrder = resolved.paintOrder;
+    if (overrides.opacity) result.opacity = resolved.opacity;
 
     const anyStroke = overrides.strokeColor || overrides.strokeWidth || overrides.strokeCap || overrides.strokeJoin || overrides.strokeDash || overrides.strokeDashOffset;
 
@@ -202,6 +213,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
     const strokeDashOffsetActive = node.in.overrideStrokeDashOffset !== null || node.payload.overrideStrokeDashOffset;
     const fillColorActive = node.in.overrideFillColor !== null || node.payload.overrideFillColor;
     const paintOrderActive = node.in.overridePaintOrder !== null || node.payload.overridePaintOrder;
+    const opacityActive = node.in.overrideOpacity !== null || node.payload.overrideOpacity;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -318,6 +330,18 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                     ))}
                 </Dropdown>
             </SocketIn>
+            <SocketIn node={node} socketId={"overrideOpacity"}>
+                <CheckBox
+                    checked={opacityActive}
+                    onToggle={(overrideOpacity) => handleUpdate({ overrideOpacity })}
+                    disabled={node.in.overrideOpacity !== null}
+                >
+                    Opacity
+                </CheckBox>
+            </SocketIn>
+            <SocketIn node={node} socketId={"opacity"}>
+                <DecimalInput value={node.payload.opacity} onCommit={(opacity) => handleUpdate({ opacity })} disabled={node.in.opacity !== null} required />
+            </SocketIn>
         </TypicalNode>
     );
 };
@@ -331,8 +355,9 @@ const OVERRIDE_INPUTS: (keyof RestyleDefinition["inputs"])[] = [
     "overrideStrokeDashOffset",
     "overrideFillColor",
     "overridePaintOrder",
+    "overrideOpacity",
 ];
-const STYLING_INPUTS: (keyof RestyleDefinition["inputs"])[] = ["strokeColor", "strokeWidth", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof RestyleDefinition["inputs"])[] = ["strokeColor", "strokeWidth", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RestyleDefinition>, outSocket: keyof RestyleDefinition["outputs"], _deps: AllDeps): (keyof RestyleDefinition["inputs"])[] => {
     if (outSocket === "output") {
@@ -372,6 +397,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<RestyleDefinition["inputs"]>]: So
     overrideStrokeDashOffset: { types: ["boolean"], mode: "or" },
     overrideFillColor: { types: ["boolean"], mode: "or" },
     overridePaintOrder: { types: ["boolean"], mode: "or" },
+    overrideOpacity: { types: ["boolean"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
 };
 

@@ -15,6 +15,7 @@ import { Color } from "../datatypes/color";
 import { Resolver } from "../../util/resolver";
 import { EmptyOr } from "../../util/misc";
 import { Dropdown } from "../../components/inputs/Dropdown";
+import { DecimalInput } from "../../components/inputs/DecimalInput";
 import { Paint } from "../shapeTypes";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
@@ -33,6 +34,7 @@ export namespace Stylings {
         strokeDashOffset: { types: ["length"], mode: "and" },
         fillColor: { types: ["color"], mode: "and" },
         paintOrder: { types: ["enum"], mode: "and" },
+        opacity: { types: ["float", "integer"], mode: "or" },
     };
 
     export type Definition = {
@@ -47,6 +49,7 @@ export namespace Stylings {
             // fill
             fillColor?: DataTypes.Use<"color">;
             paintOrder: DataTypes.Use<"enum">;
+            opacity: DataTypes.Use<"float" | "integer">;
         };
         outputs: NodeDefinitions.Generic["outputs"];
         payload: {
@@ -60,6 +63,7 @@ export namespace Stylings {
             // fill
             fillColor?: DataTypes.TypeOf<DataTypes.Use<"color">>;
             paintOrder: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+            opacity: DataTypes.TypeOf<DataTypes.Use<"float">>;
         };
     };
 
@@ -77,7 +81,7 @@ export namespace Stylings {
         accordion?: boolean;
     }) => {
         return (
-            <AccordionMaybe label={"Appearance"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder"}>
+            <AccordionMaybe label={"Appearance"} has={accordion} nodeId={node.id} socketsIn={"strokeColor|strokeWidth|strokeCap|strokeDash|strokeDashOffset|fillColor|strokeJoin|paintOrder|opacity"}>
                 <SocketIn node={node} socketId={"strokeColor"} label={"Stroke Color"}>
                     <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} required alpha />
                 </SocketIn>
@@ -126,6 +130,9 @@ export namespace Stylings {
                         })}
                     </Dropdown>
                 </SocketIn>
+                <SocketIn node={node} socketId={"opacity"} label={"Opacity"}>
+                    <DecimalInput value={node.payload.opacity} onCommit={(opacity) => handleUpdate({ opacity })} disabled={node.in.opacity !== null} required />
+                </SocketIn>
             </AccordionMaybe>
         );
     };
@@ -157,9 +164,13 @@ export namespace Stylings {
                   .join(" ")
             : undefined;
 
+        const opacityRaw = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "opacity")?.data ?? node.payload.opacity) ?? 100;
+        const opacity = Math.max(0, Math.min(100, opacityRaw)) / 100;
+
         const paint: Paint = {
             paintOrder,
             fill: (fillColor ?? null) === null ? null : Color.toHex(fillColor!),
+            opacity: opacity < 1 ? opacity : undefined,
         };
 
         if (strokeColor !== null) {

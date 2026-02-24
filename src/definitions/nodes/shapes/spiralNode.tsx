@@ -80,6 +80,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             strokeDashOffset: null,
             strokeCap: null,
             paintOrder: null,
+            opacity: null,
             // transforms
             positionMode: null,
             positionX: null,
@@ -113,6 +114,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             paintOrder: 0,
+            opacity: "100",
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",

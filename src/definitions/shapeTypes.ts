@@ -27,6 +27,7 @@ export type Paint = {
     stroke?: Stroke;
     fill?: Fill;
     paintOrder?: string; // e.g. "fill stroke markers"
+    opacity?: number; // 0–1 range; undefined = fully opaque
 };
 
 // ─── Markers ─────────────────────────────────────────────────────────────────
