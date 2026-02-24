@@ -4,6 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-02-24"} version={"3.1.2"}>
+                <Feature>Added a real starting state</Feature>
+                <Bugfix>Multiple selected nodes weren&apos;t dragging correctly</Bugfix>
+            </Build>
             <Build date={"2026-02-24"} version={"3.1.1"}>
                 <Feature>Added Opacity to all relevant Shape nodes</Feature>
             </Build>

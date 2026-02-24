@@ -19,7 +19,6 @@ import { TextInput } from "../../../components/inputs/TextInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Length } from "../../datatypes/length";
-import { NumericString } from "../../datatypes/numericString";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
@@ -225,11 +224,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
             </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"overrideStrokeColor"}>
-                <CheckBox
-                    checked={strokeColorActive}
-                    onToggle={(overrideStrokeColor) => handleUpdate({ overrideStrokeColor })}
-                    disabled={node.in.overrideStrokeColor !== null}
-                >
+                <CheckBox checked={strokeColorActive} onToggle={(overrideStrokeColor) => handleUpdate({ overrideStrokeColor })} disabled={node.in.overrideStrokeColor !== null}>
                     Stroke Color
                 </CheckBox>
             </SocketIn>
@@ -237,11 +232,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 <ColorHexInput value={node.payload.strokeColor} onCommit={(strokeColor) => handleUpdate({ strokeColor })} disabled={node.in.strokeColor !== null} alpha required />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeWidth"}>
-                <CheckBox
-                    checked={strokeWidthActive}
-                    onToggle={(overrideStrokeWidth) => handleUpdate({ overrideStrokeWidth })}
-                    disabled={node.in.overrideStrokeWidth !== null}
-                >
+                <CheckBox checked={strokeWidthActive} onToggle={(overrideStrokeWidth) => handleUpdate({ overrideStrokeWidth })} disabled={node.in.overrideStrokeWidth !== null}>
                     Stroke Width
                 </CheckBox>
             </SocketIn>
@@ -263,11 +254,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeJoin"}>
-                <CheckBox
-                    checked={strokeJoinActive}
-                    onToggle={(overrideStrokeJoin) => handleUpdate({ overrideStrokeJoin })}
-                    disabled={node.in.overrideStrokeJoin !== null}
-                >
+                <CheckBox checked={strokeJoinActive} onToggle={(overrideStrokeJoin) => handleUpdate({ overrideStrokeJoin })} disabled={node.in.overrideStrokeJoin !== null}>
                     Stroke Join
                 </CheckBox>
             </SocketIn>
@@ -281,11 +268,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeDash"}>
-                <CheckBox
-                    checked={strokeDashActive}
-                    onToggle={(overrideStrokeDash) => handleUpdate({ overrideStrokeDash })}
-                    disabled={node.in.overrideStrokeDash !== null}
-                >
+                <CheckBox checked={strokeDashActive} onToggle={(overrideStrokeDash) => handleUpdate({ overrideStrokeDash })} disabled={node.in.overrideStrokeDash !== null}>
                     Stroke Dash
                 </CheckBox>
             </SocketIn>
@@ -293,11 +276,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 <TextInput value={node.payload.strokeDash} onCommit={(strokeDash) => handleUpdate({ strokeDash })} disabled={node.in.strokeDash !== null} pattern={Length.TOKENS_REGEX} />
             </SocketIn>
             <SocketIn node={node} socketId={"overrideStrokeDashOffset"}>
-                <CheckBox
-                    checked={strokeDashOffsetActive}
-                    onToggle={(overrideStrokeDashOffset) => handleUpdate({ overrideStrokeDashOffset })}
-                    disabled={node.in.overrideStrokeDashOffset !== null}
-                >
+                <CheckBox checked={strokeDashOffsetActive} onToggle={(overrideStrokeDashOffset) => handleUpdate({ overrideStrokeDashOffset })} disabled={node.in.overrideStrokeDashOffset !== null}>
                     Dash Offset
                 </CheckBox>
             </SocketIn>
@@ -313,11 +292,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} required alpha />
             </SocketIn>
             <SocketIn node={node} socketId={"overridePaintOrder"}>
-                <CheckBox
-                    checked={paintOrderActive}
-                    onToggle={(overridePaintOrder) => handleUpdate({ overridePaintOrder })}
-                    disabled={node.in.overridePaintOrder !== null}
-                >
+                <CheckBox checked={paintOrderActive} onToggle={(overridePaintOrder) => handleUpdate({ overridePaintOrder })} disabled={node.in.overridePaintOrder !== null}>
                     Paint Order
                 </CheckBox>
             </SocketIn>
@@ -331,11 +306,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
                 </Dropdown>
             </SocketIn>
             <SocketIn node={node} socketId={"overrideOpacity"}>
-                <CheckBox
-                    checked={opacityActive}
-                    onToggle={(overrideOpacity) => handleUpdate({ overrideOpacity })}
-                    disabled={node.in.overrideOpacity !== null}
-                >
+                <CheckBox checked={opacityActive} onToggle={(overrideOpacity) => handleUpdate({ overrideOpacity })} disabled={node.in.overrideOpacity !== null}>
                     Opacity
                 </CheckBox>
             </SocketIn>

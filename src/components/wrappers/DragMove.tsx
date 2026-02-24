@@ -120,9 +120,9 @@ export namespace DragMove {
                     const dX = evt.movementX / zoom;
                     const dY = evt.movementY / zoom;
                     const { x, y } = { x: internalRef.current.x + dX, y: internalRef.current.y + dY };
-                    handleChange({ x, y });
                     onChangeRef.current?.(internalRef.current);
                     onDeltaRef.current?.({ x: dX, y: dY });
+                    handleChange({ x, y });
                 };
 
                 const pointerUp = (evt: PointerEvent) => {

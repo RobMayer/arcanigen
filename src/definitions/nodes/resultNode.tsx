@@ -90,6 +90,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
             }
             for (const [nId, toSet] of Object.entries(compiled)) {
                 const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+                (element as HTMLElement)?.style.setProperty("--x", `${toSet.x}px`);
+                (element as HTMLElement)?.style.setProperty("--y", `${toSet.y}px`);
                 element?.setAttribute("data-x", `${toSet.x}`);
                 element?.setAttribute("data-y", `${toSet.y}`);
             }
@@ -150,8 +152,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     }, [nodeId]);
 
     return (
-        <ResultWrapper position={localPosition}>
-            <div data-part={"body"} style={style} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+        <ResultWrapper position={localPosition} data-selectable={`node_${nodeId}`}>
+            <div data-part={"body"} style={style} data-state={isSelected ? "selected" : undefined}>
                 <ResultTitle data-flavour="emphasis">
                     <ResultFallback nodeId={nodeId} side={"in"} />
                     <ActionButton.Lite onClick={toggle} flavour={"inherit"}>

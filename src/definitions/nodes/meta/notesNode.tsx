@@ -24,14 +24,14 @@ export type NotesDefinition = {
     };
 };
 
-const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<NotesDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"notes", NotesDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<NotesDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"notes", NotesDefinition> => {
     return {
         id,
         in: {},
         out: {},
         payload: {
-            label: "",
-            text: "",
+            label: input.label ?? "",
+            text: input.text ?? "",
         },
         type: "notes",
     };
@@ -66,6 +66,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
             }
             for (const [nId, toSet] of Object.entries(compiled)) {
                 const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+                (element as HTMLElement)?.style.setProperty("--x", `${toSet.x}px`);
+                (element as HTMLElement)?.style.setProperty("--y", `${toSet.y}px`);
                 element?.setAttribute("data-x", `${toSet.x}`);
                 element?.setAttribute("data-y", `${toSet.y}`);
             }
@@ -123,8 +125,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
     const displayLabel = node.payload.label === "" ? "Note" : node.payload.label;
 
     return (
-        <NoteWrapper position={localPosition}>
-            <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+        <NoteWrapper position={localPosition} data-selectable={`node_${nodeId}`}>
+            <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
                 <NoteTitle>
                     <Icon shape={NODE_ICONS.note} />
                     <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>

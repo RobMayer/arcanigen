@@ -79,8 +79,8 @@ export const TypicalNode = styled(
         }, [nodeId]);
 
         return (
-            <DragMove.Item position={localPosition} className={className}>
-                <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-selectable={`node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+            <DragMove.Item position={localPosition} className={className} data-selectable={`node_${nodeId}`}>
+                <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
                     <NodeTitle
                         handleRef={handleRef}
                         node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
@@ -335,6 +335,8 @@ const applyMoveDelta = (
     // apply DOM updates for visual feedback
     for (const [nId, toSet] of Object.entries(compiled)) {
         const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+        (element as HTMLElement)?.style.setProperty("--x", `${toSet.x}px`);
+        (element as HTMLElement)?.style.setProperty("--y", `${toSet.y}px`);
         element?.setAttribute("data-x", `${toSet.x}`);
         element?.setAttribute("data-y", `${toSet.y}`);
     }
