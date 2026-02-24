@@ -7,6 +7,8 @@ import { DecimalInput } from "../components/inputs/DecimalInput";
 import { Project } from "../state/project";
 import { downloadBlob, uploadFile } from "../util/fileIO";
 import { buildExportSvg } from "../util/fontEmbed";
+import { Modal } from "../components/popups/Modal";
+import { ChangeLog } from "../changelog";
 
 export const Toolbar = styled(({ className }: { className?: string }) => {
     const [marqueeMode, setMarqueeMode] = Session.useMarqueeMode();
@@ -70,6 +72,8 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
         });
     }, [dpi]);
 
+    const changelogControls = Modal.useControls();
+
     return (
         <div className={className}>
             <ActionButton onClick={handleSave}>Save Graph</ActionButton>
@@ -91,6 +95,11 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
             <div>
                 v{APP_VERSION} [{BUILD_DATE}]
             </div>
+            <ActionButton onClick={changelogControls.open}>Change Log</ActionButton>
+            <Modal controls={changelogControls} size="640px fit">
+                <Modal.Title>Change Log</Modal.Title>
+                <ChangeLog />
+            </Modal>
         </div>
     );
 })`
