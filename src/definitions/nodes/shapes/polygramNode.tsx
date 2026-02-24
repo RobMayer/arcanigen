@@ -470,7 +470,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
 
     const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
     const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
-    const tempSkipCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0;
+    const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
     const step = Math.min(tempSkipCount, Math.ceil(pointCount / 2) - 2) + 1;
 
     if (socket === "eCircumradius") {

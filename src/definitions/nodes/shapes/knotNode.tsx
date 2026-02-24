@@ -713,7 +713,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
     tI = Math.max(0, tI);
     tO = Math.max(0, tO);
 
-    const tempSkipCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0;
+    const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
     const step = Math.min(tempSkipCount, Math.ceil(N / 2) - 2) + 1;
 
     if (socket === "eOuterCircumradius") {
