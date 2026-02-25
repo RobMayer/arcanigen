@@ -34,6 +34,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FromPathDefinition>
             strokeDash: null,
             strokeDashOffset: null,
             strokeCap: null,
+            strokeJoin: null,
             fillColor: null,
             paintOrder: null,
             opacity: null,
@@ -58,6 +59,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FromPathDefinition>
             strokeCap: Enum.Common.strokeCap.BUTT.value,
             // fill
             fillColor: { r: 0, g: 0, b: 0, a: 0 },
+            strokeJoin: 0,
             paintOrder: 0,
             opacity: "100",
             // transforms
@@ -88,7 +90,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FromPathDef
             <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
