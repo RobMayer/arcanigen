@@ -46,9 +46,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
     const selectionRef = Session.useSelectionRef();
     const positionsRef = Project.usePositionsRef();
     const positionMethods = Project.usePositionMethods();
+    const selectMethods = Session.useSelectionMethods();
 
     const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
     const [isEditing, setIsEditing] = useState(false);
+
+    const handleFocus = useCallback(() => {
+        if (!selectionRef.current.has(`node_${nodeId}`)) {
+            selectMethods.set(`node_${nodeId}`);
+        }
+    }, [selectionRef, nodeId, selectMethods]);
 
     const handleDragDelta = useCallback(
         (delta: { x: number; y: number }) => {
@@ -65,7 +72,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
                 }
             }
             for (const [nId, toSet] of Object.entries(compiled)) {
-                const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+                const element = document.querySelector(`div[data-moveable="node_${nId}"]`);
                 (element as HTMLElement)?.style.setProperty("--x", `${toSet.x}px`);
                 (element as HTMLElement)?.style.setProperty("--y", `${toSet.y}px`);
                 element?.setAttribute("data-x", `${toSet.x}`);
@@ -125,8 +132,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
     const displayLabel = node.payload.label === "" ? "Note" : node.payload.label;
 
     return (
-        <NoteWrapper position={localPosition} data-selectable={`node_${nodeId}`}>
-            <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+        <NoteWrapper position={localPosition} data-moveable={`node_${nodeId}`} onFocus={handleFocus}>
+            <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
                 <NoteTitle>
                     <Icon shape={NODE_ICONS.note} />
                     <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
@@ -183,7 +190,6 @@ const NoteWrapper = styled(DragMove.Item)`
     width: 0px;
     height: 0px;
 
-    &:focus-within > [data-part="body"],
     & > [data-part="body"][data-state~="selected"] {
         outline-color: white;
     }

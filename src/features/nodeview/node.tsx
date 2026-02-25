@@ -30,9 +30,16 @@ export const TypicalNode = styled(
 
         const selectionRef = Session.useSelectionRef();
         const positionsRef = Project.usePositionsRef();
+        const selectMethods = Session.useSelectionMethods();
         const positionMethods = Project.usePositionMethods();
 
         const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
+
+        const handleFocus = useCallback(() => {
+            if (!selectionRef.current.has(`node_${nodeId}`)) {
+                selectMethods.set(`node_${nodeId}`);
+            }
+        }, [selectionRef, nodeId, selectMethods]);
 
         const handleDragDelta = useCallback(
             (delta: { x: number; y: number }) => {
@@ -79,8 +86,8 @@ export const TypicalNode = styled(
         }, [nodeId]);
 
         return (
-            <DragMove.Item position={localPosition} className={className} data-selectable={`node_${nodeId}`}>
-                <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined}>
+            <DragMove.Item position={localPosition} className={className} data-moveable={`node_${nodeId}`} onFocus={handleFocus}>
+                <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
                     <NodeTitle
                         handleRef={handleRef}
                         node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
@@ -102,7 +109,6 @@ export const TypicalNode = styled(
     width: 0px;
     height: 0px;
 
-    &:focus-within > [data-part="body"],
     & > [data-part="body"][data-state~="selected"] {
         outline-color: white;
     }
@@ -334,7 +340,7 @@ const applyMoveDelta = (
 
     // apply DOM updates for visual feedback
     for (const [nId, toSet] of Object.entries(compiled)) {
-        const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+        const element = document.querySelector(`div[data-moveable="node_${nId}"]`);
         (element as HTMLElement)?.style.setProperty("--x", `${toSet.x}px`);
         (element as HTMLElement)?.style.setProperty("--y", `${toSet.y}px`);
         element?.setAttribute("data-x", `${toSet.x}`);

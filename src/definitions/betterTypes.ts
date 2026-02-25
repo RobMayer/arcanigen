@@ -133,6 +133,7 @@ import { PathExcludeDefinition, PathExcludeNodeType } from "./nodes/math/pathExc
 import { PathIntersectDefinition, PathIntersectNodeType } from "./nodes/math/pathIntersectNode";
 import { PathHealNodeDefinition, PathHealNodeType } from "./nodes/math/pathHealNode";
 import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivideNode";
+import { ContainerDefinition, ContainerNodeType } from "./nodes/meta/containerNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -176,6 +177,7 @@ namespace Registries {
 
         // meta
         notes: NotesDefinition;
+        container: ContainerDefinition;
 
         //debug
         shapePreview: ShapePreviewDefinition;
@@ -326,6 +328,7 @@ namespace Registries {
         tokensLength: TokensLengthPrimitiveType,
         randomSeed: RandomSeedNodeType,
         notes: NotesNodeType,
+        container: ContainerNodeType,
         shapePreview: ShapePreviewType,
 
         floatInput: FloatInputType,

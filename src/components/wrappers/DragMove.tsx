@@ -3,6 +3,8 @@ import styled from "styled-components";
 import { useStable } from "../../util/hooks/useStable";
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
 
+const NOCONTEXTSUB = () => () => {};
+
 export namespace DragMove {
     type XY = { x: number; y: number };
     type UseHandleOptions = {
@@ -19,9 +21,7 @@ export namespace DragMove {
         return <CTX value={value}>{children}</CTX>;
     };
 
-    const NOCONTEXTSUB = () => () => {};
-
-    const useDragMoveContext = (id: string) => {
+    const useDragMoveContext = (id: string, skip: boolean) => {
         const ctx = useContext(CTX);
 
         const selector = useCallback(() => {
@@ -31,16 +31,16 @@ export namespace DragMove {
         const value = useSyncExternalStore(ctx?.subscribe ?? NOCONTEXTSUB, selector);
 
         const setToTop = useCallback(() => {
-            if (ctx) {
+            if (ctx && !skip) {
                 ctx.ref.current = ctx.ref.current.filter((each) => each !== id);
                 ctx.ref.current.push(id);
                 ctx.notify();
             }
-        }, [ctx, id]);
+        }, [ctx, id, skip]);
 
         // register and unregister patterns
         useEffect(() => {
-            if (ctx) {
+            if (ctx && !skip) {
                 ctx.ref.current.push(id);
                 ctx.notify();
             }
@@ -51,13 +51,14 @@ export namespace DragMove {
                     ctx.notify();
                 }
             };
-        }, [id, ctx]);
+        }, [id, ctx, skip]);
 
-        return [value, setToTop] as const;
+        return [skip ? 0 : value + 1, setToTop] as const;
     };
 
     type DragMoveProps = {
         position: XY;
+        noStack?: boolean;
     } & DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
 
     const TheDiv = styled.div`
@@ -66,14 +67,14 @@ export namespace DragMove {
         left: var(--x, 0px);
     `;
 
-    export const Item = ({ position, onFocus, style, ...props }: DragMoveProps) => {
+    export const Item = ({ position, onFocus, style, noStack = false, ...props }: DragMoveProps) => {
         const onFocusRef = useStable(onFocus);
         const id = useId();
-        const [zIndex, setToTop] = useDragMoveContext(id);
+        const [zIndex, setToTop] = useDragMoveContext(id, noStack ?? false);
 
         const mergedStyle = useMemo(() => {
-            return { ...style, zIndex, "--x": `${position.x}px`, "--y": `${position.y}px` };
-        }, [style, zIndex, position.x, position.y]);
+            return { ...style, zIndex: noStack ? 0 : zIndex, "--x": `${position.x}px`, "--y": `${position.y}px` };
+        }, [style, zIndex, position.x, position.y, noStack]);
 
         const handleFocus = useCallback(
             (event: FocusEvent<HTMLDivElement>) => {

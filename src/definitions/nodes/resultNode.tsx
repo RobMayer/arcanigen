@@ -73,6 +73,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
     const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${nodeId}]`);
     const [isEditing, setIsEditing] = useState(false);
+    const selectMethods = Session.useSelectionMethods();
+
+    const handleFocus = useCallback(() => {
+        if (!selectionRef.current.has(`node_${nodeId}`)) {
+            selectMethods.set(`node_${nodeId}`);
+        }
+    }, [selectionRef, nodeId, selectMethods]);
 
     const handleDragDelta = useCallback(
         (delta: { x: number; y: number }) => {
@@ -89,7 +96,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
                 }
             }
             for (const [nId, toSet] of Object.entries(compiled)) {
-                const element = document.querySelector(`div[data-selectable="node_${nId}"]`);
+                const element = document.querySelector(`div[data-moveable="node_${nId}"]`);
                 (element as HTMLElement)?.style.setProperty("--x", `${toSet.x}px`);
                 (element as HTMLElement)?.style.setProperty("--y", `${toSet.y}px`);
                 element?.setAttribute("data-x", `${toSet.x}`);
@@ -152,8 +159,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     }, [nodeId]);
 
     return (
-        <ResultWrapper position={localPosition} data-selectable={`node_${nodeId}`}>
-            <div data-part={"body"} style={style} data-state={isSelected ? "selected" : undefined}>
+        <ResultWrapper position={localPosition} data-moveable={`node_${nodeId}`} onFocus={handleFocus}>
+            <div data-part={"body"} style={style} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
                 <ResultTitle data-flavour="emphasis">
                     <ResultFallback nodeId={nodeId} side={"in"} />
                     <ActionButton.Lite onClick={toggle} flavour={"inherit"}>
@@ -248,7 +255,6 @@ const ResultWrapper = styled(DragMove.Item)`
     width: 0px;
     height: 0px;
 
-    &:focus-within > [data-part="body"],
     & > [data-part="body"][data-state~="selected"] {
         outline-color: white;
     }
