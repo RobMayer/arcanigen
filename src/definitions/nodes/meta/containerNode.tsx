@@ -399,7 +399,7 @@ const ContainerWrapper = styled(DragMove.Item)`
 
     & > [data-part="body"] {
         display: grid;
-        background: oklch(from var(--flavour) 0.5 0.4 h / 4%);
+        background: oklch(from var(--flavour) calc(l * 0.5) c h / 20%);
         border: 1px solid var(--flavour);
         width: var(--w);
         height: var(--h);
