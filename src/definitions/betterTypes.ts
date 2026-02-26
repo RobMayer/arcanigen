@@ -124,6 +124,7 @@ import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode
 import { PencilEffectDefinition, PencilEffectNodeType } from "./nodes/effects/pencilEffectNode";
 import { PenEffectDefinition, PenEffectNodeType } from "./nodes/effects/penEffectNode";
 import { BrushEffectDefinition, BrushEffectNodeType } from "./nodes/effects/brushEffectNode";
+import { GlowEffectDefinition, GlowEffectNodeType } from "./nodes/effects/glowEffectNode";
 import { RandomSeedDefinition, RandomSeedNodeType } from "./nodes/primitives/randomSeedNode";
 import { NotesDefinition, NotesNodeType } from "./nodes/meta/notesNode";
 import { PathUnifyDefinition, PathUnitfyNodeType } from "./nodes/math/pathUnifyNode";
@@ -282,6 +283,7 @@ namespace Registries {
         pencilEffect: PencilEffectDefinition;
         penEffect: PenEffectDefinition;
         brushEffect: BrushEffectDefinition;
+        glowEffect: GlowEffectDefinition;
     };
 
     export const NODETYPES: { [K in keyof NODEDEFINITIONS]: NodeTypes.Type<K, NODEDEFINITIONS[K]> } = {
@@ -412,6 +414,7 @@ namespace Registries {
         pencilEffect: PencilEffectNodeType,
         penEffect: PenEffectNodeType,
         brushEffect: BrushEffectNodeType,
+        glowEffect: GlowEffectNodeType,
     } as const;
 
     export type DATATYPES = {
