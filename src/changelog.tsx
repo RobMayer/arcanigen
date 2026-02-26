@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-02-26"} version={"3.1.5"}>
+                <Feature>Added the Glow effect node.</Feature>
+            </Build>
             <Build date={"2026-02-25"} version={"3.1.4"}>
                 <Bugfix>Clicking on a node didn&apos;t *actually* select it, it just looked selected</Bugfix>
                 <Feature>Added the Container Node.</Feature>
