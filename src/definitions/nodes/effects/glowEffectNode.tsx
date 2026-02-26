@@ -7,6 +7,7 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { SliderInput } from "../../../components/inputs/SliderInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
+import { CheckBox } from "../../../components/buttons/CheckBox";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
@@ -24,6 +25,7 @@ const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 export type GlowEffectDefinition = {
     inputs: {
         input: DataTypes.Use<"shape">;
+        artColor: DataTypes.Use<"boolean">;
         color: DataTypes.Use<"color">;
         blur: DataTypes.Use<"length">;
         spread: DataTypes.Use<"length">;
@@ -40,6 +42,7 @@ export type GlowEffectDefinition = {
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        artColor: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
         color: DataTypes.TypeOf<DataTypes.Use<"color">>;
         blur: DataTypes.TypeOf<DataTypes.Use<"length">>;
         spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
@@ -56,11 +59,25 @@ export type GlowEffectDefinition = {
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GlowEffectDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"glowEffect", GlowEffectDefinition> => {
     return {
         id,
-        in: { input: null, color: null, blur: null, spread: null, strength: null, opacity: null, offsetMode: null, offsetX: null, offsetY: null, offsetRadius: null, offsetTheta: null },
+        in: {
+            input: null,
+            artColor: null,
+            color: null,
+            blur: null,
+            spread: null,
+            strength: null,
+            opacity: null,
+            offsetMode: null,
+            offsetX: null,
+            offsetY: null,
+            offsetRadius: null,
+            offsetTheta: null,
+        },
         out: { output: [] },
         payload: {
             label: "",
-            color: null,
+            artColor: false,
+            color: { r: 0, g: 0, b: 0, a: 1 },
             blur: "1px",
             spread: "1px",
             strength: "1",
@@ -95,7 +112,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
                 Input
             </SocketIn>
             <SocketIn node={node} socketId={"color"} label={"Color"}>
-                <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} alpha disabled={node.in.color !== null} />
+                <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} required alpha disabled={node.in.color !== null} />
+            </SocketIn>
+            <SocketIn node={node} socketId={"artColor"}>
+                <CheckBox checked={node.payload.artColor} onToggle={(artColor) => handleUpdate({ artColor })} disabled={node.in.artColor !== null}>
+                    Use Art Color
+                </CheckBox>
             </SocketIn>
             <SocketIn node={node} socketId={"blur"} label={"Blur"}>
                 <LengthInput value={node.payload.blur} onCommit={(blur) => handleUpdate({ blur })} disabled={node.in.blur !== null} />
@@ -135,7 +157,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<GlowEffectDefinition>, outSocket: "output", _deps: AllDeps): (keyof GlowEffectDefinition["inputs"])[] => {
-    if (outSocket === "output") return ["input", "color", "blur", "spread", "strength", "opacity", "offsetMode", "offsetX", "offsetY", "offsetRadius", "offsetTheta"];
+    if (outSocket === "output") return ["input", "artColor", "color", "blur", "spread", "strength", "opacity", "offsetMode", "offsetX", "offsetY", "offsetRadius", "offsetTheta"];
     return [];
 };
 
@@ -150,6 +172,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     if (!inputShape) return null;
 
     // Resolve parameters
+    const artColor: boolean = context.resolve<"boolean">(node.id, "artColor")?.data ?? node.payload.artColor;
     const color: Color.Type = context.resolve<"color">(node.id, "color")?.data ?? node.payload.color;
     const blurPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "blur")?.data ?? node.payload.blur) ?? 0);
     const spreadPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread) ?? 0);
@@ -175,7 +198,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     const filter: FilterPrimitive[] = [];
     let lastResult = "SourceGraphic";
 
-    if (color !== null) {
+    if (!artColor && color !== null) {
         // Colored glow: flood + clip to source alpha
         const hex = Color.toHex(color).slice(0, 7); // RGB only
         filter.push({ tag: "feFlood", attrs: { "flood-color": hex, "flood-opacity": color.a, result: "flood" } });
@@ -221,6 +244,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
 
 const SOCKETTYPES_IN: { [key in keyof GlowEffectDefinition["inputs"]]: SocketTypes.SocketRule } = {
     input: { types: ["shape"], mode: "and" },
+    artColor: { types: ["boolean"], mode: "and" },
     color: { types: ["color"], mode: "and" },
     blur: { types: ["length"], mode: "and" },
     spread: { types: ["length"], mode: "and" },
