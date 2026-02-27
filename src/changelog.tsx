@@ -4,6 +4,11 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-02-27"} version={"3.1.6"}>
+                <Bugfix>Node positions weren&apos;t being saved in subgraphs</Bugfix>
+                <Bugfix>Not all selected nodes were moving in subgraphs</Bugfix>
+                <Bugfix>Containers wouldn&apos;t move their contained nodes in subgraphs</Bugfix>
+            </Build>
             <Build date={"2026-02-26"} version={"3.1.5"}>
                 <Feature>Added the Glow effect node.</Feature>
             </Build>

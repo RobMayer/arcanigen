@@ -206,7 +206,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     let idx = reverseSequence ? count - 1 - iter : iter;
 
     // Pipeline step 2: Offset
-    idx = (((idx - offset) % count) + count) % count;
+    idx = (((idx + offset) % count) + count) % count;
 
     // Pipeline step 3: Mode maps idx (0..count-1) → stepIdx (0..socketCount-1)
     let stepIdx: number | null;

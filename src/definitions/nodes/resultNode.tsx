@@ -90,8 +90,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
             for (const id of selectionRef.current) {
                 if (id.startsWith("node_")) {
                     const nId = id.substring(5);
-                    if (positionsRef.current["root"]?.[nId]) {
-                        compiled[nId] = { x: positionsRef.current["root"][nId].x + delta.x, y: positionsRef.current["root"][nId].y + delta.y };
+                    if (positionsRef.current[graphId]?.[nId]) {
+                        compiled[nId] = { x: positionsRef.current[graphId][nId].x + delta.x, y: positionsRef.current[graphId][nId].y + delta.y };
                     }
                 }
             }
@@ -104,7 +104,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
             }
             positionMethods.setMany.passive(compiled);
         },
-        [selectionRef, nodeId, positionMethods.setMany, positionsRef],
+        [selectionRef, nodeId, positionMethods.setMany, positionsRef, graphId],
     );
 
     const handleFinish = useCallback(

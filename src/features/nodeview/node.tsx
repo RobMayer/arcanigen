@@ -46,10 +46,10 @@ export const TypicalNode = styled(
                 if (!selectionRef.current.has(`node_${nodeId}`)) {
                     return;
                 }
-                const compiled = applyMoveDelta("root", delta, selectionRef, positionsRef);
+                const compiled = applyMoveDelta(graphId, delta, selectionRef, positionsRef);
                 positionMethods.setMany.passive(compiled);
             },
-            [selectionRef, nodeId, positionMethods.setMany, positionsRef],
+            [selectionRef, nodeId, positionMethods.setMany, positionsRef, graphId],
         );
 
         const handleFinish = useCallback(

@@ -610,6 +610,7 @@ const EditorLayout = styled.div`
     & > div[data-area="graphview"] {
         position: relative;
         border: 1px solid var(--flavour);
+        overflow: clip;
     }
 
     & > div[data-area="drawer"] {
