@@ -135,7 +135,7 @@ export const LessOrEqualNodeType: NodeTypes.Type<"lessOrEqual", LessOrEqualDefin
     type: "lessOrEqual",
     displayName: "Less or Equal",
     defaultLabel: "Less or Equal",
-    iconNode: <Icon shape={NODE_ICONS.less} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.lessEqual} color={"var(--icon-flavour)"} />,
     category: "Logic",
     create,
     dependsOn,

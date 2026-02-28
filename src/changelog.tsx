@@ -4,7 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
-            <Build date={"2026-02-27"} version={"3.1.6"}>
+            <Build date={"2026-02-27"} version={"3.1.8"}>
+                <Bugfix>Less than and Less-than-or-equal node icons were swapped</Bugfix>
+            </Build>
+            <Build date={"2026-02-27"} version={"3.1.7"}>
                 <Improvement>Unified the Arc, Radial Array, and Spiral options (Start/Sweep vs From/To).</Improvement>
                 <Improvement>Added some horizontal-rules to a few nodes for organization</Improvement>
             </Build>
