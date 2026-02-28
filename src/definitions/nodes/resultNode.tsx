@@ -71,7 +71,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     const positionMethods = Project.usePositionMethods();
 
     const [isSelected] = Session.useIsSelected(`node_${nodeId}`);
-    const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${nodeId}]`);
+    const [isClosed, setIsClosed] = Project.useUiState<boolean>(`node_accordion[${graphId}][${nodeId}]`);
     const [isEditing, setIsEditing] = useState(false);
     const selectMethods = Session.useSelectionMethods();
 

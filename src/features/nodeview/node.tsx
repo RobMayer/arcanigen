@@ -67,7 +67,7 @@ export const TypicalNode = styled(
 
         const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta, zoom: () => paneControls.get().z });
 
-        const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
+        const [isClosed, setIsClosed] = Project.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
         const toggle = useCallback(() => {
             setIsClosed((p) => (p ? undefined : true));
         }, [setIsClosed]);

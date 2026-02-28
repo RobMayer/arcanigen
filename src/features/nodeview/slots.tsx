@@ -2,7 +2,7 @@ import { CSSProperties, ReactNode, Ref, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { Socket } from "./socket";
 import { Icon, ICONS } from "../../components/Icon";
-import { Session } from "../../state/session";
+import { Project } from "../../state/project";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { DataTypes, NodeDefinitions } from "../../definitions/betterTypes";
@@ -152,7 +152,7 @@ export const NodeAccordion = styled(
         }, [nodeId, socketsIn, socketsOut]);
 
         const graphId = useGraphId();
-        const [isToggled, setIsToggled] = Session.useUiState<boolean>(`nodeSlot_accordion[${graphId}][${nodeId}][${accordionId ?? label}]`);
+        const [isToggled, setIsToggled] = Project.useUiState<boolean>(`nodeSlot_accordion[${graphId}][${nodeId}][${accordionId ?? label}]`);
         const isOpen = start === "open" ? !isToggled : isToggled;
         const toggle = useCallback(() => {
             setIsToggled((p) => (p ? undefined : true));

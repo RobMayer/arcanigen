@@ -26,8 +26,11 @@ export namespace Project {
         meta: MetaType;
     };
 
+    type UiStateType = { [key: string]: unknown };
+
     type State = { [key in keyof TheType]: FastContextMember<TheType[key]> } & {
         pendingConnection: FastContextMember<PendingConnection | null>;
+        uiState: FastContextMember<UiStateType>;
         mc: MethodContextImpl;
     };
 
@@ -46,10 +49,11 @@ export namespace Project {
         const meta = useFastContextMember<TheType["meta"]>(INITIAL_STATE.meta);
 
         const pendingConnection = useFastContextMember<PendingConnection | null>(null);
+        const uiState = useFastContextMember<UiStateType>({});
 
         const mc = useMemo(() => new MethodContextImpl({ nodes, nodeList, links, linkList, positions, users, interfaces, cache, deps, meta }), []);
 
-        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, meta, pendingConnection, mc }), [mc]);
+        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, meta, pendingConnection, uiState, mc }), [mc]);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -440,6 +444,27 @@ export namespace Project {
         }, [ctx]);
     };
 
+    export const useUiState = <T,>(key: string) => {
+        const ctx = useContext(CTX)!;
+
+        const selector = useCallback(() => ctx.uiState.get()[key], [key, ctx]);
+        const set = useCallback(
+            (v: T | ((p: T | undefined) => T | undefined)) => {
+                const p = ctx.uiState.ref.current[key] as T | undefined;
+                const n = typeof v === "function" ? (v as (p: T | undefined) => T)(p) : v;
+                if (n === undefined) {
+                    delete ctx.uiState.ref.current[key];
+                } else {
+                    ctx.uiState.ref.current[key] = n;
+                }
+                ctx.uiState.notify();
+            },
+            [ctx, key],
+        );
+
+        return [useSyncExternalStore(ctx.uiState.subscribe, selector), set] as [T | undefined, typeof set];
+    };
+
     export type SavedProject = {
         version: 1;
         nodes: NodesType;
@@ -448,6 +473,7 @@ export namespace Project {
         users: UsersType;
         interfaces: InterfacesType;
         meta: MetaType;
+        uiState?: { [key: string]: unknown };
     };
 
     export const useProjectIO = () => {
@@ -462,6 +488,7 @@ export namespace Project {
                 users: ctx.users.ref.current,
                 interfaces: ctx.interfaces.ref.current,
                 meta: ctx.meta.ref.current,
+                uiState: ctx.uiState.ref.current,
             });
 
             const load = (data: SavedProject) => {
@@ -482,6 +509,7 @@ export namespace Project {
                 ctx.cache.ref.current = cache;
                 ctx.deps.ref.current = deps;
                 ctx.meta.ref.current = meta;
+                ctx.uiState.ref.current = data.uiState ?? {};
 
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
@@ -493,6 +521,7 @@ export namespace Project {
                 ctx.cache.notify();
                 ctx.deps.notify();
                 ctx.meta.notify();
+                ctx.uiState.notify();
             };
 
             const importSubgraphs = (data: SavedProject) => {
@@ -550,6 +579,18 @@ export namespace Project {
                     }
                 }
 
+                // Remap uiState keys from old graph IDs to new graph IDs
+                let currentUiState = { ...ctx.uiState.ref.current };
+                if (data.uiState) {
+                    for (const [key, val] of Object.entries(data.uiState)) {
+                        let remappedKey = key;
+                        for (const [oldId, newId] of idMap) {
+                            remappedKey = remappedKey.replaceAll(`[${oldId}]`, `[${newId}]`);
+                        }
+                        currentUiState[remappedKey] = val;
+                    }
+                }
+
                 // Apply state
                 ctx.nodes.ref.current = currentNodes;
                 ctx.links.ref.current = currentLinks;
@@ -557,6 +598,7 @@ export namespace Project {
                 ctx.users.ref.current = currentUsers;
                 ctx.interfaces.ref.current = currentInterfaces;
                 ctx.meta.ref.current = currentMeta;
+                ctx.uiState.ref.current = currentUiState;
 
                 // Rebuild derived state
                 const nodeList = Object.fromEntries(Object.entries(currentNodes).map(([gid, g]) => [gid, Object.keys(g)]));
@@ -578,6 +620,7 @@ export namespace Project {
                 ctx.cache.notify();
                 ctx.deps.notify();
                 ctx.meta.notify();
+                ctx.uiState.notify();
 
                 return [...idMap.values()];
             };
@@ -614,7 +657,17 @@ export namespace Project {
                     interfaces[gid] = ctx.interfaces.ref.current[gid] ?? [];
                     meta[gid] = ctx.meta.ref.current[gid] ?? { name: "Untitled" };
                 }
-                return { version: 1, nodes, links, positions, users, interfaces, meta };
+                // Filter uiState keys relevant to collected graphs
+                const uiState: UiStateType = {};
+                for (const [key, val] of Object.entries(ctx.uiState.ref.current)) {
+                    for (const gid of collected) {
+                        if (key.includes(`[${gid}]`)) {
+                            uiState[key] = val;
+                            break;
+                        }
+                    }
+                }
+                return { version: 1, nodes, links, positions, users, interfaces, meta, uiState };
             };
 
             return { save, load, importSubgraphs, saveSubgraph };
