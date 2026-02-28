@@ -131,6 +131,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
                 <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spanMode) })}>Span Mode</ActionButton>
                 <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spreadAlign) })}>Spread Align</ActionButton>
                 <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.paintOrder) })}>Paint Order</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.cornerShape) })}>Corner Shape</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.textAlign) })}>Text Align</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.textAnchor) })}>Text Anchor</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.offsetMode) })}>Offset Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.offsetOrigin) })}>Offset Origin</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.maskMode) })}>Mask Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spacingMode) })}>Spacing Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.overflowMode) })}>Overflow Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.sequencerMode) })}>Sequencer Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.arcMode) })}>Arc Mode</ActionButton>
+                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.expandMode) })}>Expand Mode</ActionButton>
             </NodeAccordion>
         </TypicalNode>
     );

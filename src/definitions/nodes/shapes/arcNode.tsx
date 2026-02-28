@@ -139,6 +139,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
+            <SocketIn node={node} socketId={"pieSlice"}>
+                <CheckBox checked={node.payload.pieSlice} onToggle={(pieSlice) => handleUpdate({ pieSlice })} disabled={node.in.pieSlice !== null}>
+                    Pie Slice
+                </CheckBox>
+            </SocketIn>
 
             <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
@@ -149,25 +154,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
                     disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} />
             </SocketIn>
             <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
                 <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound min={-360} max={360} />
             </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
                 <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
             </SocketIn>
             <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
                 <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
-            </SocketIn>
-
-            <SocketIn node={node} socketId={"pieSlice"}>
-                <CheckBox checked={node.payload.pieSlice} onToggle={(pieSlice) => handleUpdate({ pieSlice })} disabled={node.in.pieSlice !== null}>
-                    Pie Slice
-                </CheckBox>
             </SocketIn>
 
             <NodeAccordion label={"More"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>

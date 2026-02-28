@@ -27,10 +27,11 @@ export type BurstDefinition = {
         outerRadius: DataTypes.Use<"length">;
         spanMode: DataTypes.Use<"enum">;
         spreadAlign: DataTypes.Use<"enum">;
-        thetaMode: DataTypes.Use<"enum">;
+        arcMode: DataTypes.Use<"enum">;
         thetaStart: DataTypes.Use<"angle">;
-        thetaEnd: DataTypes.Use<"angle">;
-        thetaSteps: DataTypes.Use<"angle">;
+        sweep: DataTypes.Use<"angle">;
+        thetaFrom: DataTypes.Use<"angle">;
+        thetaTo: DataTypes.Use<"angle">;
         thetaInclusive: DataTypes.Use<"boolean">;
         thetaCurve: DataTypes.Use<"distribution">;
         markerStart: DataTypes.Use<"shape">;
@@ -51,10 +52,11 @@ export type BurstDefinition = {
         spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
         innerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
         outerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        thetaMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaEnd: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaSteps: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        thetaFrom: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        thetaTo: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         thetaInclusive: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
         markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
     } & Stylings.Definition["payload"] &
@@ -72,10 +74,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             outerRadius: null,
             spanMode: null,
             spreadAlign: null,
-            thetaMode: null,
+            arcMode: null,
             thetaStart: null,
-            thetaEnd: null,
-            thetaSteps: null,
+            sweep: null,
+            thetaFrom: null,
+            thetaTo: null,
             thetaInclusive: null,
             thetaCurve: null,
 
@@ -111,10 +114,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             spread: "20px",
             innerRadius: "140px",
             outerRadius: "160px",
-            thetaMode: Enum.Common.thetaMode.INCREMENTAL.value,
+            arcMode: Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: "0",
-            thetaEnd: "90",
-            thetaSteps: "30",
+            sweep: "90",
+            thetaFrom: "0",
+            thetaTo: "90",
             thetaInclusive: false,
             markerAlign: true,
             // stroke
@@ -138,7 +142,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
 };
 
 const SPAN_MODE_OPTIONS = Enum.options(Enum.Common.spanMode);
-const THETA_MODE_OPTIONS = Enum.options(Enum.Common.thetaMode);
+const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 const SPREAD_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
@@ -151,8 +155,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
 
     const isInOut = node.payload.spanMode === 0 && node.in.spanMode === null;
     const isSpread = node.payload.spanMode === 1 && node.in.spanMode === null;
-    const isStartStop = node.payload.thetaMode === 0 && node.in.thetaMode === null;
-    const isIncremental = node.payload.thetaMode === 1 && node.in.thetaMode === null;
+    const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
+    const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -175,12 +179,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
+                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>
@@ -196,31 +202,35 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                     disabled={node.in.spreadAlign !== null || isInOut}
                 />
             </SocketIn>
-
             <hr />
-            <SocketIn node={node} socketId={"thetaMode"} label={"Theta Mode"}>
+            <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
-                    options={THETA_MODE_OPTIONS}
-                    value={`${node.payload.thetaMode}`}
-                    onValue={(v) => handleUpdate({ thetaMode: Number(v) })}
+                    options={ARC_MODE_OPTIONS}
+                    value={`${node.payload.arcMode}`}
+                    onValue={(v) => handleUpdate({ arcMode: Number(v) })}
                     orientation={"horizontal"}
-                    disabled={node.in.thetaMode !== null}
+                    disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaStart"} label={"Start Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isIncremental} unbound />
+            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
+                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaEnd"} label={"End Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaEnd} onCommit={(thetaEnd) => handleUpdate({ thetaEnd })} disabled={node.in.thetaEnd !== null || isIncremental} unbound />
+            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
+                <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound min={-360} max={360} />
             </SocketIn>
+            <hr />
+            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
+                <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
+            </SocketIn>
+            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
+                <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
+            </SocketIn>
+
             <SocketIn node={node} socketId={"thetaInclusive"}>
-                <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isIncremental}>
+                <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null}>
                     Inclusive End
                 </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaSteps"} label={"Step Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaSteps} onCommit={(thetaSteps) => handleUpdate({ thetaSteps })} disabled={node.in.thetaSteps !== null || isStartStop} unbound />
             </SocketIn>
             <SocketIn node={node} socketId={"thetaCurve"}>
                 Angular Distribution
@@ -253,10 +263,11 @@ const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
     "outerRadius",
     "spanMode",
     "spreadAlign",
-    "thetaMode",
+    "arcMode",
     "thetaStart",
-    "thetaEnd",
-    "thetaSteps",
+    "sweep",
+    "thetaFrom",
+    "thetaTo",
     "thetaInclusive",
     "thetaCurve",
     "markerStart",
@@ -315,10 +326,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     if (rO <= 0) return null;
     rI = Math.max(0, rI);
 
-    const thetaMode = Enum.resolve(context.resolve<"enum">(node.id, "thetaMode")?.data, Enum.Common.thetaMode) ?? node.payload.thetaMode ?? 0;
-    const thetaStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-    const thetaEnd = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaEnd")?.data ?? node.payload.thetaEnd) ?? 0;
-    const thetaSteps = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaSteps")?.data ?? node.payload.thetaSteps) ?? 0;
+    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
+
+    let effectiveStart: number;
+    let effectiveSweep: number;
+
+    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
+        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        effectiveStart = from;
+        effectiveSweep = to - from;
+    } else {
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+    }
+
     const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
 
     const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
@@ -334,7 +356,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     const lineCoords: { x1: number; y1: number; x2: number; y2: number }[] = [];
     for (let i = 0; i < N; i++) {
         const coeff = delerp(i, 0, denominator);
-        const angle = thetaMode === Enum.Common.thetaMode.START_STOP.value ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, N * thetaSteps, distroLerper);
+        const angle = lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
         const c = Math.cos(deg2rad(angle - 90));
         const s = Math.sin(deg2rad(angle - 90));
         lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });
@@ -398,10 +420,11 @@ const SOCKETTYPES_IN: { [key in keyof Required<BurstDefinition["inputs"]>]: Sock
     outerRadius: { types: ["length"], mode: "or" },
     spanMode: { types: ["enum"], mode: "or" },
     spreadAlign: { types: ["enum"], mode: "or" },
-    thetaMode: { types: ["enum"], mode: "or" },
+    arcMode: { types: ["enum"], mode: "or" },
     thetaStart: { types: ["angle"], mode: "or" },
-    thetaEnd: { types: ["angle"], mode: "or" },
-    thetaSteps: { types: ["angle"], mode: "or" },
+    sweep: { types: ["angle"], mode: "or" },
+    thetaFrom: { types: ["angle"], mode: "or" },
+    thetaTo: { types: ["angle"], mode: "or" },
     thetaInclusive: { types: ["boolean"], mode: "or" },
     thetaCurve: { types: ["distribution"], mode: "or" },
     markerStart: { types: ["shape"], mode: "or" },

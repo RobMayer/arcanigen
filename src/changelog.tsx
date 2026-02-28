@@ -5,6 +5,10 @@ export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
             <Build date={"2026-02-27"} version={"3.1.6"}>
+                <Improvement>Unified the Arc, Radial Array, and Spiral options (Start/Sweep vs From/To).</Improvement>
+                <Improvement>Added some horizontal-rules to a few nodes for organization</Improvement>
+            </Build>
+            <Build date={"2026-02-27"} version={"3.1.6"}>
                 <Bugfix>Node positions weren&apos;t being saved in subgraphs</Bugfix>
                 <Bugfix>Not all selected nodes were moving in subgraphs</Bugfix>
                 <Bugfix>Containers wouldn&apos;t move their contained nodes in subgraphs</Bugfix>

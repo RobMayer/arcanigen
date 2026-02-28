@@ -130,6 +130,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput
                     value={node.payload.innerRadius}
@@ -148,6 +149,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     required
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput
                     value={node.payload.radius}

@@ -115,10 +115,14 @@ export namespace Stylings {
                     <LengthInput value={node.payload.strokeDashOffset} onCommit={(strokeDashOffset) => handleUpdate({ strokeDashOffset })} disabled={node.in.strokeDashOffset !== null} required />
                 </SocketIn>
                 {fill && "fillColor" in node.payload ? (
-                    <SocketIn node={node} socketId={"fillColor"} label={"Fill Color"}>
-                        <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} required alpha />
-                    </SocketIn>
+                    <>
+                        <hr />
+                        <SocketIn node={node} socketId={"fillColor"} label={"Fill Color"}>
+                            <ColorHexInput value={node.payload.fillColor!} onCommit={(fillColor) => handleUpdate({ fillColor: fillColor! })} disabled={node.in.fillColor !== null} required alpha />
+                        </SocketIn>
+                    </>
                 ) : null}
+                <hr />
                 <SocketIn node={node} socketId={"paintOrder"} label={"Paint Order"}>
                     <Dropdown value={`${node.payload.paintOrder}`} onValue={(v) => handleUpdate({ paintOrder: Number(v) })}>
                         {PAINT_ORDER_OPTIONS.map((each) => {
@@ -232,6 +236,9 @@ export namespace Transforms {
 
         return (
             <AccordionMaybe has={accordion} socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta|rotation"} label={"Transforms"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"rotation"} label={"Rotation"}>
+                    <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
+                </SocketIn>
                 <SocketIn node={node} socketId={"positionMode"} label={"Position Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
@@ -241,12 +248,14 @@ export namespace Transforms {
                         options={POSITION_MODE_OPTIONS}
                     />
                 </SocketIn>
+                <hr />
                 <SocketIn node={node} socketId={"positionX"} label={"Position X"}>
                     <LengthInput value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={node.in.positionX !== null || isPolar} required />
                 </SocketIn>
                 <SocketIn node={node} socketId={"positionY"} label={"Position Y"}>
                     <LengthInput value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={node.in.positionY !== null || isPolar} required />
                 </SocketIn>
+                <hr />
                 <SocketIn node={node} socketId={"positionRadius"} label={"Position Radius"}>
                     <LengthInput
                         value={node.payload.positionRadius}
@@ -257,9 +266,6 @@ export namespace Transforms {
                 </SocketIn>
                 <SocketIn node={node} socketId={"positionTheta"} label={"Position Theta"}>
                     <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
-                </SocketIn>
-                <SocketIn node={node} socketId={"rotation"} label={"Rotation"}>
-                    <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
             </AccordionMaybe>
         );

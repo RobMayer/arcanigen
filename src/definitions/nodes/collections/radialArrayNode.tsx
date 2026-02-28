@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
@@ -24,10 +24,11 @@ export type RadialArrayDefinition = {
         input: DataTypes.Use<"shape">;
         count: DataTypes.Use<"integer">;
         radius: DataTypes.Use<"length">;
-        thetaMode: DataTypes.Use<"enum">;
+        arcMode: DataTypes.Use<"enum">;
         thetaStart: DataTypes.Use<"angle">;
-        thetaEnd: DataTypes.Use<"angle">;
-        thetaSteps: DataTypes.Use<"angle">;
+        sweep: DataTypes.Use<"angle">;
+        thetaFrom: DataTypes.Use<"angle">;
+        thetaTo: DataTypes.Use<"angle">;
         thetaInclusive: DataTypes.Use<"boolean">;
         thetaCurve: DataTypes.Use<"distribution">;
         memberAlign: DataTypes.Use<"boolean">;
@@ -41,17 +42,18 @@ export type RadialArrayDefinition = {
         label: string;
         count: DataTypes.TypeOf<DataTypes.Use<"integer">>;
         radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        thetaMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaEnd: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaSteps: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        thetaFrom: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        thetaTo: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         thetaInclusive: boolean;
         memberAlign: boolean;
         memberRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
     } & Transforms.Definition["payload"];
 };
 
-const THETA_MODE_OPTIONS = Enum.options(Enum.Common.thetaMode);
+const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"radialArray", RadialArrayDefinition> => {
     return {
@@ -60,10 +62,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialArrayDefiniti
             input: null,
             count: null,
             radius: null,
-            thetaMode: null,
+            arcMode: null,
             thetaStart: null,
-            thetaEnd: null,
-            thetaSteps: null,
+            sweep: null,
+            thetaFrom: null,
+            thetaTo: null,
             thetaInclusive: null,
             thetaCurve: null,
             memberAlign: null,
@@ -84,10 +87,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialArrayDefiniti
             label: "",
             count: input.count ?? "5",
             radius: input.radius ?? "100px",
-            thetaMode: input.thetaMode ?? Enum.Common.thetaMode.INCREMENTAL.value,
+            arcMode: input.arcMode ?? Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: input.thetaStart ?? "0",
-            thetaEnd: input.thetaEnd ?? "360",
-            thetaSteps: input.thetaSteps ?? "72",
+            sweep: input.sweep ?? "360",
+            thetaFrom: input.thetaFrom ?? "0",
+            thetaTo: input.thetaTo ?? "360",
             thetaInclusive: input.thetaInclusive ?? false,
             memberAlign: input.memberAlign ?? false,
             memberRotation: input.memberRotation ?? "0",
@@ -111,8 +115,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialArray
         [methods],
     );
 
-    const isStartStop = node.payload.thetaMode === Enum.Common.thetaMode.START_STOP.value && node.in.thetaMode === null;
-    const isIncremental = node.payload.thetaMode === Enum.Common.thetaMode.INCREMENTAL.value && node.in.thetaMode === null;
+    const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
+    const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -132,41 +136,48 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialArray
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"thetaMode"} label={"Theta Mode"}>
+            <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
-                    options={THETA_MODE_OPTIONS}
-                    value={`${node.payload.thetaMode}`}
-                    onValue={(v) => handleUpdate({ thetaMode: Number(v) })}
+                    options={ARC_MODE_OPTIONS}
+                    value={`${node.payload.arcMode}`}
+                    onValue={(v) => handleUpdate({ arcMode: Number(v) })}
                     orientation={"horizontal"}
-                    disabled={node.in.thetaMode !== null}
+                    disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaStart"} label={"Start Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isIncremental} unbound />
+
+            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
+                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"thetaEnd"} label={"End Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaEnd} onCommit={(thetaEnd) => handleUpdate({ thetaEnd })} disabled={node.in.thetaEnd !== null || isIncremental} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaInclusive"}>
-                <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isIncremental}>
-                    Inclusive End
-                </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaSteps"} label={"Step Theta"}>
-                <AngleInput.SliderInput value={node.payload.thetaSteps} onCommit={(thetaSteps) => handleUpdate({ thetaSteps })} disabled={node.in.thetaSteps !== null || isStartStop} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaCurve"}>
-                Angular Distribution
+            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
+                <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound min={-360} max={360} />
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"memberAlign"}>
-                <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
-                    Align to Radius
-                </CheckBox>
+            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
+                <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
             </SocketIn>
-            <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
-                <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
+            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
+                <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
             </SocketIn>
+            <NodeAccordion nodeId={node.id} label={"More"} socketsIn={"thetaInclusive|thetaCurve|memberAlign|memberRotation"}>
+                <SocketIn node={node} socketId={"thetaInclusive"}>
+                    <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null}>
+                        Inclusive End
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaCurve"}>
+                    Angular Distribution
+                </SocketIn>
+                <hr />
+                <SocketIn node={node} socketId={"memberAlign"}>
+                    <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
+                        Align to Radius
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
+                    <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
+                </SocketIn>
+            </NodeAccordion>
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
@@ -176,10 +187,11 @@ const GEOMETRY_INPUTS: (keyof RadialArrayDefinition["inputs"])[] = [
     "input",
     "count",
     "radius",
-    "thetaMode",
+    "arcMode",
     "thetaStart",
-    "thetaEnd",
-    "thetaSteps",
+    "sweep",
+    "thetaFrom",
+    "thetaTo",
     "thetaInclusive",
     "thetaCurve",
     "memberAlign",
@@ -222,10 +234,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialArrayDefinition>, socket: 
 
     const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
 
-    const thetaMode = Enum.resolve(context.resolve<"enum">(node.id, "thetaMode")?.data, Enum.Common.thetaMode) ?? node.payload.thetaMode ?? 0;
-    const thetaStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-    const thetaEnd = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaEnd")?.data ?? node.payload.thetaEnd) ?? 0;
-    const thetaSteps = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaSteps")?.data ?? node.payload.thetaSteps) ?? 0;
+    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
+
+    let effectiveStart: number;
+    let effectiveSweep: number;
+
+    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
+        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        effectiveStart = from;
+        effectiveSweep = to - from;
+    } else {
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+    }
+
     const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
 
     const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
@@ -248,7 +271,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialArrayDefinition>, socket: 
         if (shape === null) continue;
 
         const coeff = delerp(i, 0, denominator);
-        const angle = thetaMode === Enum.Common.thetaMode.START_STOP.value ? lerp(coeff, thetaStart, thetaEnd, distroLerper) : lerp(coeff, 0, count * thetaSteps, distroLerper);
+        const angle = lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
         const angleDeg = angle - 90;
         const angleRad = deg2rad(angleDeg);
         const vx = radius * Math.cos(angleRad);
@@ -283,10 +306,11 @@ const SOCKETTYPES_IN: { [key in keyof Required<RadialArrayDefinition["inputs"]>]
     input: { types: ["shape"], mode: "or" },
     count: { types: ["integer"], mode: "or" },
     radius: { types: ["length"], mode: "or" },
-    thetaMode: { types: ["enum"], mode: "or" },
+    arcMode: { types: ["enum"], mode: "or" },
     thetaStart: { types: ["angle"], mode: "or" },
-    thetaEnd: { types: ["angle"], mode: "or" },
-    thetaSteps: { types: ["angle"], mode: "or" },
+    sweep: { types: ["angle"], mode: "or" },
+    thetaFrom: { types: ["angle"], mode: "or" },
+    thetaTo: { types: ["angle"], mode: "or" },
     thetaInclusive: { types: ["boolean"], mode: "or" },
     thetaCurve: { types: ["distribution"], mode: "or" },
     memberAlign: { types: ["boolean"], mode: "or" },

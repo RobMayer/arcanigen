@@ -109,11 +109,6 @@ export namespace Enum {
             OUTWARD: { value: 2, label: "Outward" },
         } as const;
 
-        export const thetaMode = {
-            START_STOP: { value: 0, label: "Start / Stop" },
-            INCREMENTAL: { value: 1, label: "Incremental" },
-        } as const;
-
         export const arcMode = {
             START_SWEEP: { value: 0, label: "Start / Sweep" },
             FROM_TO: { value: 1, label: "From / To" },

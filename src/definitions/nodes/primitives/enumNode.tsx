@@ -130,7 +130,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumDefinit
                     <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.sequencerMode))}>Sequencer Mode</ActionButton>
                     <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.arcMode))}>Arc Mode</ActionButton>
                     <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.expandMode))}>Expand Mode</ActionButton>
-                    <ActionButton onClick={() => handlePreset(Enum.labels(Enum.Common.thetaMode))}>Theta Mode</ActionButton>
                 </NodeAccordion>
             </NodeAccordion>
         </TypicalNode>

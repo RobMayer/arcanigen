@@ -157,27 +157,29 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
             <SocketIn node={node} socketId={"spacing"} label={"Spacing"}>
                 <LengthInput value={node.payload.spacing} onCommit={(spacing) => handleUpdate({ spacing })} disabled={node.in.spacing !== null || !isFixedSpacing} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"memberAlign"}>
-                <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
-                    Align to Path
-                </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
-                <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"pointDistro"}>
-                Distribution
-            </SocketIn>
-            <SocketIn node={node} socketId={"skipFirst"}>
-                <CheckBox checked={node.payload.skipFirst} onToggle={(skipFirst) => handleUpdate({ skipFirst })} disabled={node.in.skipFirst !== null}>
-                    Skip First
-                </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"skipLast"}>
-                <CheckBox checked={node.payload.skipLast} onToggle={(skipLast) => handleUpdate({ skipLast })} disabled={node.in.skipLast !== null}>
-                    Skip Last
-                </CheckBox>
-            </SocketIn>
+            <NodeAccordion label={"More"} nodeId={node.id} socketsIn={"memberAlign|memberRotation|skipFirst|skipList"}>
+                <SocketIn node={node} socketId={"memberAlign"}>
+                    <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
+                        Align to Path
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
+                    <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
+                </SocketIn>
+                <SocketIn node={node} socketId={"pointDistro"}>
+                    Distribution
+                </SocketIn>
+                <SocketIn node={node} socketId={"skipFirst"}>
+                    <CheckBox checked={node.payload.skipFirst} onToggle={(skipFirst) => handleUpdate({ skipFirst })} disabled={node.in.skipFirst !== null}>
+                        Skip First
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"skipLast"}>
+                    <CheckBox checked={node.payload.skipLast} onToggle={(skipLast) => handleUpdate({ skipLast })} disabled={node.in.skipLast !== null}>
+                        Skip Last
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
             <NodeAccordion nodeId={node.id} label={"Overflow & Offset"} socketsIn={"overflowMode|offsetMode|offsetPercent|offsetLength|offsetOrigin|padStart|padEnd"}>
                 <SocketIn node={node} socketId={"overflowMode"} label={"Overflow"}>
                     <RadioButton.Group

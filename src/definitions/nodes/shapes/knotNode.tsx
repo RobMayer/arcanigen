@@ -238,18 +238,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.iScribe}`}
-                    onValue={(v) => handleUpdate({ iScribe: Number(v) })}
-                    disabled={node.in.iScribe !== null || isSpread}
-                    options={SCRIBE_MODE_OPTIONS}
-                />
-            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
@@ -259,6 +248,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     value={`${node.payload.oScribe}`}
                     onValue={(v) => handleUpdate({ oScribe: Number(v) })}
                     disabled={node.in.oScribe !== null || isSpread}
+                    options={SCRIBE_MODE_OPTIONS}
+                />
+            </SocketIn>
+            <hr />
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
+                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
+                <RadioButton.Group
+                    orientation={"horizontal"}
+                    value={`${node.payload.iScribe}`}
+                    onValue={(v) => handleUpdate({ iScribe: Number(v) })}
+                    disabled={node.in.iScribe !== null || isSpread}
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
@@ -274,6 +276,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"spread"} label={"Spread"}>
                 <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
             </SocketIn>

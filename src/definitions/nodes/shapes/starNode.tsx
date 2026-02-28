@@ -193,18 +193,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.iScribe}`}
-                    onValue={(v) => handleUpdate({ iScribe: Number(v) })}
-                    disabled={node.in.iScribe !== null || isSpread}
-                    options={SCRIBE_MODE_OPTIONS}
-                />
-            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
@@ -217,6 +206,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
+                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
+                <RadioButton.Group
+                    orientation={"horizontal"}
+                    value={`${node.payload.iScribe}`}
+                    onValue={(v) => handleUpdate({ iScribe: Number(v) })}
+                    disabled={node.in.iScribe !== null || isSpread}
+                    options={SCRIBE_MODE_OPTIONS}
+                />
+            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>

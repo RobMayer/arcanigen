@@ -125,17 +125,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"pointDistro"}>
-                Angular Distribution
-            </SocketIn>
-            <SocketIn node={node} socketId={"memberAlign"}>
-                <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
-                    Align to Path
-                </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
-                <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
-            </SocketIn>
+            <NodeAccordion label={"More"} nodeId={node.id} socketsIn={"pointDistro|memberAlign|memberRotation"}>
+                <SocketIn node={node} socketId={"pointDistro"}>
+                    Angular Distribution
+                </SocketIn>
+                <SocketIn node={node} socketId={"memberAlign"}>
+                    <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
+                        Align to Path
+                    </CheckBox>
+                </SocketIn>
+                <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
+                    <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
+                </SocketIn>
+            </NodeAccordion>
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eCircumradius|eApothem"}>
                 <SocketOut node={node} socketId={"eCircumradius"}>

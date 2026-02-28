@@ -24,7 +24,7 @@ export type SpiralDefinition = {
         innerRadius: DataTypes.Use<"length">;
         outerRadius: DataTypes.Use<"length">;
         radius: DataTypes.Use<"length">;
-        deviation: DataTypes.Use<"length">;
+        spread: DataTypes.Use<"length">;
         arcMode: DataTypes.Use<"enum">;
         thetaStart: DataTypes.Use<"angle">;
         sweep: DataTypes.Use<"angle">;
@@ -45,7 +45,7 @@ export type SpiralDefinition = {
         innerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
         outerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
         radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        deviation: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
         arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
@@ -64,7 +64,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             innerRadius: null,
             outerRadius: null,
             radius: null,
-            deviation: null,
+            spread: null,
             arcMode: null,
             thetaStart: null,
             sweep: null,
@@ -99,7 +99,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             innerRadius: "120px",
             outerRadius: "180px",
             radius: "150px",
-            deviation: "60px",
+            spread: "60px",
             arcMode: Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: "0",
             sweep: "90",
@@ -161,19 +161,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"deviation"} label={"Deviation"}>
-                <LengthInput value={node.payload.deviation} onCommit={(deviation) => handleUpdate({ deviation })} disabled={node.in.deviation !== null || isInOut} min={"0px"} required />
+            <SocketIn node={node} socketId={"spread"} label={"Sread"}>
+                <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
             </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"arcMode"} label={"Angle Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
@@ -183,14 +185,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                     disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} />
             </SocketIn>
             <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
                 <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound />
             </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
                 <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
             </SocketIn>
@@ -223,7 +225,7 @@ const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = [
     "innerRadius",
     "outerRadius",
     "radius",
-    "deviation",
+    "spread",
     "arcMode",
     "thetaStart",
     "sweep",
@@ -293,9 +295,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
 
     if (spanMode === Enum.Common.spanMode.SPREAD.value) {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-        const deviation = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "deviation")?.data ?? node.payload.deviation) ?? 0);
-        rI = radius - deviation / 2;
-        rO = radius + deviation / 2;
+        const spread = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread) ?? 0);
+        rI = radius - spread / 2;
+        rO = radius + spread / 2;
     } else {
         rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
         rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
@@ -385,7 +387,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<SpiralDefinition["inputs"]>]: Soc
     innerRadius: { types: ["length"], mode: "or" },
     outerRadius: { types: ["length"], mode: "or" },
     radius: { types: ["length"], mode: "or" },
-    deviation: { types: ["length"], mode: "or" },
+    spread: { types: ["length"], mode: "or" },
     arcMode: { types: ["enum"], mode: "or" },
     thetaStart: { types: ["angle"], mode: "or" },
     sweep: { types: ["angle"], mode: "or" },
