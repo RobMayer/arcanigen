@@ -4,6 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-02-28"} version={"3.2.0"}>
+                <Improvement>More performant canvas zoom</Improvement>
+                <Improvement>Node and Accordion state now persist in saved files</Improvement>
+            </Build>
             <Build date={"2026-02-27"} version={"3.1.8"}>
                 <Bugfix>Less than and Less-than-or-equal node icons were swapped</Bugfix>
             </Build>
