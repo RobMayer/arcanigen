@@ -14,6 +14,7 @@ import { Session } from "../../../state/session";
 import { Resolver } from "../../../util/resolver";
 import { useGraphId } from "../../../state/graphId";
 import { Flavour } from "../../../components/types";
+import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
 
 export type ContainerDefinition = {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -68,8 +69,9 @@ const RESIZE_DIRS: Record<string, { sx: number; sy: number }> = {
     br: { sx: 1, sy: 1 },
 };
 
-const useResizeHandles = (bodyRef: RefObject<HTMLElement | null>, onFinish: (size: { width: number; height: number }, pos: { x: number; y: number }) => void) => {
+const useResizeHandles = (bodyRef: RefObject<HTMLElement | null>, onFinish: (size: { width: number; height: number }, pos: { x: number; y: number }) => void, zoomGetter: () => number) => {
     const onFinishRef = useStable(onFinish);
+    const zoomGetterRef = useStable(zoomGetter);
 
     useEffect(() => {
         const body = bodyRef.current;
@@ -106,7 +108,7 @@ const useResizeHandles = (bodyRef: RefObject<HTMLElement | null>, onFinish: (siz
             let py = initialPY;
 
             const pointerMove = (moveEvt: PointerEvent) => {
-                const zoom = target.currentCSSZoom * devicePixelRatio;
+                const zoom = zoomGetterRef.current() * devicePixelRatio;
                 const dx = (moveEvt.clientX - startClientX) / zoom;
                 const dy = (moveEvt.clientY - startClientY) / zoom;
 
@@ -232,7 +234,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
         [nodeId, positionMethods.setMany, selectionRef, setPosition],
     );
 
-    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
+    const [, paneControls] = useDragPaneInternal();
+    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta, zoom: () => paneControls.get().z });
 
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<ContainerDefinition>>) => {
@@ -249,17 +252,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
         [handleUpdate, setPosition],
     );
 
-    useResizeHandles(bodyRef, handleResizeFinish);
+    useResizeHandles(bodyRef, handleResizeFinish, () => paneControls.get().z);
 
     const contextControls = ContextPopup.useControls();
 
     const handleContextMenu = useCallback(
         (evt: MouseEvent<HTMLDivElement>) => {
             evt.preventDefault();
-            const zoom = (evt.target as HTMLElement).currentCSSZoom ?? 1;
+            const zoom = paneControls.get().z;
             contextControls.openAt(evt.clientX / zoom, evt.clientY / zoom);
         },
-        [contextControls],
+        [contextControls, paneControls],
     );
 
     const handleSetFlavour = useCallback(
@@ -542,6 +545,7 @@ const ContainerContent = styled.div`
 `;
 
 const ZoomCompedContextPopup = styled(ContextPopup)`
-    zoom: calc(1 / var(--dragpane_zoom));
+    transform: scale(calc(1 / var(--dragpane_zoom)));
+    transform-origin: 0 0;
     pointer-events: auto;
 `;

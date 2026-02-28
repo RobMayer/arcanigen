@@ -9,6 +9,7 @@ import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
 import { ContextPopup } from "../../components/popups/ContextPopup";
+import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 
 export const GraphNode = ({ nodeId }: { nodeId: string }) => {
     const graphId = useGraphId();
@@ -27,6 +28,7 @@ export const TypicalNode = styled(
         const graphId = useGraphId();
         const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
         const handleRef = useRef<HTMLDivElement>(null);
+        const [, paneControls] = useDragPaneInternal();
 
         const selectionRef = Session.useSelectionRef();
         const positionsRef = Project.usePositionsRef();
@@ -63,7 +65,7 @@ export const TypicalNode = styled(
             [nodeId, positionMethods.setMany, selectionRef, setPosition],
         );
 
-        const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
+        const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta, zoom: () => paneControls.get().z });
 
         const [isClosed, setIsClosed] = Session.useUiState<boolean>(`node_accordion[${graphId}][${node.id}]`);
         const toggle = useCallback(() => {
@@ -195,13 +197,14 @@ const NodeTitle = styled(
             setIsEditing(false);
         }, []);
 
+        const [, nodePaneControls] = useDragPaneInternal();
         const handleContextMenu = useCallback(
             (evt: MouseEvent<HTMLDivElement>) => {
                 evt.preventDefault();
-                const zoom = (evt.target as HTMLElement).currentCSSZoom ?? 1;
+                const zoom = nodePaneControls.get().z;
                 contextControls.openAt(evt.clientX / zoom, evt.clientY / zoom);
             },
-            [contextControls],
+            [contextControls, nodePaneControls],
         );
 
         const handleCloneAndClose = useCallback(() => {
@@ -287,7 +290,8 @@ const NodeTitle = styled(
 `;
 
 const ZoomCompedContextPopup = styled(ContextPopup)`
-    zoom: calc(1 / var(--dragpane_zoom));
+    transform: scale(calc(1 / var(--dragpane_zoom)));
+    transform-origin: 0 0;
 `;
 
 const NodeFallback = styled(({ nodeId, className, side }: { nodeId: string; className?: string; side: "in" | "out" }) => {

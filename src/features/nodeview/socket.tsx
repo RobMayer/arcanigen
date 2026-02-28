@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
 import { NodeDefinitions, NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 // useGraphId removed — Socket now receives node directly
 
 type GraphConnectionControls = {
@@ -251,6 +252,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
         [nodeId, socketId],
     );
 
+    const [, paneControls] = useDragPaneInternal();
     const ref = useRef<HTMLDivElement>(null);
     const fromMarkerRef = useRef<HTMLDivElement>(null);
     const pathRef = useRef<SVGPathElement>(null);
@@ -264,7 +266,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
 
         const basis = container.getBoundingClientRect();
         const fromPoint = fromMarker.getBoundingClientRect();
-        const zoom = container.currentCSSZoom;
+        const zoom = paneControls.get().z;
 
         const x1 = (fromPoint.left - basis.left) / zoom;
         const y1 = (fromPoint.top - basis.top) / zoom;
@@ -272,7 +274,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
         const y2 = (mouse.y - basis.top) / zoom;
 
         path.setAttribute("d", `M ${x1},${y1} L ${x2},${y2}`);
-    }, []);
+    }, [paneControls]);
 
     const mousePos = useRef<{ x: number; y: number } | null>(null);
 

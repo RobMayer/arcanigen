@@ -12,6 +12,7 @@ export namespace DragMove {
         onFinish?: (coordinates: XY) => void;
         onDelta?: (delta: XY) => void;
         button?: number | "any";
+        zoom?: () => number;
     };
 
     const CTX = createContext<FastContextMember<string[]> | undefined>(undefined);
@@ -87,7 +88,7 @@ export namespace DragMove {
         return <TheDiv {...props} style={mergedStyle} data-trhmarker={"dragmove"} onFocus={handleFocus} tabIndex={-1} />;
     };
 
-    export const useHandle = (handleRef: RefObject<HTMLElement | null>, value: XY, { onChange, onFinish, onDelta, button = 0 }: UseHandleOptions) => {
+    export const useHandle = (handleRef: RefObject<HTMLElement | null>, value: XY, { onChange, onFinish, onDelta, button = 0, zoom }: UseHandleOptions) => {
         const [local, setLocal] = useState<XY>(value);
         const internalRef = useRef<XY>(value);
 
@@ -111,13 +112,14 @@ export namespace DragMove {
         const onChangeRef = useStable(onChange);
         const onFinishRef = useStable(onFinish);
         const onDeltaRef = useStable(onDelta);
+        const zoomRef = useStable(zoom);
 
         useEffect(() => {
             const handle = handleRef.current;
 
             if (handle) {
                 const pointerMove = (evt: PointerEvent) => {
-                    const zoom = handle.currentCSSZoom * devicePixelRatio;
+                    const zoom = (zoomRef.current?.() ?? 1) * devicePixelRatio;
                     const dX = evt.movementX / zoom;
                     const dY = evt.movementY / zoom;
                     const { x, y } = { x: internalRef.current.x + dX, y: internalRef.current.y + dY };

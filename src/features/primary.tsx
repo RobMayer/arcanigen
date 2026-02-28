@@ -270,12 +270,11 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
             }
 
             const paneRect = container.getBoundingClientRect();
-            const zoom = rect.currentCSSZoom;
 
-            const x = (Math.min(start.x, moveEvt.clientX) - paneRect.left) / zoom;
-            const y = (Math.min(start.y, moveEvt.clientY) - paneRect.top) / zoom;
-            const w = Math.abs(moveEvt.clientX - start.x) / zoom;
-            const h = Math.abs(moveEvt.clientY - start.y) / zoom;
+            const x = Math.min(start.x, moveEvt.clientX) - paneRect.left;
+            const y = Math.min(start.y, moveEvt.clientY) - paneRect.top;
+            const w = Math.abs(moveEvt.clientX - start.x);
+            const h = Math.abs(moveEvt.clientY - start.y);
 
             rect.style.left = `${x}px`;
             rect.style.top = `${y}px`;
@@ -364,7 +363,8 @@ const MarqueeSelection = styled(({ className, scopeRef, selectionAction }: { cla
     pointer-events: none;
     z-index: 1;
     overflow: visible;
-    zoom: calc(1 / var(--dragpane_zoom, 1));
+    transform: scale(calc(1 / var(--dragpane_zoom, 1)));
+    transform-origin: 0 0;
     outline: 1px solid #000;
     outline-offset: 1px;
 

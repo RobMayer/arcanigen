@@ -46,11 +46,10 @@ type DragPaneProps = {
 const DEFAULT_XYZ: XYZ = { x: 0, y: 0, z: 1 };
 
 // content-space helper
-const toContentSpace = (el: HTMLElement, offset: HTMLElement | null) => {
+const toContentSpace = (el: HTMLElement, offset: HTMLElement | null, zoom: number) => {
     if (!offset) return null;
     const or = offset.getBoundingClientRect();
     const er = el.getBoundingClientRect();
-    const zoom = offset.currentCSSZoom;
     return {
         cx: (er.left + er.width / 2 - or.left) / zoom,
         cy: (er.top + er.height / 2 - or.top) / zoom,
@@ -157,9 +156,9 @@ const DragPaneBase = styled(
                     member.ref.current = next;
                     const el = offsetRef.current;
                     if (el) {
-                        el.style.top = `${next.y}px`;
-                        el.style.left = `${next.x}px`;
-                        el.style.zoom = `${next.z}`;
+                        el.style.top = `${next.y * next.z}px`;
+                        el.style.left = `${next.x * next.z}px`;
+                        el.style.transform = `scale(${next.z})`;
                         el.style.setProperty("--dragpane_zoom", `${next.z}`);
                     }
                     const vp = viewportRef.current;
@@ -188,9 +187,8 @@ const DragPaneBase = styled(
         // control methods
         const methods = useMemo<DragPaneControls>(() => {
             const panOnBase = (evt: PointerEvent | PointerEvent<unknown>, passive: boolean) => {
-                const zoom = offsetRef.current?.currentCSSZoom ?? 1;
                 const { x, y, z } = member.ref.current;
-                handleChange({ x: x + evt.movementX / zoom, y: y + evt.movementY / zoom, z }, passive);
+                handleChange({ x: x + evt.movementX / z, y: y + evt.movementY / z, z }, passive);
             };
             const panOn = Object.assign((evt: PointerEvent | PointerEvent<unknown>) => panOnBase(evt, true), {
                 committed: (evt: PointerEvent | PointerEvent<unknown>) => panOnBase(evt, false),
@@ -216,20 +214,19 @@ const DragPaneBase = styled(
                     const dx = value.x ?? 0;
                     const dy = value.y ?? 0;
                     if (dx === 0 && dy === 0) return;
-                    const zoom = offsetRef.current?.currentCSSZoom ?? 1;
                     const { x, y, z } = member.ref.current;
-                    handleChange({ x: x + dx / zoom, y: y + dy / zoom, z });
+                    handleChange({ x: x + dx / z, y: y + dy / z, z });
                 },
                 panOn,
                 panFor: (element) => {
-                    const cs = toContentSpace(element, offsetRef.current);
+                    const cs = toContentSpace(element, offsetRef.current, member.ref.current.z);
                     if (!cs) return;
                     handleChange({ x: -cs.cx, y: -cs.cy, z: member.ref.current.z });
                 },
                 center: () => {
                     const bounds = boundsRefStable.current?.current;
                     if (!bounds) return;
-                    const cs = toContentSpace(bounds, offsetRef.current);
+                    const cs = toContentSpace(bounds, offsetRef.current, member.ref.current.z);
                     if (!cs) return;
                     handleChange({ x: -cs.cx, y: -cs.cy, z: member.ref.current.z });
                 },
@@ -237,7 +234,7 @@ const DragPaneBase = styled(
                     const bounds = boundsRefStable.current?.current;
                     const viewport = viewportRef.current;
                     if (!bounds || !viewport) return;
-                    const cs = toContentSpace(bounds, offsetRef.current);
+                    const cs = toContentSpace(bounds, offsetRef.current, member.ref.current.z);
                     if (!cs) return;
                     const vr = viewport.getBoundingClientRect();
                     handleChange({ x: -cs.cx, y: -cs.cy, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
@@ -269,7 +266,7 @@ const DragPaneBase = styled(
                 zoomFor: (element) => {
                     const viewport = viewportRef.current;
                     if (!viewport) return;
-                    const cs = toContentSpace(element, offsetRef.current);
+                    const cs = toContentSpace(element, offsetRef.current, member.ref.current.z);
                     if (!cs) return;
                     const vr = viewport.getBoundingClientRect();
                     handleChange({ ...member.ref.current, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
@@ -277,7 +274,7 @@ const DragPaneBase = styled(
                 encompass: (element) => {
                     const viewport = viewportRef.current;
                     if (!viewport) return;
-                    const cs = toContentSpace(element, offsetRef.current);
+                    const cs = toContentSpace(element, offsetRef.current, member.ref.current.z);
                     if (!cs) return;
                     const vr = viewport.getBoundingClientRect();
                     handleChange({ x: -cs.cx, y: -cs.cy, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
@@ -403,9 +400,10 @@ const DragPaneBase = styled(
 
         const offsetStyle = useMemo<CSSProperties>(
             () => ({
-                top: y,
-                left: x,
-                zoom: z,
+                top: y * z,
+                left: x * z,
+                transform: `scale(${z})`,
+                transformOrigin: "0 0",
                 "--dragpane_zoom": z,
             }),
             [x, y, z],

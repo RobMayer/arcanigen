@@ -44,7 +44,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         if (fromMarkerRef.current && toMarkerRef.current && pathContainer.current) {
             const fromPoint = fromMarkerRef.current.getBoundingClientRect();
             const toPoint = toMarkerRef.current.getBoundingClientRect();
-            const zoom = entry.target.currentCSSZoom;
+            const zoom = paneControls.get().z;
 
             const x1 = (fromPoint.left - basis.left) / zoom;
             const y1 = (fromPoint.top - basis.top) / zoom;
@@ -54,7 +54,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             const dx = Math.max(150, Math.abs(x2 - x1) * 0.5);
             pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
         }
-    }, []);
+    }, [paneControls]);
 
     useResizeObserver(ref, onResize);
 
