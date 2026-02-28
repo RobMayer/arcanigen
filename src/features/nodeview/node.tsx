@@ -200,9 +200,15 @@ const NodeTitle = styled(
         const [, nodePaneControls] = useDragPaneInternal();
         const handleContextMenu = useCallback(
             (evt: MouseEvent<HTMLDivElement>) => {
-                evt.preventDefault();
-                const zoom = nodePaneControls.get().z;
-                contextControls.openAt(evt.clientX / zoom, evt.clientY / zoom);
+                const paneElement = nodePaneControls.paneRef().current;
+                if (paneElement) {
+                    evt.preventDefault();
+                    const rect = paneElement.getBoundingClientRect();
+                    const { x: panX, y: panY, z } = nodePaneControls.get();
+                    const offsetX = rect.left + rect.width / 2 + panX * z;
+                    const offsetY = rect.top + rect.height / 2 + panY * z;
+                    contextControls.openAt((evt.clientX - offsetX) / z, (evt.clientY - offsetY) / z);
+                }
             },
             [contextControls, nodePaneControls],
         );
@@ -237,12 +243,12 @@ const NodeTitle = styled(
                     <Icon shape={ICONS.Close} />
                 </ActionButton.Lite>
                 <NodeFallback nodeId={node.id} side={"out"} />
-                <ZoomCompedContextPopup controls={contextControls}>
+                <ContextPopup controls={contextControls}>
                     <ActionButton.Option onClick={handleCloneAndClose}>Clone</ActionButton.Option>
                     <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
                         Delete
                     </ActionButton.Option>
-                </ZoomCompedContextPopup>
+                </ContextPopup>
             </div>
         );
     },
@@ -287,11 +293,6 @@ const NodeTitle = styled(
 
     background-color: oklch(from var(--flavour) calc(l - 0.15) calc(c - 0.02) h);
     border-color: oklch(from var(--flavour) calc(l - 0.05) c h);
-`;
-
-const ZoomCompedContextPopup = styled(ContextPopup)`
-    transform: scale(calc(1 / var(--dragpane_zoom)));
-    transform-origin: 0 0;
 `;
 
 const NodeFallback = styled(({ nodeId, className, side }: { nodeId: string; className?: string; side: "in" | "out" }) => {

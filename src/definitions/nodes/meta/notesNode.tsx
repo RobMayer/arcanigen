@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
-import { CSSProperties, FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { CSSProperties, FocusEvent, KeyboardEvent, MouseEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { DragMove } from "../../../components/wrappers/DragMove";
@@ -8,10 +8,12 @@ import { TextInput } from "../../../components/inputs/TextInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { AbstractInput } from "../../../components/abstract/Inputs";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { ContextPopup } from "../../../components/popups/ContextPopup";
 import { Project } from "../../../state/project";
 import { Session } from "../../../state/session";
 import { Resolver } from "../../../util/resolver";
 import { useGraphId } from "../../../state/graphId";
+import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
 
 export type NotesDefinition = {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -40,9 +42,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<NotesDefinition>>, 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const nodeId = node.id;
     const { update: updateNode, remove: removeNode } = methods;
+    const { cloneNode } = Project.useMethods();
     const graphId = useGraphId();
     const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
     const handleRef = useRef<HTMLDivElement>(null);
+    const [, paneControls] = useDragPaneInternal();
     const selectionRef = Session.useSelectionRef();
     const positionsRef = Project.usePositionsRef();
     const positionMethods = Project.usePositionMethods();
@@ -94,7 +98,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
         [nodeId, positionMethods.setMany, selectionRef, setPosition],
     );
 
-    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
+    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta, zoom: () => paneControls.get().z });
 
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<NotesDefinition>>) => {
@@ -125,6 +129,33 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
         setIsEditing(false);
     }, []);
 
+    const contextControls = ContextPopup.useControls();
+
+    const handleContextMenu = useCallback(
+        (evt: MouseEvent<HTMLDivElement>) => {
+            const paneElement = paneControls.paneRef().current;
+            if (paneElement) {
+                evt.preventDefault();
+                const rect = paneElement.getBoundingClientRect();
+                const { x: panX, y: panY, z } = paneControls.get();
+                const offsetX = rect.left + rect.width / 2 + panX * z;
+                const offsetY = rect.top + rect.height / 2 + panY * z;
+                contextControls.openAt((evt.clientX - offsetX) / z, (evt.clientY - offsetY) / z);
+            }
+        },
+        [contextControls, paneControls],
+    );
+
+    const handleClone = useCallback(() => {
+        cloneNode(nodeId);
+        contextControls.close();
+    }, [cloneNode, nodeId, contextControls]);
+
+    const handleDeleteAndClose = useCallback(() => {
+        removeNode();
+        contextControls.close();
+    }, [removeNode, contextControls]);
+
     const style = useMemo(() => {
         return { "--node": `--node_${nodeId}` } as CSSProperties;
     }, [nodeId]);
@@ -136,7 +167,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
             <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
                 <NoteTitle>
                     <Icon shape={NODE_ICONS.note} />
-                    <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                    <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit} onContextMenu={handleContextMenu}>
                         {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} /> : <span>{displayLabel}</span>}
                     </div>
                     <ActionButton.Lite onClick={removeNode}>
@@ -146,6 +177,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
                 <NoteBody>
                     <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
                 </NoteBody>
+                <ContextPopup controls={contextControls}>
+                    <ActionButton.Option onClick={handleClone}>Clone</ActionButton.Option>
+                    <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
+                        Delete
+                    </ActionButton.Option>
+                </ContextPopup>
             </div>
         </NoteWrapper>
     );
@@ -201,7 +238,6 @@ const NoteWrapper = styled(DragMove.Item)`
         width: max-content;
         min-width: 280px;
         outline: 1px solid transparent;
-        transform: translate(-50%, 0);
         anchor-name: var(--node);
         outline-offset: 4px;
         border-radius: 2px;

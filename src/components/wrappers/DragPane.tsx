@@ -24,6 +24,7 @@ export type DragPaneControls = {
     zoomFor: (element: HTMLElement) => void;
     encompass: (element: HTMLElement) => void;
     get: () => XYZ;
+    paneRef: () => RefObject<HTMLElement | null>;
 };
 
 type DragPaneProps = {
@@ -279,6 +280,7 @@ const DragPaneBase = styled(
                     const vr = viewport.getBoundingClientRect();
                     handleChange({ x: -cs.cx, y: -cs.cy, z: Math.min(vr.width / cs.w, vr.height / cs.h) });
                 },
+                paneRef: () => viewportRef,
             };
         }, [member, handleChange]);
 

@@ -258,9 +258,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
 
     const handleContextMenu = useCallback(
         (evt: MouseEvent<HTMLDivElement>) => {
-            evt.preventDefault();
-            const zoom = paneControls.get().z;
-            contextControls.openAt(evt.clientX / zoom, evt.clientY / zoom);
+            const paneElement = paneControls.paneRef().current;
+            if (paneElement) {
+                evt.preventDefault();
+                const rect = paneElement.getBoundingClientRect();
+                const { x: panX, y: panY, z } = paneControls.get();
+                const offsetX = rect.left + rect.width / 2 + panX * z;
+                const offsetY = rect.top + rect.height / 2 + panY * z;
+                contextControls.openAt((evt.clientX - offsetX) / z, (evt.clientY - offsetY) / z);
+            }
         },
         [contextControls, paneControls],
     );
@@ -334,7 +340,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
                                 </ActionButton.Lite>
                             </div>
                         </ContainerTitle>
-                        <ZoomCompedContextPopup controls={contextControls}>
+                        <ContextPopup controls={contextControls}>
                             {(Object.entries(FLAVOUR_NAMES) as [ContainerDefinition["payload"]["flavour"], string][]).map(([key, name]) => (
                                 <ActionButton.Option key={key} flavour={key === "base" ? undefined : key} onClick={() => handleSetFlavour(key)}>
                                     {name}
@@ -344,7 +350,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
                             <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
                                 Delete
                             </ActionButton.Option>
-                        </ZoomCompedContextPopup>
+                        </ContextPopup>
                     </ContainerContent>
                     <EdgeHandle data-resize="cr" />
                     <EdgeHandle data-resize="bl" />
@@ -542,10 +548,4 @@ const EdgeHandle = styled.div`
 const ContainerContent = styled.div`
     grid-area: content;
     align-self: start;
-`;
-
-const ZoomCompedContextPopup = styled(ContextPopup)`
-    transform: scale(calc(1 / var(--dragpane_zoom)));
-    transform-origin: 0 0;
-    pointer-events: auto;
 `;
