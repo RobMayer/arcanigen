@@ -11,6 +11,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { Project } from "../../state/project";
 import { Session } from "../../state/session";
 import { useGraphId } from "../../state/graphId";
+import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
@@ -66,6 +67,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     const graphId = useGraphId();
     const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
     const handleRef = useRef<HTMLDivElement>(null);
+    const [, paneControls] = useDragPaneInternal();
     const selectionRef = Session.useSelectionRef();
     const positionsRef = Project.usePositionsRef();
     const positionMethods = Project.usePositionMethods();
@@ -118,7 +120,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         [nodeId, positionMethods.setMany, selectionRef, setPosition],
     );
 
-    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta });
+    const localPosition = DragMove.useHandle(handleRef, storedPosition, { onFinish: handleFinish, onDelta: handleDragDelta, zoom: () => paneControls.get().z });
 
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>) => {
