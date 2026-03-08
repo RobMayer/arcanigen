@@ -27,8 +27,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             return {};
         }
         return {
-            "--fromTarget": `anchor(--socket_${link.fromNode}_${link.fromSocket} center, anchor(--socketFB_${link.fromNode}_${link.fromSocket} center, anchor(--nodeFB_${link.fromNode}_out center, 0)))`,
-            "--toTarget": `anchor(--socket_${link.toNode}_${link.toSocket} center, anchor(--socketFB_${link.toNode}_${link.toSocket} center, anchor(--nodeFB_${link.toNode}_in center, 0)))`,
+            "--fromTarget": `anchor(--socket_${link.fromNode}_${link.fromSocket} center, anchor(--socketFB_${link.fromNode}_${link.fromSocket} center, anchor(--nodeFB_${link.fromNode}_out center, 0px)))`,
+            "--toTarget": `anchor(--socket_${link.toNode}_${link.toSocket} center, anchor(--socketFB_${link.toNode}_${link.toSocket} center, anchor(--nodeFB_${link.toNode}_in center, 0px)))`,
             "--fromNode": `--node_${link.fromNode}`,
             "--toNode": `--node_${link.toNode}`,
         } as CSSProperties;
@@ -39,22 +39,25 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const toMarkerRef = useRef<HTMLDivElement>(null);
     const pathContainer = useRef<SVGPathElement>(null);
 
-    const onResize = useCallback((entry: ResizeObserverEntry) => {
-        const basis = entry.target.getBoundingClientRect();
-        if (fromMarkerRef.current && toMarkerRef.current && pathContainer.current) {
-            const fromPoint = fromMarkerRef.current.getBoundingClientRect();
-            const toPoint = toMarkerRef.current.getBoundingClientRect();
-            const zoom = paneControls.get().z;
+    const onResize = useCallback(
+        (entry: ResizeObserverEntry) => {
+            const basis = entry.target.getBoundingClientRect();
+            if (fromMarkerRef.current && toMarkerRef.current && pathContainer.current) {
+                const fromPoint = fromMarkerRef.current.getBoundingClientRect();
+                const toPoint = toMarkerRef.current.getBoundingClientRect();
+                const zoom = paneControls.get().z;
 
-            const x1 = (fromPoint.left - basis.left) / zoom;
-            const y1 = (fromPoint.top - basis.top) / zoom;
-            const x2 = (toPoint.left - basis.left) / zoom;
-            const y2 = (toPoint.top - basis.top) / zoom;
+                const x1 = (fromPoint.left - basis.left) / zoom;
+                const y1 = (fromPoint.top - basis.top) / zoom;
+                const x2 = (toPoint.left - basis.left) / zoom;
+                const y2 = (toPoint.top - basis.top) / zoom;
 
-            const dx = Math.max(150, Math.abs(x2 - x1) * 0.5);
-            pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
-        }
-    }, [paneControls]);
+                const dx = Math.max(150, Math.abs(x2 - x1) * 0.5);
+                pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
+            }
+        },
+        [paneControls],
+    );
 
     useResizeObserver(ref, onResize);
 
@@ -172,19 +175,9 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     );
 })`
     position: absolute;
-    width: auto;
-    height: auto;
+    width: fit-contents;
+    height: fit-contents;
     z-index: -1;
-
-    --anchorT: anchor(var(--fromNode) center);
-    --anchorR: anchor(var(--toNode) center);
-    --anchorB: anchor(var(--toNode) center);
-    --anchorL: anchor(var(--fromNode) center);
-
-    --anchorT: var(--fromTarget);
-    --anchorR: var(--toTarget);
-    --anchorB: var(--toTarget);
-    --anchorL: var(--fromTarget);
 
     & > [data-part="markerFrom"],
     & > [data-part="markerTo"] {
@@ -204,7 +197,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         left: var(--toTarget);
     }
 
-    inset: min(var(--anchorT), var(--anchorB)) min(var(--anchorR), var(--anchorL)) min(var(--anchorB), var(--anchorT)) min(var(--anchorL), var(--anchorR));
+    inset: calc(min(var(--fromTarget), var(--toTarget))) calc(min(var(--toTarget), var(--fromTarget))) calc(min(var(--toTarget), var(--fromTarget))) calc(min(var(--fromTarget), var(--toTarget)));
 
     min-width: 1px;
     min-height: 1px;

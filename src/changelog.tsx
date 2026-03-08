@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-03-07"} version={"3.2.1"}>
+                <Bugfix>Firefox position anchoring issue.</Bugfix>
+            </Build>
             <Build date={"2026-02-28"} version={"3.2.0"}>
                 <Improvement>More performant canvas zoom</Improvement>
                 <Improvement>Node and Accordion state now persist in saved files</Improvement>

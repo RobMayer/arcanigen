@@ -47,15 +47,17 @@ export const SvgCanvas = styled(({ className, paneControls }: SvgCanvasProps) =>
     return (
         <CanvasViewPane className={className} controls={paneControls} minZoom={0.1} maxZoom={10} boundsRef={boundsRef}>
             <SvgCanvasContent>
-                <svg
-                    data-export-svg
-                    viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`}
-                    width={canvas.width}
-                    height={canvas.height}
-                    style={{ background: canvas.background }}
-                >
-                    {contents && <ShapeElement shape={contents} />}
-                </svg>
+                <div>
+                    <svg
+                        data-export-svg
+                        viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`}
+                        width={canvas.width}
+                        height={canvas.height}
+                        style={{ background: canvas.background }}
+                    >
+                        {contents && <ShapeElement shape={contents} />}
+                    </svg>
+                </div>
             </SvgCanvasContent>
             <Bounds ref={boundsRef} />
         </CanvasViewPane>
@@ -71,6 +73,7 @@ const CanvasViewPane = styled(DragPane)`
     border: 3px solid transparent;
     background-position: calc(50% + var(--x) * var(--z)) calc(50% + var(--y) * var(--z));
     background-size: calc(var(--z) * 83.14px) calc(var(--z) * 48px);
+
     &[data-state~="breach_top"] {
         border-top-color: red;
     }
@@ -99,10 +102,10 @@ const CanvasViewPane = styled(DragPane)`
 `;
 
 const Bounds = styled.div`
-    left: calc(anchor(--svg-canvas left) - 16px);
-    right: calc(anchor(--svg-canvas right) - 16px);
-    top: calc(anchor(--svg-canvas top) - 16px);
-    bottom: calc(anchor(--svg-canvas bottom) - 16px);
+    left: calc(anchor(--svg-canvas left, 0px) - 16px);
+    right: calc(anchor(--svg-canvas right, 0px) - 16px);
+    top: calc(anchor(--svg-canvas top, 0px) - 16px);
+    bottom: calc(anchor(--svg-canvas bottom, 0px) - 16px);
     position: absolute;
     pointer-events: none;
     background: #2224;
@@ -112,8 +115,13 @@ const Bounds = styled.div`
 `;
 
 const SvgCanvasContent = styled.div`
-    transform: translate(-50%, -50%);
-    & > svg {
+    width: 0;
+    height: 0;
+    display: grid;
+    display: grid;
+    place-items: center;
+    place-content: center;
+    & > div > svg {
         anchor-name: --svg-canvas;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         display: block;
