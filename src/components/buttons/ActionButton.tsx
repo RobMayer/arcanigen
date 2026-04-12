@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { AbstractButton } from "../abstract/Button";
+import { AbstractButton } from "../abstract/button";
 import { COMMON_STYLES } from "../styles";
 import { Flavour } from "../types";
 

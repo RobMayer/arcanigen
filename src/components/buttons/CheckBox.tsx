@@ -2,7 +2,7 @@ import { MouseEvent, useCallback } from "react";
 import { useStable } from "../../util/hooks/useStable";
 import { Icon, IconDefinition, ICONS } from "../Icon";
 import styled from "styled-components";
-import { AbstractButton } from "../abstract/Button";
+import { AbstractButton } from "../abstract/button";
 import { COMMON_STYLES } from "../styles";
 import { Flavour } from "../types";
 

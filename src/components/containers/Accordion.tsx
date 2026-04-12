@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useMemo } from "react";
 import styled from "styled-components";
-import { AbstractButton } from "../abstract/Button";
+import { AbstractButton } from "../abstract/button";
 import { Flavour } from "../types";
 import { createController } from "../../util/hooks/useController";
 import { merge } from "../../util/misc";
