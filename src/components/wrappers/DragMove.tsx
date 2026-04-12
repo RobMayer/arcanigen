@@ -119,7 +119,7 @@ export namespace DragMove {
 
             if (handle) {
                 const pointerMove = (evt: PointerEvent) => {
-                    const zoom = (zoomRef.current?.() ?? 1) * devicePixelRatio;
+                    const zoom = zoomRef.current?.() ?? 1;
                     const dX = evt.movementX / zoom;
                     const dY = evt.movementY / zoom;
                     const { x, y } = { x: internalRef.current.x + dX, y: internalRef.current.y + dY };

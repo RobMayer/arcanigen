@@ -108,7 +108,7 @@ const useResizeHandles = (bodyRef: RefObject<HTMLElement | null>, onFinish: (siz
             let py = initialPY;
 
             const pointerMove = (moveEvt: PointerEvent) => {
-                const zoom = zoomGetterRef.current() * devicePixelRatio;
+                const zoom = zoomGetterRef.current();
                 const dx = (moveEvt.clientX - startClientX) / zoom;
                 const dy = (moveEvt.clientY - startClientY) / zoom;
 

@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-04-11"} version={"3.2.2"}>
+                <Bugfix>Fixed drag-distance of nodes and some CSS inheritence in Brave</Bugfix>
+            </Build>
             <Build date={"2026-03-07"} version={"3.2.1"}>
                 <Bugfix>Firefox position anchoring issue.</Bugfix>
             </Build>
