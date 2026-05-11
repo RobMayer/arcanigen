@@ -322,6 +322,9 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             },
         };
         this.dirty.add("positions");
+
+        this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, cloned.id);
+        this.dirty.add("cache");
     }
 
     addNodeByType(graphId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): void {
@@ -348,6 +351,9 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             },
         };
         this.dirty.add("positions");
+
+        this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, newNode.id);
+        this.dirty.add("cache");
     }
 
     interjectNode(graphId: string, linkId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): boolean {

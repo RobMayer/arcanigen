@@ -4,9 +4,10 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, applyRounding, numericCanInterject, makeOnInterject } from "./numericMath";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
@@ -78,10 +79,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RoundDefini
         [methods],
     );
 
+    const graphId = useGraphId();
+    const preview = Project.useCachedOutput(graphId, node, "output");
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"output"} label={"Output"}>
+                <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"input"}>
                 Input

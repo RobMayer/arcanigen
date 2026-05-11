@@ -157,7 +157,9 @@ export namespace Project {
                 cloneNode: (nodeId: string) => ctx.mc.run(() => ctx.mc.cloneNode(graphId, nodeId)),
                 interjectNode: (linkId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) => {
                     let result = false;
-                    ctx.mc.run(() => { result = ctx.mc.interjectNode(graphId, linkId, nodeType, params, position); });
+                    ctx.mc.run(() => {
+                        result = ctx.mc.interjectNode(graphId, linkId, nodeType, params, position);
+                    });
                     return result;
                 },
             }),
@@ -580,7 +582,7 @@ export namespace Project {
                 }
 
                 // Remap uiState keys from old graph IDs to new graph IDs
-                let currentUiState = { ...ctx.uiState.ref.current };
+                const currentUiState = { ...ctx.uiState.ref.current };
                 if (data.uiState) {
                     for (const [key, val] of Object.entries(data.uiState)) {
                         let remappedKey = key;

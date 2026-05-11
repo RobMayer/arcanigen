@@ -58,7 +58,11 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: Shape 
 
     return (
         <div className={className} style={style}>
-            {pad === 0 ? null : <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}><ShapeElement shape={shape} /></svg>}
+            {pad === 0 ? null : (
+                <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>
+                    <ShapeElement shape={shape} />
+                </svg>
+            )}
         </div>
     );
 })`
@@ -227,3 +231,48 @@ const LabelSmall = styled(({ children, className, label, align }: { children: Re
         align-items: center;
     }
 `;
+
+export const ValuePreview = styled(({ className, value }: { className?: string; value: DataTypes.AnyEval | null }) => {
+    return <div className={className}>{handlePreview(value)}</div>;
+})`
+    background: #222;
+    border: 1px solid #888;
+    text-align: center;
+    display: flex;
+    align-self: center;
+    justify-self: center;
+    justify-content: center;
+    align-items: center;
+    flex: 1 1 auto;
+    padding: 0.25em 0.4em;
+`;
+
+// todo: more meaningful returns for certain data-types - ReactNode instead of string - colors that output a swatch, for example - for later
+const handlePreview = (value: DataTypes.AnyEval | null): string => {
+    if (value === null) {
+        return "« none »";
+    }
+    switch (value.kind) {
+        case "string":
+        case "length":
+            return value.data;
+        case "boolean":
+            return value.data ? "true" : "false";
+        case "angle":
+            return `${Number(Number(value.data).toFixed(6))}°`;
+        case "integer":
+        case "float":
+            return `${Number(Number(value.data).toFixed(6))}`;
+        case "tokens<length>":
+            return `${value.data}`;
+        case "path":
+        case "enum":
+        case "distribution":
+        case "shape":
+        case "color":
+        case "layer":
+        case "array<layer>":
+        case "sequence":
+            return `« ${value.kind} »`;
+    }
+};

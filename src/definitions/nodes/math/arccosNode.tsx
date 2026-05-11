@@ -4,11 +4,12 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { extractSingle, makeCanInterject, makeOnInterject } from "./numericMath";
+import { useGraphId } from "../../../state/graphId";
 
 const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
 const ANGLE_OUT: SocketTypes.SocketRule = { types: ["angle"], mode: "or" };
@@ -40,6 +41,10 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ArccosDefinition>>,
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArccosDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const graphId = useGraphId();
+
+    const preview = Project.useCachedOutput(graphId, node, "output");
+
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<ArccosDefinition>>) => {
             methods.update(v);
@@ -49,8 +54,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArccosDefin
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"output"} label={"Output"}>
+                <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"input"} label={"Input"}>
                 <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
