@@ -3,10 +3,11 @@ import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 
 export type LogicalAndDefinition = {
@@ -68,10 +69,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LogicalAndD
         [alterNode, removeLinks, node.id, node.in],
     );
 
+    const graphId = useGraphId();
+    const preview = Project.useCachedOutput(graphId, node, "output");
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"output"} label={"Output"}>
+                <ValuePreview value={preview} />
             </SocketOut>
             <hr />
             <ActionButton onClick={handleAddInput} flavour={"accent"}>

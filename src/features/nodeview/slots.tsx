@@ -10,6 +10,8 @@ import { Flavour } from "../../components/types";
 import { Shape } from "../../definitions/shapeTypes";
 import { ShapeElement } from "../../definitions/shapeRenderer";
 import { Color } from "../../definitions/datatypes/color";
+import { Length } from "../../definitions/datatypes/length";
+import { EmptyOr } from "../../util/misc";
 
 const SlotBase = styled.div`
     display: flex;
@@ -254,8 +256,9 @@ const handlePreview = (value: DataTypes.AnyEval | null): string => {
     }
     switch (value.kind) {
         case "string":
-        case "length":
             return value.data;
+        case "length":
+            return previewLength(value.data);
         case "boolean":
             return value.data ? "true" : "false";
         case "angle":
@@ -275,4 +278,13 @@ const handlePreview = (value: DataTypes.AnyEval | null): string => {
         case "sequence":
             return `« ${value.kind} »`;
     }
+};
+
+const previewLength = (l: EmptyOr<Length.Type>): string => {
+    const c = Length.Emptyable.parse(l);
+    if (c === null) {
+        return "« none »";
+    }
+    const [v, u] = c;
+    return `${Number(v.toFixed(6))}${u}`;
 };

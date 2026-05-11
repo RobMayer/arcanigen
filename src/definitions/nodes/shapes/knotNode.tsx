@@ -6,11 +6,12 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback, useEffect } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, gcd, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
@@ -200,6 +201,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
         }
     }, [node.payload.pointCount, handleUpdate, node.payload.skipCount]);
 
+    const graphId = useGraphId();
+    const previewOuterCircumradius = Project.useCachedOutput(graphId, node, "eOuterCircumradius");
+    const previewOuterApothem = Project.useCachedOutput(graphId, node, "eOuterApothem");
+    const previewInnerCircumradius = Project.useCachedOutput(graphId, node, "eInnerCircumradius");
+    const previewInnerApothem = Project.useCachedOutput(graphId, node, "eInnerApothem");
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"}>
@@ -356,17 +362,17 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
-                <SocketOut node={node} socketId={"eOuterCircumradius"}>
-                    Outer Circumradius
+                <SocketOut node={node} socketId={"eOuterCircumradius"} label={"Outer Circumradius"}>
+                    <ValuePreview value={previewOuterCircumradius} />
                 </SocketOut>
-                <SocketOut node={node} socketId={"eOuterApothem"}>
-                    Outer Apothem
+                <SocketOut node={node} socketId={"eOuterApothem"} label={"Outer Apothem"}>
+                    <ValuePreview value={previewOuterApothem} />
                 </SocketOut>
-                <SocketOut node={node} socketId={"eInnerCircumradius"}>
-                    Inner Circumradius
+                <SocketOut node={node} socketId={"eInnerCircumradius"} label={"Inner Circumradius"}>
+                    <ValuePreview value={previewInnerCircumradius} />
                 </SocketOut>
-                <SocketOut node={node} socketId={"eInnerApothem"}>
-                    Inner Apothem
+                <SocketOut node={node} socketId={"eInnerApothem"} label={"Inner Apothem"}>
+                    <ValuePreview value={previewInnerApothem} />
                 </SocketOut>
             </NodeAccordion>
         </TypicalNode>

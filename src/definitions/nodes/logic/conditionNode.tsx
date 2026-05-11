@@ -3,10 +3,11 @@ import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 
@@ -56,10 +57,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ConditionDe
         [methods],
     );
 
+    const graphId = useGraphId();
+    const preview = Project.useCachedOutput(graphId, node, "result");
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"result"}>
-                Result
+            <SocketOut node={node} socketId={"result"} label={"Result"}>
+                <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"if"}>
                 <CheckBox checked={node.payload.if} onToggle={(v) => handleUpdate({ if: v })} disabled={node.in.if !== null}>

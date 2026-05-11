@@ -3,9 +3,10 @@ import { Icon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 import { NUMERIC_TYPES, constrainForPartner, queryUpstreamOutType, extractPair } from "../math/numericMath";
 
@@ -65,10 +66,12 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BetweenDefinition>
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BetweenDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+    const graphId = useGraphId();
+    const preview = Project.useCachedOutput(graphId, node, "output");
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"output"} label={"Output"}>
+                <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"value"}>
                 Value
