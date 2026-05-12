@@ -234,9 +234,48 @@ const LabelSmall = styled(({ children, className, label, align }: { children: Re
     }
 `;
 
-export const ValuePreview = styled(({ className, value }: { className?: string; value: DataTypes.AnyEval | null }) => {
-    return <div className={className}>{handlePreview(value)}</div>;
-})`
+// todo: more meaningful returns for certain data-types - ReactNode instead of string - colors that output a swatch, for example - for later
+export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): ReactNode => {
+    if (value === null) {
+        return <PreviewBase>{"« none »"}</PreviewBase>;
+    }
+    switch (value.kind) {
+        case "string":
+            return <PreviewBase>{value.data}</PreviewBase>;
+        case "length":
+            return <PreviewBase>{parseLength(value.data)}</PreviewBase>;
+        case "boolean":
+            return <PreviewBase>{value.data ? "true" : "false"}</PreviewBase>;
+        case "angle":
+            return <PreviewBase>{Number(Number(value.data).toFixed(6))}°</PreviewBase>;
+        case "integer":
+        case "float":
+            return <PreviewBase>{Number(Number(value.data).toFixed(6))}</PreviewBase>;
+        case "tokens<length>":
+            return <PreviewBase>{value.data}</PreviewBase>;
+        case "color":
+            return <PreviewColor value={value.data} />;
+        case "path":
+        case "enum":
+        case "distribution":
+        case "shape":
+        case "layer":
+        case "array<layer>":
+        case "sequence":
+            return <PreviewBase>{`« ${value.kind} »`}</PreviewBase>;
+    }
+};
+
+const parseLength = (l: EmptyOr<Length.Type>): string => {
+    const c = Length.Emptyable.parse(l);
+    if (c === null) {
+        return "« none »";
+    }
+    const [v, u] = c;
+    return `${Number(v.toFixed(6))}${u}`;
+};
+
+const PreviewBase = styled.div`
     background: #222;
     border: 1px solid #888;
     text-align: center;
@@ -249,42 +288,45 @@ export const ValuePreview = styled(({ className, value }: { className?: string; 
     padding: 0.25em 0.4em;
 `;
 
-// todo: more meaningful returns for certain data-types - ReactNode instead of string - colors that output a swatch, for example - for later
-const handlePreview = (value: DataTypes.AnyEval | null): string => {
-    if (value === null) {
-        return "« none »";
-    }
-    switch (value.kind) {
-        case "string":
-            return value.data;
-        case "length":
-            return previewLength(value.data);
-        case "boolean":
-            return value.data ? "true" : "false";
-        case "angle":
-            return `${Number(Number(value.data).toFixed(6))}°`;
-        case "integer":
-        case "float":
-            return `${Number(Number(value.data).toFixed(6))}`;
-        case "tokens<length>":
-            return `${value.data}`;
-        case "path":
-        case "enum":
-        case "distribution":
-        case "shape":
-        case "color":
-        case "layer":
-        case "array<layer>":
-        case "sequence":
-            return `« ${value.kind} »`;
-    }
-};
+const PreviewColor = styled(({ value, className }: { value: Color.Type; className?: string }) => {
+    const styleValue = useMemo(() => {
+        return { "--value": value === null ? "transparent" : Color.toHex(value) } as CSSProperties;
+    }, [value]);
 
-const previewLength = (l: EmptyOr<Length.Type>): string => {
-    const c = Length.Emptyable.parse(l);
-    if (c === null) {
-        return "« none »";
+    return (
+        <div className={className}>
+            <BaseSwatch style={styleValue} />
+            {Color.toHex(value)}
+        </div>
+    );
+})`
+    background: #222;
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+    border: 1px solid #888;
+    text-align: center;
+    align-self: center;
+    justify-self: center;
+    justify-content: center;
+    align-items: center;
+    flex: 1 1 auto;
+    padding: 0.25em 0.4em;
+`;
+
+const BaseSwatch = styled.span`
+    flex: 0 0 1lh;
+    background: url("swatch.png");
+    background-size: 25%;
+    display: block;
+    height: 1lh;
+    aspect-ratio: 1;
+    align-self: center;
+    border: 1px solid black;
+    &:after {
+        display: block;
+        content: "";
+        width: 100%;
+        height: 100%;
+        background-color: var(--value);
     }
-    const [v, u] = c;
-    return `${Number(v.toFixed(6))}${u}`;
-};
+`;
