@@ -121,27 +121,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumInputDe
                 </Slot>
             ))}
             <NodeAccordion label={"Presets"} nodeId={node.id}>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.blendMode) })}>Blend Modes</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.scribeMode) })}>Scribe Modes</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.positionMode) })}>Position Modes</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.strokeCap) })}>Stroke Cap</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.strokeJoin) })}>Stroke Join</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.distroFunctions) })}>Distro Functions</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.distroEasing) })}>Distro Easing</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spanMode) })}>Span Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spreadAlign) })}>Spread Align</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.paintOrder) })}>Paint Order</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.cornerShape) })}>Corner Shape</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.textAlign) })}>Text Align</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.textAnchor) })}>Text Anchor</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.offsetMode) })}>Offset Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.offsetOrigin) })}>Offset Origin</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.maskMode) })}>Mask Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.spacingMode) })}>Spacing Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.overflowMode) })}>Overflow Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.sequencerMode) })}>Sequencer Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.arcMode) })}>Arc Mode</ActionButton>
-                <ActionButton onClick={() => handleUpdate({ options: Enum.labels(Enum.Common.expandMode) })}>Expand Mode</ActionButton>
+                {Enum.PRESETS.map(({ label, options }) => (
+                    <ActionButton key={label} onClick={() => handleUpdate({ options: Enum.labels(options) })}>
+                        {label}
+                    </ActionButton>
+                ))}
             </NodeAccordion>
         </TypicalNode>
     );

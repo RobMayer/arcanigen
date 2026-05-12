@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-05-12"} version={"3.2.4"}>
+                <Improvement>Added Color Join and Color Split nodes</Improvement>
+            </Build>
             <Build date={"2026-05-11"} version={"3.2.3"}>
                 <Improvement>Added a preview thingy to math and logic nodes</Improvement>
             </Build>

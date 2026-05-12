@@ -228,8 +228,8 @@ const XN = 0.95047;
 const YN = 1.0;
 const ZN = 1.08883;
 
-const LAB_EPSILON = 216 / 24389;
-const LAB_KAPPA = 24389 / 27;
+const CIELAB_EPSILON = 216 / 24389;
+const CIELAB_KAPPA = 24389 / 27;
 
 const rgbToXYZ = (r: number, g: number, b: number): [number, number, number] => {
     // sRGB → linear
@@ -251,10 +251,10 @@ const xyzToRGB = (x: number, y: number, z: number): [number, number, number] => 
     return [toSRGB(rl), toSRGB(gl), toSRGB(bl)];
 };
 
-const LAB: ColorSpaceConverter = {
+const CIELAB: ColorSpaceConverter = {
     fromRGB: (r, g, b) => {
         const [x, y, z] = rgbToXYZ(r, g, b);
-        const f = (t: number) => (t > LAB_EPSILON ? Math.cbrt(t) : (LAB_KAPPA * t + 16) / 116);
+        const f = (t: number) => (t > CIELAB_EPSILON ? Math.cbrt(t) : (CIELAB_KAPPA * t + 16) / 116);
         const fx = f(x / XN);
         const fy = f(y / YN);
         const fz = f(z / ZN);
@@ -267,7 +267,7 @@ const LAB: ColorSpaceConverter = {
         const fz = fy - b / 200;
         const finv = (t: number) => {
             const t3 = t * t * t;
-            return t3 > LAB_EPSILON ? t3 : (116 * t - 16) / LAB_KAPPA;
+            return t3 > CIELAB_EPSILON ? t3 : (116 * t - 16) / CIELAB_KAPPA;
         };
         return xyzToRGB(finv(fx) * XN, finv(fy) * YN, finv(fz) * ZN);
     },
@@ -330,6 +330,21 @@ const OKLCH: ColorSpaceConverter = {
     hueIndex: 2,
 };
 
+const CIELCH: ColorSpaceConverter = {
+    fromRGB: (r, g, b) => {
+        const [L, a, bComp] = CIELAB.fromRGB(r, g, b);
+        const C = Math.sqrt(a * a + bComp * bComp);
+        const H = (Math.atan2(bComp, a) * 180) / Math.PI;
+        return [L, C, H < 0 ? H + 360 : H];
+    },
+    toRGB: (c) => {
+        const [L, C, H] = c;
+        const hRad = (H * Math.PI) / 180;
+        return CIELAB.toRGB([L, C * Math.cos(hRad), C * Math.sin(hRad)]);
+    },
+    hueIndex: 2,
+};
+
 // ============================================================================
 // Converter registry (indexed by Enum.Common.colorSpace values)
 // ============================================================================
@@ -343,9 +358,11 @@ const CONVERTERS: ColorSpaceConverter[] = [
     HWK, // 5
     HSI, // 6
     HCY, // 7
-    LAB, // 8
+    CIELAB, // 8
     OKLAB, // 9
     OKLCH, // 10
+    CIELCH, // 11
+    RGB, // 12 (RGB_BYTE — same converter, joiner scales the inputs differently)
 ];
 
 // ============================================================================
@@ -399,6 +416,24 @@ export const lerpAngle = (hA: number, hB: number, t: number, traversal: number):
 // ============================================================================
 
 export type RGBA = { r: number; g: number; b: number; a: number };
+
+/**
+ * Decomposes an RGB triple (channels 0–1) into the components of the given color space.
+ * Returns components in their native units (see comments on each converter).
+ */
+export const componentsFromRGB = (colorSpaceValue: number, r: number, g: number, b: number): number[] => {
+    const converter = CONVERTERS[colorSpaceValue] ?? CONVERTERS[0];
+    return converter.fromRGB(r, g, b);
+};
+
+/**
+ * Composes a color from its components in the given color space.
+ * Components must be in the converter's native units. Returns RGB channels 0–1.
+ */
+export const componentsToRGB = (colorSpaceValue: number, components: number[]): [number, number, number] => {
+    const converter = CONVERTERS[colorSpaceValue] ?? CONVERTERS[0];
+    return converter.toRGB(components);
+};
 
 /**
  * Interpolates between two RGBA colors in the given color space.

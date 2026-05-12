@@ -13,6 +13,8 @@ import { ResultDefinition, ResultNodeType } from "./nodes/resultNode";
 import { AngleDefinition, AnglePrimitiveType } from "./nodes/primitives/angleNode";
 import { BooleanDefinition, BooleanPrimitiveType } from "./nodes/primitives/booleanNode";
 import { ColorDefinition, ColorPrimitiveType } from "./nodes/primitives/colorNode";
+import { ColorSplitDefinition, ColorSplitNodeType } from "./nodes/math/colorSplitNode";
+import { ColorJoinDefinition, ColorJoinNodeType } from "./nodes/math/colorJoinNode";
 import { EnumDefinition as EnumPrimDefinition, EnumPrimitiveType } from "./nodes/primitives/enumNode";
 import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNode";
 import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/integerNode";
@@ -169,6 +171,8 @@ namespace Registries {
         angle: AngleDefinition;
         boolean: BooleanDefinition;
         color: ColorDefinition;
+        colorSplit: ColorSplitDefinition;
+        colorJoin: ColorJoinDefinition;
         enum: EnumPrimDefinition;
         float: FloatDefinition;
         integer: IntegerDefinition;
@@ -325,6 +329,8 @@ namespace Registries {
         angle: AnglePrimitiveType,
         boolean: BooleanPrimitiveType,
         color: ColorPrimitiveType,
+        colorSplit: ColorSplitNodeType,
+        colorJoin: ColorJoinNodeType,
         enum: EnumPrimitiveType,
         length: LengthPrimitiveType,
         tokensLength: TokensLengthPrimitiveType,

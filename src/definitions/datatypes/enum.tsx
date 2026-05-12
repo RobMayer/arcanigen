@@ -245,9 +245,16 @@ export namespace Enum {
             HWK: { value: 5, label: "HWK" },
             HSI: { value: 6, label: "HSI" },
             HCY: { value: 7, label: "HCY" },
-            LAB: { value: 8, label: "LAB" },
+            CIELAB: { value: 8, label: "CIELAB" },
             OKLAB: { value: 9, label: "OKLAB" },
             OKLCH: { value: 10, label: "OKLCH" },
+            CIELCH: { value: 11, label: "CIELCH" },
+            RGB_BYTE: { value: 12, label: "RGB (Byte)" },
+        } as const;
+
+        export const alphaScale = {
+            FLOAT: { value: 0, label: "Float (0–100)" },
+            BYTE: { value: 1, label: "Byte (0–255)" },
         } as const;
 
         export const angleTraversal = {
@@ -259,4 +266,37 @@ export namespace Enum {
             COUNTER_CLOCKWISE: { value: 5, label: "Counter-Clockwise" },
         } as const;
     }
+
+    /**
+     * Shared preset list used by the Enum primitive node and the Enum interface input node
+     * so both stay in sync. Order is the user-facing order in the Presets accordion.
+     */
+    export const PRESETS: readonly { readonly label: string; readonly options: Base }[] = [
+        { label: "Blend Modes", options: Common.blendMode },
+        { label: "Scribe Modes", options: Common.scribeMode },
+        { label: "Position Modes", options: Common.positionMode },
+        { label: "Stroke Cap", options: Common.strokeCap },
+        { label: "Stroke Join", options: Common.strokeJoin },
+        { label: "Distro Functions", options: Common.distroFunctions },
+        { label: "Distro Easing", options: Common.distroEasing },
+        { label: "Span Mode", options: Common.spanMode },
+        { label: "Spread Align", options: Common.spreadAlign },
+        { label: "Paint Order", options: Common.paintOrder },
+        { label: "Corner Shape", options: Common.cornerShape },
+        { label: "Text Align", options: Common.textAlign },
+        { label: "Text Anchor", options: Common.textAnchor },
+        { label: "Offset Mode", options: Common.offsetMode },
+        { label: "Offset Origin", options: Common.offsetOrigin },
+        { label: "Mask Mode", options: Common.maskMode },
+        { label: "Spacing Mode", options: Common.spacingMode },
+        { label: "Overflow Mode", options: Common.overflowMode },
+        { label: "Sequencer Mode", options: Common.sequencerMode },
+        { label: "Arc Mode", options: Common.arcMode },
+        { label: "Expand Mode", options: Common.expandMode },
+        { label: "Color Space", options: Common.colorSpace },
+        { label: "Alpha Scale", options: Common.alphaScale },
+        { label: "Angle Traversal", options: Common.angleTraversal },
+        { label: "Length Unit", options: Common.lengthUnit },
+        { label: "Rounding Mode", options: Common.roundingMode },
+    ];
 }
