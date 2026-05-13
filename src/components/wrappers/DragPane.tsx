@@ -400,6 +400,80 @@ const DragPaneBase = styled(
             };
         }, [methods, viewportRef]);
 
+        // space + left-click pan (alternative for trackpad users)
+        useEffect(() => {
+            const element = viewportRef.current;
+            if (!element) return;
+
+            let spaceHeld = false;
+            let dragInProgress = false;
+
+            const isEditableTarget = (target: EventTarget | null): boolean => {
+                if (!(target instanceof Element)) return false;
+                const tag = target.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+                if (target instanceof HTMLElement && target.isContentEditable) return true;
+                return false;
+            };
+
+            const keyDown = (evt: KeyboardEvent) => {
+                if (evt.code !== "Space" || evt.repeat) return;
+                if (isEditableTarget(document.activeElement)) return;
+                evt.preventDefault(); // suppress page-scroll on space
+                spaceHeld = true;
+                setPanning(true);
+            };
+
+            const keyUp = (evt: KeyboardEvent) => {
+                if (evt.code !== "Space") return;
+                spaceHeld = false;
+                if (!dragInProgress) setPanning(false);
+            };
+
+            const windowBlur = () => {
+                spaceHeld = false;
+                if (!dragInProgress) setPanning(false);
+            };
+
+            const pointerMove = (evt: globalThis.PointerEvent) => {
+                methods.panOn(evt as unknown as PointerEvent);
+            };
+
+            const pointerUp = (evt: globalThis.PointerEvent) => {
+                element.removeEventListener("pointermove", pointerMove);
+                element.removeEventListener("pointerup", pointerUp);
+                element.releasePointerCapture(evt.pointerId);
+                methods.panOn.commit();
+                dragInProgress = false;
+                if (!spaceHeld) setPanning(false);
+            };
+
+            const pointerDown = (evt: globalThis.PointerEvent) => {
+                if (evt.handled) return;
+                if (evt.button !== 0 || !spaceHeld) return;
+                evt.handled = "active";
+                evt.preventDefault();
+                dragInProgress = true;
+                element.setPointerCapture(evt.pointerId);
+                element.addEventListener("pointermove", pointerMove);
+                element.addEventListener("pointerup", pointerUp);
+            };
+
+            window.addEventListener("keydown", keyDown);
+            window.addEventListener("keyup", keyUp);
+            window.addEventListener("blur", windowBlur);
+            element.addEventListener("pointerdown", pointerDown, true);
+
+            return () => {
+                window.removeEventListener("keydown", keyDown);
+                window.removeEventListener("keyup", keyUp);
+                window.removeEventListener("blur", windowBlur);
+                element.removeEventListener("pointerdown", pointerDown, true);
+                element.removeEventListener("pointermove", pointerMove);
+                element.removeEventListener("pointerup", pointerUp);
+            };
+        }, [methods, viewportRef]);
+
         const offsetStyle = useMemo<CSSProperties>(
             () => ({
                 top: y * z,

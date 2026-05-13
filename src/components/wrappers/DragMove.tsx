@@ -136,6 +136,7 @@ export namespace DragMove {
                 };
 
                 const pointerDown = (evt: PointerEvent) => {
+                    if (evt.handled) return;
                     if (button === "any" || evt.button === button) {
                         evt.handled = "active";
                         handle.setPointerCapture(evt.pointerId);

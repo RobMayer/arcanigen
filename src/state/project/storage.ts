@@ -17,7 +17,7 @@ const STARTING_STATE = {
             NOTE: {
                 ...NodeTypes.get("notes").create(
                     {
-                        text: "Middle-click and drag to navigate the viewport. \n\n Drag a node from the drawer below onto the graph view to add a node (or you can just click on it). \n\n Drag a socket to connect it to another socket.",
+                        text: "Middle-click and drag (or hold down space and left-click and drag) to navigate the viewport. \n\n Drag a node from the drawer below onto the graph view to add a node (or you can just click on it). \n\n Drag a socket to connect it to another socket.",
                     },
                     "NOTE",
                 ),
