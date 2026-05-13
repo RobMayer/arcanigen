@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-05-12"} version={"3.2.5"}>
+                <Improvement>Space + Left-click-drag also moves the canvas</Improvement>
+            </Build>
             <Build date={"2026-05-12"} version={"3.2.4"}>
                 <Improvement>Added Color Join and Color Split nodes</Improvement>
             </Build>
