@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-07-16"} version={"3.2.6"}>
+                <Bugfix>Fixed Text Paths not showing up with the correct font in the preview.</Bugfix>
+            </Build>
             <Build date={"2026-05-12"} version={"3.2.5"}>
                 <Improvement>Space + Left-click-drag also moves the canvas</Improvement>
             </Build>

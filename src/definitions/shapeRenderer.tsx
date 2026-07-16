@@ -1,4 +1,4 @@
-import { createElement, ReactNode, useId, useMemo } from "react";
+import { createElement, CSSProperties, ReactNode, useId, useMemo } from "react";
 import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, ClippedShape, FilteredShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
@@ -184,10 +184,14 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
         rotate: shape.rotate !== undefined ? `${shape.rotate}` : undefined,
     };
 
+    // The `font-family` presentation attribute is unreliable across renderers/exports;
+    // supplement it with an inline style, which takes precedence and is honored everywhere.
+    const style: CSSProperties | undefined = shape.fontFamily ? { fontFamily: shape.fontFamily } : undefined;
+
     if (shape.textPath) {
         const pathId = `${id}-tp`;
         return (
-            <text {...attrs} {...paintAttrs(shape.paint)} transform={shape.transform || undefined}>
+            <text {...attrs} {...paintAttrs(shape.paint)} style={style} transform={shape.transform || undefined}>
                 <defs>
                     <path id={pathId} d={shape.textPath.d} />
                 </defs>
@@ -199,7 +203,7 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
     }
 
     return (
-        <text {...attrs} {...paintAttrs(shape.paint)} transform={shape.transform || undefined}>
+        <text {...attrs} {...paintAttrs(shape.paint)} style={style} transform={shape.transform || undefined}>
             {shape.text}
         </text>
     );
