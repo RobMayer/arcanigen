@@ -136,6 +136,7 @@ import { PathExcludeDefinition, PathExcludeNodeType } from "./nodes/math/pathExc
 import { PathIntersectDefinition, PathIntersectNodeType } from "./nodes/math/pathIntersectNode";
 import { PathHealNodeDefinition, PathHealNodeType } from "./nodes/math/pathHealNode";
 import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivideNode";
+import { PathCombineDefinition, PathCombineNodeType } from "./nodes/math/pathCombineNode";
 import { ContainerDefinition, ContainerNodeType } from "./nodes/meta/containerNode";
 
 export type { SubgraphDeps };
@@ -282,6 +283,7 @@ namespace Registries {
         pathIntersect: PathIntersectDefinition;
         pathHeal: PathHealNodeDefinition;
         pathDivide: PathDivideDefinition;
+        pathCombine: PathCombineDefinition;
 
         // effects
         pencilEffect: PencilEffectDefinition;
@@ -416,6 +418,7 @@ namespace Registries {
         pathIntersect: PathIntersectNodeType,
         pathHeal: PathHealNodeType,
         pathDivide: PathDivideNodeType,
+        pathCombine: PathCombineNodeType,
 
         pencilEffect: PencilEffectNodeType,
         penEffect: PenEffectNodeType,

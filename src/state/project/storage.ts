@@ -29,7 +29,7 @@ const STARTING_STATE = {
             LAYERS: {
                 ...NodeTypes.get("layers").create({}, "LAYERS"),
                 in: { layers: null, isolate: null, layer_LAYER0: "CIRCLE_TO_LAYERS", layer_LAYER1: "POLYGON_TO_LAYERS" },
-                out: { output: ["LAYERS_TO_RESULT"], layerCount: [] },
+                out: { output: ["LAYERS_TO_RESULT"], layerCount: [], enabledCount: [] },
                 payload: {
                     label: "",
                     isolate: false,

@@ -60,6 +60,16 @@ export namespace Enum {
             POLAR: { value: 1, label: "Polar" },
         } as const;
 
+        export const pathOp = {
+            UNIFY: { value: 0, label: "Unify" },
+            INTERSECT: { value: 1, label: "Intersect" },
+            EXCLUDE: { value: 2, label: "Exclude" },
+            SUBTRACT: { value: 3, label: "Subtract" },
+            INVERSE_SUBTRACT: { value: 4, label: "Inverse Subtract" },
+            DIVIDE: { value: 5, label: "Divide" },
+            INVERSE_DIVIDE: { value: 6, label: "Inverse Divide" },
+        } as const;
+
         export const blendMode = {
             NORMAL: { value: 0, label: "Normal" },
             MULTIPLY: { value: 1, label: "Multiply" },
@@ -273,6 +283,7 @@ export namespace Enum {
      */
     export const PRESETS: readonly { readonly label: string; readonly options: Base }[] = [
         { label: "Blend Modes", options: Common.blendMode },
+        { label: "Path Operations", options: Common.pathOp },
         { label: "Scribe Modes", options: Common.scribeMode },
         { label: "Position Modes", options: Common.positionMode },
         { label: "Stroke Cap", options: Common.strokeCap },

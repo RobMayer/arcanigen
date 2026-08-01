@@ -23,6 +23,7 @@ export type LayerDefinition = {
     outputs: {
         output: DataTypes.Use<"shape">;
         layerCount: DataTypes.Use<"integer">;
+        enabledCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: string;
@@ -45,6 +46,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LayerDefinition>>, 
         out: {
             output: [],
             layerCount: [],
+            enabledCount: [],
         },
         payload: {
             label: "",
@@ -153,9 +155,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
                 </>
             )}
             <hr />
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layerCount" socketsIn={"isolate"}>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layerCount|enabledCount" socketsIn={"isolate"}>
                 <SocketOut node={node} socketId={"layerCount"}>
                     Layer Count
+                </SocketOut>
+                <SocketOut node={node} socketId={"enabledCount"}>
+                    Enabled Count
                 </SocketOut>
                 <SocketIn node={node} socketId={"isolate"}>
                     <CheckBox checked={node.payload.isolate} onToggle={(blendInternal) => handleUpdate({ isolate: blendInternal })}>
@@ -323,7 +328,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: ke
     if (outSocket === "output") {
         return ["layers", "isolate", ...(node.payload.layers.map((l) => l.socket) as `layer_${string}`[])];
     }
-    if (outSocket === "layerCount") {
+    if (outSocket === "layerCount" || outSocket === "enabledCount") {
         return ["layers"];
     }
     return [];
@@ -436,6 +441,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
         };
     }
 
+    if (socket === "enabledCount") {
+        const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
+        const count = supersocketEval ? supersocketEval.data.filter((entry) => entry.enabled ?? true).length : node.payload.layers.filter((l) => l.enabled).length;
+        return {
+            kind: "integer",
+            data: `${count}`,
+        };
+    }
+
     return null;
 };
 
@@ -453,6 +467,10 @@ const SOCKETTYPES_IN: { [key in keyof Required<LayerDefinition["inputs"]>]: Sock
 const SOCKETTYPES_OUT: { [key in keyof Required<LayerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     layerCount: {
+        types: ["integer"],
+        mode: "and",
+    },
+    enabledCount: {
         types: ["integer"],
         mode: "and",
     },

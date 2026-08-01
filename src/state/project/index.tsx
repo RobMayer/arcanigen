@@ -468,7 +468,7 @@ export namespace Project {
     };
 
     export type SavedProject = {
-        version: 1;
+        version: number;
         nodes: NodesType;
         links: LinksType;
         positions: { [graphId: string]: { [nodeId: string]: XY } };
@@ -483,7 +483,7 @@ export namespace Project {
 
         return useMemo(() => {
             const save = (): SavedProject => ({
-                version: 1,
+                version: Versioning.CURRENT,
                 nodes: ctx.nodes.ref.current,
                 links: ctx.links.ref.current,
                 positions: ctx.positions.ref.current,
@@ -493,7 +493,8 @@ export namespace Project {
                 uiState: ctx.uiState.ref.current,
             });
 
-            const load = (data: SavedProject) => {
+            const load = (raw: SavedProject) => {
+                const data = Versioning.normalize(raw);
                 const { nodes, links, positions, users, interfaces, meta } = data;
 
                 const nodeList = Object.fromEntries(Object.entries(nodes).map(([gid, g]) => [gid, Object.keys(g)]));
@@ -526,7 +527,9 @@ export namespace Project {
                 ctx.uiState.notify();
             };
 
-            const importSubgraphs = (data: SavedProject) => {
+            const importSubgraphs = (raw: SavedProject) => {
+                const data = Versioning.normalize(raw);
+
                 // Build ID mapping for non-root graphs
                 const idMap = new Map<string, string>();
                 for (const graphId of Object.keys(data.nodes)) {
@@ -669,10 +672,34 @@ export namespace Project {
                         }
                     }
                 }
-                return { version: 1, nodes, links, positions, users, interfaces, meta, uiState };
+                return { version: Versioning.CURRENT, nodes, links, positions, users, interfaces, meta, uiState };
             };
 
             return { save, load, importSubgraphs, saveSubgraph };
         }, [ctx]);
     };
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+    export namespace Versioning {
+        export const CURRENT = 2;
+
+        export const normalize = (input: any): Project.SavedProject => {
+            if (input.version === 1) {
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type === "layers") {
+                            // v2 added the "Enabled Count" output; backfill it for v1 layer nodes.
+                            node.out.enabledCount = node.out.enabledCount ?? [];
+                        }
+                    }
+                }
+                input.version = 2;
+            }
+            // next version alterations go here...
+            return input as Project.SavedProject;
+        };
+    }
 }
