@@ -2,8 +2,8 @@
 
 - [ ] Finish cleaning up component namespaces
     - [ ] Consolidate ColorInput and ColorInputHex into one ColorInput namespace (add picker, too)
-- [ ] container/wrapper nodes for spacial organization - maybe?
-- [ ] drag and drop from node drawer onto viewport
+- [x] container/wrapper nodes for spacial organization - maybe?
+- [x] drag and drop from node drawer onto viewport
 - [x] resize observer on viewport of drag-pane
 - [x] sliders for integer and float, already
 
@@ -17,9 +17,9 @@
     - [x] Custom Nodes needs special handling. we should not assume that all inputs rely on all outputs (or the inverse thereof). We need to cache the relationship between input-type nodes and output-type nodes on a per subgraph basis.
 - [x] Project state needs cleanup.
     - [x] Types are all over the place - and is weirdly interleved with cycleDetection.
-        - [ ] is cycleDetection really even in the right place?
+        - [x] is cycleDetection really even in the right place?
     - [x] the initial state parser is rather hamfisted and should probably be properly re-written
-        - [ ] load, save, merge
+        - [x] load, save, merge
 
 # tasks that will get completed as the system gets fleshed out
 
@@ -40,8 +40,8 @@
 - [x] Within tolerance test (A == B +/- C)
 - [x] Between test (A <= B <= C)
 - [x] Comparison tests (<, >, <=, >=)
-- [ ] Color Split
-- [ ] Color Join
+- [x] Color Split
+- [x] Color Join
 - [ ] Color Adjust?
 - [x] Can we make the type prop on <SocketIn/> and <SocketOut/> redundant by using a properly memoized return of getSocketType(...) - with the idea that we could concat the list of types with either " | " or " & " depending on that socket rule's mode? _THIS MUST NOT CAUSE RE-RENDER CHURN_
 - [x] Note Node
@@ -63,7 +63,7 @@
     - [ ] Banded Arc
     - [ ] Banded Spiral
     - [ ] Banded Line
-    - [x] Merged Knot (like knot but without overlap - complex as fuck)
-- [ ] Figure out Random Seed mechanism
+    - [x] Merged Knot (like knot but without overlap)
+- [x] Figure out Random Seed mechanism
 - [ ] allow subgraphs to have a custom icon or an icon selector, I guess - maybe?
 - [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe

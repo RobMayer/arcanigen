@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import styled from "styled-components";
 import { ActionButton } from "../components/buttons/ActionButton";
+import { LinkButton } from "../components/buttons/LinkButton";
 import { Session } from "../state/session";
 import { Icon, ICONS } from "../components/Icon";
 import { DecimalInput } from "../components/inputs/DecimalInput";
@@ -95,6 +96,12 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
             <div>
                 v{APP_VERSION} [{BUILD_DATE}]
             </div>
+            <LinkButton href="https://www.youtube.com/watch?v=8as5Jh1xs1M&list=PLAKrIav6IfnEVC7URg6PoC1c9ym8pJQrj" target="_blank" rel="noopener noreferrer">
+                Vlog + Help
+            </LinkButton>
+            <LinkButton href="https://github.com/RobMayer/arcanigen" target="_blank" rel="noopener noreferrer">
+                Github
+            </LinkButton>
             <ActionButton onClick={changelogControls.open}>Change Log</ActionButton>
             <Modal controls={changelogControls} size="640px fit">
                 <Modal.Title
@@ -117,7 +124,8 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
     gap: 6px;
     padding: 2px;
     align-items: center;
-    & > button {
+    & > button,
+    & > a {
         padding: 0.25em;
     }
 `;
