@@ -4,6 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-01"} version={"3.3.0"}>
+                <Feature>Added Path Combine node (Unify/Subtract/etc on several paths in one node)</Feature>
+                <Feature>Added several other nodes adjacent to Path Combinations (PathOp Compose, PathOp inputs and outputs)</Feature>
+            </Build>
             <Build date={"2026-07-16"} version={"3.2.6"}>
                 <Bugfix>Fixed Text Paths not showing up with the correct font in the preview.</Bugfix>
             </Build>
@@ -118,6 +122,7 @@ const Body = styled.dl`
     display: flex;
     flex-direction: column;
     gap: 6px;
+    overflow-y: auto;
 
     & > dt {
         display: flex;

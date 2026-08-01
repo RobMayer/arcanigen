@@ -1,6 +1,6 @@
 {
     "name": "node-graph",
-    "version": "3.2.6",
+    "version": "3.3.0",
     "description": "",
     "type": "module",
     "scripts": {

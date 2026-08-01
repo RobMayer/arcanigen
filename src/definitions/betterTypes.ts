@@ -52,6 +52,7 @@ import { NumericString } from "./datatypes/numericString";
 import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
 import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
+import { PathOpComposeDefinition, PathOpComposeNodeType } from "./nodes/collections/pathOpComposeNode";
 import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
 import { DistributionNodeType, DistributionNodeDefinition } from "./nodes/math/distributionNode";
 import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/integerInputNode";
@@ -74,6 +75,8 @@ import { TokensLengthInputDefinition, TokensLengthInputType } from "./nodes/inte
 import { TokensLengthOutputDefinition, TokensLengthOutputType } from "./nodes/interface/tokensLengthOutputNode";
 import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interface/arrayLayerInputNode";
 import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
+import { ArrayPathOpInputDefinition, ArrayPathOpInputType } from "./nodes/interface/arrayPathOpInputNode";
+import { ArrayPathOpOutputDefinition, ArrayPathOpOutputType } from "./nodes/interface/arrayPathOpOutputNode";
 import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
 import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/sequenceInputNode";
@@ -136,7 +139,7 @@ import { PathExcludeDefinition, PathExcludeNodeType } from "./nodes/math/pathExc
 import { PathIntersectDefinition, PathIntersectNodeType } from "./nodes/math/pathIntersectNode";
 import { PathHealNodeDefinition, PathHealNodeType } from "./nodes/math/pathHealNode";
 import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivideNode";
-import { PathCombineDefinition, PathCombineNodeType } from "./nodes/math/pathCombineNode";
+import { PathCombineDefinition, PathCombineNodeType } from "./nodes/collections/pathCombineNode";
 import { ContainerDefinition, ContainerNodeType } from "./nodes/meta/containerNode";
 
 export type { SubgraphDeps };
@@ -211,6 +214,8 @@ namespace Registries {
         tokensLengthOutput: TokensLengthOutputDefinition;
         arrayLayerInput: ArrayLayerInputDefinition;
         arrayLayerOutput: ArrayLayerOutputDefinition;
+        arrayPathOpInput: ArrayPathOpInputDefinition;
+        arrayPathOpOutput: ArrayPathOpOutputDefinition;
         distributionInput: DistributionInputDefinition;
         distributionOutput: DistributionOutputDefinition;
         sequenceInput: SequenceInputDefinition;
@@ -246,6 +251,7 @@ namespace Registries {
 
         // collections
         layerCompose: LayerComposeDefinition;
+        pathOpCompose: PathOpComposeDefinition;
         layers: LayerDefinition;
         mask: MaskDefinition;
         clip: ClipDefinition;
@@ -313,6 +319,7 @@ namespace Registries {
         fromPath: FromPathNodeType,
 
         layerCompose: LayerComposeNodeType,
+        pathOpCompose: PathOpComposeNodeType,
         layers: LayerNodeType,
         mask: MaskNodeType,
         clip: ClipNodeType,
@@ -363,6 +370,8 @@ namespace Registries {
         tokensLengthOutput: TokensLengthOutputType,
         arrayLayerInput: ArrayLayerInputType,
         arrayLayerOutput: ArrayLayerOutputType,
+        arrayPathOpInput: ArrayPathOpInputType,
+        arrayPathOpOutput: ArrayPathOpOutputType,
         distributionInput: DistributionInputType,
         distributionOutput: DistributionOutputType,
         sequenceInput: SequenceInputType,
@@ -443,6 +452,8 @@ namespace Registries {
         distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
         layer: { shape: Shape | null; enabled: boolean | null; blend: number | null };
         "array<layer>": { shape: Shape | null; enabled: boolean | null; blend: number | null }[];
+        pathOp: { path: SVGPath | null; enabled: boolean | null; op: number | null };
+        "array<pathOp>": { path: SVGPath | null; enabled: boolean | null; op: number | null }[];
         sequence: { senderId: string; count: number };
     };
 
@@ -460,6 +471,8 @@ namespace Registries {
         "tokens<length>": "Lengths",
         layer: "Layer",
         "array<layer>": "Layer Array",
+        pathOp: "Path Op",
+        "array<pathOp>": "Path Op Array",
         distribution: "Distribution",
         sequence: "Sequence",
     };
@@ -619,6 +632,7 @@ export namespace SocketTypes {
 
     /** Named presets */
     export const LAYER_OR_SHAPE: SocketRule = { types: ["layer", "shape"], mode: "and" };
+    export const PATHOP_OR_PATH: SocketRule = { types: ["pathOp", "path"], mode: "and" };
 
     /** Create a single-type rule (mode is irrelevant for single types) */
     export const of = (kind: DataTypes.Kind): SocketRule => ({ types: [kind], mode: "and" });

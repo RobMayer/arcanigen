@@ -294,14 +294,16 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="tokens<length>"] {
         --flavour: var(--flavour-accent);
     }
-    &[data-linktype~="path"] {
+    &[data-linktype~="path"],
+    &[data-linktype~="pathOp"] {
         --flavour: var(--flavour-emphasis);
     }
     &[data-linktype~="distribution"] {
         --flavour: var(--flavour-info);
     }
     &[data-linktype~="sequence"],
-    &[data-linktype~="array<layer>"] {
+    &[data-linktype~="array<layer>"],
+    &[data-linktype~="array<pathOp>"] {
         --flavour: var(--flavour-danger);
     }
     &[data-linktype~="shape"],

@@ -97,7 +97,17 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
             </div>
             <ActionButton onClick={changelogControls.open}>Change Log</ActionButton>
             <Modal controls={changelogControls} size="640px fit">
-                <Modal.Title>Change Log</Modal.Title>
+                <Modal.Title
+                    options={
+                        <>
+                            <ActionButton.Lite onClick={changelogControls.close} flavour={"danger"}>
+                                <Icon shape={ICONS.Close} />
+                            </ActionButton.Lite>
+                        </>
+                    }
+                >
+                    Change Log
+                </Modal.Title>
                 <ChangeLog />
             </Modal>
         </div>

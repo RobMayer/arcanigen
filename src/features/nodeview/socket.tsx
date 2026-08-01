@@ -214,11 +214,13 @@ export const Socket = styled(
     &[data-sockettype~="distribution"] {
         --flavour: var(--flavour-info);
     }
-    &[data-sockettype~="path"] {
+    &[data-sockettype~="path"],
+    &[data-sockettype~="pathOp"] {
         --flavour: var(--flavour-emphasis);
     }
     &[data-sockettype~="sequence"],
-    &[data-sockettype~="array<layer>"] {
+    &[data-sockettype~="array<layer>"],
+    &[data-sockettype~="array<pathOp>"] {
         --flavour: var(--flavour-danger);
     }
     &[data-sockettype~="shape"],
@@ -354,11 +356,13 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
                 --flavour: var(--flavour-info);
             }
 
-            &[data-sockettype~="path"] {
+            &[data-sockettype~="path"],
+            &[data-sockettype~="pathOp"] {
                 --flavour: var(--flavour-emphasis);
             }
             &[data-sockettype~="sequence"],
-            &[data-sockettype~="array<layer>"] {
+            &[data-sockettype~="array<layer>"],
+            &[data-sockettype~="array<pathOp>"] {
                 --flavour: var(--flavour-danger);
             }
             &[data-sockettype~="shape"],

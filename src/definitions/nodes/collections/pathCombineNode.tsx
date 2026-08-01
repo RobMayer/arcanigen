@@ -17,7 +17,8 @@ import { PaperHelper } from "../../../util/paperHelper";
 
 export type PathCombineDefinition = {
     inputs: {
-        [pathSocket: `path_${string}`]: DataTypes.Use<"path">;
+        pathOps: DataTypes.Use<"array<pathOp>">;
+        [pathSocket: `path_${string}`]: DataTypes.Use<"path" | "pathOp">;
     };
     outputs: {
         output: DataTypes.Use<"path">;
@@ -40,6 +41,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathCombineDefiniti
     return {
         id,
         in: {
+            pathOps: null,
             [socketId]: null,
         },
         out: {
@@ -118,28 +120,36 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
 
     // The first enabled row seeds the accumulator, so its operation is meaningless — gray it out.
     const seedIndex = node.payload.paths.findIndex((p) => p.enabled);
+    const supersocketConnected = node.in.pathOps !== null;
 
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <hr />
-            <ActionButton onClick={handleAddPath} flavour={"accent"}>
-                Add Path
-            </ActionButton>
-            {node.payload.paths.map((entry, idx) => (
-                <PathEntry
-                    entry={entry}
-                    node={node}
-                    key={entry.socket}
-                    index={idx}
-                    isSeed={idx === seedIndex}
-                    handleRemovePath={handleRemovePath}
-                    handlePathUpdate={handlePathUpdate}
-                    handleReorderPath={handleReorderPath}
-                />
-            ))}
+            <SocketIn node={node} socketId={"pathOps"}>
+                Path Ops
+            </SocketIn>
+            {supersocketConnected ? null : (
+                <>
+                    <hr />
+                    <ActionButton onClick={handleAddPath} flavour={"accent"}>
+                        Add Path
+                    </ActionButton>
+                    {node.payload.paths.map((entry, idx) => (
+                        <PathEntry
+                            entry={entry}
+                            node={node}
+                            key={entry.socket}
+                            index={idx}
+                            isSeed={idx === seedIndex}
+                            handleRemovePath={handleRemovePath}
+                            handlePathUpdate={handlePathUpdate}
+                            handleReorderPath={handleReorderPath}
+                        />
+                    ))}
+                </>
+            )}
             <hr />
             <NodeAccordion label="Additional Outputs" nodeId={node.id} socketsOut="operationCount|enabledCount">
                 <SocketOut node={node} socketId={"operationCount"}>
@@ -182,8 +192,12 @@ const PathEntry = ({
     ) => void;
     handleReorderPath: (socketId: string, toIndex: number) => void;
 }) => {
+    const theLink = Project.useLink(node.in[entry.socket]);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
+
+    // A connected pathOp carries its own op/enabled, so freeze the row's controls (mirrors Layers).
+    const overridden = theLink?.type === "pathOp";
 
     const handleDragStart = useCallback(
         (e: DragEvent) => {
@@ -227,8 +241,8 @@ const PathEntry = ({
     return (
         <PathEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
             <SocketIn node={node} socketId={entry.socket as `path_${string}`}>
-                <CheckBox checked={entry.enabled} onToggle={(enabled) => handlePathUpdate(entry.socket, { enabled })} />
-                <Dropdown value={`${entry.op}`} onValue={(v) => handlePathUpdate(entry.socket, { op: Number(v) })} disabled={isSeed}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handlePathUpdate(entry.socket, { enabled })} disabled={overridden} />
+                <Dropdown value={`${entry.op}`} onValue={(v) => handlePathUpdate(entry.socket, { op: Number(v) })} disabled={isSeed || overridden}>
                     {OP_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -282,15 +296,38 @@ const DragGrip = styled.div`
     }
 `;
 
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"pathCombine", PathCombineDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+    if (direction !== "in") return;
+
+    // Only react when the supersocket itself is connected.
+    const link = ctx.getLink(graphId, linkId);
+    if (!link || link.toSocket !== "pathOps") return;
+
+    // Clear all individual path_* links — the supersocket now drives the fold.
+    const currentNode = ctx.getNode(graphId, node.id);
+    if (!currentNode) return;
+    const linkIdsToRemove: string[] = [];
+    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+        if (socketKey.startsWith("path_") && socketLinkId !== null) {
+            linkIdsToRemove.push(socketLinkId);
+        }
+    }
+    if (linkIdsToRemove.length === 0) return;
+    ctx.removeLinks(graphId, ...linkIdsToRemove);
+};
+
 const dependsOn = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, outSocket: keyof PathCombineDefinition["outputs"], _deps: AllDeps): (keyof PathCombineDefinition["inputs"])[] => {
     if (outSocket === "output") {
-        return node.payload.paths.map((p) => p.socket) as `path_${string}`[];
+        return ["pathOps", ...(node.payload.paths.map((p) => p.socket) as `path_${string}`[])];
     }
-    // operationCount is derived purely from the payload (row count / enabled flags), no input dependency.
-    return [];
+    // Counts read the supersocket when connected, else the payload rows.
+    return ["pathOps"];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, inSocket: keyof PathCombineDefinition["inputs"], _deps: AllDeps): (keyof PathCombineDefinition["outputs"])[] => {
+    if (inSocket === "pathOps") {
+        return ["output", "operationCount", "enabledCount"];
+    }
     if (typeof inSocket === "string" && inSocket.startsWith("path_")) {
         return ["output"];
     }
@@ -299,8 +336,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, in
 
 const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: keyof PathCombineDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "operationCount" || socket === "enabledCount") {
-        const enabled = node.payload.paths.filter((p) => p.enabled).length;
-        // Every enabled row past the seed applies one op, so operations = enabled − 1 (floored at 0).
+        const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
+        const enabled = supersocketEval ? supersocketEval.data.filter((e) => e.enabled ?? true).length : node.payload.paths.filter((p) => p.enabled).length;
+        // Every enabled entry past the seed applies one op, so operations = enabled − 1 (floored at 0).
         return {
             kind: "integer",
             data: `${socket === "enabledCount" ? enabled : Math.max(0, enabled - 1)}`,
@@ -310,10 +348,40 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
     if (socket !== "output") return null;
 
     const entries: { op: PaperHelper.PathOpKind; path: DataTypes.TypeOf<DataTypes.Use<"path">> | null }[] = [];
-    for (const row of node.payload.paths) {
-        if (!row.enabled) continue;
-        const resolved = context.resolve<"path">(node.id, row.socket)?.data ?? null;
-        entries.push({ op: OP_KINDS[row.op] ?? "unify", path: resolved });
+
+    // Supersocket path: fold the provided array<pathOp> directly.
+    const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
+    if (supersocketEval) {
+        for (const entry of supersocketEval.data) {
+            if (!(entry.enabled ?? true)) continue;
+            entries.push({ op: OP_KINDS[entry.op ?? 0] ?? "unify", path: entry.path });
+        }
+    } else {
+        // Individual rows: each socket may carry a bare path or a composed pathOp (which overrides op/enabled).
+        for (const row of node.payload.paths) {
+            const resolved = context.resolve<"pathOp">(node.id, row.socket) as DataTypes.AnyEval | null;
+
+            let path: DataTypes.TypeOf<DataTypes.Use<"path">> | null;
+            let enabled: boolean;
+            let op: number;
+            if (resolved && resolved.kind === "pathOp") {
+                path = resolved.data.path;
+                enabled = resolved.data.enabled ?? row.enabled;
+                op = resolved.data.op ?? row.op;
+            } else if (resolved && resolved.kind === "path") {
+                path = resolved.data;
+                enabled = row.enabled;
+                op = row.op;
+            } else {
+                // unconnected — a null path is still a meaningful fold operand (passthrough)
+                path = null;
+                enabled = row.enabled;
+                op = row.op;
+            }
+
+            if (!enabled) continue;
+            entries.push({ op: OP_KINDS[op] ?? "unify", path });
+        }
     }
 
     if (entries.length === 0) return null;
@@ -327,7 +395,10 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, so
         }
         return { types: ["path"], mode: "and" };
     }
-    return { types: ["path"], mode: "or" };
+    if (socketId === "pathOps") {
+        return { types: ["array<pathOp>"], mode: "or" };
+    }
+    return { types: ["path", "pathOp"], mode: "or" };
 };
 
 const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
@@ -357,12 +428,13 @@ export const PathCombineNodeType: NodeTypes.Type<"pathCombine", PathCombineDefin
     displayName: "Path Combine",
     defaultLabel: "Path Combine",
     iconNode: <Icon shape={NODE_ICONS.combine} color={"var(--icon-flavour)"} />,
-    category: "Math",
+    category: "Collections",
     create,
     dependsOn,
     contributesTo,
     evaluate,
     Controls,
+    onConnect,
     canInterject,
     onInterject,
     getSocketType,

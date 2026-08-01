@@ -113,7 +113,7 @@ const InterfaceMembers = ({
         if (entry.type === "accordion") {
             return (
                 <NodeAccordion key={`acc-${entry.label}`} label={entry.label} nodeId={hostNode.id} accordionId={entry.id}>
-                    <InterfaceMembers members={entry.items as InterfaceMember[]} graphId={graphId} hostNode={hostNode} handleValue={handleValue} />
+                    <InterfaceMembers members={entry.items} graphId={graphId} hostNode={hostNode} handleValue={handleValue} />
                 </NodeAccordion>
             );
         }
@@ -232,13 +232,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             // Build from individual layer sockets
             const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
             for (const entry of layerEntries) {
-                const resolved = context.resolve(node.id, entry.socket, outerSeqData) as DataTypes.AnyEval | null;
+                const resolved = context.resolve(node.id, entry.socket, outerSeqData);
                 if (!resolved) {
                     layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
                     continue;
                 }
                 if (resolved.kind === "layer") {
-                    const data = resolved.data as { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null };
+                    const data = resolved.data;
                     layerData.push({
                         shape: data.shape,
                         enabled: data.enabled ?? entry.enabled,
@@ -253,6 +253,41 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
                 }
             }
             return { kind: "array<layer>", data: layerData };
+        }
+
+        // Path-op group handling
+        const pathOpsKey = `pathOps_${inputNodeId}`;
+        if (pathOpsKey in node.payload) {
+            const pathOpEntries = (node.payload as Record<string, unknown>)[pathOpsKey] as { socket: string; enabled: boolean; op: number }[];
+
+            // Check supersocket first — if connected, use its data directly
+            const supersocketEval = context.resolve<"array<pathOp>">(node.id, inputNodeId, outerSeqData);
+            if (supersocketEval) return supersocketEval;
+
+            // Build from individual pathOp sockets
+            const pathOpData: { path: DataTypes.TypeOf<DataTypes.Use<"path">> | null; enabled: boolean | null; op: number | null }[] = [];
+            for (const entry of pathOpEntries) {
+                const resolved = context.resolve(node.id, entry.socket, outerSeqData);
+                if (!resolved) {
+                    pathOpData.push({ path: null, enabled: entry.enabled, op: entry.op });
+                    continue;
+                }
+                if (resolved.kind === "pathOp") {
+                    const data = resolved.data;
+                    pathOpData.push({
+                        path: data.path,
+                        enabled: data.enabled ?? entry.enabled,
+                        op: data.op ?? entry.op,
+                    });
+                } else if (resolved.kind === "path") {
+                    pathOpData.push({
+                        path: resolved.data,
+                        enabled: entry.enabled,
+                        op: entry.op,
+                    });
+                }
+            }
+            return { kind: "array<pathOp>", data: pathOpData };
         }
 
         // Regular socket: resolve in parent graph with translated seqData
@@ -276,7 +311,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
 
     // Remap sequence token senderIds on output
     if (raw?.kind === "sequence") {
-        const { senderId, count } = raw.data as { senderId: string; count: number };
+        const { senderId, count } = raw.data;
         return { kind: "sequence", data: { senderId: `${node.id}/${senderId}`, count } };
     }
     return raw;
@@ -305,6 +340,12 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: stri
                 inSockets[parsed.nodeId] = null;
                 inSockets[socketId] = null;
                 initialValues[`layers_${parsed.nodeId}`] = [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.NORMAL.value }];
+            } else if (inputNode?.type === "arrayPathOpInput") {
+                // Create supersocket + initial path-op group for array<pathOp> input
+                const socketId = `pathop_${nanoid()}`;
+                inSockets[parsed.nodeId] = null;
+                inSockets[socketId] = null;
+                initialValues[`pathOps_${parsed.nodeId}`] = [{ socket: socketId, enabled: true, op: Enum.Common.pathOp.UNIFY.value }];
             } else {
                 const socketed = (inputNode?.payload as { socketed?: boolean })?.socketed !== false;
                 if (socketed) {
@@ -347,17 +388,19 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
     const link = ctx.getLink(graphId, linkId);
     if (!link) return;
 
-    // Check if the connected socket is a supersocket for a layer group
+    // Check if the connected socket is a supersocket for a layer or path-op group
     const layersKey = `layers_${link.toSocket}`;
-    if (!(layersKey in node.payload)) return;
+    const pathOpsKey = `pathOps_${link.toSocket}`;
+    const groupKey = layersKey in node.payload ? layersKey : pathOpsKey in node.payload ? pathOpsKey : null;
+    if (!groupKey) return;
 
-    // Collect all link IDs from layer_* sockets in this group
+    // Collect all link IDs from the group's item sockets
     const currentNode = ctx.getNode(graphId, node.id);
     if (!currentNode) return;
-    const layerEntries = (currentNode.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+    const groupEntries = (currentNode.payload as Record<string, unknown>)[groupKey] as { socket: string }[];
     const linkIdsToRemove: string[] = [];
 
-    for (const entry of layerEntries) {
+    for (const entry of groupEntries) {
         const socketLinkId = currentNode.in[entry.socket];
         if (socketLinkId !== null && socketLinkId !== undefined) {
             linkIdsToRemove.push(socketLinkId);
@@ -393,6 +436,8 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
     shapeOutput: { types: ["shape"], mode: "and" },
     arrayLayerInput: { types: ["array<layer>"], mode: "and" },
     arrayLayerOutput: { types: ["array<layer>"], mode: "and" },
+    arrayPathOpInput: { types: ["array<pathOp>"], mode: "and" },
+    arrayPathOpOutput: { types: ["array<pathOp>"], mode: "and" },
     distributionInput: { types: ["distribution"], mode: "and" },
     distributionOutput: { types: ["distribution"], mode: "and" },
     sequenceInput: { types: ["sequence"], mode: "and" },
@@ -405,11 +450,15 @@ const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId
     const subgraphId = node.payload.graphId;
     if (!subgraphId) return SocketTypes.ANY;
 
-    // Check if this socket belongs to a layer group
+    // Check if this socket belongs to a layer or path-op group
     for (const key of Object.keys(node.payload)) {
-        if (!key.startsWith("layers_")) continue;
-        const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
-        if (entries.some((e) => e.socket === socketId)) return SocketTypes.LAYER_OR_SHAPE;
+        if (key.startsWith("layers_")) {
+            const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
+            if (entries.some((e) => e.socket === socketId)) return SocketTypes.LAYER_OR_SHAPE;
+        } else if (key.startsWith("pathOps_")) {
+            const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
+            if (entries.some((e) => e.socket === socketId)) return SocketTypes.PATHOP_OR_PATH;
+        }
     }
 
     // Look up the subgraph interface node and map its type
@@ -487,6 +536,8 @@ const DynamicSlot = ({
             return <InputSlotEnum host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<EnumInputDefinition>} handleValue={handleValue} />;
         case "arrayLayerInput":
             return <InputSlotLayerGroup host={hostNode} source={sourceNode} />;
+        case "arrayPathOpInput":
+            return <InputSlotPathOpGroup host={hostNode} source={sourceNode} />;
         case "tokensLengthOutput":
             return <OutputSlotTokensLength host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<TokensLengthOutputDefinition>} />;
         case "tokensLengthInput":
@@ -501,6 +552,8 @@ const DynamicSlot = ({
             return <InputSlotDistribution host={hostNode} source={sourceNode} />;
         case "arrayLayerOutput":
             return <OutputSlotArrayLayer host={hostNode} source={sourceNode} />;
+        case "arrayPathOpOutput":
+            return <OutputSlotArrayPathOp host={hostNode} source={sourceNode} />;
         case "sequenceInput":
             return <InputSlotSequence host={hostNode} source={sourceNode} />;
         case "sequenceOutput":
@@ -1382,3 +1435,200 @@ const TextPreview = styled.div`
     border: 1px solid #666;
     flex: 1 1 auto;
 `;
+
+const PATHOP_OPTIONS = Enum.options(Enum.Common.pathOp);
+const PATHOP_MIME = "application/x-custom-pathop-socket";
+
+const OutputSlotArrayPathOp = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketOut node={host} socketId={source.id}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
+        </SocketOut>
+    );
+};
+
+const InputSlotPathOpGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    const { alterNode, removeLinks } = Project.useMethods();
+    const label = ((source.payload as { label?: string }).label ?? "") === "" ? "Path Ops" : (source.payload as { label?: string }).label;
+    const pathOpEntries = ((host.payload as Record<string, unknown>)[`pathOps_${source.id}`] ?? []) as { socket: string; enabled: boolean; op: number }[];
+    const supersocketConnected = host.in[source.id] !== null;
+
+    const handleAddPathOp = useCallback(() => {
+        const socketId = `pathop_${nanoid()}`;
+        alterNode(host.id, (n) => ({
+            ...n,
+            in: { ...n.in, [socketId]: null },
+            payload: {
+                ...n.payload,
+                [`pathOps_${source.id}`]: [
+                    ...((n.payload as Record<string, unknown>)[`pathOps_${source.id}`] as { socket: string; enabled: boolean; op: number }[]),
+                    { socket: socketId, enabled: true, op: Enum.Common.pathOp.UNIFY.value },
+                ],
+            },
+        }));
+    }, [alterNode, host.id, source.id]);
+
+    const handleRemovePathOp = useCallback(
+        (socket: string) => {
+            const linkId = host.in[socket];
+            if (linkId) {
+                removeLinks(linkId);
+            }
+            alterNode(host.id, (n) => {
+                const { [socket]: _, ...restIn } = n.in;
+                return {
+                    ...n,
+                    in: restIn,
+                    payload: {
+                        ...n.payload,
+                        [`pathOps_${source.id}`]: ((n.payload as Record<string, unknown>)[`pathOps_${source.id}`] as { socket: string; enabled: boolean; op: number }[]).filter(
+                            (p) => p.socket !== socket,
+                        ),
+                    },
+                };
+            });
+        },
+        [alterNode, removeLinks, host.id, host.in, source.id],
+    );
+
+    const handlePathOpUpdate = useCallback(
+        (socket: string, update: Partial<{ enabled: boolean; op: number }>) => {
+            alterNode(host.id, (n) => ({
+                ...n,
+                payload: {
+                    ...n.payload,
+                    [`pathOps_${source.id}`]: ((n.payload as Record<string, unknown>)[`pathOps_${source.id}`] as { socket: string; enabled: boolean; op: number }[]).map((p) =>
+                        p.socket === socket ? { ...p, ...update } : p,
+                    ),
+                },
+            }));
+        },
+        [alterNode, host.id, source.id],
+    );
+
+    const handleReorderPathOp = useCallback(
+        (socketId: string, toIndex: number) => {
+            alterNode(host.id, (n) => {
+                const pathOps = [...((n.payload as Record<string, unknown>)[`pathOps_${source.id}`] as { socket: string; enabled: boolean; op: number }[])];
+                const fromIndex = pathOps.findIndex((p) => p.socket === socketId);
+                if (fromIndex === -1 || fromIndex === toIndex) return n;
+                const [entry] = pathOps.splice(fromIndex, 1);
+                pathOps.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, entry);
+                return {
+                    ...n,
+                    payload: { ...n.payload, [`pathOps_${source.id}`]: pathOps },
+                };
+            });
+        },
+        [alterNode, host.id, source.id],
+    );
+
+    return (
+        <>
+            <SocketIn node={host} socketId={source.id}>
+                {label}
+            </SocketIn>
+            {supersocketConnected ? null : (
+                <>
+                    <ActionButton onClick={handleAddPathOp} flavour={"accent"}>
+                        Add Path
+                    </ActionButton>
+                    {pathOpEntries.map((entry, idx) => (
+                        <PathOpGroupEntry
+                            key={entry.socket}
+                            entry={entry}
+                            host={host}
+                            index={idx}
+                            handleRemovePathOp={handleRemovePathOp}
+                            handlePathOpUpdate={handlePathOpUpdate}
+                            handleReorderPathOp={handleReorderPathOp}
+                        />
+                    ))}
+                </>
+            )}
+        </>
+    );
+};
+
+const PathOpGroupEntry = ({
+    entry,
+    host,
+    index,
+    handlePathOpUpdate,
+    handleRemovePathOp,
+    handleReorderPathOp,
+}: {
+    entry: { socket: string; enabled: boolean; op: number };
+    host: NodeDefinitions.NodeFor<CustomDefinition>;
+    index: number;
+    handleRemovePathOp: (socket: string) => void;
+    handlePathOpUpdate: (socket: string, update: Partial<{ enabled: boolean; op: number }>) => void;
+    handleReorderPathOp: (socketId: string, toIndex: number) => void;
+}) => {
+    const theLink = Project.useLink(host.in[entry.socket]);
+    const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+
+    // A connected pathOp carries its own op/enabled, so freeze the row's controls.
+    const overridden = theLink?.type === "pathOp";
+
+    const handleDragStart = useCallback(
+        (e: DragEvent) => {
+            e.dataTransfer.setDragImage(ref.current as Element, 0, 0);
+            e.dataTransfer.setData(PATHOP_MIME, entry.socket);
+            e.dataTransfer.effectAllowed = "move";
+        },
+        [entry.socket],
+    );
+
+    const handleDragOver = useCallback((e: DragEvent) => {
+        if (!e.dataTransfer.types.includes(PATHOP_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        const rect = ref.current?.getBoundingClientRect();
+        if (rect) {
+            setDropSide(e.clientY < rect.top + rect.height / 2 ? "above" : "below");
+        }
+    }, []);
+
+    const handleDragLeave = useCallback(() => {
+        setDropSide(null);
+    }, []);
+
+    const handleDrop = useCallback(
+        (e: DragEvent) => {
+            const socketId = e.dataTransfer.getData(PATHOP_MIME);
+            if (socketId) {
+                e.preventDefault();
+                handleReorderPathOp(socketId, dropSide === "below" ? index + 1 : index);
+            }
+            setDropSide(null);
+        },
+        [handleReorderPathOp, index, dropSide],
+    );
+
+    const handleDragEnd = useCallback(() => {
+        setDropSide(null);
+    }, []);
+
+    return (
+        <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
+            <SocketIn node={host} socketId={entry.socket}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handlePathOpUpdate(entry.socket, { enabled })} disabled={overridden} />
+                <Dropdown value={`${entry.op}`} onValue={(v) => handlePathOpUpdate(entry.socket, { op: Number(v) })} disabled={overridden}>
+                    {PATHOP_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </Dropdown>
+                <DragGrip draggable onDragStart={handleDragStart}>
+                    <Icon shape={ICONS.Caret.Vertical} />
+                </DragGrip>
+                <ActionButton.Lite onClick={() => handleRemovePathOp(entry.socket)} flavour={"danger"}>
+                    <Icon shape={ICONS.Close} />
+                </ActionButton.Lite>
+            </SocketIn>
+        </LayerEntryWrapper>
+    );
+};

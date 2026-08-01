@@ -149,7 +149,7 @@ export namespace Project {
                 removeNode: (nodeId: string) => ctx.mc.run(() => ctx.mc.removeNode(graphId, nodeId)),
                 removeLinks: (...linkIds: string[]) => ctx.mc.run(() => ctx.mc.removeLinks(graphId, ...linkIds)),
                 updateNodePayload: <P extends NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>(id: ArcaneGraph.NodeId, data: Partial<P>) =>
-                    ctx.mc.run(() => ctx.mc.updatePayload(graphId, id, data as Partial<Record<string, unknown>>)),
+                    ctx.mc.run(() => ctx.mc.updatePayload(graphId, id, data)),
                 addNodeByType: (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) =>
                     ctx.mc.run(() => ctx.mc.addNodeByType(graphId, nodeType, params, position)),
                 alterNode: (id: ArcaneGraph.NodeId, fn: (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) =>
