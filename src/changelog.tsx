@@ -4,6 +4,11 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-01"} version={"3.3.1"}>
+                <Feature>Added Tokenizer (Length) node (for joining multiple lengths for parametized Stroke Dash)</Feature>
+                <Feature>Added Reverse Path node</Feature>
+                <Feature>Added Path Length node</Feature>
+            </Build>
             <Build date={"2026-08-01"} version={"3.3.0"}>
                 <Feature>Added Path Combine node (Unify/Subtract/etc on several paths in one node)</Feature>
                 <Feature>Added several other nodes adjacent to Path Combinations (PathOp Compose, PathOp inputs and outputs)</Feature>

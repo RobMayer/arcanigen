@@ -76,6 +76,22 @@ export namespace PaperHelper {
         return booleanOp(pathA, pathB, (a, b) => a.divide(b));
     };
 
+    // Total arc length of a path in px (transform baked in). Works on open paths and compound paths.
+    export const pathLength = (pathData: SVGPath): number | null => {
+        ensurePaper();
+        const item = paper.project.importSVG(`<path d="${pathData.d}" transform="${pathData.transform}"/>`, { insert: false }) as paper.PathItem;
+        if (!item) return null;
+        try {
+            const len = item instanceof paper.CompoundPath ? item.children.reduce((sum, child) => sum + (child as paper.Path).length, 0) : (item as paper.Path).length;
+            item.remove();
+            return len;
+        } catch (e) {
+            console.warn(e);
+            item?.remove();
+            return null;
+        }
+    };
+
     /**
      * The seven fold operations a Path Combine row can apply. `inverse*` variants swap the operands
      * (the row's path becomes the minuend/dividend), which only matters for the non-commutative ops.

@@ -53,6 +53,7 @@ import { Color } from "./datatypes/color";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
 import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
 import { PathOpComposeDefinition, PathOpComposeNodeType } from "./nodes/collections/pathOpComposeNode";
+import { TokenizerLengthDefinition, TokenizerLengthNodeType } from "./nodes/collections/tokenizerLengthNode";
 import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
 import { DistributionNodeType, DistributionNodeDefinition } from "./nodes/math/distributionNode";
 import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/integerInputNode";
@@ -138,6 +139,8 @@ import { PathSubtractDefinition, PathSubtractNodeType } from "./nodes/math/pathS
 import { PathExcludeDefinition, PathExcludeNodeType } from "./nodes/math/pathExcludeNode";
 import { PathIntersectDefinition, PathIntersectNodeType } from "./nodes/math/pathIntersectNode";
 import { PathHealNodeDefinition, PathHealNodeType } from "./nodes/math/pathHealNode";
+import { ReversePathDefinition, ReversePathNodeType } from "./nodes/math/reversePathNode";
+import { PathLengthDefinition, PathLengthNodeType } from "./nodes/math/pathLengthNode";
 import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivideNode";
 import { PathCombineDefinition, PathCombineNodeType } from "./nodes/collections/pathCombineNode";
 import { ContainerDefinition, ContainerNodeType } from "./nodes/meta/containerNode";
@@ -252,6 +255,7 @@ namespace Registries {
         // collections
         layerCompose: LayerComposeDefinition;
         pathOpCompose: PathOpComposeDefinition;
+        tokenizerLength: TokenizerLengthDefinition;
         layers: LayerDefinition;
         mask: MaskDefinition;
         clip: ClipDefinition;
@@ -288,6 +292,8 @@ namespace Registries {
         pathExclude: PathExcludeDefinition;
         pathIntersect: PathIntersectDefinition;
         pathHeal: PathHealNodeDefinition;
+        pathLength: PathLengthDefinition;
+        reversePath: ReversePathDefinition;
         pathDivide: PathDivideDefinition;
         pathCombine: PathCombineDefinition;
 
@@ -320,6 +326,7 @@ namespace Registries {
 
         layerCompose: LayerComposeNodeType,
         pathOpCompose: PathOpComposeNodeType,
+        tokenizerLength: TokenizerLengthNodeType,
         layers: LayerNodeType,
         mask: MaskNodeType,
         clip: ClipNodeType,
@@ -426,6 +433,8 @@ namespace Registries {
         pathExclude: PathExcludeNodeType,
         pathIntersect: PathIntersectNodeType,
         pathHeal: PathHealNodeType,
+        pathLength: PathLengthNodeType,
+        reversePath: ReversePathNodeType,
         pathDivide: PathDivideNodeType,
         pathCombine: PathCombineNodeType,
 

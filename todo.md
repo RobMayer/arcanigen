@@ -10,11 +10,12 @@
     - [ ] Banded Line
     - [x] Merged Knot (like knot but without overlap)
 - [ ] Integer to Enum - (for use with random seed?; modes: clamp or wrap)
+    - [ ] Might need "Option Count" output on enums
 - [ ] Lengths to Tokens<length> (for building dash arrays dynamically)
 - [ ] Linear Symmetry
 - [ ] Radial Symmetry
-- [ ] Reverse Path
-- [ ] PathLength
+- [x] Reverse Path
+- [x] Path Length
 - [ ] Grid
     - [ ] Cartesian
     - [ ] Iso
@@ -84,3 +85,4 @@
 - [x] Figure out Random Seed mechanism
 - [ ] allow subgraphs to have a custom icon or an icon selector, I guess - maybe?
 - [ ] rework the drag-pan system to use explicit ID'd and to use some internal state, maybe
+- [ ] filter "add Nodes" menu by input socket and output socket types
