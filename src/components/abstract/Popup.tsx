@@ -331,7 +331,7 @@ export namespace AbstractPopup {
                     onMouseMove={isOpen && backdrop === "hover" && ((safeZone && safeZonePath) || !safeZone) ? doCancel : undefined}
                     // onAuxClick={isOpen && backdrop === "click" ? doCancel : undefined}
                     onWheel={handleBackdropWheel}
-                    style={captureStyles}
+                    style={captureStyles as CSSProperties}
                 />
                 <div data-part={"contents"} style={contentsStyle} ref={combinedRef} {...props} onFocusCapture={handleFocus} tabIndex={-1}>
                     {preload || isOpen ? children : null}
