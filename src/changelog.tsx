@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-02"} version={"3.3.2"}>
+                <Feature>Added Integer to Enum node</Feature>
+            </Build>
             <Build date={"2026-08-01"} version={"3.3.1"}>
                 <Feature>Added Tokenizer (Length) node (for joining multiple lengths for parametized Stroke Dash)</Feature>
                 <Feature>Added Reverse Path node</Feature>
