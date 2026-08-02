@@ -114,7 +114,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "out
 
 const SOCKETTYPES_IN: { [key in keyof Required<IntegerDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     value: { types: ["angle", "float", "integer", "length"], mode: "or" },
-    mode: { types: ["enum", "integer"], mode: "or" },
+    mode: { types: ["enum"], mode: "and" },
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<IntegerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
