@@ -53,7 +53,7 @@ const effectiveInputType = (connectedType: SocketTypes.SocketRule, resolvedInTyp
 };
 
 const roundedOutputType = (inputType: SocketTypes.SocketRule): SocketTypes.SocketRule => {
-    return { types: inputType.types.map((t) => (t === "float" ? "integer" : t)) as DataTypes.Kind[], mode: inputType.mode };
+    return { types: inputType.types.map((t) => (t === "float" ? "integer" : t)), mode: inputType.mode };
 };
 
 const queryDownstreamTypes = (node: RoundNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
@@ -129,7 +129,7 @@ const setPayload = (nodeId: string, updates: Partial<RoundDefinition["payload"]>
     if (!current) return;
     ctx.setNode(graphId, nodeId, {
         ...current,
-        payload: { ...current.payload, ...updates } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"],
+        payload: { ...current.payload, ...updates },
     });
 };
 

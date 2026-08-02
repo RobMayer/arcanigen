@@ -95,7 +95,7 @@ export namespace Tree {
 
     //#region modification
 
-    export const add = <T>(tree: TreeOf<T>, payload: T, parent: NodeId | string, id: NodeId = ""): [tree: TreeOf<T>, newId: NodeId | null] => {
+    export const add = <T>(tree: TreeOf<T>, payload: T, parent: NodeId  , id: NodeId = ""): [tree: TreeOf<T>, newId: NodeId | null] => {
         if (parent !== null && !Tree.has(tree, parent)) {
             return [tree, null];
         }

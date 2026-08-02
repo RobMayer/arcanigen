@@ -242,7 +242,7 @@ export function computeSubgraphDeps<N>(graph: ArcaneGraph.GraphOf<N>, interfaces
 
     // Initialize empty arrays for all interface entries
     for (const entry of sockets) {
-        result[entry as InterfaceKey] = [];
+        result[entry] = [];
     }
 
     // For each output interface node, trace upstream and find which input interface nodes it depends on

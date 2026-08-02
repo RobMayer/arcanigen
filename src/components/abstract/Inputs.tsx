@@ -631,7 +631,7 @@ export namespace AbstractInput {
 
         // Normalize: add unit if bare number, apply custom normalize
         const normalizeMeasure = useCallback((v: string): EmptyOr<Measure<U>> => {
-            if (v === "") return "" as EmptyOr<Measure<U>>;
+            if (v === "") return "";
 
             // Check if it's already a valid dimensioned value
             const parsed = parseMeasure(v, unitsRef.current);
@@ -658,7 +658,7 @@ export namespace AbstractInput {
             (el: HTMLInputElement, v: string): EmptyOr<Measure<U>> | null => {
                 if (v === "") {
                     el.setCustomValidity(required ? "Value is required" : "");
-                    return required ? null : ("" as EmptyOr<Measure<U>>);
+                    return required ? null : ("");
                 }
 
                 const regex = new RegExp(`^${pattern}$`);
@@ -718,7 +718,7 @@ export namespace AbstractInput {
                     if (valueRef.current !== "") {
                         onCommitRef.current?.("");
                     }
-                    return "" as EmptyOr<Measure<U>>;
+                    return "";
                 }
 
                 const regex = new RegExp(`^${pattern}$`);

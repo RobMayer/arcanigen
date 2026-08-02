@@ -120,7 +120,7 @@ const PathElement = ({ shape }: { shape: PathShape }) => {
             strokeDashoffset={pa.strokeDashoffset}
             paintOrder={pa.paintOrder}
             opacity={pa.opacity}
-            vectorEffect={shape.vectorEffect as "none" | "non-scaling-stroke" | undefined}
+            vectorEffect={shape.vectorEffect}
             transform={shape.transform || undefined}
             {...markerAttrs}
         />

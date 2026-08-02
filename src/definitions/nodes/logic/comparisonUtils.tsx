@@ -1,4 +1,4 @@
-import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { DataTypes, NodeTypes, SocketTypes } from "../../betterTypes";
 import { constrainForPartner } from "../math/numericMath";
 
 // --- Shared Definition ---
@@ -31,6 +31,6 @@ export const setPayload = (nodeId: string, updates: Partial<BinaryComparisonDefi
     if (!current) return;
     ctx.setNode(graphId, nodeId, {
         ...current,
-        payload: { ...current.payload, ...updates } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"],
+        payload: { ...current.payload, ...updates },
     });
 };

@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-02"} version={"3.3.3"}>
+                <Feature>Added Patch node for organizing wires</Feature>
+            </Build>
             <Build date={"2026-08-02"} version={"3.3.2"}>
                 <Feature>Added Integer to Enum node</Feature>
             </Build>

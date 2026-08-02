@@ -114,24 +114,27 @@ export const Slot = ({ children, label }: { children?: ReactNode; label?: ReactN
 
 // A single row carrying both halves of one passthrough pair: an "in" socket on the far
 // left and an "out" socket on the far right, with arbitrary controls (grip, remove) between.
-// The two sockets share the same socketId, disambiguated by side (in/out live in separate maps).
+// The two halves must use DISTINCT socket ids — the socket anchor name is keyed by
+// nodeId+socketId with no side, so a shared id would collide and mis-route wires.
 export const SocketPair = <D extends NodeDefinitions.Generic>({
     node,
-    socketId,
+    socketInId,
+    socketOutId,
     children,
     ref,
 }: {
     children?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
-    socketId: string;
+    socketInId: string;
+    socketOutId: string;
     ref?: Ref<HTMLDivElement>;
 }) => {
     const anyNode = node as NodeDefinitions.NodeFor<NodeDefinitions.Any>;
     return (
         <PairBase ref={ref}>
-            <Socket side={"in"} socketId={socketId} nodeId={node.id} node={anyNode} connected={anyNode.in[socketId] != null} />
+            <Socket side={"in"} socketId={socketInId} nodeId={node.id} node={anyNode} connected={anyNode.in[socketInId] != null} />
             <div data-part={"middle"}>{children}</div>
-            <Socket side={"out"} socketId={socketId} nodeId={node.id} node={anyNode} connected={(anyNode.out[socketId]?.length ?? 0) > 0} />
+            <Socket side={"out"} socketId={socketOutId} nodeId={node.id} node={anyNode} connected={(anyNode.out[socketOutId]?.length ?? 0) > 0} />
         </PairBase>
     );
 };

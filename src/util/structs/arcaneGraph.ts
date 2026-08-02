@@ -263,7 +263,7 @@ export namespace ArcaneGraph {
         const newNodes = { ...graph.nodes };
         for (const [id, data] of Object.entries(normalized)) {
             if (id in newNodes) continue;
-            newNodes[id] = { ...data, id } as NodeOf<N>;
+            newNodes[id] = { ...data, id };
             newIds.push(id);
         }
         if (newIds.length === 0) return [graph, []];

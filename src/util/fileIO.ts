@@ -14,7 +14,7 @@ export const uploadFile = (accept: string): Promise<string> => {
         input.accept = accept;
         input.onchange = () => {
             const file = input.files?.[0];
-            if (!file) return reject();
+            if (!file) return reject(new Error("Could not upload or read file"));
             file.text().then(resolve).catch(reject);
         };
         input.click();

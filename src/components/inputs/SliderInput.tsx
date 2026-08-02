@@ -33,6 +33,7 @@ type WithDisplayProps = {
     flavour?: Flavour;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const WithDisplay = styled(
     ({
         value,
@@ -49,9 +50,9 @@ const WithDisplay = styled(
         flavour,
         ...rest
     }: Omit<DivProps, "ref"> & WithDisplayProps) => {
-        const [innerRef, makeRef] = useCombinedRef(ref);
-        const [innerSliderRef, makeSliderRef] = useCombinedRef(sliderRef);
-        const [innerDisplayRef, makeDisplayRef] = useCombinedRef(displayRef);
+        const [_innerRef, makeRef] = useCombinedRef(ref);
+        const [_innerSliderRef, makeSliderRef] = useCombinedRef(sliderRef);
+        const [_innerDisplayRef, makeDisplayRef] = useCombinedRef(displayRef);
 
         return (
             <div className={className} id={id} ref={makeRef} data-flavour={flavour} {...rest}>

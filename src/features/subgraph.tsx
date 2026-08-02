@@ -201,7 +201,7 @@ const extractAt = (members: InterfaceMember[], path: MemberPath): [InterfaceMemb
     if (bi < 0 || bi >= items.length) return [null, members];
     const [item] = items.splice(bi, 1);
     next[ai] = { ...acc, items };
-    return [item as InterfaceMember, next];
+    return [item, next];
 };
 
 /** Insert an item into the tree at the given path */

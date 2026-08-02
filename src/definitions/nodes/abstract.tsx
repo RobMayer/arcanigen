@@ -355,8 +355,8 @@ export namespace Iteration {
         const reverseSequence = context.resolve<"boolean">(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
         const startOffsetStr = context.resolve<"integer">(node.id, "startOffset")?.data ?? node.payload.startOffset;
         const endOffsetStr = context.resolve<"integer">(node.id, "endOffset")?.data ?? node.payload.endOffset;
-        const startOffset = startOffsetStr === "" ? 0 : parseInt(startOffsetStr as string, 10) || 0;
-        const endOffset = endOffsetStr === "" ? 0 : parseInt(endOffsetStr as string, 10) || 0;
+        const startOffset = startOffsetStr === "" ? 0 : parseInt(startOffsetStr, 10) || 0;
+        const endOffset = endOffsetStr === "" ? 0 : parseInt(endOffsetStr, 10) || 0;
         const modeEnum = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
         const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
 

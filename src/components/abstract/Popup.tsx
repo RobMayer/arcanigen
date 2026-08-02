@@ -280,7 +280,7 @@ export namespace AbstractPopup {
 
         // Determine pointer-events for backdrop based on mode
         const captureStyles = useMemo(() => {
-            return { pointerEvents: backdrop === "pass" ? "none" : "auto" } as CSSProperties;
+            return { pointerEvents: backdrop === "pass" ? "none" : "auto" };
         }, [backdrop]);
 
         const handleBackdropWheel = useMemo(() => {

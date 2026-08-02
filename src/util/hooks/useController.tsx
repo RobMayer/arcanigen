@@ -44,7 +44,7 @@ export const createController = <S, C extends { [key: string]: (...args: any[]) 
     const useControllerInternal = () => {
         const ctx = useContext(CTX);
         if (!ctx) {
-            throw `useControllerInternal must be used within a ControlLoop`;
+            throw new Error(`useControllerInternal must be used within a ControlLoop`);
         }
         const value = useSyncExternalStore(ctx.state.subscribe, ctx.state.get);
         return [value, ctx.controls] as const;
@@ -58,9 +58,10 @@ export const createController = <S, C extends { [key: string]: (...args: any[]) 
                 get(target, prop) {
                     if (prop === BINDER) return binder;
                     if (typeof prop === "symbol") return undefined;
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                     return (...args: any[]) => binder.current[prop]?.(...args);
                 },
-            }) as C;
+            });
         }, []);
     };
 

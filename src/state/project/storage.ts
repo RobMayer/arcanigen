@@ -1,6 +1,6 @@
 import { NodeTypes } from "../../definitions/betterTypes";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
-import type { NodesType, LinksType, InterfacesType, DepsType, UsersType, MetaType } from "./types";
+import type { NodesType, LinksType, InterfacesType, DepsType, UsersType } from "./types";
 import { buildInitialCache } from "./cache";
 
 const STARTING_STATE = {
@@ -146,7 +146,7 @@ const users: UsersType = (() => {
     return u;
 })();
 const interfaces = Object.fromEntries(Object.entries(STARTING_STATE).map(([graphId, g]) => [graphId, g.interfaces])) as InterfacesType;
-const meta = Object.fromEntries(Object.entries(STARTING_STATE).map(([graphId, g]) => [graphId, g.meta])) as MetaType;
+const meta = Object.fromEntries(Object.entries(STARTING_STATE).map(([graphId, g]) => [graphId, g.meta]));
 const cache = buildInitialCache(nodes, links, interfaces);
 const deps = buildInitialDeps(nodes, links, interfaces, users);
 

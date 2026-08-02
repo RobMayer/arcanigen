@@ -87,7 +87,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             const typeKey = e.dataTransfer.types.find((t) => t.startsWith(NODE_TYPE_MIME_PREFIX));
             if (!typeKey) return;
             const rawKey = typeKey.slice((NODE_TYPE_MIME_PREFIX as string).length);
-            const nodeTypeKey = NodeTypes.list().find((nt) => nt.type.toLowerCase() === rawKey)?.type as NodeTypes.Key | undefined;
+            const nodeTypeKey = NodeTypes.list().find((nt) => nt.type.toLowerCase() === rawKey)?.type;
             if (!nodeTypeKey) return;
             const nodeType = NodeTypes.get(nodeTypeKey);
             if (!nodeType.canInterject?.(link, graphId, mc)) return;

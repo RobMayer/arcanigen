@@ -117,7 +117,7 @@ const setPayload = (nodeId: string, updates: Partial<PowDefinition["payload"]>, 
     if (!current) return;
     ctx.setNode(graphId, nodeId, {
         ...current,
-        payload: { ...current.payload, ...updates } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"],
+        payload: { ...current.payload, ...updates },
     });
 };
 

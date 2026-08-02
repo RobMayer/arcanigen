@@ -26,11 +26,14 @@ type Pair = {
 };
 
 export type PatchDefinition = {
+    // A pair's two halves get DISTINCT socket keys derived from its id: `in_<pairId>` and
+    // `out_<pairId>`. They must differ — the socket anchor name is keyed by nodeId+socketId
+    // (with no side), so reusing one key for both halves would make wires snap to the wrong end.
     inputs: {
-        [pair: `pair_${string}`]: DataTypes.Use<DataTypes.Kind>;
+        [inSocket: `in_${string}`]: DataTypes.Use<DataTypes.Kind>;
     };
     outputs: {
-        [pair: `pair_${string}`]: DataTypes.Use<DataTypes.Kind>;
+        [outSocket: `out_${string}`]: DataTypes.Use<DataTypes.Kind>;
     };
     payload: {
         label: string;
@@ -42,13 +45,18 @@ type PatchNode = NodeDefinitions.BuiltNodeOf<"patch", PatchDefinition>;
 
 const freshPair = (): Pair => ({ id: `pair_${nanoid()}`, connectedType: SocketTypes.NONE, resolvedInTypes: SocketTypes.ANY });
 
+// Socket-key <-> pair-id mapping. `base` is the pair id (`pair_...`).
+const inKey = (base: string): `in_${string}` => `in_${base}`;
+const outKey = (base: string): `out_${string}` => `out_${base}`;
+const pairBase = (socketKey: string): string => socketKey.replace(/^(in_|out_)/, "");
+
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PatchDefinition>>, id: string = nanoid()): PatchNode => {
     const pairs = input.pairs ?? [freshPair()];
     const inn: { [k: string]: null } = {};
     const out: { [k: string]: string[] } = {};
     for (const p of pairs) {
-        inn[p.id] = null;
-        out[p.id] = [];
+        inn[inKey(p.id)] = null;
+        out[outKey(p.id)] = [];
     }
     return {
         id,
@@ -75,9 +83,9 @@ const setPairTypes = (nodeId: string, pairId: string, updates: Partial<Pair>, gr
     } as NodeDefinitions.NodeFor<NodeDefinitions.Any>);
 };
 
-/** Intersect the accept-rule of every consumer wired to this pair's `out`. Null when nothing is downstream. */
-const queryDownstreamTypes = (node: PatchNode, pairId: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
-    const linkIds = (node.out as Record<string, string[]>)[pairId] ?? [];
+/** Intersect the accept-rule of every consumer wired to this pair's `out` socket. Null when nothing is downstream. */
+const queryDownstreamTypes = (node: PatchNode, outSocket: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
+    const linkIds = (node.out as Record<string, string[]>)[outSocket] ?? [];
     if (linkIds.length === 0) return null;
     let result: SocketTypes.SocketRule | null = null;
     for (const linkId of linkIds) {
@@ -96,65 +104,68 @@ const onConnect = (node: PatchNode, linkId: string, direction: "in" | "out", gra
     if (!link) return;
 
     if (direction === "in") {
-        const pairId = link.toSocket;
-        const upstream = queryUpstreamOutType(node, pairId, graphId, ctx);
-        setPairTypes(node.id, pairId, { connectedType: upstream }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, pairId, "out", "constraintAdded");
+        // Something wired into our `in` — read its type and push it out the far side.
+        const base = pairBase(link.toSocket);
+        const upstream = queryUpstreamOutType(node, link.toSocket, graphId, ctx);
+        setPairTypes(node.id, base, { connectedType: upstream }, graphId, ctx);
+        ctx.requestRefresh(graphId, node.id, outKey(base), "out", "constraintAdded");
     } else {
-        const pairId = link.fromSocket;
+        // Something wired onto our `out` — intersect the consumer constraints back onto the `in`.
+        const base = pairBase(link.fromSocket);
         const currentNode = ctx.getNode(graphId, node.id) as PatchNode | undefined;
         if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, pairId, graphId, ctx);
-        const pair = getPair(currentNode, pairId);
+        const downstream = queryDownstreamTypes(currentNode, link.fromSocket, graphId, ctx);
+        const pair = getPair(currentNode, base);
         if (downstream !== null && pair && !SocketTypes.equals(downstream, pair.resolvedInTypes)) {
-            setPairTypes(node.id, pairId, { resolvedInTypes: downstream }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, pairId, "in", "constraintAdded");
+            setPairTypes(node.id, base, { resolvedInTypes: downstream }, graphId, ctx);
+            ctx.requestRefresh(graphId, node.id, inKey(base), "in", "constraintAdded");
         }
     }
 };
 
 const onDisconnect = (node: PatchNode, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction === "in") {
-        const pairId = link.toSocket;
-        ctx.requestRefresh(graphId, node.id, pairId, "out", "constraintRemoved");
-        setPairTypes(node.id, pairId, { connectedType: SocketTypes.NONE }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, pairId, "out", "constraintAdded");
+        const base = pairBase(link.toSocket);
+        ctx.requestRefresh(graphId, node.id, outKey(base), "out", "constraintRemoved");
+        setPairTypes(node.id, base, { connectedType: SocketTypes.NONE }, graphId, ctx);
+        ctx.requestRefresh(graphId, node.id, outKey(base), "out", "constraintAdded");
     } else {
-        const pairId = link.fromSocket;
-        ctx.requestRefresh(graphId, node.id, pairId, "in", "constraintRemoved");
+        const base = pairBase(link.fromSocket);
+        ctx.requestRefresh(graphId, node.id, inKey(base), "in", "constraintRemoved");
         const currentNode = ctx.getNode(graphId, node.id) as PatchNode | undefined;
         if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, pairId, graphId, ctx);
-        setPairTypes(node.id, pairId, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, pairId, "in", "constraintAdded");
+        const downstream = queryDownstreamTypes(currentNode, link.fromSocket, graphId, ctx);
+        setPairTypes(node.id, base, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
+        ctx.requestRefresh(graphId, node.id, inKey(base), "in", "constraintAdded");
     }
 };
 
 const onRefreshRequest = (node: PatchNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const currentNode = ctx.getNode(graphId, node.id) as PatchNode | undefined;
     if (!currentNode) return;
-    const pair = getPair(currentNode, socketId);
+    const base = pairBase(socketId);
+    const pair = getPair(currentNode, base);
     if (!pair) return;
 
     if (side === "in") {
         // Our upstream changed — re-read it and propagate the new type out the far side.
         const newUpstream = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
         if (!SocketTypes.equals(newUpstream, pair.connectedType)) {
-            setPairTypes(node.id, socketId, { connectedType: newUpstream }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, socketId, "out", reason);
+            setPairTypes(node.id, base, { connectedType: newUpstream }, graphId, ctx);
+            ctx.requestRefresh(graphId, node.id, outKey(base), "out", reason);
         }
     } else {
         // A downstream constraint changed — re-intersect and propagate back to our upstream.
         const newInTypes = queryDownstreamTypes(currentNode, socketId, graphId, ctx) ?? SocketTypes.ANY;
         if (!SocketTypes.equals(newInTypes, pair.resolvedInTypes)) {
-            setPairTypes(node.id, socketId, { resolvedInTypes: newInTypes }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, socketId, "in", reason);
+            setPairTypes(node.id, base, { resolvedInTypes: newInTypes }, graphId, ctx);
+            ctx.requestRefresh(graphId, node.id, inKey(base), "in", reason);
         }
     }
 };
 
 const getSocketType = (node: NodeDefinitions.NodeFor<PatchDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const pair = getPair(node, socketId);
+    const pair = getPair(node, pairBase(socketId));
     if (!pair) return side === "in" ? SocketTypes.ANY : SocketTypes.NONE;
 
     // Once an upstream drives the pair, both halves report that concrete type.
@@ -172,17 +183,17 @@ const getSocketType = (node: NodeDefinitions.NodeFor<PatchDefinition>, socketId:
 // ─── Graph plumbing ──────────────────────────────────────────────────────────
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PatchDefinition>, outSocket: keyof PatchDefinition["outputs"], _deps: AllDeps): (keyof PatchDefinition["inputs"])[] => {
-    // Each output is fed only by the input sharing its pair id.
-    return [outSocket];
+    // Each output is fed only by the input half of the same pair.
+    return [inKey(pairBase(outSocket))];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PatchDefinition>, inSocket: keyof PatchDefinition["inputs"], _deps: AllDeps): (keyof PatchDefinition["outputs"])[] => {
-    return [inSocket];
+    return [outKey(pairBase(inSocket))];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PatchDefinition>, socket: keyof PatchDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     // Pure passthrough: the out value is whatever arrived on the in half of the same pair.
-    return context.resolve(node.id, socket);
+    return context.resolve(node.id, inKey(pairBase(socket)));
 };
 
 // ─── UI ────────────────────────────────────────────────────────────────────
@@ -253,8 +264,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PatchDefini
         const pair = freshPair();
         alterNode(nodeId, (n) => ({
             ...n,
-            in: { ...n.in, [pair.id]: null },
-            out: { ...n.out, [pair.id]: [] },
+            in: { ...n.in, [inKey(pair.id)]: null },
+            out: { ...n.out, [outKey(pair.id)]: [] },
             payload: {
                 ...n.payload,
                 pairs: [...(n.payload as PatchDefinition["payload"]).pairs, pair],
@@ -264,13 +275,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PatchDefini
 
     const handleRemovePair = useCallback(
         (pairId: string) => {
-            const toRemove = [node.in[pairId], ...(node.out[pairId] ?? [])].filter((l): l is string => Boolean(l));
+            const toRemove = [node.in[inKey(pairId)], ...(node.out[outKey(pairId)] ?? [])].filter((l): l is string => Boolean(l));
             if (toRemove.length > 0) {
                 removeLinks(...toRemove);
             }
             alterNode(nodeId, (n) => {
-                const { [pairId]: _i, ...restIn } = n.in;
-                const { [pairId]: _o, ...restOut } = n.out;
+                const { [inKey(pairId)]: _i, ...restIn } = n.in;
+                const { [outKey(pairId)]: _o, ...restOut } = n.out;
                 return {
                     ...n,
                     in: restIn,
@@ -411,7 +422,7 @@ const PatchPairRow = ({
 
     return (
         <PairRowWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragLeave}>
-            <SocketPair node={node} socketId={pairId}>
+            <SocketPair node={node} socketInId={inKey(pairId)} socketOutId={outKey(pairId)}>
                 <DragGrip draggable onDragStart={handleDragStart}>
                     <Icon shape={ICONS.Caret.Vertical} />
                 </DragGrip>
@@ -457,7 +468,7 @@ const PatchWrapper = styled(DragMove.Item)`
         display: grid;
         background: #000c;
         gap: 8px;
-        min-width: 100px;
+        min-width: 90px;
         border: 1px solid #666;
         width: max-content;
         outline: 1px solid transparent;
@@ -478,6 +489,8 @@ const PatchTitle = styled.div`
     padding: 0.125em;
     gap: 0.25em;
     margin: 2px;
+    background: #222;
+    border: 1px solid #444;
 
     & > div[data-part="handle"] {
         cursor: move;
@@ -535,9 +548,4 @@ const DragGrip = styled.div`
     &:hover {
         opacity: 0.8;
     }
-`;
-
-const Footer = styled.div`
-    display: flex;
-    place-content: center;
 `;

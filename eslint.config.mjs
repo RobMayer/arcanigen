@@ -5,11 +5,19 @@ import react from "eslint-plugin-react";
 import reactHooksConfigurable from "eslint-plugin-react-hooks-configurable";
 
 export default defineConfig([
+    // Build output — never lint generated artifacts.
+    {
+        ignores: ["dist/**", "scripts/*.cjs"],
+    },
     ...tseslint.configs.recommendedTypeChecked,
     {
         languageOptions: {
             parserOptions: {
-                projectService: true,
+                // Root-level config/script files live outside the `src`-only tsconfig, so let the
+                // project service lint them via a default inferred program.
+                projectService: {
+                    allowDefaultProject: ["*.config.ts", "*.config.mjs", "scripts/*.cjs"],
+                },
             },
         },
     },

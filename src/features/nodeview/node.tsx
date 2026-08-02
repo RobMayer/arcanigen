@@ -92,7 +92,7 @@ export const TypicalNode = styled(
                 <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
                     <NodeTitle
                         handleRef={handleRef}
-                        node={node as NodeDefinitions.NodeFor<NodeDefinitions.Base>}
+                        node={node}
                         isOpen={!isClosed}
                         toggleOpen={toggle}
                         setLabel={setLabel}
