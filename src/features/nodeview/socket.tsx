@@ -180,14 +180,14 @@ export const Socket = styled(
     height: calc(1lh - (1lh - 1em) / 2);
     align-self: center;
     aspect-ratio: 1;
-    background: oklch(from var(--flavour) l c h);
+    background: oklch(from var(--flavour) calc(l * 0.5) calc(c * 0.5) h);
     border-radius: 100%;
     anchor-name: var(--socket);
     transition:
         background-color 0.25s,
         outline-color 0.25s;
-    outline: 1px solid #fff4;
-    outline-offset: -2px;
+    outline: 2px solid oklch(from var(--flavour) l c h);
+    outline-offset: -4px;
     border: 1px solid black;
     z-index: 1;
 
@@ -232,16 +232,26 @@ export const Socket = styled(
         --flavour: var(--flavour-base);
     }
 
-    &[data-state~="invalid"] {
-        background: #222;
-        outline-color: #fff1;
+    &[data-state~="connected"] {
+        background-color: var(--flavour);
     }
+
+    &[data-state~="invalid"] {
+        background-color: #000;
+        outline-color: #333;
+        &[data-state~="connected"] {
+            background-color: #333;
+        }
+    }
+
     &:hover:not([data-state~="invalid"]),
     &[data-state~="active"] {
-        background: oklch(from var(--flavour) calc(l * 1.2) c h);
-    }
-    &[data-state~="active"] {
-        outline-color: #fff;
+        outline-color: oklch(from var(--flavour) calc(l * 1.2) c h);
+        border-color: #fff;
+        background-color: oklch(from var(--flavour) calc(l * 0.65) calc(c * 0.65) h);
+        &[data-state~="connected"] {
+            background-color: oklch(from var(--flavour) calc(l * 1.2) c h);
+        }
     }
 `;
 
