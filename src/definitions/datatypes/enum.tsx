@@ -4,13 +4,19 @@ export namespace Enum {
     type Entry = { readonly value: number; readonly label: string };
     type Base = Record<string, Entry>;
 
+    /** Treat an index as an accessor that wraps in either direction (like Array.at(), but modulo). */
+    const wrapIndex = (k: number, len: number): number => {
+        const i = Math.trunc(k);
+        return ((i % len) + len) % len;
+    };
+
     export const keyOf = <O extends Base>(o: O, k: number) => {
         const keys = Object.keys(o);
-        return keys[k > keys.length - 1 || k < 0 ? 0 : k] as keyof O;
+        return keys[wrapIndex(k, keys.length)] as keyof O;
     };
     export const labelOf = <O extends Base>(o: O, k: number): string => {
         const entries = Object.values(o);
-        return entries[k > entries.length - 1 || k < 0 ? 0 : k].label;
+        return entries[wrapIndex(k, entries.length)].label;
     };
     export const labels = <O extends Base>(o: O): string[] => Object.values(o).map((e) => e.label);
     export const options = <O extends Base>(o: O): Options =>
@@ -19,7 +25,7 @@ export namespace Enum {
         });
     export const resolve = <O extends Base>(n: number | null | undefined, o: O): number | undefined => {
         if (n == null || n === undefined) return undefined;
-        return Math.max(0, Math.min(n, Object.values(o).length - 1));
+        return wrapIndex(n, Object.values(o).length);
     };
 
     export namespace Common {

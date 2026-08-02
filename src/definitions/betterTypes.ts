@@ -36,6 +36,7 @@ import { NegateDefinition, NegateType } from "./nodes/math/negateNode";
 import { ReciprocalDefinition, ReciprocalType } from "./nodes/math/reciprocalNode";
 import { AbsDefinition, AbsType } from "./nodes/math/absNode";
 import { RoundDefinition, RoundType } from "./nodes/math/roundNode";
+import { IntegerToEnumDefinition, IntegerToEnumNodeType } from "./nodes/math/integerToEnumNode";
 import { SinDefinition, SinType } from "./nodes/math/sinNode";
 import { CosDefinition, CosType } from "./nodes/math/cosNode";
 import { TanDefinition, TanType } from "./nodes/math/tanNode";
@@ -238,6 +239,7 @@ namespace Registries {
         reciprocal: ReciprocalDefinition;
         abs: AbsDefinition;
         round: RoundDefinition;
+        integerToEnum: IntegerToEnumDefinition;
         sin: SinDefinition;
         cos: CosDefinition;
         tan: TanDefinition;
@@ -397,6 +399,7 @@ namespace Registries {
         reciprocal: ReciprocalType,
         abs: AbsType,
         round: RoundType,
+        integerToEnum: IntegerToEnumNodeType,
         sin: SinType,
         cos: CosType,
         tan: TanType,
