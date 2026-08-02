@@ -145,6 +145,7 @@ import { PathLengthDefinition, PathLengthNodeType } from "./nodes/math/pathLengt
 import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivideNode";
 import { PathCombineDefinition, PathCombineNodeType } from "./nodes/collections/pathCombineNode";
 import { ContainerDefinition, ContainerNodeType } from "./nodes/meta/containerNode";
+import { PatchDefinition, PatchNodeType } from "./nodes/meta/patchNode";
 
 export type { SubgraphDeps };
 export type AllDeps = { [graphId: string]: SubgraphDeps };
@@ -191,6 +192,7 @@ namespace Registries {
         // meta
         notes: NotesDefinition;
         container: ContainerDefinition;
+        patch: PatchDefinition;
 
         //debug
         shapePreview: ShapePreviewDefinition;
@@ -355,6 +357,7 @@ namespace Registries {
         randomSeed: RandomSeedNodeType,
         notes: NotesNodeType,
         container: ContainerNodeType,
+        patch: PatchNodeType,
         shapePreview: ShapePreviewType,
 
         floatInput: FloatInputType,

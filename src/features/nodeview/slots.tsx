@@ -112,6 +112,44 @@ export const Slot = ({ children, label }: { children?: ReactNode; label?: ReactN
     return <SlotBase>{label ? <LabelSmall label={label}>{children}</LabelSmall> : <LabelBig align={"left"}>{children}</LabelBig>}</SlotBase>;
 };
 
+// A single row carrying both halves of one passthrough pair: an "in" socket on the far
+// left and an "out" socket on the far right, with arbitrary controls (grip, remove) between.
+// The two sockets share the same socketId, disambiguated by side (in/out live in separate maps).
+export const SocketPair = <D extends NodeDefinitions.Generic>({
+    node,
+    socketId,
+    children,
+    ref,
+}: {
+    children?: ReactNode;
+    node: NodeDefinitions.NodeFor<D>;
+    socketId: string;
+    ref?: Ref<HTMLDivElement>;
+}) => {
+    const anyNode = node as NodeDefinitions.NodeFor<NodeDefinitions.Any>;
+    return (
+        <PairBase ref={ref}>
+            <Socket side={"in"} socketId={socketId} nodeId={node.id} node={anyNode} connected={anyNode.in[socketId] != null} />
+            <div data-part={"middle"}>{children}</div>
+            <Socket side={"out"} socketId={socketId} nodeId={node.id} node={anyNode} connected={(anyNode.out[socketId]?.length ?? 0) > 0} />
+        </PairBase>
+    );
+};
+
+const PairBase = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    & > [data-part="middle"] {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+`;
+
 export const NodeAccordion = styled(
     ({
         className,
