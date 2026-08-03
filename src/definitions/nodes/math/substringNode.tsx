@@ -173,7 +173,7 @@ export const SubstringNodeType: NodeTypes.Type<"substring", SubstringDefinition>
     type: "substring",
     displayName: "Substring",
     defaultLabel: "Substring",
-    iconNode: <Icon shape={NODE_ICONS.text} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.substring} color={"var(--icon-flavour)"} />,
     category: "Math",
     create,
     dependsOn,

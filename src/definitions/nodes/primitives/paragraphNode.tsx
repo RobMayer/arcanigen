@@ -98,7 +98,7 @@ export const ParagraphPrimitiveType: NodeTypes.Type<"paragraph", ParagraphDefini
     type: "paragraph",
     displayName: "Paragraph",
     defaultLabel: "Paragraph",
-    iconNode: <Icon shape={NODE_ICONS.text} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.paragraph} color={"var(--icon-flavour)"} />,
     category: "Primitives",
     evaluate,
     Controls,
