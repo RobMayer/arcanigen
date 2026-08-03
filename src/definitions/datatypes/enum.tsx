@@ -138,27 +138,27 @@ export namespace Enum {
             CUT: { value: 4, label: "Cut" },
         } as const;
 
-        export const textAlign = {
+        export const linearAlign = {
             START: { value: 0, label: "Start" },
             CENTER: { value: 1, label: "Center" },
             END: { value: 2, label: "End" },
         } as const;
 
-        export const textAnchor = {
+        export const verticalAlign = {
             TOP: { value: 0, label: "Top" },
             MIDDLE: { value: 1, label: "Middle" },
             BOTTOM: { value: 2, label: "Bottom" },
         } as const;
 
+        export const horizontalAlign = {
+            LEFT: { value: 0, label: "Left" },
+            CENTER: { value: 1, label: "Center" },
+            RIGHT: { value: 2, label: "Right" },
+        } as const;
+
         export const offsetMode = {
             RELATIVE: { value: 0, label: "Relative" },
             ABSOLUTE: { value: 1, label: "Absolute" },
-        } as const;
-
-        export const offsetOrigin = {
-            START: { value: 0, label: "Start" },
-            CENTER: { value: 1, label: "Center" },
-            END: { value: 2, label: "End" },
         } as const;
 
         export const maskMode = {
@@ -300,10 +300,10 @@ export namespace Enum {
         { label: "Spread Align", options: Common.spreadAlign },
         { label: "Paint Order", options: Common.paintOrder },
         { label: "Corner Shape", options: Common.cornerShape },
-        { label: "Text Align", options: Common.textAlign },
-        { label: "Text Anchor", options: Common.textAnchor },
+        { label: "Linear Alignment", options: Common.linearAlign },
+        { label: "Vertical Alignment", options: Common.verticalAlign },
+        { label: "Horizontal Alignment", options: Common.horizontalAlign },
         { label: "Offset Mode", options: Common.offsetMode },
-        { label: "Offset Origin", options: Common.offsetOrigin },
         { label: "Mask Mode", options: Common.maskMode },
         { label: "Spacing Mode", options: Common.spacingMode },
         { label: "Overflow Mode", options: Common.overflowMode },

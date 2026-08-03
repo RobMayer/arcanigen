@@ -57,10 +57,10 @@ export type TextPathDefinition = {
     } & Stylings.Definition["payload"];
 };
 
-const TEXT_ALIGN_OPTIONS = Enum.options(Enum.Common.textAlign);
-const TEXT_ANCHOR_OPTIONS = Enum.options(Enum.Common.textAnchor);
+const TEXT_ALIGN_OPTIONS = Enum.options(Enum.Common.linearAlign);
+const TEXT_ANCHOR_OPTIONS = Enum.options(Enum.Common.verticalAlign);
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
-const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.offsetOrigin);
+const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const FONT_OPTIONS = Enum.options(Fonts.ENUM);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"textPath", TextPathDefinition> => {
@@ -99,12 +99,12 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             size: "16px",
             spacing: "0px",
             rotation: "0",
-            anchor: Enum.Common.textAnchor.MIDDLE.value,
-            align: Enum.Common.textAlign.START.value,
+            anchor: Enum.Common.verticalAlign.MIDDLE.value,
+            align: Enum.Common.linearAlign.START.value,
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
             offsetLength: "0px",
-            offsetOrigin: Enum.Common.offsetOrigin.START.value,
+            offsetOrigin: Enum.Common.linearAlign.START.value,
             reversePath: false,
             // stroke
             strokeWidth: "0px",
@@ -269,14 +269,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16);
     const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
     const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
-    const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.textAlign) ?? node.payload.align;
-    const anchor = Enum.resolve(context.resolve<"enum">(node.id, "anchor")?.data, Enum.Common.textAnchor) ?? node.payload.anchor;
+    const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
+    const anchor = Enum.resolve(context.resolve<"enum">(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
 
-    const textAnchorValue: string = Resolver.EnumMappings.textAlign[align] ?? "start";
+    const textAnchorValue: string = Resolver.EnumMappings.linearAlign[align] ?? "start";
     const dominantBaseline: string = Resolver.EnumMappings.textAnchor[anchor] ?? "central";
 
     const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
+    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let startOffset: string;

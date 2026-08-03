@@ -6,7 +6,7 @@ export namespace Resolver {
         export const strokeCap = ["butt", "square", "round"] as const;
         export const strokeJoin = ["miter", "bevel", "round"] as const;
         export const paintOrder = ["fill stroke markers", "fill markers stroke", "stroke fill markers", "stroke markers fill", "markers fill stroke", "markers stroke fill"] as const;
-        export const textAlign = ["start", "middle", "end"] as const;
+        export const linearAlign = ["start", "middle", "end"] as const;
         export const textAnchor = ["hanging", "central", "auto"] as const;
         export const blendMode = [
             "normal",
@@ -49,12 +49,7 @@ export namespace Resolver {
     };
 
     /** Re-add `{customNodeId}/` prefix to inner-generated keys when calling back to the parent graph. */
-    export const translateOutward = (
-        innerSeqData: SequenceData,
-        strippedKeys: Set<string>,
-        customNodeId: string,
-        originalParentSeqData: SequenceData,
-    ): SequenceData => {
+    export const translateOutward = (innerSeqData: SequenceData, strippedKeys: Set<string>, customNodeId: string, originalParentSeqData: SequenceData): SequenceData => {
         const result: Record<string, number> = { ...originalParentSeqData };
         const prefix = `${customNodeId}/`;
         for (const [key, value] of Object.entries(innerSeqData)) {
@@ -76,7 +71,12 @@ export namespace Resolver {
         graphId: string;
         sequenceData: SequenceData;
         resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, sequenceData?: SequenceData) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
-        subgraph: (graphId: string, outputNodeId: string, resolveInput: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null, innerSeqData: SequenceData) => DataTypes.AnyEval | null;
+        subgraph: (
+            graphId: string,
+            outputNodeId: string,
+            resolveInput: (inputNodeId: string, seqData: SequenceData) => DataTypes.AnyEval | null,
+            innerSeqData: SequenceData,
+        ) => DataTypes.AnyEval | null;
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
         getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
         /** Look up a node by graphId and nodeId */
@@ -93,5 +93,4 @@ export namespace Resolver {
         };
         contents: Shape | null;
     };
-
 }

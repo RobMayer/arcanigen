@@ -44,7 +44,7 @@ export type AlongPathDefinition = {
 };
 
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
-const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.offsetOrigin);
+const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"alongPath", AlongPathDefinition> => {
@@ -72,7 +72,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
             offsetLength: "0px",
-            offsetOrigin: Enum.Common.offsetOrigin.START.value,
+            offsetOrigin: Enum.Common.linearAlign.START.value,
             ...input,
         },
         type: "alongPath",
@@ -178,7 +178,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     const overflowMode = Enum.resolve(context.resolve<"enum">(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
 
     const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
+    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
     const originPct = [0, 50, 100][offsetOrigin] ?? 0;
 
     let distance: { percent: number; px: number };

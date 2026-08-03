@@ -66,7 +66,7 @@ export type PathArrayDefinition = {
 const SPACING_MODE_OPTIONS = Enum.options(Enum.Common.spacingMode);
 const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
-const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.offsetOrigin);
+const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathArray", PathArrayDefinition> => {
     return {
@@ -103,7 +103,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
             offsetLength: "0px",
-            offsetOrigin: Enum.Common.offsetOrigin.START.value,
+            offsetOrigin: Enum.Common.linearAlign.START.value,
             padStart: "0px",
             padEnd: "0px",
             skipFirst: false,
@@ -300,7 +300,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
 
     // Offset
     const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.offsetOrigin) ?? node.payload.offsetOrigin;
+    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
     const originPct = [0, 50, 100][offsetOrigin] ?? 0;
 
     let offset: { percent: number; px: number };
