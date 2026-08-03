@@ -5,6 +5,9 @@ together to describe how a piece of SVG art is generated, and the graph renders 
 live. It runs entirely in the browser — there's no backend, and nothing leaves the
 page.
 
+https://arcanigen.thatrobhuman.com - live app
+https://www.youtube.com/playlist?list=PLAKrIav6IfnEVC7URg6PoC1c9ym8pJQrj vlog/tutorial playlist
+
 ## What it does
 
 - Node-graph editor: shapes, transforms, effects, math, and logic nodes wired into a graph that outputs SVG.
