@@ -344,7 +344,7 @@ export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = 
     type: "textPath",
     displayName: "Text Path",
     defaultLabel: "Text Path",
-    iconNode: <Icon shape={NODE_ICONS.text} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.textPath} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,
