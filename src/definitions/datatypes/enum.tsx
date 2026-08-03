@@ -161,6 +161,11 @@ export namespace Enum {
             ABSOLUTE: { value: 1, label: "Absolute" },
         } as const;
 
+        export const substringMode = {
+            LENGTH: { value: 0, label: "Length" },
+            END: { value: 1, label: "End" },
+        } as const;
+
         export const maskMode = {
             LUMINANCE: { value: 0, label: "Luminance" },
             ALPHA: { value: 1, label: "Alpha" },
@@ -304,6 +309,7 @@ export namespace Enum {
         { label: "Vertical Alignment", options: Common.verticalAlign },
         { label: "Horizontal Alignment", options: Common.horizontalAlign },
         { label: "Offset Mode", options: Common.offsetMode },
+        { label: "Substring Mode", options: Common.substringMode },
         { label: "Mask Mode", options: Common.maskMode },
         { label: "Spacing Mode", options: Common.spacingMode },
         { label: "Overflow Mode", options: Common.overflowMode },

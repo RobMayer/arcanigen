@@ -125,6 +125,7 @@ export type TextShape = {
     fontFamily?: string;
     fontSize: number;
     letterSpacing?: number;
+    lineHeight?: number; // vertical advance between lines when text contains "\n"
     textAnchor?: "start" | "middle" | "end";
     dominantBaseline?: string;
     rotate?: number; // per-character rotation in degrees
@@ -208,14 +209,4 @@ export type FilteredShape = {
 
 // ─── Union ───────────────────────────────────────────────────────────────────
 
-export type Shape =
-    | PathShape
-    | LineShape
-    | RectShape
-    | TextShape
-    | GroupShape
-    | OffsetPathShape
-    | SymbolShape
-    | MaskedShape
-    | ClippedShape
-    | FilteredShape;
+export type Shape = PathShape | LineShape | RectShape | TextShape | GroupShape | OffsetPathShape | SymbolShape | MaskedShape | ClippedShape | FilteredShape;

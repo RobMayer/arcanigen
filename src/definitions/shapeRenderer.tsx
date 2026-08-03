@@ -202,9 +202,21 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
         );
     }
 
+    // SVG <text> ignores "\n" — whitespace never starts a new line — so split explicit
+    // breaks into <tspan>s positioned with x (reset to the anchor) + dy (line advance).
+    const lines = shape.text.split("\n");
+    const lineHeight = shape.lineHeight ?? shape.fontSize * 1.2;
+    // Shift the whole block so the vertical anchor (dominant-baseline) applies to the
+    // block as a whole rather than only to the first line.
+    const firstDy = shape.dominantBaseline === "central" ? (-(lines.length - 1) / 2) * lineHeight : shape.dominantBaseline === "auto" ? -(lines.length - 1) * lineHeight : 0;
+
     return (
         <text {...attrs} {...paintAttrs(shape.paint)} style={style} transform={shape.transform || undefined}>
-            {shape.text}
+            {lines.map((line, i) => (
+                <tspan key={i} x={0} dy={i === 0 ? firstDy : lineHeight}>
+                    {line}
+                </tspan>
+            ))}
         </text>
     );
 };

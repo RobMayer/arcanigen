@@ -17,6 +17,10 @@ import { ColorSplitDefinition, ColorSplitNodeType } from "./nodes/math/colorSpli
 import { ColorJoinDefinition, ColorJoinNodeType } from "./nodes/math/colorJoinNode";
 import { EnumDefinition as EnumPrimDefinition, EnumPrimitiveType } from "./nodes/primitives/enumNode";
 import { FloatDefinition, FloatPrimitiveType } from "./nodes/primitives/floatNode";
+import { StringDefinition, StringPrimitiveType } from "./nodes/primitives/stringNode";
+import { ParagraphDefinition, ParagraphPrimitiveType } from "./nodes/primitives/paragraphNode";
+import { SubstringDefinition, SubstringNodeType } from "./nodes/math/substringNode";
+import { ConcatDefinition, ConcatNodeType } from "./nodes/math/concatNode";
 import { IntegerDefinition, IntegerPrimitiveType } from "./nodes/primitives/integerNode";
 import { LengthDefinition, LengthPrimitiveType } from "./nodes/primitives/lengthNode";
 import { TokensLengthDefinition, TokensLengthPrimitiveType } from "./nodes/primitives/tokensLengthNode";
@@ -112,7 +116,8 @@ import { BurstDefinition, BurstNodeType } from "./nodes/shapes/burstNode";
 import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
 import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
 import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
-import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textNode";
+import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textPathNode";
+import { TextDefinition, TextNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/shapes/alongPathNode";
 import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
@@ -172,6 +177,7 @@ namespace Registries {
         spiral: SpiralDefinition;
         line: LineDefinition;
         textPath: TextPathDefinition;
+        text: TextDefinition;
         alongPath: AlongPathDefinition;
         glyph: GlyphDefinition;
         transform: TransformDefinition;
@@ -184,6 +190,8 @@ namespace Registries {
         colorJoin: ColorJoinDefinition;
         enum: EnumPrimDefinition;
         float: FloatDefinition;
+        string: StringDefinition;
+        paragraph: ParagraphDefinition;
         integer: IntegerDefinition;
         length: LengthDefinition;
         tokensLength: TokensLengthDefinition;
@@ -237,6 +245,8 @@ namespace Registries {
         divide: DivideDefinition;
         modulo: ModuloDefinition;
         remainder: RemainderDefinition;
+        substring: SubstringDefinition;
+        concat: ConcatDefinition;
         negate: NegateDefinition;
         reciprocal: ReciprocalDefinition;
         abs: AbsDefinition;
@@ -323,6 +333,7 @@ namespace Registries {
         spiral: SpiralNodeType,
         line: LineNodeType,
         textPath: TextPathNodeType,
+        text: TextNodeType,
         alongPath: AlongPathNodeType,
         glyph: GlyphNodeType,
         transform: TransformType,
@@ -345,6 +356,8 @@ namespace Registries {
         angleIterator: AngleIteratorNodeType,
         restyle: RestyleNodeType,
         float: FloatPrimitiveType,
+        string: StringPrimitiveType,
+        paragraph: ParagraphPrimitiveType,
         integer: IntegerPrimitiveType,
         angle: AnglePrimitiveType,
         boolean: BooleanPrimitiveType,
@@ -398,6 +411,8 @@ namespace Registries {
         divide: DivideType,
         modulo: ModuloType,
         remainder: RemainderType,
+        substring: SubstringNodeType,
+        concat: ConcatNodeType,
         negate: NegateType,
         reciprocal: ReciprocalType,
         abs: AbsType,

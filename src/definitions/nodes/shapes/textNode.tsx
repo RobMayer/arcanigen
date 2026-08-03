@@ -10,76 +10,59 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
-import { Stylings } from "../abstract";
+import { Stylings, Transforms } from "../abstract";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
-import { CheckBox } from "../../../components/buttons/CheckBox";
-import { PaperHelper } from "../../../util/paperHelper";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { Fonts } from "../../fonts";
 
-export type TextPathDefinition = {
+export type TextDefinition = {
     inputs: {
         text: DataTypes.Use<"string">;
         font: DataTypes.Use<"enum">;
-        path: DataTypes.Use<"path">;
         size: DataTypes.Use<"length">; // font size
-        spacing: DataTypes.Use<"length">; // font spacing
-        rotation: DataTypes.Use<"angle">;
-        anchor: DataTypes.Use<"enum">;
-        align: DataTypes.Use<"enum">;
-        offsetMode: DataTypes.Use<"enum">;
-        offsetPercent: DataTypes.Use<"float" | "integer">;
-        offsetLength: DataTypes.Use<"length">;
-        offsetOrigin: DataTypes.Use<"enum">;
-        reversePath: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"];
+        spacing: DataTypes.Use<"length">; // letter spacing
+        lineHeight: DataTypes.Use<"length">; // vertical advance between wrapped lines
+        letterRotation: DataTypes.Use<"angle">; // per-character rotation
+        anchor: DataTypes.Use<"enum">; // vertical align -> dominant-baseline
+        align: DataTypes.Use<"enum">; // horizontal align -> text-anchor
+    } & Stylings.Definition["inputs"] &
+        Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        font: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         text: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        font: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         size: DataTypes.TypeOf<DataTypes.Use<"length">>;
         spacing: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        rotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        lineHeight: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        letterRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
         anchor: DataTypes.TypeOf<DataTypes.Use<"enum">>;
         align: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetPercent: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        offsetLength: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetOrigin: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        reversePath: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"];
+    } & Stylings.Definition["payload"] &
+        Transforms.Definition["payload"];
 };
 
 const TEXT_ALIGN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const TEXT_ANCHOR_OPTIONS = Enum.options(Enum.Common.verticalAlign);
-const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
-const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const FONT_OPTIONS = Enum.options(Fonts.ENUM);
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"textPath", TextPathDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"text", TextDefinition> => {
     return {
         id,
         in: {
             text: null,
             font: null,
-            path: null,
             size: null,
             spacing: null,
-            rotation: null,
+            lineHeight: null,
+            letterRotation: null,
             anchor: null,
             align: null,
-            offsetMode: null,
-            offsetPercent: null,
-            offsetLength: null,
-            offsetOrigin: null,
-            reversePath: null,
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
@@ -88,24 +71,27 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             fillColor: null,
             paintOrder: null,
             opacity: null,
+            // transforms
+            positionMode: null,
+            positionX: null,
+            positionY: null,
+            positionRadius: null,
+            positionTheta: null,
+            rotation: null,
         },
         out: {
             output: [],
         },
         payload: {
             label: "",
-            font: 0,
             text: "Text",
+            font: 0,
             size: "16px",
             spacing: "0px",
-            rotation: "0",
+            lineHeight: "",
+            letterRotation: "0",
             anchor: Enum.Common.verticalAlign.MIDDLE.value,
-            align: Enum.Common.linearAlign.START.value,
-            offsetMode: Enum.Common.offsetMode.RELATIVE.value,
-            offsetPercent: "0",
-            offsetLength: "0px",
-            offsetOrigin: Enum.Common.linearAlign.START.value,
-            reversePath: false,
+            align: Enum.Common.linearAlign.CENTER.value,
             // stroke
             strokeWidth: "0px",
             strokeDash: "",
@@ -116,15 +102,22 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             fillColor: { r: 0, g: 0, b: 0, a: 1 },
             paintOrder: 0,
             opacity: "100",
+            // transforms
+            positionMode: Enum.Common.positionMode.CARTESIAN.value,
+            positionX: "0px",
+            positionY: "0px",
+            positionRadius: "0px",
+            positionTheta: "0",
+            rotation: "0",
             ...input,
         },
-        type: "textPath",
+        type: "text",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<TextDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -147,17 +140,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     ))}
                 </Dropdown>
             </SocketIn>
-            <SocketIn node={node} socketId={"path"} label={"Path"} />
-            <SocketIn node={node} socketId={"reversePath"}>
-                <CheckBox checked={node.payload.reversePath} onToggle={(reversePath) => handleUpdate({ reversePath })} disabled={node.in.reversePath !== null}>
-                    Reverse Path
-                </CheckBox>
-            </SocketIn>
             <SocketIn node={node} socketId={"size"} label={"Font Size"}>
                 <LengthInput value={node.payload.size} onCommit={(size) => handleUpdate({ size })} disabled={node.in.size !== null} min={"0px"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"spacing"} label={"Letter Spacing"}>
                 <LengthInput value={node.payload.spacing} onCommit={(spacing) => handleUpdate({ spacing })} disabled={node.in.spacing !== null} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"lineHeight"} label={"Line Height"}>
+                <LengthInput value={node.payload.lineHeight} onCommit={(lineHeight) => handleUpdate({ lineHeight })} disabled={node.in.lineHeight !== null} min={"0px"} placeholder={"auto"} />
             </SocketIn>
             <SocketIn node={node} socketId={"align"} label={"Align"}>
                 <RadioButton.Group
@@ -177,63 +167,25 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     options={TEXT_ANCHOR_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"rotation"} label={"Letter Rotation"}>
-                <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetMode"} label={"Offset Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.offsetMode}`}
-                    onValue={(v) => handleUpdate({ offsetMode: Number(v) })}
-                    disabled={node.in.offsetMode !== null}
-                    options={OFFSET_MODE_OPTIONS}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetPercent"} label={"Offset %"}>
-                <DecimalInput.SliderInput
-                    value={node.payload.offsetPercent}
-                    onCommit={(offsetPercent) => handleUpdate({ offsetPercent })}
-                    disabled={node.in.offsetPercent !== null || node.payload.offsetMode !== Enum.Common.offsetMode.RELATIVE.value}
-                    min={-100}
-                    max={100}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetLength"} label={"Offset Length"}>
-                <LengthInput
-                    value={node.payload.offsetLength}
-                    onCommit={(offsetLength) => handleUpdate({ offsetLength })}
-                    disabled={node.in.offsetLength !== null || node.payload.offsetMode !== Enum.Common.offsetMode.ABSOLUTE.value}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetOrigin"} label={"Offset Origin"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.offsetOrigin}`}
-                    onValue={(v) => handleUpdate({ offsetOrigin: Number(v) })}
-                    disabled={node.in.offsetOrigin !== null}
-                    options={OFFSET_ORIGIN_OPTIONS}
-                />
+            <SocketIn node={node} socketId={"letterRotation"} label={"Letter Rotation"}>
+                <AngleInput.SliderInput value={node.payload.letterRotation} onCommit={(letterRotation) => handleUpdate({ letterRotation })} disabled={node.in.letterRotation !== null} />
             </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
 
-const ALL_INPUTS: (keyof TextPathDefinition["inputs"])[] = [
+const ALL_INPUTS: (keyof TextDefinition["inputs"])[] = [
     "text",
     "font",
-    "path",
     "size",
     "spacing",
-    "rotation",
+    "lineHeight",
+    "letterRotation",
     "anchor",
     "align",
-    "offsetMode",
-    "offsetPercent",
-    "offsetLength",
-    "offsetOrigin",
-    "reversePath",
+    "rotation",
     "strokeWidth",
     "strokeColor",
     "strokeCap",
@@ -241,24 +193,23 @@ const ALL_INPUTS: (keyof TextPathDefinition["inputs"])[] = [
     "strokeDashOffset",
     "fillColor",
     "paintOrder",
+    "positionMode",
+    "positionX",
+    "positionY",
+    "positionRadius",
+    "positionTheta",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, _outSocket: keyof TextPathDefinition["outputs"], _deps: AllDeps): (keyof TextPathDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<TextDefinition>, _outSocket: keyof TextDefinition["outputs"], _deps: AllDeps): (keyof TextDefinition["inputs"])[] => {
     return ALL_INPUTS;
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, _inSocket: keyof TextPathDefinition["inputs"], _deps: AllDeps): (keyof TextPathDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<TextDefinition>, _inSocket: keyof TextDefinition["inputs"], _deps: AllDeps): (keyof TextDefinition["outputs"])[] => {
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: keyof TextPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof TextDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
-
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
-    if (!pathData) return null;
-
-    const reversePath = context.resolve<"boolean">(node.id, "reversePath")?.data ?? node.payload.reversePath;
-    const pathD = reversePath ? (PaperHelper.reverseD(pathData.d) ?? pathData.d) : pathData.d;
 
     const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
     if (!text) return null;
@@ -268,28 +219,29 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
 
     const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16);
     const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
-    const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
+    // Empty line height falls back to a font-relative default.
+    const lineHeight = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "lineHeight")?.data ?? node.payload.lineHeight) ?? size * 1.2;
+    const letterRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "letterRotation")?.data ?? node.payload.letterRotation) ?? 0;
     const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
     const anchor = Enum.resolve(context.resolve<"enum">(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
 
-    const textAnchorValue: string = Resolver.EnumMappings.linearAlign[align] ?? "start";
+    const textAnchorValue = (Resolver.EnumMappings.linearAlign[align] ?? "start") as "start" | "middle" | "end";
     const dominantBaseline: string = Resolver.EnumMappings.textAnchor[anchor] ?? "central";
 
-    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
-    const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
-
-    let startOffset: string;
-    if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
-        const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
-        startOffset = `calc(clamp(0%, ${originPct} + ${pct}%, 100%))`;
-    } else {
-        const len = context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
-        const lenNum = Length.Emptyable.asNumber(len) ?? 0;
-        startOffset = `calc(clamp(0%, ${originPct} + ${lenNum}px, 100%))`;
-    }
-
     const paint = Stylings.evaluate(node, context);
+
+    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+
+    // The text has no geometric path, so approximate its bounds for layout/preview
+    // purposes from font metrics: ~0.6em advance per character, one em tall per line.
+    const lines = text.split("\n");
+    const longest = Math.max(...lines.map((l) => l.length));
+    const approxWidth = longest * size * 0.6 + Math.max(0, longest - 1) * spacing;
+    const blockHeight = lines.length * lineHeight;
+    const offsetX = textAnchorValue === "middle" ? -approxWidth / 2 : textAnchorValue === "end" ? -approxWidth : 0;
+    // Match the renderer's vertical block anchoring (see TextElement).
+    const offsetY = dominantBaseline === "central" ? -blockHeight / 2 : dominantBaseline === "auto" ? -blockHeight : 0;
+    const preview = { x: translateX + offsetX, y: translateY + offsetY, w: approxWidth, h: blockHeight };
 
     return {
         kind: "shape",
@@ -299,39 +251,35 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
             fontFamily,
             fontSize: size,
             letterSpacing: spacing !== 0 ? spacing : undefined,
-            textAnchor: textAnchorValue as "start" | "middle" | "end",
+            lineHeight,
+            textAnchor: textAnchorValue,
             dominantBaseline,
-            rotate: rotation !== 0 ? rotation : undefined,
+            rotate: letterRotation !== 0 ? letterRotation : undefined,
             paint,
-            textPath: { d: pathD, startOffset },
-            transform: pathData.transform,
-            preview: pathData.preview,
+            transform: transforms.join(" "),
+            preview,
         },
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<TextPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<TextDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     text: { types: ["string"], mode: "or" },
     font: { types: ["enum"], mode: "or" },
-    path: { types: ["path"], mode: "or" },
     size: { types: ["length"], mode: "or" },
     spacing: { types: ["length"], mode: "or" },
-    rotation: { types: ["angle"], mode: "or" },
+    lineHeight: { types: ["length"], mode: "or" },
+    letterRotation: { types: ["angle"], mode: "or" },
     anchor: { types: ["enum"], mode: "or" },
     align: { types: ["enum"], mode: "or" },
-    offsetMode: { types: ["enum"], mode: "or" },
-    offsetPercent: { types: ["float", "integer"], mode: "or" },
-    offsetLength: { types: ["length"], mode: "or" },
-    offsetOrigin: { types: ["enum"], mode: "or" },
-    reversePath: { types: ["boolean"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
+    ...Transforms.IN_SOCKET_TYPES,
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<TextPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_OUT: { [key in keyof Required<TextDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<TextDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
             return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
@@ -340,11 +288,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socke
     }
 };
 
-export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = {
-    type: "textPath",
-    displayName: "Text Path",
-    defaultLabel: "Text Path",
-    iconNode: <Icon shape={NODE_ICONS.textPath} color={"var(--icon-flavour)"} />,
+export const TextNodeType: NodeTypes.Type<"text", TextDefinition> = {
+    type: "text",
+    displayName: "Text",
+    defaultLabel: "Text",
+    iconNode: <Icon shape={NODE_ICONS.text} color={"var(--icon-flavour)"} />,
     category: "Shapes",
     create,
     dependsOn,
