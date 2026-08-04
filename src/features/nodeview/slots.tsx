@@ -103,7 +103,7 @@ export const SocketOut = <D extends NodeDefinitions.Generic, K extends keyof D["
             ) : (
                 <LabelBig align={"right"}>{children}</LabelBig>
             )}
-            <Socket side={"out"} socketId={socketId} nodeId={node.id} node={node as NodeDefinitions.NodeFor<NodeDefinitions.Any>} connected={node.out[socketId].length > 0} />
+            <Socket side={"out"} socketId={socketId} nodeId={node.id} node={node as NodeDefinitions.NodeFor<NodeDefinitions.Any>} connected={(node.out[socketId]?.length ?? 0) > 0} />
         </SlotBase>
     );
 };

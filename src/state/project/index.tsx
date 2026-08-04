@@ -679,7 +679,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 3;
+        export const CURRENT = 4;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -711,6 +711,19 @@ export namespace Project {
                     }
                 }
                 input.version = 3;
+            }
+            if (input.version === 3) {
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type === "angleIterator") {
+                            // v4 added a Cyclical/Continuous continuity mode; existing iterators were implicitly Cyclical (angleContinuity.CYCLICAL = 0).
+                            node.in.continuity = node.in.continuity ?? null;
+                            node.payload.continuity = node.payload.continuity ?? 0;
+                        }
+                    }
+                }
+                input.version = 4;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

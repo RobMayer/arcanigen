@@ -294,6 +294,11 @@ export namespace Enum {
             CLOCKWISE: { value: 4, label: "Clockwise" },
             COUNTER_CLOCKWISE: { value: 5, label: "Counter-Clockwise" },
         } as const;
+
+        export const angleContinuity = {
+            CYCLICAL: { value: 0, label: "Cyclical" },
+            CONTINUOUS: { value: 1, label: "Continuous" },
+        } as const;
     }
 
     /**
@@ -327,6 +332,7 @@ export namespace Enum {
         { label: "Color Space", options: Common.colorSpace },
         { label: "Alpha Scale", options: Common.alphaScale },
         { label: "Angle Traversal", options: Common.angleTraversal },
+        { label: "Angle Continuity", options: Common.angleContinuity },
         { label: "Length Unit", options: Common.lengthUnit },
         { label: "Rounding Mode", options: Common.roundingMode },
     ];

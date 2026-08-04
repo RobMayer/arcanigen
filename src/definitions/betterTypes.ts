@@ -125,6 +125,8 @@ import { ClipDefinition, ClipNodeType } from "./nodes/collections/clipNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
 import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
 import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/radialArrayNode";
+import { RepetitionArrayDefinition, RepetitionArrayNodeType } from "./nodes/collections/repetitionArrayNode";
+import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collections/sequenceIndexNode";
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
@@ -276,6 +278,8 @@ namespace Registries {
         sequencer: SequencerDefinition;
         polygonArray: PolygonArrayDefinition;
         radialArray: RadialArrayDefinition;
+        repetitionArray: RepetitionArrayDefinition;
+        sequenceIndex: SequenceIndexDefinition;
         pathArray: PathArrayDefinition;
         colorIterator: ColorIteratorDefinition;
         floatIterator: FloatIteratorDefinition;
@@ -348,6 +352,8 @@ namespace Registries {
         sequencer: SequencerNodeType,
         polygonArray: PolygonArrayNodeType,
         radialArray: RadialArrayNodeType,
+        repetitionArray: RepetitionArrayNodeType,
+        sequenceIndex: SequenceIndexNodeType,
         pathArray: PathArrayNodeType,
         colorIterator: ColorIteratorNodeType,
         floatIterator: FloatIteratorNodeType,
