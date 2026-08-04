@@ -146,11 +146,9 @@ export namespace AbstractSlider {
 
                     dragStateRef.current = { lastPos: getPos(e), accumulatedValue: newValue };
 
-                    // Update DOM directly
                     const visualFrac = max - min === 0 ? 0 : (newValue - min) / (max - min);
                     updateDOMFraction(visualFrac);
 
-                    // Update React state
                     const valueStr = String(newValue) as NumericString.Type;
                     setCache(valueStr);
                     onValueRef.current?.(valueStr);
@@ -172,7 +170,6 @@ export namespace AbstractSlider {
                     const valueDelta = ((isVertical ? -deltaPos : deltaPos) / size) * (max - min);
                     let newValue = accumulatedValue + valueDelta;
 
-                    // Clamp to bounds
                     const clamped = Math.max(min, Math.min(max, newValue));
                     const wasClamped = clamped !== newValue;
                     newValue = clamped;
@@ -219,7 +216,6 @@ export namespace AbstractSlider {
                     finalValue = Math.max(min, Math.min(max, finalValue));
                     dragStateRef.current = null;
 
-                    // Cancel any pending RAF
                     if (rafRef.current !== null) {
                         cancelAnimationFrame(rafRef.current);
                         rafRef.current = null;
@@ -582,9 +578,7 @@ export namespace AbstractSlider {
                 return ((angle * 180) / Math.PI + 360) % 360;
             }, []);
 
-            // Ref to track drag state across events
             const dragStateRef = useRef<{ lastAngle: number; accumulatedValue: number } | null>(null);
-            // Ref for RAF throttling
             const rafRef = useRef<number | null>(null);
 
             // Pointer drag handling
@@ -613,7 +607,6 @@ export namespace AbstractSlider {
                 // Track click: jump to position, then allow dragging
                 const handleTrackPointerDown = (e: PointerEvent) => {
                     if (e.button !== 0) return;
-                    // Don't handle if click was on the handle itself
                     if (e.target === handle || handle.contains(e.target as Node)) return;
                     if (e.handled) {
                         return;
@@ -644,12 +637,10 @@ export namespace AbstractSlider {
                         const clickedValueInTurn = (clickedAngle / 360) * (trackMax - trackMin) + trackMin;
                         newValue = currentTurn * (trackMax - trackMin) + clickedValueInTurn;
 
-                        // Apply step if defined
                         if (step !== undefined) {
                             newValue = Math.round(newValue / step) * step;
                         }
 
-                        // Clamp to bounds
                         if (min !== undefined && max !== undefined) {
                             newValue = Math.max(min, Math.min(max, newValue));
                         }
@@ -668,12 +659,10 @@ export namespace AbstractSlider {
                         const valueDelta = (angleDelta / 360) * (trackMax - trackMin);
                         newValue = currentValue + valueDelta;
 
-                        // Apply step if defined
                         if (step !== undefined) {
                             newValue = Math.round(newValue / step) * step;
                         }
 
-                        // Apply bounds if defined
                         if (min !== undefined && max !== undefined) {
                             if (wrap) {
                                 newValue = wrapNumber(newValue, min, max);
@@ -688,11 +677,9 @@ export namespace AbstractSlider {
                         accumulatedValue: cleanFloat(newValue),
                     };
 
-                    // Update DOM directly
                     const visualAngle = angleFromTrack(newValue, trackMin, trackMax);
                     bounds.style.rotate = `${visualAngle}deg`;
 
-                    // Update React state
                     const valueStr = String(cleanFloat(newValue)) as NumericString.Type;
                     setCache(valueStr);
                     onValueRef.current?.(valueStr);
@@ -737,7 +724,6 @@ export namespace AbstractSlider {
                         }
                     }
 
-                    // Update drag state
                     // If value was clamped, adjust lastAngle so that reversing direction
                     // starts moving the handle immediately (handle stays "in line" with pointer)
                     let newLastAngle = angle;
@@ -794,7 +780,6 @@ export namespace AbstractSlider {
                     }
                     dragStateRef.current = null;
 
-                    // Cancel any pending RAF
                     if (rafRef.current !== null) {
                         cancelAnimationFrame(rafRef.current);
                         rafRef.current = null;
@@ -823,7 +808,6 @@ export namespace AbstractSlider {
                     handle.removeEventListener("pointermove", handlePointerMove);
                     handle.removeEventListener("pointerup", handlePointerUp);
                     track.removeEventListener("pointerdown", handleTrackPointerDown);
-                    // Cleanup RAF on unmount/re-run
                     if (rafRef.current !== null) {
                         cancelAnimationFrame(rafRef.current);
                         rafRef.current = null;
@@ -1277,7 +1261,6 @@ export namespace AbstractSlider {
                     }
                     dragStateRef.current = null;
 
-                    // Cancel any pending RAF
                     if (rafRef.current !== null) {
                         cancelAnimationFrame(rafRef.current);
                         rafRef.current = null;

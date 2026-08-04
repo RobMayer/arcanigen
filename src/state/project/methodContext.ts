@@ -44,7 +44,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
     }
 
     private flush(): void {
-        // Rebuild nodeList/linkList for affected graphIds
         if (this.dirtyNodeGraphs.size > 0) {
             const nodeList = { ...this.refs.nodeList.ref.current };
             for (const gId of this.dirtyNodeGraphs) {
@@ -64,7 +63,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             this.dirty.add("linkList");
         }
 
-        // Notify React for dirty slices
         for (const key of this.dirty) {
             this.refs[key].notify();
         }
@@ -150,7 +148,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             this.fireOnDisconnect(removed.links, graphId);
         }
 
-        // Fire onConnect on both endpoints
         this.fireOnConnect(graphId, fromNode, newLink, "out");
         this.fireOnConnect(graphId, toNode, newLink, "in");
 
@@ -175,10 +172,8 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirtyNodeGraphs.add(graphId);
         this.dirtyLinkGraphs.add(graphId);
 
-        // Fire onDisconnect
         this.fireOnDisconnect(removed.links, graphId);
 
-        // Rebuild cache for affected toNodes
         const affectedNodes = new Set(removed.links.map((l) => l.toNode));
         for (const nodeId of affectedNodes) {
             if (this.refs.nodes.ref.current[graphId]?.[nodeId]) {
@@ -210,13 +205,11 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         const currentGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
         const [{ nodes, links }, removedFromDelete] = ArcaneGraph.removeNodes(currentGraph, nodeId);
 
-        // Update positions
         const positions = { ...this.refs.positions.ref.current[graphId] };
         delete positions[nodeId];
         this.refs.positions.ref.current = { ...this.refs.positions.ref.current, [graphId]: positions };
         this.dirty.add("positions");
 
-        // Apply node/link removal
         this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [graphId]: nodes };
         this.refs.links.ref.current = { ...this.refs.links.ref.current, [graphId]: links };
         this.dirty.add("nodes");
@@ -229,7 +222,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             this.fireOnDisconnect(removedFromDelete.links, graphId, nodeId);
         }
 
-        // Invalidate cache for removed node, rebuild downstream
         this.refs.cache.ref.current = invalidateDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, graphId, nodeId);
         for (const downstreamId of downstream) {
             if (this.refs.nodes.ref.current[graphId]?.[downstreamId]) {
@@ -261,14 +253,12 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("nodes");
         this.dirtyNodeGraphs.add(graphId);
 
-        // Call onPayloadChange hook
         const nodeType = NodeTypes.get(updated.type);
         if (nodeType.onPayloadChange) {
             const onPayloadChange = nodeType.onPayloadChange as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, prev: Record<string, unknown>, graphId: string, ctx: NodeTypes.MethodContext) => void;
             onPayloadChange(updated, prev, graphId, this);
         }
 
-        // Rebuild cache downstream
         this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, nodeId);
         this.dirty.add("cache");
 
@@ -336,13 +326,11 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("nodes");
         this.dirtyNodeGraphs.add(graphId);
 
-        // Call onCreate hook
         if (nodeType.onCreate) {
             const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, graphId: string, ctx: NodeTypes.MethodContext) => void;
             onCreate(newNode, graphId, this);
         }
 
-        // Set position
         this.refs.positions.ref.current = {
             ...this.refs.positions.ref.current,
             [graphId]: {
@@ -363,7 +351,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         if (!nodeType.canInterject || !nodeType.onInterject) return false;
         if (!nodeType.canInterject(link, graphId, this)) return false;
 
-        // Create the new node
         const newNode = nodeType.create(params as Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>);
         const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
         const { nodes } = ArcaneGraph.importNodes(oldGraph, [newNode]);
@@ -376,7 +363,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             onCreate(newNode, graphId, this);
         }
 
-        // Set position
         this.refs.positions.ref.current = {
             ...this.refs.positions.ref.current,
             [graphId]: {
@@ -404,7 +390,6 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("nodes");
         this.dirtyNodeGraphs.add(graphId);
 
-        // Rebuild cache
         this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, nodeId);
         this.dirty.add("cache");
     }

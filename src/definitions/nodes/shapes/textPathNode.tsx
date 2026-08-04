@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
@@ -39,6 +39,7 @@ export type TextPathDefinition = {
     } & Stylings.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -91,6 +92,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
         },
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
@@ -135,8 +137,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketIn node={node} socketId={"path"} label={"Path"} />
             <SocketIn node={node} socketId={"text"} label={"Text"}>
-                <BlockInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} />
+                <BlockInput.WithModal value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} title={"Edit Text"} />
             </SocketIn>
             <SocketIn node={node} socketId={"font"} label={"Font"}>
                 <Dropdown value={`${node.payload.font}`} onValue={(v) => handleUpdate({ font: Number(v) })} disabled={node.in.font !== null}>
@@ -147,7 +150,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     ))}
                 </Dropdown>
             </SocketIn>
-            <SocketIn node={node} socketId={"path"} label={"Path"} />
             <SocketIn node={node} socketId={"reversePath"}>
                 <CheckBox checked={node.payload.reversePath} onToggle={(reversePath) => handleUpdate({ reversePath })} disabled={node.in.reversePath !== null}>
                     Reverse Path
@@ -216,6 +218,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                 />
             </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <NodeAccordion label={"Additional Options"} socketsOut={"charCount"} nodeId={node.id}>
+                <SocketOut node={node} socketId={"charCount"}>
+                    Character Count
+                </SocketOut>
+            </NodeAccordion>
         </TypicalNode>
     );
 };
@@ -243,16 +250,23 @@ const ALL_INPUTS: (keyof TextPathDefinition["inputs"])[] = [
     "paintOrder",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, _outSocket: keyof TextPathDefinition["outputs"], _deps: AllDeps): (keyof TextPathDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, outSocket: keyof TextPathDefinition["outputs"], _deps: AllDeps): (keyof TextPathDefinition["inputs"])[] => {
+    if (outSocket === "charCount") return ["text"];
     return ALL_INPUTS;
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, _inSocket: keyof TextPathDefinition["inputs"], _deps: AllDeps): (keyof TextPathDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, inSocket: keyof TextPathDefinition["inputs"], _deps: AllDeps): (keyof TextPathDefinition["outputs"])[] => {
+    if (inSocket === "text") return ["output", "charCount"];
     return ["output"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: keyof TextPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+    if (socket !== "output" && socket !== "charCount") return null;
+
+    if (socket === "charCount") {
+        const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
+        return { kind: "integer", data: `${(text ?? "").length}` };
+    }
 
     const pathData = context.resolve<"path">(node.id, "path")?.data;
     if (!pathData) return null;
@@ -329,6 +343,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<TextPathDefinition["inputs"]>]: S
 
 const SOCKETTYPES_OUT: { [key in keyof Required<TextPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

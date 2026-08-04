@@ -86,7 +86,6 @@ export const buildInitialDeps = (nodes: NodesType, links: LinksType, interfaces:
     }
     for (const [targetGraphId, userList] of Object.entries(users)) {
         for (const { scope } of userList) {
-            // scope depends on targetGraphId
             if (graphDependsOn[scope]) {
                 graphDependsOn[scope].add(targetGraphId);
             }

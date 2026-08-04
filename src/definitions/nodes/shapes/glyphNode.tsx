@@ -123,7 +123,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"path"} label={"Path Data"}>
-                <BlockInput value={node.payload.path} onCommit={(path) => handleUpdate({ path })} />
+                <BlockInput.Modal value={node.payload.path} onCommit={(path) => handleUpdate({ path })} title={"Edit Path Data"} buttonLabel={"Edit Path Data…"} />
             </SocketIn>
             <SocketIn node={node} socketId={"width"} label={"Width"}>
                 <LengthInput value={node.payload.width} onCommit={(width) => handleUpdate({ width })} disabled={node.in.width !== null} min={"0px"} required />

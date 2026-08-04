@@ -303,7 +303,6 @@ const DragGrip = styled.div`
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction !== "in") return;
 
-    // Check if the connected socket is the supersocket
     const link = ctx.getLink(graphId, linkId);
     if (!link || link.toSocket !== "layers") return;
 
@@ -341,7 +340,6 @@ const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket:
     if (inSocket === "isolate") {
         return ["output"];
     }
-    // layer_* sockets contribute to output
     if (typeof inSocket === "string" && inSocket.startsWith("layer_")) {
         return ["output"];
     }
@@ -352,7 +350,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     if (socket === "output") {
         const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">>; blend: number }[] = [];
 
-        // Check supersocket first
         const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
         if (supersocketEval) {
             for (const entry of supersocketEval.data) {

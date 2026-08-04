@@ -17,6 +17,7 @@ export type ConcatDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"string">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -36,6 +37,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ConcatDefinition>>,
         },
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
@@ -70,28 +72,33 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ConcatDefin
             <SocketIn node={node} socketId={"separator"} label={"Separator"}>
                 <TextInput value={node.payload.separator} onCommit={(separator) => handleUpdate({ separator })} disabled={node.in.separator !== null} />
             </SocketIn>
+            <SocketOut node={node} socketId={"charCount"}>
+                Character Count
+            </SocketOut>
         </TypicalNode>
     );
 };
 
 const ALL_INPUTS: (keyof ConcatDefinition["inputs"])[] = ["a", "b", "separator"];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<ConcatDefinition>, _outSocket: "output", _deps: AllDeps): (keyof ConcatDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<ConcatDefinition>, _outSocket: keyof ConcatDefinition["outputs"], _deps: AllDeps): (keyof ConcatDefinition["inputs"])[] => {
     return ALL_INPUTS;
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<ConcatDefinition>, _inSocket: keyof ConcatDefinition["inputs"], _deps: AllDeps): (keyof ConcatDefinition["outputs"])[] => {
-    return ["output"];
+    return ["output", "charCount"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<ConcatDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+const evaluate = (node: NodeDefinitions.NodeFor<ConcatDefinition>, socket: keyof ConcatDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket !== "output" && socket !== "charCount") return null;
 
     const a = context.resolve<"string">(node.id, "a")?.data ?? node.payload.a ?? "";
     const b = context.resolve<"string">(node.id, "b")?.data ?? node.payload.b ?? "";
     const separator = context.resolve<"string">(node.id, "separator")?.data ?? node.payload.separator ?? "";
 
-    return { kind: "string", data: a + separator + b };
+    const result = a + separator + b;
+    if (socket === "output") return { kind: "string", data: result };
+    return { kind: "integer", data: `${result.length}` };
 };
 
 const SOCKETTYPES_IN: { [key in keyof Required<ConcatDefinition["inputs"]>]: SocketTypes.SocketRule } = {
@@ -102,6 +109,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<ConcatDefinition["inputs"]>]: Soc
 
 const SOCKETTYPES_OUT: { [key in keyof Required<ConcatDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["string"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<ConcatDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

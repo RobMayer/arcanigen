@@ -88,7 +88,6 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _outS
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _inSocket: keyof LayerComposeDefinition["inputs"], _deps: AllDeps): (keyof LayerComposeDefinition["outputs"])[] => {
-    // All inputs contribute to output
     return ["output"];
 };
 

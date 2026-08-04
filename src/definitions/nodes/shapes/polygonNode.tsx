@@ -188,7 +188,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonDefi
             </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eCircumradius|eApothem"}>
+            <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eCircumradius|eApothem"}>
                 <SocketOut node={node} socketId={"eCircumradius"} label={"Circumradius"}>
                     <ValuePreview value={previewCircumradius} />
                 </SocketOut>

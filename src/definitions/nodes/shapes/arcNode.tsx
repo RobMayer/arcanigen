@@ -248,7 +248,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
         effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
-    // Clamp sweep to [-360, 360]
     effectiveSweep = Math.max(-360, Math.min(360, effectiveSweep));
 
     if (effectiveSweep === 0) {

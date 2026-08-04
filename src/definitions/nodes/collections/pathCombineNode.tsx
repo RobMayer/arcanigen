@@ -151,7 +151,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
                 </>
             )}
             <hr />
-            <NodeAccordion label="Additional Outputs" nodeId={node.id} socketsOut="operationCount|enabledCount">
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="operationCount|enabledCount">
                 <SocketOut node={node} socketId={"operationCount"}>
                     Operation Count
                 </SocketOut>

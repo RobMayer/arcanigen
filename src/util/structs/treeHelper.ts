@@ -132,7 +132,6 @@ export namespace TreeHelper {
     export const toSorted = <T>(data: TreeOf<T>, sorter: (a: [node: TreeItemOf<T>, index: number], b: [node: TreeItemOf<T>, index: number]) => number): TreeOf<T> => {
         const result: TreeOf<T> = { ...data };
 
-        // Sort roots array
         const sortedRoots = [...data[ROOTS]]
             .map((id, index) => [data[id], index] as [TreeItemOf<T>, number])
             .sort(sorter)
@@ -162,7 +161,6 @@ export namespace TreeHelper {
     export const toSortedWide = <T>(data: TreeOf<T>, sorter: (a: [node: TreeItemOf<T>, index: number], b: [node: TreeItemOf<T>, index: number]) => number): TreeOf<T> => {
         const result: TreeOf<T> = { ...data };
 
-        // Sort roots
         const sortedRoots = [...data[ROOTS]]
             .map((id, index) => [data[id], index] as [TreeItemOf<T>, number])
             .sort(sorter)
@@ -176,13 +174,11 @@ export namespace TreeHelper {
             const node = data[id];
             if (!node) continue;
 
-            // Sort children and add to queue
             const sortedChildren = node.children
                 .map((childId, index) => [data[childId], index] as [TreeItemOf<T>, number])
                 .sort(sorter)
                 .map(([n]) => n.id);
 
-            // Update node's children array to be sorted
             result[id] = { ...node, children: sortedChildren };
 
             queue.push(...sortedChildren);
@@ -194,7 +190,6 @@ export namespace TreeHelper {
     export const toSortedDeep = <T>(data: TreeOf<T>, sorter: (a: [node: TreeItemOf<T>, index: number], b: [node: TreeItemOf<T>, index: number]) => number): TreeOf<T> => {
         const result: TreeOf<T> = { ...data };
 
-        // Sort roots
         const sortedRoots = [...data[ROOTS]]
             .map((id, index) => [data[id], index] as [TreeItemOf<T>, number])
             .sort(sorter)
@@ -207,20 +202,16 @@ export namespace TreeHelper {
             const node = data[id];
             if (!node) return;
 
-            // Sort children
             const sortedChildren = node.children
                 .map((childId, index) => [data[childId], index] as [TreeItemOf<T>, number])
                 .sort(sorter)
                 .map(([n]) => n.id);
 
-            // Update node's children array to be sorted
             result[id] = { ...node, children: sortedChildren };
 
-            // Recursively traverse children (depth-first)
             sortedChildren.forEach(traverse);
         };
 
-        // Start traversal from roots
         sortedRoots.forEach(traverse);
 
         return result;
@@ -254,7 +245,6 @@ export namespace TreeHelper {
         const thingsToMove = ids.filter((each, i, ary) => {
             const curParent = result[each]?.parent;
 
-            // Skip if item doesn't exist
             if (!result[each]) {
                 return false;
             }

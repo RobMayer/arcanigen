@@ -124,7 +124,6 @@ const contributesTo = (
     _inSocket: keyof DistributionNodeDefinition["inputs"],
     _deps: AllDeps,
 ): (keyof DistributionNodeDefinition["outputs"])[] => {
-    // Both a and b contribute to output
     return ["output"];
 };
 

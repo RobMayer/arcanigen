@@ -18,7 +18,6 @@ type ColorInputProps = {
 
 // HSV components as individual numeric values (used internally for sliders)
 
-// Hex pattern for validation
 const HEX_PATTERN_NO_ALPHA = "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})";
 const HEX_PATTERN_ALPHA = "#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})";
 
@@ -67,7 +66,6 @@ export const ColorInput = styled(({ className, alpha, value, onValue, onCommit, 
 
     const hsvCacheRef = useRef(hsvCache);
 
-    // Sync with incoming prop
     useEffect(() => {
         setRgbaCache(value);
         const hsv = Color.toHSV(value);
@@ -75,7 +73,6 @@ export const ColorInput = styled(({ className, alpha, value, onValue, onCommit, 
         hsvCacheRef.current = hsv;
     }, [value]);
 
-    // Style for swatch preview
     const swatchStyle = useMemo(() => {
         return { "--value": rgbaCache === null ? "transparent" : Color.toHex(rgbaCache) } as CSSProperties;
     }, [rgbaCache]);

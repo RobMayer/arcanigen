@@ -24,6 +24,7 @@ export type SubstringDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"string">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -49,6 +50,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<SubstringDefinition
         },
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
@@ -102,18 +104,21 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SubstringDe
             <SocketIn node={node} socketId={"end"} label={"End"}>
                 <IntegerInput value={node.payload.end} onCommit={(end) => handleUpdate({ end })} disabled={node.in.end !== null || !isEnd} />
             </SocketIn>
+            <SocketOut node={node} socketId={"charCount"}>
+                Character Count
+            </SocketOut>
         </TypicalNode>
     );
 };
 
 const ALL_INPUTS: (keyof SubstringDefinition["inputs"])[] = ["string", "startIndex", "mode", "length", "end"];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<SubstringDefinition>, _outSocket: "output", _deps: AllDeps): (keyof SubstringDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<SubstringDefinition>, _outSocket: keyof SubstringDefinition["outputs"], _deps: AllDeps): (keyof SubstringDefinition["inputs"])[] => {
     return ALL_INPUTS;
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<SubstringDefinition>, _inSocket: keyof SubstringDefinition["inputs"], _deps: AllDeps): (keyof SubstringDefinition["outputs"])[] => {
-    return ["output"];
+    return ["output", "charCount"];
 };
 
 const resolveInt = (context: Resolver.Context, nodeId: string, socketId: keyof SubstringDefinition["inputs"], fallback: EmptyOr<NumericString.Type>, def: number): number => {
@@ -121,8 +126,8 @@ const resolveInt = (context: Resolver.Context, nodeId: string, socketId: keyof S
     return Math.round(NumericString.Emptyable.asNumber(raw) ?? def);
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<SubstringDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+const evaluate = (node: NodeDefinitions.NodeFor<SubstringDefinition>, socket: keyof SubstringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket !== "output" && socket !== "charCount") return null;
 
     const str = context.resolve<"string">(node.id, "string")?.data ?? node.payload.string ?? "";
     const len = str.length;
@@ -144,8 +149,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<SubstringDefinition>, socket: "o
         end = endRaw <= 0 ? len + endRaw : endRaw;
     }
     end = Math.max(start, Math.min(len, end));
+    const result = str.slice(start, end);
 
-    return { kind: "string", data: str.slice(start, end) };
+    if (socket === "output") return { kind: "string", data: result };
+    return { kind: "integer", data: `${result.length}` };
 };
 
 const SOCKETTYPES_IN: { [key in keyof Required<SubstringDefinition["inputs"]>]: SocketTypes.SocketRule } = {
@@ -158,6 +165,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<SubstringDefinition["inputs"]>]: 
 
 const SOCKETTYPES_OUT: { [key in keyof Required<SubstringDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["string"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<SubstringDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

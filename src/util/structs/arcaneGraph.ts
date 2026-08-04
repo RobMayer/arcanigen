@@ -162,7 +162,6 @@ export namespace ArcaneGraph {
             const link = graph.links[linkId];
             if (!link) continue;
 
-            // Get all outgoing links from the target node
             const nextLinks = linksFrom(graph, link.toNode, null);
             for (const nextLinkId of nextLinks) {
                 if (!visited.has(nextLinkId)) {
@@ -473,9 +472,7 @@ export namespace ArcaneGraph {
         let newLinks: typeof graph.links | null = null;
 
         for (const [id, entry] of Object.entries(normalized)) {
-            // validate nodes exist
             if (!(entry.fromNode in graph.nodes) || !(entry.toNode in graph.nodes)) continue;
-            // skip duplicate ids
             if (id in graph.links || (newLinks !== null && id in newLinks)) continue;
 
             // resolve the current toNode (may have been patched by a previous iteration)
@@ -503,7 +500,6 @@ export namespace ArcaneGraph {
                 }
             }
 
-            // create the new link
             const link: Link = { ...entry, id };
             if (newLinks === null) newLinks = { ...graph.links };
             newLinks[id] = link;

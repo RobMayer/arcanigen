@@ -107,7 +107,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
         [updateNode],
     );
 
-    // Double-click to edit label
     const startEdit = useCallback(() => {
         setIsEditing(true);
     }, []);

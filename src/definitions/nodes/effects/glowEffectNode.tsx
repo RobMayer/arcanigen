@@ -171,7 +171,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     const inputShape = context.resolve<"shape">(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    // Resolve parameters
     const artColor: boolean = context.resolve<"boolean">(node.id, "artColor")?.data ?? node.payload.artColor;
     const color: Color.Type = context.resolve<"color">(node.id, "color")?.data ?? node.payload.color;
     const blurPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "blur")?.data ?? node.payload.blur) ?? 0);
@@ -179,7 +178,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     const strength = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "strength")?.data ?? node.payload.strength) ?? 1);
     const opacity = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "opacity")?.data ?? node.payload.opacity) ?? 1));
 
-    // Resolve offset
     const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.positionMode) ?? node.payload.offsetMode;
     let dx: number;
     let dy: number;
@@ -194,7 +192,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
         dy = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetY")?.data ?? node.payload.offsetY) ?? 0;
     }
 
-    // Build filter chain
     const filter: FilterPrimitive[] = [];
     let lastResult = "SourceGraphic";
 

@@ -8,18 +8,22 @@ import { Slot, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../interfaceHelpers";
 import { TextInput } from "../../../components/inputs/TextInput";
+import { Dropdown } from "../../../components/inputs/Dropdown";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { Enum } from "../../datatypes/enum";
 
 export type StringInputDefinition = {
     inputs: never;
     outputs: {
         output: DataTypes.Use<"string">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
         initialValue: DataTypes.TypeOf<DataTypes.Use<"string">>;
         socketed: boolean;
+        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
     };
 };
 
@@ -29,15 +33,19 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<StringInputDefinit
         in: {},
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
             initialValue: "",
             socketed: true,
+            widget: Enum.Common.stringInputWidget.BLOCK.value,
         },
         type: "stringInput",
     };
 };
+
+const WIDGET_OPTIONS = Enum.options(Enum.Common.stringInputWidget);
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StringInputDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -52,19 +60,32 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StringInput
             <SocketOut node={node} socketId={"output"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
-            <Slot label={"Initial Value"}>
-                <TextInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
-            </Slot>
+            <SocketOut node={node} socketId={"charCount"}>
+                Character Count
+            </SocketOut>
             <Slot>
                 <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
                     Socketed
                 </CheckBox>
             </Slot>
+            <Slot label={"Widget"}>
+                <Dropdown value={`${node.payload.widget}`} onValue={(w) => handleUpdate({ widget: Number(w) })}>
+                    {WIDGET_OPTIONS.map((each) => (
+                        <option value={each.value} key={each.value}>
+                            {each.label}
+                        </option>
+                    ))}
+                </Dropdown>
+            </Slot>
+            <hr />
+            <Slot label={"Initial Value"}>
+                <TextInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} />
+            </Slot>
         </TypicalNode>
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<StringInputDefinition>, _outSocket: "output", _deps: AllDeps): (keyof StringInputDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<StringInputDefinition>, _outSocket: keyof StringInputDefinition["outputs"], _deps: AllDeps): (keyof StringInputDefinition["inputs"])[] => {
     return [];
 };
 
@@ -72,14 +93,11 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<StringInputDefinition>, _i
     return [];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<StringInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
-        const providedInput = context.getInput?.<"string">(node.id);
-        return {
-            kind: "string",
-            data: providedInput?.data ?? node.payload.initialValue,
-        };
-    }
+const evaluate = (node: NodeDefinitions.NodeFor<StringInputDefinition>, socket: keyof StringInputDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const providedInput = context.getInput?.<"string">(node.id);
+    const str = providedInput?.data ?? node.payload.initialValue;
+    if (socket === "output") return { kind: "string", data: str };
+    if (socket === "charCount") return { kind: "integer", data: `${str.length}` };
     return null;
 };
 
@@ -93,6 +111,7 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"stringInput", StringInputDe
 
 const SOCKETTYPES_OUT: { [key in keyof Required<StringInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["string"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<StringInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {

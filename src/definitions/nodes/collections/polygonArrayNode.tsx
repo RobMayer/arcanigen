@@ -143,7 +143,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
                 </SocketIn>
             </NodeAccordion>
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eCircumradius|eApothem"}>
+            <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eCircumradius|eApothem"}>
                 <SocketOut node={node} socketId={"eCircumradius"} label={"Circumradius"}>
                     <ValuePreview value={previewCircumradius} />
                 </SocketOut>

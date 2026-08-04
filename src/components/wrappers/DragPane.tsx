@@ -46,7 +46,6 @@ type DragPaneProps = {
 
 const DEFAULT_XYZ: XYZ = { x: 0, y: 0, z: 1 };
 
-// content-space helper
 const toContentSpace = (el: HTMLElement, offset: HTMLElement | null, zoom: number) => {
     if (!offset) return null;
     const or = offset.getBoundingClientRect();
@@ -185,7 +184,6 @@ const DragPaneBase = styled(
             [setPosition, member, checkBreaches],
         );
 
-        // control methods
         const methods = useMemo<DragPaneControls>(() => {
             const panOnBase = (evt: PointerEvent | PointerEvent<unknown>, passive: boolean) => {
                 const { x, y, z } = member.ref.current;

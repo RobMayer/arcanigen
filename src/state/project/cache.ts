@@ -58,7 +58,6 @@ const evaluateSubgraphForCache = (
     const outputNode = subgraphNodes[outputNodeId];
     if (!outputNode) return null;
 
-    // Helper to evaluate a node's output within this subgraph
     const evaluateNodeInSubgraph = (nodeId: string, outSocket: string, seqData: Resolver.SequenceData): DataTypes.AnyEval | null => {
         const node = subgraphNodes[nodeId];
         if (!node) return null;
@@ -125,7 +124,6 @@ const evaluateSocketCached = (
 ): DataTypes.AnyEval | null => {
     const cacheKey = makeCacheKey(outSocket, sequenceData);
 
-    // Already cached (including null)? Return it.
     const nodeCache = graphCache[nodeId];
     if (nodeCache && cacheKey in nodeCache) {
         return nodeCache[cacheKey];
@@ -222,7 +220,6 @@ const buildGraphCache = (cache: CacheType, nodes: NodesType, links: LinksType, i
         }
     }
 
-    // Build cache starting from each source node
     let newCache = cache;
     for (const sourceId of sourceNodes) {
         newCache = rebuildDownstream(newCache, nodes, links, interfaces, graphId, sourceId);

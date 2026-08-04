@@ -323,7 +323,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolyringDef
             </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
+            <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
                 <SocketOut node={node} socketId={"eOuterCircumradius"} label={"Outer Circumradius"}>
                     <ValuePreview value={previewOuterCircumradius} />
                 </SocketOut>
@@ -572,7 +572,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        // Generate vertex angles
         const angles = range(N).map((_, i) => {
             const coeff = lerp(delerp(i, 0, N), 0, 360, distroLerper);
             return deg2rad(coeff - 90);

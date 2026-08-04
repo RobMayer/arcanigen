@@ -15,6 +15,7 @@ export type ParagraphDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"string">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -30,6 +31,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ParagraphDefinitio
         },
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
@@ -53,27 +55,29 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ParagraphDe
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"value"} label={"Value"}>
-                <BlockInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
+                <BlockInput.WithModal value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} title={"Edit Paragraph"} />
             </SocketIn>
+            <SocketOut node={node} socketId={"charCount"}>
+                Character Count
+            </SocketOut>
         </TypicalNode>
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<ParagraphDefinition>, outSocket: "output", _deps: AllDeps): (keyof ParagraphDefinition["inputs"])[] => {
-    if (outSocket === "output") return ["value"];
+const dependsOn = (_node: NodeDefinitions.NodeFor<ParagraphDefinition>, outSocket: keyof ParagraphDefinition["outputs"], _deps: AllDeps): (keyof ParagraphDefinition["inputs"])[] => {
+    if (outSocket === "output" || outSocket === "charCount") return ["value"];
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<ParagraphDefinition>, inSocket: keyof ParagraphDefinition["inputs"], _deps: AllDeps): (keyof ParagraphDefinition["outputs"])[] => {
-    if (inSocket === "value") return ["output"];
+    if (inSocket === "value") return ["output", "charCount"];
     return [];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<ParagraphDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
-        const val = context.resolve<"string">(node.id, "value");
-        return { kind: "string", data: val?.data ?? node.payload.value };
-    }
+const evaluate = (node: NodeDefinitions.NodeFor<ParagraphDefinition>, socket: keyof ParagraphDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const str = context.resolve<"string">(node.id, "value")?.data ?? node.payload.value;
+    if (socket === "output") return { kind: "string", data: str };
+    if (socket === "charCount") return { kind: "integer", data: `${str.length}` };
     return null;
 };
 
@@ -83,6 +87,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<ParagraphDefinition["inputs"]>]: 
 
 const SOCKETTYPES_OUT: { [key in keyof Required<ParagraphDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["string"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<ParagraphDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

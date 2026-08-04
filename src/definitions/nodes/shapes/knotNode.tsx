@@ -361,7 +361,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
             </NodeAccordion>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion nodeId={node.id} label={"Additional Outputs"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
+            <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
                 <SocketOut node={node} socketId={"eOuterCircumradius"} label={"Outer Circumradius"}>
                     <ValuePreview value={previewOuterCircumradius} />
                 </SocketOut>
@@ -610,7 +610,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         if (tO <= 0) return null;
         tI = Math.max(0, tI);
 
-        // Skip count
         const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
         const skipCount = Math.min(tempSkipCount, Math.ceil(N / 2) - 2);
         const step = skipCount + 1;
@@ -633,7 +632,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        // Generate vertex angles
         const angles = range(N).map((_, i) => {
             const coeff = lerp(delerp(i, 0, N), 0, 360, distroLerper);
             return deg2rad(coeff - 90);

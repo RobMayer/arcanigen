@@ -90,7 +90,6 @@ const useResizeHandles = (bodyRef: RefObject<HTMLElement | null>, onFinish: (siz
 
             const wrapper = body.closest<HTMLElement>("[data-trhmarker]");
 
-            // Snapshot initial state
             const initialW = parseFloat(body.style.getPropertyValue("--w")) || body.offsetWidth;
             const initialH = parseFloat(body.style.getPropertyValue("--h")) || body.offsetHeight;
             const initialPX = parseFloat(wrapper?.style.getPropertyValue("--x") ?? "0");
@@ -201,7 +200,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
                 }
             }
 
-            // Move snapshotted contained nodes
             for (const candidateId of containedNodesRef.current) {
                 if (compiled[candidateId]) continue;
                 const candidatePos = positionsRef.current[graphId]?.[candidateId];
@@ -284,7 +282,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
         contextControls.close();
     }, [removeNode, contextControls]);
 
-    // Double-click to edit label
     const startEdit = useCallback(() => {
         setIsEditing(true);
     }, []);

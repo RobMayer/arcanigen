@@ -15,6 +15,7 @@ export type StringDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"string">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -30,6 +31,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<StringDefinition>>
         },
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
@@ -55,25 +57,27 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StringDefin
             <SocketIn node={node} socketId={"value"} label={"Value"}>
                 <TextInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
             </SocketIn>
+            <SocketOut node={node} socketId={"charCount"}>
+                Character Count
+            </SocketOut>
         </TypicalNode>
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<StringDefinition>, outSocket: "output", _deps: AllDeps): (keyof StringDefinition["inputs"])[] => {
-    if (outSocket === "output") return ["value"];
+const dependsOn = (_node: NodeDefinitions.NodeFor<StringDefinition>, outSocket: keyof StringDefinition["outputs"], _deps: AllDeps): (keyof StringDefinition["inputs"])[] => {
+    if (outSocket === "output" || outSocket === "charCount") return ["value"];
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<StringDefinition>, inSocket: keyof StringDefinition["inputs"], _deps: AllDeps): (keyof StringDefinition["outputs"])[] => {
-    if (inSocket === "value") return ["output"];
+    if (inSocket === "value") return ["output", "charCount"];
     return [];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<StringDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "output") {
-        const val = context.resolve<"string">(node.id, "value");
-        return { kind: "string", data: val?.data ?? node.payload.value };
-    }
+const evaluate = (node: NodeDefinitions.NodeFor<StringDefinition>, socket: keyof StringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const str = context.resolve<"string">(node.id, "value")?.data ?? node.payload.value;
+    if (socket === "output") return { kind: "string", data: str };
+    if (socket === "charCount") return { kind: "integer", data: `${str.length}` };
     return null;
 };
 
@@ -83,6 +87,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<StringDefinition["inputs"]>]: Soc
 
 const SOCKETTYPES_OUT: { [key in keyof Required<StringDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["string"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<StringDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

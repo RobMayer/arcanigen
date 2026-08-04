@@ -240,7 +240,6 @@ export namespace Project {
         return useSyncExternalStore(ctx.cache.subscribe, selector) as DataTypes.EvalOf<D["outputs"][K]> | null;
     };
 
-    //
     export const useCachedInput = <D extends NodeDefinitions.Generic, K extends keyof D["inputs"]>(
         graphId: GraphId,
         { id: nodeId }: NodeDefinitions.NodeFor<D>,
@@ -343,17 +342,14 @@ export namespace Project {
                     if (!downstreamByScope[scope]) downstreamByScope[scope] = new Set();
                     for (const d of downstream) downstreamByScope[scope].add(d);
 
-                    // Remove the Custom node and its links
                     const [{ nodes, links }] = ArcaneGraph.removeNodes(scopeGraph, customNodeId);
                     currentNodes = { ...currentNodes, [scope]: nodes };
                     currentLinks = { ...currentLinks, [scope]: links };
 
-                    // Remove position
                     const scopePositions = { ...currentPositions[scope] };
                     delete scopePositions[customNodeId];
                     currentPositions = { ...currentPositions, [scope]: scopePositions };
 
-                    // Invalidate cache for the removed node
                     currentCache = invalidateDownstream(currentCache, currentNodes, currentLinks, scope, customNodeId);
                 }
 
@@ -683,7 +679,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 2;
+        export const CURRENT = 3;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -697,6 +693,24 @@ export namespace Project {
                     }
                 }
                 input.version = 2;
+            }
+            if (input.version === 2) {
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type === "stringInput") {
+                            // v3 added a selectable input widget; backfill to Block (stringInputWidget.BLOCK = 2).
+                            node.payload.widget = node.payload.widget ?? 2;
+                            // v3 added the "Character Count" output.
+                            node.out.charCount = node.out.charCount ?? [];
+                        }
+                        if (node.type === "textPath") {
+                            // v3 added the "Character Count" output.
+                            node.out.charCount = node.out.charCount ?? [];
+                        }
+                    }
+                }
+                input.version = 3;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

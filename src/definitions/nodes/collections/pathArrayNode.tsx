@@ -320,7 +320,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
         NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
     );
 
-    // Spacing
     const spacingNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
 
     const overflow: "clamp" | "wrap" = overflowModeEnum === Enum.Common.overflowMode.WRAP.value ? "wrap" : "clamp";

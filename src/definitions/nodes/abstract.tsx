@@ -142,7 +142,6 @@ export namespace Stylings {
     };
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): Paint => {
-        // Resolve stroke attributes
         const strokeColor = context.resolve<"color">(node.id, "strokeColor")?.data ?? node.payload.strokeColor;
         const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
         const strokeCap = Enum.resolve(context.resolve<"enum">(node.id, "strokeCap")?.data, Enum.Common.strokeCap) ?? node.payload.strokeCap;
@@ -150,10 +149,8 @@ export namespace Stylings {
         const strokeDash = context.resolve<"tokens<length>">(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
         const strokeDashOffset = context.resolve<"length">(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
 
-        // Resolve fill attributes
         const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
 
-        // Map enums
         const cap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
         const join = Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt";
         const paintOrder =
@@ -203,7 +200,6 @@ export namespace Transforms {
 
     export type Definition = {
         inputs: {
-            // stroke
             positionMode: DataTypes.Use<"enum">;
             positionX: DataTypes.Use<"length">;
             positionY: DataTypes.Use<"length">;
@@ -272,7 +268,6 @@ export namespace Transforms {
     };
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context) => {
-        // Resolve transform attributes
         const positionMode = Enum.resolve(context.resolve<"enum">(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
         const positionX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
         const positionY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
@@ -280,7 +275,6 @@ export namespace Transforms {
         const positionTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
         const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
 
-        // Calculate translation based on position mode
         let translateX: number;
         let translateY: number;
         if (positionMode === Enum.Common.positionMode.POLAR.value) {
@@ -291,7 +285,6 @@ export namespace Transforms {
             translateX = positionRadius * Math.cos(thetaRad);
             translateY = positionRadius * Math.sin(thetaRad);
         } else {
-            // Cartesian mode
             translateX = positionX;
             translateY = positionY;
         }
@@ -362,12 +355,10 @@ export namespace Iteration {
 
         let iter = context.sequenceData[senderId] ?? 0;
 
-        // Reverse
         if (reverseSequence) {
             iter = count - 1 - iter;
         }
 
-        // Effective range
         const effectiveStart = startOffset;
         const effectiveEnd = count - 1 + endOffset;
         const effectiveCount = effectiveEnd - effectiveStart + 1;
@@ -396,7 +387,6 @@ export namespace Iteration {
             }
         }
 
-        // Compute t (0..1)
         const t = effectiveCount <= 1 ? 0 : effectiveIdx / (effectiveCount - 1);
         return { t };
     };
@@ -419,11 +409,9 @@ export namespace Iteration {
         if (stops.length === 0) return 0;
         if (stops.length === 1) return stops[0].value;
 
-        // Clamp to range
         if (position <= stops[0].position) return stops[0].value;
         if (position >= stops[stops.length - 1].position) return stops[stops.length - 1].value;
 
-        // Find bracketing stops
         let lo = 0;
         for (let i = 1; i < stops.length; i++) {
             if (stops[i].position >= position) {

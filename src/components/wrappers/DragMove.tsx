@@ -39,7 +39,6 @@ export namespace DragMove {
             }
         }, [ctx, id, skip]);
 
-        // register and unregister patterns
         useEffect(() => {
             if (ctx && !skip) {
                 ctx.ref.current.push(id);

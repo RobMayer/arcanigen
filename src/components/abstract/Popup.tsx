@@ -20,6 +20,7 @@ import {
     WheelEvent,
 } from "react";
 import styled from "styled-components";
+import { createPortal } from "react-dom";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
 import { createController } from "../../util/hooks/useController";
@@ -278,7 +279,6 @@ export namespace AbstractPopup {
             };
         }, [safeZone, isOpen, setupObserver, updateSafeZone]);
 
-        // Determine pointer-events for backdrop based on mode
         const captureStyles = useMemo(() => {
             return { pointerEvents: backdrop === "pass" ? "none" : "auto" };
         }, [backdrop]);
@@ -320,7 +320,11 @@ export namespace AbstractPopup {
             [onFocusCapture],
         );
 
-        return (
+        // Portal to <body> so popups escape any transformed/scrollable ancestor
+        // (e.g. the zoom-transformed graph pane), which otherwise captures their
+        // fixed positioning and makes focus scroll the pane. CSS anchor positioning
+        // still works across the portal since it resolves by name, not DOM ancestry.
+        return createPortal(
             <LocalDialog popover={"manual"} ref={combinedDialogRef} className={className}>
                 <div data-part={"backdrop"} />
                 <div data-part={"bounds"} ref={boundsRef} />
@@ -344,7 +348,8 @@ export namespace AbstractPopup {
                         <div data-part={"observed"} style={safezoneStyle} ref={observedRef} />
                     </>
                 )}
-            </LocalDialog>
+            </LocalDialog>,
+            document.body,
         );
     };
 
@@ -566,26 +571,22 @@ export namespace AbstractPopup {
             onOpenRef.current?.();
         }, [getBounds, getDialogDimensions, setPosition]);
 
-        // Open at center of viewport
         const openCenter = useCallback(() => {
             pendingPositionRef.current = { type: "center" };
             popoverHandle.current?.open();
         }, []);
 
-        // Open at explicit coordinates
         const openAt = useCallback((x: number, y: number, alignment?: AlignmentOptions) => {
             pendingPositionRef.current = { type: "at", x, y, alignment };
             popoverHandle.current?.open();
         }, []);
 
-        // Open relative to element
         const openOn = useCallback((element: HTMLElement, alignment?: AlignmentOptions, anchor?: AlignmentOptions) => {
             const elementRect = element.getBoundingClientRect();
             pendingPositionRef.current = { type: "on", elementRect, alignment, anchor };
             popoverHandle.current?.open();
         }, []);
 
-        // Close dialog
         const closeDialog = useCallback(() => {
             pendingPositionRef.current = null;
             positionRef.current = null;
@@ -604,7 +605,6 @@ export namespace AbstractPopup {
             setPosition(null);
         }, [setPosition]);
 
-        // Controller methods
         const dialogMethods = useMemo<Dialog.Controls>(
             () => ({
                 open: openCenter,
@@ -624,7 +624,7 @@ export namespace AbstractPopup {
             if (!handle || !position) return;
 
             const onPointerDown = (e: PointerEvent) => {
-                if (e.button !== 0) return; // Left click only
+                if (e.button !== 0) return;
                 const pos = positionRef.current;
                 if (!pos) return;
 
@@ -710,7 +710,6 @@ export namespace AbstractPopup {
                 const bounds = getBounds();
                 const clamped = clampToBounds(pos, dims.width, dims.height, bounds);
 
-                // Only update if position changed
                 if (clamped.x !== pos.x || clamped.y !== pos.y) {
                     positionRef.current = clamped;
                     setPosition(clamped);
@@ -733,7 +732,6 @@ export namespace AbstractPopup {
             [style, position],
         );
 
-        // Drag handle context value
         const dragHandleContextValue = useMemo<DragHandleContextValue>(
             () => ({
                 handleRef,

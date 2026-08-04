@@ -128,7 +128,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokenizerLe
                 />
             ))}
             <hr />
-            <NodeAccordion label="Additional Outputs" nodeId={node.id} socketsOut="tokenCount|nonNullishCount">
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="tokenCount|nonNullishCount">
                 <SocketOut node={node} socketId={"tokenCount"}>
                     Token Count
                 </SocketOut>
@@ -265,7 +265,11 @@ const dependsOn = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, out
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, inSocket: keyof TokenizerLengthDefinition["inputs"], _deps: AllDeps): (keyof TokenizerLengthDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>,
+    inSocket: keyof TokenizerLengthDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof TokenizerLengthDefinition["outputs"])[] => {
     if (typeof inSocket === "string" && inSocket.startsWith("token_")) {
         return ["output", "nonNullishCount"];
     }

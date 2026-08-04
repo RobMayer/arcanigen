@@ -54,7 +54,6 @@ export namespace Length {
     export const max = (a: Type, b: Type): Type => (asNumber(b) > asNumber(a) ? b : a);
     export const clamp = (a: Type, theMin: Type, theMax: Type): Type => max(min(a, theMax), theMin);
 
-    // for sorting
     export const compare = (a: Type, b: Type): number => asNumber(a) - asNumber(b);
 
     // -1 if below min, 1 if above max, 0 if within bounds

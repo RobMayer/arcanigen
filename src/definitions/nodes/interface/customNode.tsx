@@ -36,6 +36,7 @@ import { TokensLengthOutputDefinition } from "./tokensLengthOutputNode";
 import { StringInputDefinition } from "./stringInputNode";
 import { StringOutputDefinition } from "./stringOutputNode";
 import { TextInput } from "../../../components/inputs/TextInput";
+import { BlockInput } from "../../../components/inputs/BlockInput";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { CheckButton } from "../../../components/buttons/CheckButton";
@@ -321,7 +322,6 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: stri
     const targetGraphId = node.payload.graphId;
     if (!targetGraphId) return;
 
-    // Read the subgraph's interface entries
     const interfaceSockets = flattenSockets(ctx.getInterfaces(targetGraphId));
 
     // Build socket maps and default values from Input/Output nodes
@@ -360,7 +360,6 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: stri
         }
     }
 
-    // Update the node with the built socket maps and default values
     ctx.setNode(graphId, node.id, {
         ...node,
         in: inSockets,
@@ -1141,12 +1140,42 @@ const InputSlotString = ({ host, source, handleValue }: InputWidgetProps<StringI
     const socketed = source.payload.socketed !== false;
     const label = (source.payload.label ?? "") === "" ? "Input" : source.payload.label;
     const disabled = host.in[source.id] != null;
+    const value = host.payload[`value_${source.id}`] as string;
+    const onCommit = (v: string) => handleValue({ [`value_${source.id}`]: v });
 
-    return (
-        <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} label={label}>
-            <TextInput value={host.payload[`value_${source.id}`] as string} onCommit={(v) => handleValue({ [`value_${source.id}`]: v })} disabled={disabled} />
-        </InputSocketOrSlot>
-    );
+    switch (source.payload.widget) {
+        case Enum.Common.stringInputWidget.NONE.value:
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id}>
+                    {label}
+                </InputSocketOrSlot>
+            );
+        case Enum.Common.stringInputWidget.LINE.value:
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} label={label}>
+                    <TextInput value={value} onCommit={onCommit} disabled={disabled} />
+                </InputSocketOrSlot>
+            );
+        case Enum.Common.stringInputWidget.BLOCK_MODAL.value:
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} label={label}>
+                    <BlockInput.WithModal value={value} onCommit={onCommit} disabled={disabled} title={label} />
+                </InputSocketOrSlot>
+            );
+        case Enum.Common.stringInputWidget.MODAL.value:
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} label={label}>
+                    <BlockInput.Modal value={value} onCommit={onCommit} disabled={disabled} title={label} />
+                </InputSocketOrSlot>
+            );
+        case Enum.Common.stringInputWidget.BLOCK.value:
+        default:
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} label={label}>
+                    <BlockInput value={value} onCommit={onCommit} disabled={disabled} />
+                </InputSocketOrSlot>
+            );
+    }
 };
 
 const InputSlotDistribution = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {

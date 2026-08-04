@@ -215,7 +215,6 @@ const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, co
     const scaleX = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "scaleX")?.data ?? node.payload.scaleX) ?? 1;
     const scaleY = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "scaleY")?.data ?? node.payload.scaleY) ?? 1;
 
-    // Resolve translation
     let translateX: number;
     let translateY: number;
     if (positionMode === Enum.Common.positionMode.POLAR.value) {

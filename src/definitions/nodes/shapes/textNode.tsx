@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
@@ -32,6 +32,7 @@ export type TextDefinition = {
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        charCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
@@ -81,6 +82,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextDefinition>>, i
         },
         out: {
             output: [],
+            charCount: [],
         },
         payload: {
             label: "",
@@ -129,7 +131,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextDefinit
                 Output
             </SocketOut>
             <SocketIn node={node} socketId={"text"} label={"Text"}>
-                <BlockInput value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} />
+                <BlockInput.WithModal value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} title={"Edit Text"} />
             </SocketIn>
             <SocketIn node={node} socketId={"font"} label={"Font"}>
                 <Dropdown value={`${node.payload.font}`} onValue={(v) => handleUpdate({ font: Number(v) })} disabled={node.in.font !== null}>
@@ -172,6 +174,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextDefinit
             </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <NodeAccordion label={"Additional Options"} socketsOut={"charCount"} nodeId={node.id}>
+                <SocketOut node={node} socketId={"charCount"}>
+                    Character Count
+                </SocketOut>
+            </NodeAccordion>
         </TypicalNode>
     );
 };
@@ -200,18 +207,23 @@ const ALL_INPUTS: (keyof TextDefinition["inputs"])[] = [
     "positionTheta",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<TextDefinition>, _outSocket: keyof TextDefinition["outputs"], _deps: AllDeps): (keyof TextDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<TextDefinition>, outSocket: keyof TextDefinition["outputs"], _deps: AllDeps): (keyof TextDefinition["inputs"])[] => {
+    if (outSocket === "charCount") return ["text"];
     return ALL_INPUTS;
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<TextDefinition>, _inSocket: keyof TextDefinition["inputs"], _deps: AllDeps): (keyof TextDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<TextDefinition>, inSocket: keyof TextDefinition["inputs"], _deps: AllDeps): (keyof TextDefinition["outputs"])[] => {
+    if (inSocket === "text") return ["output", "charCount"];
     return ["output"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof TextDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+    if (socket !== "output" && socket !== "charCount") return null;
 
     const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
+
+    if (socket === "charCount") return { kind: "integer", data: `${(text ?? "").length}` };
+
     if (!text) return null;
 
     const fontVal = Enum.resolve(context.resolve<"enum">(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
@@ -277,6 +289,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<TextDefinition["inputs"]>]: Socke
 
 const SOCKETTYPES_OUT: { [key in keyof Required<TextDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
+    charCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<TextDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

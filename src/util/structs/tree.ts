@@ -149,7 +149,6 @@ export namespace Tree {
         const thingsToMove = [...ids].filter((each, i, ary) => {
             const curParent = result[each]?.parent;
 
-            // Skip if item doesn't exist
             if (!result[each]) {
                 return false;
             }

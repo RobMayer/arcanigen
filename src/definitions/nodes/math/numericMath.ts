@@ -183,7 +183,6 @@ export const extractPair = (aKind: string, aData: unknown, bKind: string, bData:
         return { a: 0, b: 0, unit: "px" };
     }
     const unit = parsedA[1];
-    // Convert B to A's unit
     const bConverted = Length.parse(Length.convert(bData as Length.Type, unit));
     return {
         a: parsedA[0],

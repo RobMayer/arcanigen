@@ -226,6 +226,14 @@ export namespace Enum {
             HORIZONTAL_RADIO_BOX: { value: 5, label: "Horizontal Radio Box" },
         } as const;
 
+        export const stringInputWidget = {
+            NONE: { value: 0, label: "None" },
+            LINE: { value: 1, label: "Line" },
+            BLOCK: { value: 2, label: "Block" },
+            BLOCK_MODAL: { value: 3, label: "Block + Modal" },
+            MODAL: { value: 4, label: "Modal" },
+        } as const;
+
         export const typicalInputWidget = {
             NONE: { value: 0, label: "None" },
             INPUT: { value: 1, label: "Input" },
