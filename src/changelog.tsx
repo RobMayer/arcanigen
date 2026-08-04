@@ -4,6 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-03"} version={"3.3.5"}>
+                <Feature>Added a plain-old-text Node</Feature>
+                <Feature>Added several nodes related to strings</Feature>
+            </Build>
             <Build date={"2026-08-02"} version={"3.3.4"}>
                 <Improvement>Changed styles of unconnected sockets</Improvement>
             </Build>
