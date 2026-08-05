@@ -100,7 +100,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RepetitionArrayDefinition>, ou
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<RepetitionArrayDefinition>, inSocket: keyof RepetitionArrayDefinition["inputs"], _deps: AllDeps): (keyof RepetitionArrayDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<RepetitionArrayDefinition>,
+    inSocket: keyof RepetitionArrayDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof RepetitionArrayDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence"];
     }
@@ -174,7 +178,7 @@ export const RepetitionArrayNodeType: NodeTypes.Type<"repetitionArray", Repetiti
     type: "repetitionArray",
     displayName: "Repetition Array",
     defaultLabel: "Repetition Array",
-    iconNode: <Icon shape={NODE_ICONS.stack} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.loop} color={"var(--icon-flavour)"} />,
     category: "Collections",
     create,
     dependsOn,

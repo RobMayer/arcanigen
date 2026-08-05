@@ -59,6 +59,9 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
             if (each.type === "result" || (each.type as string) === "custom") {
                 return false;
             }
+            if (each.deprecated) {
+                return false;
+            }
             if (graphId === "root" && (each.category === "Inputs" || each.category === "Outputs")) {
                 return false;
             }

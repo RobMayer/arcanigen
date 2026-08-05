@@ -612,6 +612,8 @@ export namespace NodeTypes {
         defaultLabel: string;
         iconNode: ReactNode;
         category: Category;
+        /** Keeps the type loadable for existing saves but hides it from the Add Node drawer. */
+        deprecated?: boolean;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
         evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;

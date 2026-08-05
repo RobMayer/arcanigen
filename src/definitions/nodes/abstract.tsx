@@ -401,12 +401,12 @@ export namespace Iteration {
     };
 
     /**
-     * Sample a piecewise-linear function defined by sorted stops at a given position.
-     * Stops should be sorted by position (0..100 scale).
+     * Sample a piecewise-linear function of `T` defined by sorted stops at a given position,
+     * interpolating between the two bracketing stops with the supplied `lerp`.
+     * Stops must be non-empty and sorted by position (0..100 scale).
      * Clamps to the nearest stop value outside the range.
      */
-    export const sampleStops = (stops: { value: number; position: number }[], position: number): number => {
-        if (stops.length === 0) return 0;
+    export const sampleStopsWith = <T,>(stops: { value: T; position: number }[], position: number, lerp: (a: T, b: T, t: number) => T): T => {
         if (stops.length === 1) return stops[0].value;
 
         if (position <= stops[0].position) return stops[0].value;
@@ -424,7 +424,16 @@ export namespace Iteration {
         const range = stops[hi].position - stops[lo].position;
         const localT = range === 0 ? 0 : (position - stops[lo].position) / range;
 
-        return stops[lo].value + localT * (stops[hi].value - stops[lo].value);
+        return lerp(stops[lo].value, stops[hi].value, localT);
+    };
+
+    /**
+     * Numeric piecewise-linear sampler — a thin wrapper over {@link sampleStopsWith}.
+     * Returns 0 for an empty stop set.
+     */
+    export const sampleStops = (stops: { value: number; position: number }[], position: number): number => {
+        if (stops.length === 0) return 0;
+        return sampleStopsWith(stops, position, (a, b, t) => a + t * (b - a));
     };
 
     export const Controls = ({
