@@ -35,6 +35,7 @@ export type AngleIterator2Definition = {
         sequencedOutput: DataTypes.Use<"angle">;
         sampledOutput: DataTypes.Use<"angle">;
         stopsOutput: DataTypes.Use<"array<stop<angle>>">;
+        stopCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: string;
@@ -66,6 +67,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Defin
             sequencedOutput: [],
             sampledOutput: [],
             stopsOutput: [],
+            stopCount: [],
         },
         payload: {
             label: "",
@@ -216,8 +218,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                     Sampled Output
                 </SocketOut>
                 <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
-                    <DecimalInput.SliderInput value={node.payload.samplePosition} onCommit={(samplePosition) => handleUpdate({ samplePosition })} disabled={node.in.samplePosition !== null} min={0} max={100} />
+                    <DecimalInput.SliderInput
+                        value={node.payload.samplePosition}
+                        onCommit={(samplePosition) => handleUpdate({ samplePosition })}
+                        disabled={node.in.samplePosition !== null}
+                        min={0}
+                        max={100}
+                    />
                 </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="stopCount">
+                <SocketOut node={node} socketId={"stopCount"}>
+                    Stop Count
+                </SocketOut>
             </NodeAccordion>
         </TypicalNode>
     );
@@ -389,7 +402,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, outS
     if (outSocket === "sampledOutput") {
         return [...Iteration.SAMPLED_DEPS, "angleTraversal", "continuity", "stops", ...stopSockets];
     }
-    if (outSocket === "stopsOutput") {
+    if (outSocket === "stopsOutput" || outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
@@ -397,7 +410,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, outS
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, inSocket: keyof AngleIterator2Definition["inputs"], _deps: AllDeps): (keyof AngleIterator2Definition["outputs"])[] => {
     if (inSocket === "stops") {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
     }
     if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
         return ["sequencedOutput"];
@@ -406,12 +419,16 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>,
         return ["sampledOutput"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
     }
-    return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+    return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socket: keyof AngleIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "stopCount") {
+        return { kind: "integer", data: `${resolveStops(node, context).length}` };
+    }
+
     if (socket === "stopsOutput") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
         return { kind: "array<stop<angle>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
@@ -445,7 +462,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socke
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<AngleIterator2Definition["inputs"], "sequence" | "angleTraversal" | "continuity" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">>]: SocketTypes.SocketRule;
+    [key in keyof Required<
+        Pick<AngleIterator2Definition["inputs"], "sequence" | "angleTraversal" | "continuity" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">
+    >]: SocketTypes.SocketRule;
 } = {
     ...Iteration.IN_SOCKET_TYPES,
     angleTraversal: { types: ["enum"], mode: "and" },
@@ -457,6 +476,7 @@ const SOCKETTYPES_OUT: { [key in keyof Required<AngleIterator2Definition["output
     sequencedOutput: { types: ["angle"], mode: "and" },
     sampledOutput: { types: ["angle"], mode: "and" },
     stopsOutput: { types: ["array<stop<angle>>"], mode: "and" },
+    stopCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

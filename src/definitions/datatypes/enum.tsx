@@ -66,6 +66,17 @@ export namespace Enum {
             POLAR: { value: 1, label: "Polar" },
         } as const;
 
+        export const gradientSpread = {
+            PAD: { value: 0, label: "Pad" },
+            REFLECT: { value: 1, label: "Reflect" },
+            REPEAT: { value: 2, label: "Repeat" },
+        } as const;
+
+        export const framing = {
+            AUTO: { value: 0, label: "Auto" },
+            MANUAL: { value: 1, label: "Manual" },
+        } as const;
+
         export const pathOp = {
             UNIFY: { value: 0, label: "Unify" },
             INTERSECT: { value: 1, label: "Intersect" },

@@ -298,6 +298,7 @@ export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): Re
             return <PreviewColor value={value.data} />;
         case "path":
         case "enum":
+        case "gradient":
         case "distribution":
         case "shape":
         case "layer":

@@ -7,6 +7,7 @@ export namespace Resolver {
         export const strokeJoin = ["miter", "bevel", "round"] as const;
         export const paintOrder = ["fill stroke markers", "fill markers stroke", "stroke fill markers", "stroke markers fill", "markers fill stroke", "markers stroke fill"] as const;
         export const linearAlign = ["start", "middle", "end"] as const;
+        export const gradientSpread = ["pad", "reflect", "repeat"] as const;
         export const textAnchor = ["hanging", "central", "auto"] as const;
         export const blendMode = [
             "normal",

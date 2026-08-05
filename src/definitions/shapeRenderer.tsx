@@ -1,12 +1,15 @@
 import { createElement, CSSProperties, ReactNode, useId, useMemo } from "react";
-import { Shape, Paint, Stroke, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, ClippedShape, FilteredShape } from "./shapeTypes";
+import { Shape, Paint, Stroke, GradientPaint, Fill, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, ClippedShape, FilteredShape } from "./shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
+
+const isGradient = (v: Fill | undefined): v is GradientPaint => typeof v === "object" && v !== null;
 
 // ─── Paint → SVG attributes ─────────────────────────────────────────────────
 
-const strokeAttrs = (s: Stroke): Record<string, string> => {
-    const attrs: Record<string, string> = {
-        stroke: s.color,
+const strokeAttrs = (s: Stroke): Record<string, string | undefined> => {
+    const attrs: Record<string, string | undefined> = {
+        // Gradient strokes are materialized by paintDefs into a url(#…) reference.
+        stroke: isGradient(s.color) ? undefined : s.color,
         strokeWidth: `${s.width}`,
         strokeLinecap: s.cap,
         strokeLinejoin: s.join,
@@ -23,7 +26,8 @@ const paintAttrs = (paint: Paint): Record<string, string | undefined> => {
     if (paint.stroke) {
         Object.assign(attrs, strokeAttrs(paint.stroke));
     }
-    attrs.fill = paint.fill === null ? "none" : (paint.fill ?? "none");
+    // Gradient fills are materialized by paintDefs into a url(#…) reference.
+    attrs.fill = isGradient(paint.fill) ? undefined : paint.fill === null ? "none" : (paint.fill ?? "none");
     if (paint.paintOrder) {
         attrs.paintOrder = paint.paintOrder;
     }
@@ -31,6 +35,72 @@ const paintAttrs = (paint: Paint): Record<string, string | undefined> => {
         attrs.opacity = `${paint.opacity}`;
     }
     return attrs;
+};
+
+// ─── Gradient rendering ──────────────────────────────────────────────────────
+// Mirrors the marker pattern: emit a <linearGradient>/<radialGradient> def with a
+// generated id and reference it via url(#id) on the host element's fill/stroke.
+
+// Fit (objectBoundingBox): map an angle to the gradient vector's endpoints on the
+// unit box. 0° = left→right; increasing angle rotates clockwise in screen space.
+const gradientVector = (angleDeg: number): { x1: number; y1: number; x2: number; y2: number } => {
+    const rad = (angleDeg * Math.PI) / 180;
+    const dx = Math.cos(rad) / 2;
+    const dy = Math.sin(rad) / 2;
+    return { x1: 0.5 - dx, y1: 0.5 - dy, x2: 0.5 + dx, y2: 0.5 + dy };
+};
+
+const GradientDefElement = ({ def, id }: { def: GradientPaint; id: string }) => {
+    const stops = def.stops.map((s, i) => <stop key={i} offset={s.position} stopColor={s.color} stopOpacity={s.opacity} />);
+
+    if (def.variant === "radial") {
+        if (def.units === "userSpaceOnUse" && def.radial) {
+            const { cx, cy, r, fx, fy, fr } = def.radial;
+            return (
+                <radialGradient id={id} gradientUnits="userSpaceOnUse" cx={cx} cy={cy} r={r} fx={fx} fy={fy} fr={fr} spreadMethod={def.spread}>
+                    {stops}
+                </radialGradient>
+            );
+        }
+        return (
+            <radialGradient id={id} gradientUnits="objectBoundingBox" cx={0.5} cy={0.5} r={0.5} spreadMethod={def.spread}>
+                {stops}
+            </radialGradient>
+        );
+    }
+
+    if (def.units === "userSpaceOnUse" && def.linear) {
+        const { x1, y1, x2, y2 } = def.linear;
+        return (
+            <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={x1} y1={y1} x2={x2} y2={y2} spreadMethod={def.spread}>
+                {stops}
+            </linearGradient>
+        );
+    }
+    const v = gradientVector(def.angle);
+    return (
+        <linearGradient id={id} gradientUnits="objectBoundingBox" x1={v.x1} y1={v.y1} x2={v.x2} y2={v.y2} spreadMethod={def.spread}>
+            {stops}
+        </linearGradient>
+    );
+};
+
+// Gather any gradient defs a paint needs (fill and/or stroke) plus the paint attrs,
+// with fill/stroke rewritten to url(#…) references where a gradient is present.
+const paintDefs = (paint: Paint, id: string): { defs: ReactNode[]; attrs: Record<string, string | undefined> } => {
+    const attrs = paintAttrs(paint);
+    const defs: ReactNode[] = [];
+    if (isGradient(paint.fill)) {
+        const gid = `${id}-fg`;
+        defs.push(<GradientDefElement key="fg" def={paint.fill} id={gid} />);
+        attrs.fill = `url(#${gid})`;
+    }
+    if (paint.stroke && isGradient(paint.stroke.color)) {
+        const gid = `${id}-sg`;
+        defs.push(<GradientDefElement key="sg" def={paint.stroke.color} id={gid} />);
+        attrs.stroke = `url(#${gid})`;
+    }
+    return { defs, attrs };
 };
 
 // ─── Marker rendering ────────────────────────────────────────────────────────
@@ -98,16 +168,17 @@ export const ShapeElement = ({ shape }: { shape: Shape }): ReactNode => {
 const PathElement = ({ shape }: { shape: PathShape }) => {
     const id = useId();
 
-    let defsNode: ReactNode = null;
+    const pd = paintDefs(shape.paint, id);
+    const defs: ReactNode[] = [...pd.defs];
     let markerAttrs: Record<string, string> = {};
 
     if (shape.markers) {
         const m = MarkerDefs({ markers: shape.markers, id });
-        defsNode = <defs>{m.defs}</defs>;
+        defs.push(...m.defs);
         markerAttrs = m.attrs;
     }
 
-    const pa = paintAttrs(shape.paint);
+    const pa = pd.attrs;
     const el = (
         <path
             d={shape.d}
@@ -126,10 +197,10 @@ const PathElement = ({ shape }: { shape: PathShape }) => {
         />
     );
 
-    if (defsNode) {
+    if (defs.length > 0) {
         return (
             <g>
-                {defsNode}
+                <defs>{defs}</defs>
                 {el}
             </g>
         );
@@ -142,21 +213,22 @@ const PathElement = ({ shape }: { shape: PathShape }) => {
 const LineElement = ({ shape }: { shape: LineShape }) => {
     const id = useId();
 
-    let defsNode: ReactNode = null;
+    const pd = paintDefs(shape.paint, id);
+    const defs: ReactNode[] = [...pd.defs];
     let markerAttrs: Record<string, string> = {};
 
     if (shape.markers) {
         const m = MarkerDefs({ markers: shape.markers, id });
-        defsNode = <defs>{m.defs}</defs>;
+        defs.push(...m.defs);
         markerAttrs = m.attrs;
     }
 
-    const el = <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} {...paintAttrs(shape.paint)} {...markerAttrs} transform={shape.transform || undefined} />;
+    const el = <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} {...pd.attrs} {...markerAttrs} transform={shape.transform || undefined} />;
 
-    if (defsNode) {
+    if (defs.length > 0) {
         return (
             <g>
-                {defsNode}
+                <defs>{defs}</defs>
                 {el}
             </g>
         );
@@ -167,7 +239,19 @@ const LineElement = ({ shape }: { shape: LineShape }) => {
 // ─── Rect ────────────────────────────────────────────────────────────────────
 
 const RectElement = ({ shape }: { shape: RectShape }) => {
-    return <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} ry={shape.ry} {...paintAttrs(shape.paint)} transform={shape.transform || undefined} />;
+    const id = useId();
+    const pd = paintDefs(shape.paint, id);
+    const el = <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} ry={shape.ry} {...pd.attrs} transform={shape.transform || undefined} />;
+
+    if (pd.defs.length > 0) {
+        return (
+            <g>
+                <defs>{pd.defs}</defs>
+                {el}
+            </g>
+        );
+    }
+    return el;
 };
 
 // ─── Text ────────────────────────────────────────────────────────────────────
@@ -188,11 +272,14 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
     // supplement it with an inline style, which takes precedence and is honored everywhere.
     const style: CSSProperties | undefined = shape.fontFamily ? { fontFamily: shape.fontFamily } : undefined;
 
+    const pd = paintDefs(shape.paint, id);
+
     if (shape.textPath) {
         const pathId = `${id}-tp`;
         return (
-            <text {...attrs} {...paintAttrs(shape.paint)} style={style} transform={shape.transform || undefined}>
+            <text {...attrs} {...pd.attrs} style={style} transform={shape.transform || undefined}>
                 <defs>
+                    {pd.defs}
                     <path id={pathId} d={shape.textPath.d} />
                 </defs>
                 <textPath href={`#${pathId}`} startOffset={shape.textPath.startOffset}>
@@ -210,8 +297,8 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
     // block as a whole rather than only to the first line.
     const firstDy = shape.dominantBaseline === "central" ? (-(lines.length - 1) / 2) * lineHeight : shape.dominantBaseline === "auto" ? -(lines.length - 1) * lineHeight : 0;
 
-    return (
-        <text {...attrs} {...paintAttrs(shape.paint)} style={style} transform={shape.transform || undefined}>
+    const textEl = (
+        <text {...attrs} {...pd.attrs} style={style} transform={shape.transform || undefined}>
             {lines.map((line, i) => (
                 <tspan key={i} x={0} dy={i === 0 ? firstDy : lineHeight}>
                     {line}
@@ -219,6 +306,16 @@ const TextElement = ({ shape }: { shape: TextShape }) => {
             ))}
         </text>
     );
+
+    if (pd.defs.length > 0) {
+        return (
+            <g>
+                <defs>{pd.defs}</defs>
+                {textEl}
+            </g>
+        );
+    }
+    return textEl;
 };
 
 // ─── Group ───────────────────────────────────────────────────────────────────

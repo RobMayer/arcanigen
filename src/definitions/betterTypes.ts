@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { SVGPath } from "../types";
-import { Shape } from "./shapeTypes";
+import { GradientPaint, Shape } from "./shapeTypes";
 import { EmptyOr } from "../util/misc";
 import { ArcaneGraph } from "../util/structs/arcaneGraph";
 import { Angle } from "./datatypes/angle";
@@ -132,6 +132,8 @@ import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecat
 import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
+import { LinearGradientDefinition, LinearGradientNodeType } from "./nodes/collections/linearGradientNode";
+import { RadialGradientDefinition, RadialGradientNodeType } from "./nodes/collections/radialGradientNode";
 import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/deprecated/floatIteratorNode";
 import { FloatIterator2Definition, FloatIterator2NodeType } from "./nodes/collections/floatIterator2Node";
 import { StopFloatBreakoutDefinition, FloatStopNodeType } from "./nodes/collections/floatStopNode";
@@ -307,6 +309,8 @@ namespace Registries {
         angleIterator2: AngleIterator2Definition;
         angleStop: AngleStopBreakoutDefinition;
         restyle: RestyleDefinition;
+        linearGradient: LinearGradientDefinition;
+        radialGradient: RadialGradientDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
         logicalNot: LogicalNotDefinition;
@@ -391,6 +395,8 @@ namespace Registries {
         angleIterator2: AngleIterator2NodeType,
         angleStop: AngleStopNodeType,
         restyle: RestyleNodeType,
+        linearGradient: LinearGradientNodeType,
+        radialGradient: RadialGradientNodeType,
         float: FloatPrimitiveType,
         string: StringPrimitiveType,
         paragraph: ParagraphPrimitiveType,
@@ -514,6 +520,7 @@ namespace Registries {
         shape: Shape;
         path: SVGPath;
         color: Color.Type;
+        gradient: GradientPaint;
         "tokens<length>": string;
         distribution: { func: number; easing: number; intensity: EmptyOr<NumericString.Type> };
         layer: { shape: Shape | null; enabled: boolean | null; blend: number | null };
@@ -541,6 +548,7 @@ namespace Registries {
         float: "Float",
         integer: "Integer",
         color: "Color",
+        gradient: "Gradient",
         enum: "Enum",
         angle: "Angle",
         boolean: "Boolean",
@@ -721,6 +729,7 @@ export namespace SocketTypes {
     /** Named presets */
     export const LAYER_OR_SHAPE: SocketRule = { types: ["layer", "shape"], mode: "and" };
     export const PATHOP_OR_PATH: SocketRule = { types: ["pathOp", "path"], mode: "and" };
+    export const COLOR_OR_GRADIENT: SocketRule = { types: ["color", "gradient"], mode: "and" };
 
     /** Create a single-type rule (mode is irrelevant for single types) */
     export const of = (kind: DataTypes.Kind): SocketRule => ({ types: [kind], mode: "and" });

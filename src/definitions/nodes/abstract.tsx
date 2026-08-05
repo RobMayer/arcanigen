@@ -16,7 +16,7 @@ import { Resolver } from "../../util/resolver";
 import { EmptyOr } from "../../util/misc";
 import { Dropdown } from "../../components/inputs/Dropdown";
 import { DecimalInput } from "../../components/inputs/DecimalInput";
-import { Paint } from "../shapeTypes";
+import { Fill, Paint } from "../shapeTypes";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
@@ -27,12 +27,14 @@ const MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 export namespace Stylings {
     export const IN_SOCKET_TYPES: { [key in keyof Required<Definition["inputs"]>]: SocketTypes.SocketRule } = {
         strokeWidth: { types: ["length"], mode: "and" },
-        strokeColor: { types: ["color"], mode: "and" },
+        // Inlined rather than SocketTypes.COLOR_OR_GRADIENT: this const initializes at
+        // module load, before betterTypes finishes (import cycle) → TDZ on SocketTypes.
+        strokeColor: { types: ["color", "gradient"], mode: "and" },
         strokeJoin: { types: ["enum"], mode: "and" },
         strokeCap: { types: ["enum"], mode: "and" },
         strokeDash: { types: ["tokens<length>"], mode: "and" },
         strokeDashOffset: { types: ["length"], mode: "and" },
-        fillColor: { types: ["color"], mode: "and" },
+        fillColor: { types: ["color", "gradient"], mode: "and" },
         paintOrder: { types: ["enum"], mode: "and" },
         opacity: { types: ["float", "integer"], mode: "or" },
     };
@@ -141,15 +143,24 @@ export namespace Stylings {
         );
     };
 
+    // Resolve a fill/stroke socket that accepts either a color or a gradient:
+    // a linked gradient wins; otherwise fall back to the (color) payload as hex.
+    const resolvePaintValue = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context, socket: "fillColor" | "strokeColor", fallback: Color.Type | undefined): Fill => {
+        const ev = context.resolve<"color" | "gradient">(node.id, socket);
+        if (ev?.kind === "gradient") return ev.data;
+        const color = (ev?.kind === "color" ? ev.data : undefined) ?? fallback ?? null;
+        return color === null ? null : Color.toHex(color);
+    };
+
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): Paint => {
-        const strokeColor = context.resolve<"color">(node.id, "strokeColor")?.data ?? node.payload.strokeColor;
+        const strokeColor = resolvePaintValue(node, context, "strokeColor", node.payload.strokeColor);
         const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
         const strokeCap = Enum.resolve(context.resolve<"enum">(node.id, "strokeCap")?.data, Enum.Common.strokeCap) ?? node.payload.strokeCap;
         const strokeJoin = Enum.resolve(context.resolve<"enum">(node.id, "strokeJoin")?.data, Enum.Common.strokeJoin) ?? node.payload.strokeJoin ?? 0;
         const strokeDash = context.resolve<"tokens<length>">(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
         const strokeDashOffset = context.resolve<"length">(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
 
-        const fillColor = context.resolve<"color">(node.id, "fillColor")?.data ?? node.payload.fillColor;
+        const fill = resolvePaintValue(node, context, "fillColor", node.payload.fillColor);
 
         const cap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
         const join = Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt";
@@ -170,13 +181,13 @@ export namespace Stylings {
 
         const paint: Paint = {
             paintOrder,
-            fill: (fillColor ?? null) === null ? null : Color.toHex(fillColor!),
+            fill,
             opacity: opacity < 1 ? opacity : undefined,
         };
 
         if (strokeColor !== null) {
             paint.stroke = {
-                color: Color.toHex(strokeColor),
+                color: strokeColor,
                 width: Length.Emptyable.asNumber(strokeWidth) ?? 0,
                 cap,
                 join,

@@ -44,6 +44,7 @@ export type ColorIterator2Definition = {
         sequencedOutput: DataTypes.Use<"color">;
         sampledOutput: DataTypes.Use<"color">;
         stopsOutput: DataTypes.Use<"array<stop<color>>">;
+        stopCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: string;
@@ -75,6 +76,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIterator2Defin
             sequencedOutput: [],
             sampledOutput: [],
             stopsOutput: [],
+            stopCount: [],
         },
         payload: {
             label: "",
@@ -177,6 +179,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
             <SocketOut node={node} socketId={"stopsOutput"}>
                 Stops Output
             </SocketOut>
+
             <SocketIn node={node} socketId={"stops"}>
                 Stops Input
             </SocketIn>
@@ -199,7 +202,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                 </>
             )}
 
-            <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="colorSpace|angleTraversal|mode|reverseSequence|startOffset|endOffset">
+            <NodeAccordion label={"Iteration Options"} nodeId={node.id} socketsIn="colorSpace|angleTraversal|mode|reverseSequence|startOffset|endOffset">
                 <SocketIn node={node} socketId={"colorSpace"} label={"Color Space"}>
                     <Dropdown value={`${node.payload.colorSpace}`} onValue={(v) => handleUpdate({ colorSpace: Number(v) })} disabled={node.in.colorSpace !== null}>
                         {COLOR_SPACE_OPTIONS.map((each) => (
@@ -233,6 +236,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         max={100}
                     />
                 </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="stopCount">
+                <SocketOut node={node} socketId={"stopCount"}>
+                    Stop Count
+                </SocketOut>
             </NodeAccordion>
         </TypicalNode>
     );
@@ -409,7 +417,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, outS
     if (outSocket === "sampledOutput") {
         return [...Iteration.SAMPLED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
     }
-    if (outSocket === "stopsOutput") {
+    if (outSocket === "stopsOutput" || outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
@@ -417,7 +425,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, outS
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>, inSocket: keyof ColorIterator2Definition["inputs"], _deps: AllDeps): (keyof ColorIterator2Definition["outputs"])[] => {
     if (inSocket === "stops") {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
     }
     if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
         return ["sequencedOutput"];
@@ -426,12 +434,16 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>,
         return ["sampledOutput"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
     }
-    return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+    return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socket: keyof ColorIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "stopCount") {
+        return { kind: "integer", data: `${resolveStops(node, context).length}` };
+    }
+
     if (socket === "stopsOutput") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
         return { kind: "array<stop<color>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
@@ -474,6 +486,7 @@ const SOCKETTYPES_OUT: { [key in keyof Required<ColorIterator2Definition["output
     sequencedOutput: { types: ["color"], mode: "and" },
     sampledOutput: { types: ["color"], mode: "and" },
     stopsOutput: { types: ["array<stop<color>>"], mode: "and" },
+    stopCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

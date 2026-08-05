@@ -288,6 +288,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="string"],
     &[data-linktype~="length"],
     &[data-linktype~="color"],
+    &[data-linktype~="gradient"],
     &[data-linktype~="enum"],
     &[data-linktype~="angle"],
     &[data-linktype~="boolean"],

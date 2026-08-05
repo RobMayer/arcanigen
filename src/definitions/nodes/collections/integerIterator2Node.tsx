@@ -26,6 +26,7 @@ export type IntegerIterator2Definition = {
         sequencedOutput: DataTypes.Use<"integer">;
         sampledOutput: DataTypes.Use<"integer">;
         stopsOutput: DataTypes.Use<"array<stop<integer>>">;
+        stopCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: string;
@@ -53,6 +54,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerIterator2Def
             sequencedOutput: [],
             sampledOutput: [],
             stopsOutput: [],
+            stopCount: [],
         },
         payload: {
             label: "",
@@ -180,8 +182,19 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIter
                     Sampled Output
                 </SocketOut>
                 <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
-                    <DecimalInput.SliderInput value={node.payload.samplePosition} onCommit={(samplePosition) => handleUpdate({ samplePosition })} disabled={node.in.samplePosition !== null} min={0} max={100} />
+                    <DecimalInput.SliderInput
+                        value={node.payload.samplePosition}
+                        onCommit={(samplePosition) => handleUpdate({ samplePosition })}
+                        disabled={node.in.samplePosition !== null}
+                        min={0}
+                        max={100}
+                    />
                 </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="stopCount">
+                <SocketOut node={node} socketId={"stopCount"}>
+                    Stop Count
+                </SocketOut>
             </NodeAccordion>
         </TypicalNode>
     );
@@ -337,7 +350,11 @@ const resolveStops = (node: NodeDefinitions.NodeFor<IntegerIterator2Definition>,
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<IntegerIterator2Definition>, outSocket: keyof IntegerIterator2Definition["outputs"], _deps: AllDeps): (keyof IntegerIterator2Definition["inputs"])[] => {
+const dependsOn = (
+    node: NodeDefinitions.NodeFor<IntegerIterator2Definition>,
+    outSocket: keyof IntegerIterator2Definition["outputs"],
+    _deps: AllDeps,
+): (keyof IntegerIterator2Definition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
     if (outSocket === "sequencedOutput") {
         return [...Iteration.SEQUENCED_DEPS, "stops", ...stopSockets];
@@ -345,15 +362,19 @@ const dependsOn = (node: NodeDefinitions.NodeFor<IntegerIterator2Definition>, ou
     if (outSocket === "sampledOutput") {
         return [...Iteration.SAMPLED_DEPS, "stops", ...stopSockets];
     }
-    if (outSocket === "stopsOutput") {
+    if (outSocket === "stopsOutput" || outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerIterator2Definition>, inSocket: keyof IntegerIterator2Definition["inputs"], _deps: AllDeps): (keyof IntegerIterator2Definition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<IntegerIterator2Definition>,
+    inSocket: keyof IntegerIterator2Definition["inputs"],
+    _deps: AllDeps,
+): (keyof IntegerIterator2Definition["outputs"])[] => {
     if (inSocket === "stops") {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
     }
     if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
         return ["sequencedOutput"];
@@ -362,12 +383,16 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerIterator2Definition
         return ["sampledOutput"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
     }
-    return ["sequencedOutput", "sampledOutput", "stopsOutput"];
+    return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<IntegerIterator2Definition>, socket: keyof IntegerIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    if (socket === "stopCount") {
+        return { kind: "integer", data: `${resolveStops(node, context).length}` };
+    }
+
     if (socket === "stopsOutput") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
         return { kind: "array<stop<integer>>", data: stops.map((s) => ({ value: Math.round(s.value), position: s.position, enabled: s.enabled })) };
@@ -403,6 +428,7 @@ const SOCKETTYPES_OUT: { [key in keyof Required<IntegerIterator2Definition["outp
     sequencedOutput: { types: ["integer"], mode: "and" },
     sampledOutput: { types: ["integer"], mode: "and" },
     stopsOutput: { types: ["array<stop<integer>>"], mode: "and" },
+    stopCount: { types: ["integer"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {

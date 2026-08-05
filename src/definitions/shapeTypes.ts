@@ -7,10 +7,31 @@ export type BBox = {
     h: number;
 };
 
+// ─── Gradient paint ──────────────────────────────────────────────────────────
+// A fill or stroke can be a solid hex string OR a gradient. The renderer
+// materializes a GradientPaint into a <linearGradient>/<radialGradient> def
+// with a generated id (same pattern as markers) and references it via url(#id).
+
+export type GradientStop = {
+    color: string; // "#RRGGBB"
+    opacity: number; // 0–1, split off the stop's alpha for renderer/export reliability
+    position: number; // 0–1 along the gradient vector
+};
+
+export type GradientPaint = {
+    variant: "linear" | "radial";
+    units: "objectBoundingBox" | "userSpaceOnUse"; // Auto = objectBoundingBox, Manual = userSpaceOnUse
+    stops: GradientStop[];
+    spread: "pad" | "reflect" | "repeat";
+    angle: number; // Auto linear only: degrees, maps to bounding-box endpoints (0° = L→R)
+    linear?: { x1: number; y1: number; x2: number; y2: number }; // Manual linear: explicit user-space vector
+    radial?: { cx: number; cy: number; r: number; fx: number; fy: number; fr: number }; // Manual radial: explicit user-space circles
+};
+
 // ─── Stroke ──────────────────────────────────────────────────────────────────
 
 export type Stroke = {
-    color: string; // hex: "#RRGGBB" or "#RRGGBBAA"
+    color: string | GradientPaint; // hex ("#RRGGBB"/"#RRGGBBAA") or a gradient
     width: number;
     cap: "butt" | "round" | "square";
     join: "butt" | "round" | "bevel" | "miter";
@@ -19,7 +40,7 @@ export type Stroke = {
 
 // ─── Fill ────────────────────────────────────────────────────────────────────
 
-export type Fill = string | null; // hex color string or null for "none"
+export type Fill = string | GradientPaint | null; // hex color, gradient, or null for "none"
 
 // ─── Paint styling shared by most leaf shapes ────────────────────────────────
 
