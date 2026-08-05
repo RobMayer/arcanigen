@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -264,7 +264,7 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     type: "clamp",
     displayName: "Clamp",
     defaultLabel: "Clamp",
-    iconNode: <Icon shape={NODE_ICONS.round} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.round} />,
     category: "Math",
     evaluate,
     Controls,

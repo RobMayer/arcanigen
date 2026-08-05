@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -599,7 +599,7 @@ export const StarNodeType: NodeTypes.Type<"star", StarDefinition> = {
     type: "star",
     displayName: "Star",
     defaultLabel: "Star",
-    iconNode: <Icon shape={NODE_ICONS.shapeStar} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeStar} />,
     category: "Shapes",
     create,
     dependsOn,

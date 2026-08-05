@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -359,7 +359,7 @@ export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = 
     type: "textPath",
     displayName: "Text Path",
     defaultLabel: "Text Path",
-    iconNode: <Icon shape={NODE_ICONS.textPath} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.textPath} />,
     category: "Shapes",
     create,
     dependsOn,

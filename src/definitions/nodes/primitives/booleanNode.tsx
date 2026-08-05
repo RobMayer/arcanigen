@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -102,7 +102,7 @@ export const BooleanPrimitiveType: NodeTypes.Type<"boolean", BooleanDefinition> 
     type: "boolean",
     displayName: "Boolean",
     defaultLabel: "Boolean",
-    iconNode: <Icon shape={NODE_ICONS.power} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.power} />,
     category: "Primitives",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -142,7 +142,7 @@ export const GreaterOrEqualNodeType: NodeTypes.Type<"greaterOrEqual", GreaterOrE
     type: "greaterOrEqual",
     displayName: "Greater or Equal",
     defaultLabel: "Greater or Equal",
-    iconNode: <Icon shape={NODE_ICONS.greaterEqual} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.greaterEqual} />,
     category: "Logic",
     create,
     dependsOn,

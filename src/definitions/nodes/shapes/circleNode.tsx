@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -177,7 +177,7 @@ export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     type: "circle",
     displayName: "Circle",
     defaultLabel: "Circle",
-    iconNode: <Icon shape={NODE_ICONS.shapeCircle} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeCircle} />,
     category: "Shapes",
     create,
     dependsOn,

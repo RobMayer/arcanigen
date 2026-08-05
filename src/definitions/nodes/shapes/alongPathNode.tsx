@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -237,7 +237,7 @@ export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition>
     type: "alongPath",
     displayName: "Along Path",
     defaultLabel: "Along Path",
-    iconNode: <Icon shape={NODE_ICONS.sequence} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.sequence} />,
     category: "Collections",
     create,
     dependsOn,

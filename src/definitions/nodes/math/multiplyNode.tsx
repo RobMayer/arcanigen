@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -236,7 +236,7 @@ export const MultiplyType: NodeTypes.Type<"multiply", MultiplyDefinition> = {
     type: "multiply",
     displayName: "Multiply",
     defaultLabel: "Multiply",
-    iconNode: <Icon shape={NODE_ICONS.asterisk} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.asterisk} />,
     category: "Math",
     evaluate,
     Controls,

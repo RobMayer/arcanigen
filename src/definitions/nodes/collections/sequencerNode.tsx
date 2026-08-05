@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, Icon } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS, Icon } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -408,7 +408,7 @@ export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition>
     type: "sequencer",
     displayName: "Sequencer",
     defaultLabel: "Sequencer",
-    iconNode: <Icon shape={NODE_ICONS.timeline} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.timeline} />,
     category: "Collections",
     create,
     dependsOn,

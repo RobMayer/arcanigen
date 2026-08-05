@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
@@ -540,7 +540,7 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     type: "layers",
     displayName: "Layers",
     defaultLabel: "Layers",
-    iconNode: <Icon shape={NODE_ICONS.layers} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.layers} />,
     category: "Collections",
     create,
     dependsOn,

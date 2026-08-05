@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -125,7 +125,7 @@ export const ConcatNodeType: NodeTypes.Type<"concat", ConcatDefinition> = {
     type: "concat",
     displayName: "Concatenate",
     defaultLabel: "Concatenate",
-    iconNode: <Icon shape={NODE_ICONS.plus} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.plus} />,
     category: "Math",
     create,
     dependsOn,

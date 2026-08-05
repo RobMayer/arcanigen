@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -74,7 +74,7 @@ export const IsNullishNodeType: NodeTypes.Type<"isNullish", IsNullishDefinition>
     type: "isNullish",
     displayName: "Is Nullish",
     defaultLabel: "Is Nullish",
-    iconNode: <Icon shape={NODE_ICONS.nullish} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.nullish} />,
     category: "Logic",
     create,
     dependsOn,

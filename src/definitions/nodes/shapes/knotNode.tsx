@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -788,7 +788,7 @@ export const KnotNodeType: NodeTypes.Type<"knot", KnotDefinition> = {
     type: "knot",
     displayName: "Knot",
     defaultLabel: "Knot",
-    iconNode: <Icon shape={NODE_ICONS.shapeKnot} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeKnot} />,
     category: "Shapes",
     create,
     dependsOn,

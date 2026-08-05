@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -236,7 +236,7 @@ export const ModuloType: NodeTypes.Type<"modulo", ModuloDefinition> = {
     type: "modulo",
     displayName: "Modulo",
     defaultLabel: "Modulo",
-    iconNode: <Icon shape={NODE_ICONS.percent} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.percent} />,
     category: "Math",
     evaluate,
     Controls,

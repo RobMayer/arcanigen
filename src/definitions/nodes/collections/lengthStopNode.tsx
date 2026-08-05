@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -127,7 +127,7 @@ export const LengthStopNodeType: NodeTypes.Type<"lengthStop", LengthStopBreakout
     type: "lengthStop",
     displayName: "Length Stop",
     defaultLabel: "Length Stop",
-    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.stopOf} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
     category: "Collections",
     create,
     dependsOn,

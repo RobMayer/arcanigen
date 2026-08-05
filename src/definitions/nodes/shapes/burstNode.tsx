@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -452,7 +452,7 @@ export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
     type: "burst",
     displayName: "Burst",
     defaultLabel: "Burst",
-    iconNode: <Icon shape={NODE_ICONS.shapeBurst} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeBurst} />,
     category: "Shapes",
     create,
     dependsOn,

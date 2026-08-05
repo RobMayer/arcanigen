@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -122,7 +122,7 @@ export const StringInputType: NodeTypes.Type<"stringInput", StringInputDefinitio
     type: "stringInput",
     displayName: "String Input",
     defaultLabel: "Input",
-    iconNode: <Icon shape={NODE_ICONS.text} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowTo.RightArc} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.text} directionIcon={ICONS.ArrowTo.RightArc} />,
     category: "Inputs",
     evaluate,
     Controls,

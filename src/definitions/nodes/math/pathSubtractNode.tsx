@@ -6,7 +6,7 @@ import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
 import { makeCanInterject, makeOnInterject } from "./numericMath";
 
@@ -116,7 +116,7 @@ export const PathSubtractNodeType: NodeTypes.Type<"pathSubtract", PathSubtractDe
     type: "pathSubtract",
     displayName: "Path Subtract",
     defaultLabel: "Path Subtract",
-    iconNode: <Icon shape={NODE_ICONS.pathSubtract} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.pathSubtract} />,
     category: "Math",
     create,
     dependsOn,

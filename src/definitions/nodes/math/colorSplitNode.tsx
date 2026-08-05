@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -543,7 +543,7 @@ export const ColorSplitNodeType: NodeTypes.Type<"colorSplit", ColorSplitDefiniti
     type: "colorSplit",
     displayName: "Color Split",
     defaultLabel: "Color Split",
-    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"circle"} layer={NODE_ICONS.split} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.split} />,
     category: "Math",
     evaluate,
     Controls,

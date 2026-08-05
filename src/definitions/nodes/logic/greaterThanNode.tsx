@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -138,7 +138,7 @@ export const GreaterThanNodeType: NodeTypes.Type<"greaterThan", GreaterThanDefin
     type: "greaterThan",
     displayName: "Greater Than",
     defaultLabel: "Greater Than",
-    iconNode: <Icon shape={NODE_ICONS.greater} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.greater} />,
     category: "Logic",
     create,
     dependsOn,

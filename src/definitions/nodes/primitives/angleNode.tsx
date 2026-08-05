@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -118,7 +118,7 @@ export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     type: "angle",
     displayName: "Angle",
     defaultLabel: "Angle",
-    iconNode: <Icon shape={NODE_ICONS.angle} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.angle} />,
     category: "Primitives",
     evaluate,
     Controls,

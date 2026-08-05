@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -131,7 +131,7 @@ export const PathOpComposeNodeType: NodeTypes.Type<"pathOpCompose", PathOpCompos
     type: "pathOpCompose",
     displayName: "Compose Path Op",
     defaultLabel: "Compose Path Op",
-    iconNode: <Icon shape={NODE_ICONS.combine} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.joinOf} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.combine} modifierIcon={NODE_ICONS.modifiers.joinOf} />,
     category: "Collections",
     create,
     dependsOn,

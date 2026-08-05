@@ -5,7 +5,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
 import { makeCanInterject, makeOnInterject } from "./numericMath";
 
@@ -97,7 +97,7 @@ export const PathIntersectNodeType: NodeTypes.Type<"pathIntersect", PathIntersec
     type: "pathIntersect",
     displayName: "Path Intersect",
     defaultLabel: "Path Intersect",
-    iconNode: <Icon shape={NODE_ICONS.pathIntersect} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.pathIntersect} />,
     category: "Math",
     create,
     dependsOn,

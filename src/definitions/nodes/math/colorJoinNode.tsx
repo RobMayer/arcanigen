@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -561,7 +561,7 @@ export const ColorJoinNodeType: NodeTypes.Type<"colorJoin", ColorJoinDefinition>
     type: "colorJoin",
     displayName: "Color Join",
     defaultLabel: "Color Join",
-    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"circle"} layer={NODE_ICONS.merge} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.merge} />,
     category: "Math",
     evaluate,
     Controls,

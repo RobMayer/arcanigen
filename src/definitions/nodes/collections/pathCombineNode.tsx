@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
@@ -454,7 +454,7 @@ export const PathCombineNodeType: NodeTypes.Type<"pathCombine", PathCombineDefin
     type: "pathCombine",
     displayName: "Path Combine",
     defaultLabel: "Path Combine",
-    iconNode: <Icon shape={NODE_ICONS.combine} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.combine} />,
     category: "Collections",
     create,
     dependsOn,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -205,7 +205,7 @@ export const BetweenNodeType: NodeTypes.Type<"between", BetweenDefinition> = {
     type: "between",
     displayName: "Between",
     defaultLabel: "Between",
-    iconNode: <Icon shape={NODE_ICONS.tilde} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.tilde} />,
     category: "Logic",
     create,
     dependsOn,

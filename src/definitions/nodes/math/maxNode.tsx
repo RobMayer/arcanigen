@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -226,7 +226,7 @@ export const MaxType: NodeTypes.Type<"max", MaxDefinition> = {
     type: "max",
     displayName: "Max",
     defaultLabel: "Max",
-    iconNode: <Icon shape={NODE_ICONS.max} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.max} />,
     category: "Math",
     evaluate,
     Controls,

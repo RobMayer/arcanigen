@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -128,7 +128,7 @@ export const AngleStopNodeType: NodeTypes.Type<"angleStop", AngleStopBreakoutDef
     type: "angleStop",
     displayName: "Angle Stop",
     defaultLabel: "Angle Stop",
-    iconNode: <Icon shape={NODE_ICONS.angle} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.stopOf} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
     category: "Collections",
     create,
     dependsOn,

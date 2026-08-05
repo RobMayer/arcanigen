@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -138,7 +138,7 @@ export const LessOrEqualNodeType: NodeTypes.Type<"lessOrEqual", LessOrEqualDefin
     type: "lessOrEqual",
     displayName: "Less or Equal",
     defaultLabel: "Less or Equal",
-    iconNode: <Icon shape={NODE_ICONS.lessEqual} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.lessEqual} />,
     category: "Logic",
     create,
     dependsOn,

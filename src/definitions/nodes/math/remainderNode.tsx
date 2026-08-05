@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -236,7 +236,7 @@ export const RemainderType: NodeTypes.Type<"remainder", RemainderDefinition> = {
     type: "remainder",
     displayName: "Remainder",
     defaultLabel: "Remainder",
-    iconNode: <Icon shape={NODE_ICONS.percent} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.percent} />,
     category: "Math",
     evaluate,
     Controls,

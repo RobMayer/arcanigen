@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -313,7 +313,7 @@ export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", Tokenize
     type: "tokenizerLength",
     displayName: "Tokenzer (Length)",
     defaultLabel: "Tokenzer (Length)",
-    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.tokenizerFor} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.tokenizerFor} />,
     category: "Collections",
     create,
     dependsOn,

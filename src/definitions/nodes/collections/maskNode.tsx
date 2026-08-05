@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -161,7 +161,7 @@ export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     type: "mask",
     displayName: "Mask",
     defaultLabel: "Mask",
-    iconNode: <Icon shape={NODE_ICONS.mask} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.mask} />,
     category: "Collections",
     create,
     dependsOn,

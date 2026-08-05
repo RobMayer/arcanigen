@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NODE_ICONS, NodeIcon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -631,7 +631,7 @@ export const LinearGradientNodeType: NodeTypes.Type<"linearGradient", LinearGrad
     type: "linearGradient",
     displayName: "Linear Gradient",
     defaultLabel: "Linear Gradient",
-    iconNode: <Icon shape={NODE_ICONS.linearGradient} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.linearGradient} />,
     category: "Collections",
     create,
     dependsOn,

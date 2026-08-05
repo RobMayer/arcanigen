@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -180,7 +180,7 @@ export const AbsType: NodeTypes.Type<"abs", AbsDefinition> = {
     type: "abs",
     displayName: "Abs",
     defaultLabel: "Abs",
-    iconNode: <Icon shape={NODE_ICONS.abs} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.abs} />,
     category: "Math",
     evaluate,
     Controls,

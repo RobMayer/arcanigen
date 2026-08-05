@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -236,7 +236,7 @@ export const SubtractType: NodeTypes.Type<"subtract", SubtractDefinition> = {
     type: "subtract",
     displayName: "Subtract",
     defaultLabel: "Subtract",
-    iconNode: <Icon shape={NODE_ICONS.subtract} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.subtract} />,
     category: "Math",
     evaluate,
     Controls,

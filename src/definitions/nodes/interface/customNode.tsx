@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS, ICONS, Icon } from "../../../components/Icon";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Resolver } from "../../../util/resolver";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
@@ -495,7 +495,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     type: "custom",
     displayName: "Custom",
     defaultLabel: "Custom",
-    iconNode: <Icon shape={NODE_ICONS.graph} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.graph} />,
     category: "Meta",
     evaluate,
     Controls,

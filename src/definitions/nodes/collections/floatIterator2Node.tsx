@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NODE_ICONS, NodeIcon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -452,7 +452,7 @@ export const FloatIterator2NodeType: NodeTypes.Type<"floatIterator2", FloatItera
     type: "floatIterator2",
     displayName: "Float Iterator",
     defaultLabel: "Float Iterator",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.loop} />,
     category: "Collections",
     create,
     dependsOn,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NODE_ICONS, NodeIcon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -390,7 +390,7 @@ export const ColorStopArrayNodeType: NodeTypes.Type<"colorStopArray", ColorStopA
     type: "colorStopArray",
     displayName: "Color Stop Array",
     defaultLabel: "Color Stop Array",
-    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.arrayOfStopOf} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.modifiers.arrayOfStopOf} />,
     category: "Collections",
     create,
     dependsOn,

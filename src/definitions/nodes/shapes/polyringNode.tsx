@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -714,7 +714,7 @@ export const PolyringNodeType: NodeTypes.Type<"polyring", PolyringDefinition> = 
     type: "polyring",
     displayName: "Polyring",
     defaultLabel: "Polyring",
-    iconNode: <Icon shape={NODE_ICONS.shapePolyring} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapePolyring} />,
     category: "Shapes",
     create,
     dependsOn,

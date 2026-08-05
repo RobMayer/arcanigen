@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -168,7 +168,7 @@ export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefin
     type: "brushEffect",
     displayName: "Brush Stroke",
     defaultLabel: "Brush Stroke",
-    iconNode: <Icon shape={NODE_ICONS.brush} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.brush} />,
     category: "Effects",
     create,
     dependsOn,

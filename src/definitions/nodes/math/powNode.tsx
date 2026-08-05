@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -206,7 +206,7 @@ export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     type: "pow",
     displayName: "Pow",
     defaultLabel: "Pow",
-    iconNode: <Icon shape={NODE_ICONS.pow} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.pow} />,
     category: "Math",
     evaluate,
     Controls,

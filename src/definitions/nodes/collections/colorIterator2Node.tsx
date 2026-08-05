@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NODE_ICONS, NodeIcon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -509,7 +509,7 @@ export const ColorIterator2NodeType: NodeTypes.Type<"colorIterator2", ColorItera
     type: "colorIterator2",
     displayName: "Color Iterator",
     defaultLabel: "Color Iterator",
-    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.loop} />,
     category: "Collections",
     create,
     dependsOn,

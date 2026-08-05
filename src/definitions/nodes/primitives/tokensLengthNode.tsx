@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -101,7 +101,7 @@ export const TokensLengthPrimitiveType: NodeTypes.Type<"tokensLength", TokensLen
     type: "tokensLength",
     displayName: "Tokens (Length)",
     defaultLabel: "Tokens (Length)",
-    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.tokenOf} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.tokenOf} />,
     category: "Primitives",
     evaluate,
     Controls,

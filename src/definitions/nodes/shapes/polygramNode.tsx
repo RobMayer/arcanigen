@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -526,7 +526,7 @@ export const PolygramNodeType: NodeTypes.Type<"polygram", PolygramDefinition> = 
     type: "polygram",
     displayName: "Polygram",
     defaultLabel: "Polygram",
-    iconNode: <Icon shape={NODE_ICONS.shapePolygram} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapePolygram} />,
     category: "Shapes",
     create,
     dependsOn,

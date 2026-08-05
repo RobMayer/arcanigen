@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -180,7 +180,7 @@ export const ReciprocalType: NodeTypes.Type<"reciprocal", ReciprocalDefinition> 
     type: "reciprocal",
     displayName: "Reciprocal",
     defaultLabel: "Reciprocal",
-    iconNode: <Icon shape={NODE_ICONS.divide} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.divide} />,
     category: "Math",
     evaluate,
     Controls,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -180,7 +180,7 @@ export const NegateType: NodeTypes.Type<"negate", NegateDefinition> = {
     type: "negate",
     displayName: "Negate",
     defaultLabel: "Negate",
-    iconNode: <Icon shape={NODE_ICONS.subtract} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.subtract} />,
     category: "Math",
     evaluate,
     Controls,

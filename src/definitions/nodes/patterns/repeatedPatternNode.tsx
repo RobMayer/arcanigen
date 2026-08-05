@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
@@ -178,7 +178,7 @@ export const RepeatedPatternNodeType: NodeTypes.Type<"repeatedPattern", Repeated
     type: "repeatedPattern",
     displayName: "Repeated Pattern",
     defaultLabel: "Repeated Pattern",
-    iconNode: <Icon shape={NODE_ICONS.loop} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.patternFor} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.loop} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
     category: "Collections",
     create,
     dependsOn,

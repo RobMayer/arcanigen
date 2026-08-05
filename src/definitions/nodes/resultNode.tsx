@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../components/Icon";
+import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
 import { CSSProperties, FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -169,7 +169,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
                         <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
                     </ActionButton.Lite>
                     <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
-                        <Icon shape={NODE_ICONS.result} color={"var(--icon-flavour)"} />
+                        <NodeIcon shape={NODE_ICONS.result} />
                         {isEditing ? (
                             <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Result"} />
                         ) : (
@@ -238,7 +238,7 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     type: "result",
     displayName: "Result",
     defaultLabel: "Result",
-    iconNode: <Icon shape={NODE_ICONS.result} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.result} />,
     category: "Result",
     create,
     dependsOn,

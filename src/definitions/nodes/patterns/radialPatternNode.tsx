@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -336,7 +336,7 @@ export const RadialPatternNodeType: NodeTypes.Type<"radialPattern", RadialPatter
     type: "radialPattern",
     displayName: "Radial Pattern",
     defaultLabel: "Radial Pattern",
-    iconNode: <Icon shape={NODE_ICONS.shapeArc} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.patternFor} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
     category: "Collections",
     create,
     dependsOn,

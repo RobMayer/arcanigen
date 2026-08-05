@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NODE_ICONS, NodeIcon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -500,7 +500,7 @@ export const AngleIterator2NodeType: NodeTypes.Type<"angleIterator2", AngleItera
     type: "angleIterator2",
     displayName: "Angle Iterator",
     defaultLabel: "Angle Iterator",
-    iconNode: <Icon shape={NODE_ICONS.angle} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.loop} />,
     category: "Collections",
     create,
     dependsOn,

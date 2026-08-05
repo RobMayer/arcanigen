@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -331,7 +331,7 @@ export const TransformType: NodeTypes.Type<"transform", TransformDefinition> = {
     type: "transform",
     displayName: "Transform",
     defaultLabel: "Transform",
-    iconNode: <Icon shape={NODE_ICONS.dolly} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.dolly} />,
     category: "Collections",
     evaluate,
     Controls,

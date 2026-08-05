@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -101,7 +101,7 @@ export const ArccosType: NodeTypes.Type<"arccos", ArccosDefinition> = {
     type: "arccos",
     displayName: "Arccos",
     defaultLabel: "Arccos",
-    iconNode: <Icon shape={NODE_ICONS.sine} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
     category: "Math",
     evaluate,
     Controls,

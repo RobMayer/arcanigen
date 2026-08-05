@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -100,7 +100,7 @@ export const ColorPrimitiveType: NodeTypes.Type<"color", ColorDefinition> = {
     type: "color",
     displayName: "Color",
     defaultLabel: "Color",
-    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.color} />,
     category: "Primitives",
     evaluate,
     Controls,

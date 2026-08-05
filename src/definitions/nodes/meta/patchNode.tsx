@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { CSSProperties, DragEvent, MouseEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -438,7 +438,7 @@ export const PatchNodeType: NodeTypes.Type<"patch", PatchDefinition> = {
     type: "patch",
     displayName: "Patch",
     defaultLabel: "Patch",
-    iconNode: <Icon shape={NODE_ICONS.patch} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.patch} />,
     category: "Meta",
     create,
     evaluate,

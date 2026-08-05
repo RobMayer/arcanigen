@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -218,7 +218,7 @@ export const RoundType: NodeTypes.Type<"round", RoundDefinition> = {
     type: "round",
     displayName: "Round",
     defaultLabel: "Round",
-    iconNode: <Icon shape={NODE_ICONS.round} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.round} />,
     category: "Math",
     evaluate,
     Controls,

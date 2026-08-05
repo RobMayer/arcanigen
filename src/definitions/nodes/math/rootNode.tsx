@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -207,7 +207,7 @@ export const RootType: NodeTypes.Type<"root", RootDefinition> = {
     type: "root",
     displayName: "Root",
     defaultLabel: "Root",
-    iconNode: <Icon shape={NODE_ICONS.root} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.root} />,
     category: "Math",
     evaluate,
     Controls,

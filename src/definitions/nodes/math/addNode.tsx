@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -249,7 +249,7 @@ export const AddType: NodeTypes.Type<"add", AddDefinition> = {
     type: "add",
     displayName: "Add",
     defaultLabel: "Add",
-    iconNode: <Icon shape={NODE_ICONS.plus} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.plus} />,
     category: "Math",
     evaluate,
     Controls,

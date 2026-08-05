@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -309,7 +309,7 @@ export const RingNodeType: NodeTypes.Type<"ring", RingDefinition> = {
     type: "ring",
     displayName: "Ring",
     defaultLabel: "Ring",
-    iconNode: <Icon shape={NODE_ICONS.shapeRing} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeRing} />,
     category: "Shapes",
     create,
     dependsOn,

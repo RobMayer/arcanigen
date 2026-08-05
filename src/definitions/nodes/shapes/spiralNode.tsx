@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -418,7 +418,7 @@ export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     type: "spiral",
     displayName: "Spiral",
     defaultLabel: "Spiral",
-    iconNode: <Icon shape={NODE_ICONS.shapeSpiral} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeSpiral} />,
     category: "Shapes",
     create,
     dependsOn,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -181,7 +181,7 @@ export const SubstringNodeType: NodeTypes.Type<"substring", SubstringDefinition>
     type: "substring",
     displayName: "Substring",
     defaultLabel: "Substring",
-    iconNode: <Icon shape={NODE_ICONS.substring} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.substring} />,
     category: "Math",
     create,
     dependsOn,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NODE_ICONS, NodeIcon } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -667,7 +667,7 @@ export const RadialGradientNodeType: NodeTypes.Type<"radialGradient", RadialGrad
     type: "radialGradient",
     displayName: "Radial Gradient",
     defaultLabel: "Radial Gradient",
-    iconNode: <Icon shape={NODE_ICONS.radialGradient} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.radialGradient} />,
     category: "Collections",
     create,
     dependsOn,

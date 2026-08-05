@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -72,7 +72,7 @@ export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefiniti
     type: "logicalNot",
     displayName: "Not",
     defaultLabel: "Not",
-    iconNode: <Icon shape={NODE_ICONS.logicalNot} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.logicalNot} />,
     category: "Logic",
     create,
     dependsOn,

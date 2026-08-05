@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { CSSProperties, FocusEvent, KeyboardEvent, MouseEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -207,7 +207,7 @@ export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
     type: "notes",
     displayName: "Note",
     defaultLabel: "Note",
-    iconNode: <Icon shape={NODE_ICONS.note} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.note} />,
     category: "Meta",
     evaluate,
     Controls,

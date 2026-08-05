@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -267,7 +267,7 @@ export const GlowEffectNodeType: NodeTypes.Type<"glowEffect", GlowEffectDefiniti
     type: "glowEffect",
     displayName: "Glow",
     defaultLabel: "Glow",
-    iconNode: <Icon shape={NODE_ICONS.eclipse} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.eclipse} />,
     category: "Effects",
     create,
     dependsOn,

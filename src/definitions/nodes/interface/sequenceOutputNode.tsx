@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -103,7 +103,7 @@ export const SequenceOutputType: NodeTypes.Type<"sequenceOutput", SequenceOutput
     type: "sequenceOutput",
     displayName: "Sequence Output",
     defaultLabel: "Output",
-    iconNode: <Icon shape={NODE_ICONS.timeline} color={"var(--icon-flavour)"} cutout={"scoop"} layer={ICONS.ArrowFrom.RightArc} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.timeline} directionIcon={ICONS.ArrowFrom.RightArc} />,
     category: "Outputs",
     evaluate,
     Controls,

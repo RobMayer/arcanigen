@@ -5,7 +5,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
 import { makeCanInterject, makeOnInterject } from "./numericMath";
 
@@ -88,7 +88,7 @@ export const PathHealNodeType: NodeTypes.Type<"pathHeal", PathHealNodeDefinition
     type: "pathHeal",
     displayName: "Path Heal",
     defaultLabel: "Path Heal",
-    iconNode: <Icon shape={NODE_ICONS.pathHeal} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.pathHeal} />,
     category: "Math",
     create,
     dependsOn,

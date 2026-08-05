@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -90,7 +90,7 @@ export const RandomSeedNodeType: NodeTypes.Type<"randomSeed", RandomSeedDefiniti
     type: "randomSeed",
     displayName: "Random Seed",
     defaultLabel: "Random Seed",
-    iconNode: <Icon shape={NODE_ICONS.random} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.random} />,
     category: "Primitives",
     evaluate,
     Controls,

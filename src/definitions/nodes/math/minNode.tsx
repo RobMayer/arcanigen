@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
@@ -226,7 +226,7 @@ export const MinType: NodeTypes.Type<"min", MinDefinition> = {
     type: "min",
     displayName: "Min",
     defaultLabel: "Min",
-    iconNode: <Icon shape={NODE_ICONS.min} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.min} />,
     category: "Math",
     evaluate,
     Controls,

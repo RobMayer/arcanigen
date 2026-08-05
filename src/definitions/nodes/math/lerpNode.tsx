@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -251,7 +251,7 @@ export const LerpType: NodeTypes.Type<"lerp", LerpDefinition> = {
     type: "lerp",
     displayName: "Lerp",
     defaultLabel: "Lerp",
-    iconNode: <Icon shape={NODE_ICONS.range} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.range} />,
     category: "Math",
     evaluate,
     Controls,

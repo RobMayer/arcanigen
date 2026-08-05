@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -98,7 +98,7 @@ export const TanType: NodeTypes.Type<"tan", TanDefinition> = {
     type: "tan",
     displayName: "Tan",
     defaultLabel: "Tan",
-    iconNode: <Icon shape={NODE_ICONS.sine} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
     category: "Math",
     evaluate,
     Controls,

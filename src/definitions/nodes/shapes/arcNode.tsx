@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
@@ -365,7 +365,7 @@ export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     type: "arc",
     displayName: "Arc",
     defaultLabel: "Arc",
-    iconNode: <Icon shape={NODE_ICONS.shapeArc} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} />,
     category: "Shapes",
     create,
     dependsOn,

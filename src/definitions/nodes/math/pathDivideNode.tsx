@@ -6,7 +6,7 @@ import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
 import { makeCanInterject, makeOnInterject } from "./numericMath";
 
@@ -116,7 +116,7 @@ export const PathDivideNodeType: NodeTypes.Type<"pathDivide", PathDivideDefiniti
     type: "pathDivide",
     displayName: "Path Divide",
     defaultLabel: "Path Divide",
-    iconNode: <Icon shape={NODE_ICONS.pathDivide} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.pathDivide} />,
     category: "Math",
     create,
     dependsOn,

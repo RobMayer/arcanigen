@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -103,7 +103,7 @@ export const ParagraphPrimitiveType: NodeTypes.Type<"paragraph", ParagraphDefini
     type: "paragraph",
     displayName: "Paragraph",
     defaultLabel: "Paragraph",
-    iconNode: <Icon shape={NODE_ICONS.paragraph} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.paragraph} />,
     category: "Primitives",
     evaluate,
     Controls,

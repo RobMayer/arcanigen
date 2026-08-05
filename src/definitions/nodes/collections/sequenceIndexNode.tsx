@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -109,7 +109,7 @@ export const SequenceIndexNodeType: NodeTypes.Type<"sequenceIndex", SequenceInde
     type: "sequenceIndex",
     displayName: "Sequence Index",
     defaultLabel: "Sequence Index",
-    iconNode: <Icon shape={NODE_ICONS.timeline} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.num} layerColor="#fff" />,
+    iconNode: <NodeIcon shape={NODE_ICONS.timeline} modifierIcon={NODE_ICONS.num} />,
     category: "Collections",
     create,
     dependsOn,

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
@@ -392,7 +392,7 @@ export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     type: "restyle",
     displayName: "Re-style",
     defaultLabel: "Re-style",
-    iconNode: <Icon shape={NODE_ICONS.restyle} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.restyle} />,
     category: "Collections",
     create,
     dependsOn,

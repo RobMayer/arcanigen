@@ -5,7 +5,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { Icon, ICONS } from "../../../components/Icon";
+import { NodeIcon, ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
 import { makeCanInterject, makeOnInterject } from "./numericMath";
 
@@ -95,7 +95,7 @@ export const ReversePathNodeType: NodeTypes.Type<"reversePath", ReversePathDefin
     type: "reversePath",
     displayName: "Reverse Path",
     defaultLabel: "Reverse Path",
-    iconNode: <Icon shape={ICONS.Media.FastBackward} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={ICONS.Media.FastBackward} />,
     category: "Math",
     create,
     dependsOn,

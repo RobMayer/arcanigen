@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -82,7 +82,7 @@ export const IntegerToEnumNodeType: NodeTypes.Type<"integerToEnum", IntegerToEnu
     type: "integerToEnum",
     displayName: "Integer to Enum",
     defaultLabel: "Int → Enum",
-    iconNode: <Icon shape={NODE_ICONS.convert} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.convert} />,
     category: "Math",
     create,
     dependsOn,

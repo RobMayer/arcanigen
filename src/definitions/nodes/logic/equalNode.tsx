@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -138,7 +138,7 @@ export const EqualNodeType: NodeTypes.Type<"equal", EqualDefinition> = {
     type: "equal",
     displayName: "Equal",
     defaultLabel: "Equal",
-    iconNode: <Icon shape={NODE_ICONS.equal} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.equal} />,
     category: "Logic",
     create,
     dependsOn,

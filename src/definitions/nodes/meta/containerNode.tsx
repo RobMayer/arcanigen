@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { CSSProperties, FocusEvent, KeyboardEvent, MouseEvent, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -379,7 +379,7 @@ export const ContainerNodeType: NodeTypes.Type<"container", ContainerDefinition>
     type: "container",
     displayName: "Container",
     defaultLabel: "Container",
-    iconNode: <Icon shape={NODE_ICONS.group} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.group} />,
     category: "Meta",
     evaluate,
     Controls,

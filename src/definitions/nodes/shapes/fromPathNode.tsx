@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
@@ -157,7 +157,7 @@ export const FromPathNodeType: NodeTypes.Type<"fromPath", FromPathDefinition> = 
     type: "fromPath",
     displayName: "From Path",
     defaultLabel: "From Path",
-    iconNode: <Icon shape={NODE_ICONS.path} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.path} />,
     category: "Shapes",
     create,
     dependsOn,

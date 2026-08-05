@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -139,7 +139,7 @@ export const ClipNodeType: NodeTypes.Type<"clip", ClipDefinition> = {
     type: "clip",
     displayName: "Clip",
     defaultLabel: "Clip",
-    iconNode: <Icon shape={NODE_ICONS.clip} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.clip} />,
     category: "Collections",
     create,
     dependsOn,

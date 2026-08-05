@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -206,7 +206,7 @@ export const WithinNodeType: NodeTypes.Type<"within", WithinDefinition> = {
     type: "within",
     displayName: "Within",
     defaultLabel: "Within",
-    iconNode: <Icon shape={NODE_ICONS.plusMinus} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.plusMinus} />,
     category: "Logic",
     create,
     dependsOn,

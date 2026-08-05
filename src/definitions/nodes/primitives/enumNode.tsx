@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, ICONS, Icon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
@@ -161,7 +161,7 @@ export const EnumPrimitiveType: NodeTypes.Type<"enum", EnumDefinition> = {
     type: "enum",
     displayName: "Enum",
     defaultLabel: "Enum",
-    iconNode: <Icon shape={NODE_ICONS.list} color={"var(--icon-flavour)"} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.list} />,
     category: "Primitives",
     evaluate,
     Controls,
