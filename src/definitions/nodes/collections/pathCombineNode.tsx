@@ -22,6 +22,7 @@ export type PathCombineDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"path">;
+        pathOpArray: DataTypes.Use<"array<pathOp>">;
         operationCount: DataTypes.Use<"integer">;
         enabledCount: DataTypes.Use<"integer">;
     };
@@ -46,6 +47,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathCombineDefiniti
         },
         out: {
             output: [],
+            pathOpArray: [],
             operationCount: [],
             enabledCount: [],
         },
@@ -151,7 +153,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
                 </>
             )}
             <hr />
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="operationCount|enabledCount">
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pathOpArray|operationCount|enabledCount">
+                <SocketOut node={node} socketId={"pathOpArray"}>
+                    Path Op Array
+                </SocketOut>
                 <SocketOut node={node} socketId={"operationCount"}>
                     Operation Count
                 </SocketOut>
@@ -317,7 +322,7 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"pathCombine", PathCombineD
 };
 
 const dependsOn = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, outSocket: keyof PathCombineDefinition["outputs"], _deps: AllDeps): (keyof PathCombineDefinition["inputs"])[] => {
-    if (outSocket === "output") {
+    if (outSocket === "output" || outSocket === "pathOpArray") {
         return ["pathOps", ...(node.payload.paths.map((p) => p.socket) as `path_${string}`[])];
     }
     // Counts read the supersocket when connected, else the payload rows.
@@ -326,10 +331,10 @@ const dependsOn = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, outSock
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, inSocket: keyof PathCombineDefinition["inputs"], _deps: AllDeps): (keyof PathCombineDefinition["outputs"])[] => {
     if (inSocket === "pathOps") {
-        return ["output", "operationCount", "enabledCount"];
+        return ["output", "pathOpArray", "operationCount", "enabledCount"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("path_")) {
-        return ["output"];
+        return ["output", "pathOpArray"];
     }
     return [];
 };
@@ -343,6 +348,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
             kind: "integer",
             data: `${socket === "enabledCount" ? enabled : Math.max(0, enabled - 1)}`,
         };
+    }
+
+    if (socket === "pathOpArray") {
+        const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
+        if (supersocketEval) {
+            return { kind: "array<pathOp>", data: supersocketEval.data };
+        }
+        const pathOpData: { path: DataTypes.TypeOf<DataTypes.Use<"path">> | null; enabled: boolean | null; op: number | null }[] = [];
+        for (const row of node.payload.paths) {
+            const resolved = context.resolve<"pathOp">(node.id, row.socket) as DataTypes.AnyEval | null;
+            if (resolved && resolved.kind === "pathOp") {
+                pathOpData.push({ path: resolved.data.path, enabled: resolved.data.enabled ?? row.enabled, op: resolved.data.op ?? row.op });
+            } else if (resolved && resolved.kind === "path") {
+                pathOpData.push({ path: resolved.data, enabled: row.enabled, op: row.op });
+            } else {
+                pathOpData.push({ path: null, enabled: row.enabled, op: row.op });
+            }
+        }
+        return { kind: "array<pathOp>", data: pathOpData };
     }
 
     if (socket !== "output") return null;
@@ -392,6 +416,9 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, so
     if (side === "out") {
         if (socketId === "operationCount" || socketId === "enabledCount") {
             return { types: ["integer"], mode: "and" };
+        }
+        if (socketId === "pathOpArray") {
+            return { types: ["array<pathOp>"], mode: "and" };
         }
         return { types: ["path"], mode: "and" };
     }

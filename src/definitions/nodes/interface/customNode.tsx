@@ -437,6 +437,30 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
     arrayLayerOutput: { types: ["array<layer>"], mode: "and" },
     arrayPathOpInput: { types: ["array<pathOp>"], mode: "and" },
     arrayPathOpOutput: { types: ["array<pathOp>"], mode: "and" },
+    layerInput: { types: ["layer"], mode: "and" },
+    layerOutput: { types: ["layer"], mode: "and" },
+    pathOpInput: { types: ["pathOp"], mode: "and" },
+    pathOpOutput: { types: ["pathOp"], mode: "and" },
+    stopColorInput: { types: ["stop<color>"], mode: "and" },
+    stopColorOutput: { types: ["stop<color>"], mode: "and" },
+    arrayStopColorInput: { types: ["array<stop<color>>"], mode: "and" },
+    arrayStopColorOutput: { types: ["array<stop<color>>"], mode: "and" },
+    stopFloatInput: { types: ["stop<float>"], mode: "and" },
+    stopFloatOutput: { types: ["stop<float>"], mode: "and" },
+    arrayStopFloatInput: { types: ["array<stop<float>>"], mode: "and" },
+    arrayStopFloatOutput: { types: ["array<stop<float>>"], mode: "and" },
+    stopAngleInput: { types: ["stop<angle>"], mode: "and" },
+    stopAngleOutput: { types: ["stop<angle>"], mode: "and" },
+    arrayStopAngleInput: { types: ["array<stop<angle>>"], mode: "and" },
+    arrayStopAngleOutput: { types: ["array<stop<angle>>"], mode: "and" },
+    stopIntegerInput: { types: ["stop<integer>"], mode: "and" },
+    stopIntegerOutput: { types: ["stop<integer>"], mode: "and" },
+    arrayStopIntegerInput: { types: ["array<stop<integer>>"], mode: "and" },
+    arrayStopIntegerOutput: { types: ["array<stop<integer>>"], mode: "and" },
+    stopLengthInput: { types: ["stop<length>"], mode: "and" },
+    stopLengthOutput: { types: ["stop<length>"], mode: "and" },
+    arrayStopLengthInput: { types: ["array<stop<length>>"], mode: "and" },
+    arrayStopLengthOutput: { types: ["array<stop<length>>"], mode: "and" },
     distributionInput: { types: ["distribution"], mode: "and" },
     distributionOutput: { types: ["distribution"], mode: "and" },
     sequenceInput: { types: ["sequence"], mode: "and" },
@@ -561,6 +585,32 @@ const DynamicSlot = ({
             return <InputSlotPath host={hostNode} source={sourceNode} />;
         case "pathOutput":
             return <OutputSlotPath host={hostNode} source={sourceNode} />;
+        case "layerInput":
+        case "pathOpInput":
+        case "stopColorInput":
+        case "stopFloatInput":
+        case "stopAngleInput":
+        case "stopIntegerInput":
+        case "stopLengthInput":
+        case "arrayStopColorInput":
+        case "arrayStopFloatInput":
+        case "arrayStopAngleInput":
+        case "arrayStopIntegerInput":
+        case "arrayStopLengthInput":
+            return <InputSlotPassthrough host={hostNode} source={sourceNode} />;
+        case "layerOutput":
+        case "pathOpOutput":
+        case "stopColorOutput":
+        case "stopFloatOutput":
+        case "stopAngleOutput":
+        case "stopIntegerOutput":
+        case "stopLengthOutput":
+        case "arrayStopColorOutput":
+        case "arrayStopFloatOutput":
+        case "arrayStopAngleOutput":
+        case "arrayStopIntegerOutput":
+        case "arrayStopLengthOutput":
+            return <OutputSlotPassthrough host={hostNode} source={sourceNode} />;
     }
     return null;
 };
@@ -1227,6 +1277,23 @@ const InputSlotPath = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomD
 };
 
 const OutputSlotPath = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketOut node={host} socketId={source.id}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}
+        </SocketOut>
+    );
+};
+
+// Label-only slots for pass-through interface types (layer, pathOp, stop<T>, array<stop<T>>) — no inline editor.
+const InputSlotPassthrough = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    return (
+        <SocketIn node={host} socketId={source.id}>
+            {((source.payload as { label?: string }).label ?? "") === "" ? "Input" : (source.payload as { label?: string }).label}
+        </SocketIn>
+    );
+};
+
+const OutputSlotPassthrough = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
         <SocketOut node={host} socketId={source.id}>
             {((source.payload as { label?: string }).label ?? "") === "" ? "Output" : (source.payload as { label?: string }).label}

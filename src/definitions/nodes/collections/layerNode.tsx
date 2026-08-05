@@ -22,6 +22,7 @@ export type LayerDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"shape">;
+        layerArray: DataTypes.Use<"array<layer>">;
         layerCount: DataTypes.Use<"integer">;
         enabledCount: DataTypes.Use<"integer">;
     };
@@ -45,6 +46,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LayerDefinition>>, 
         },
         out: {
             output: [],
+            layerArray: [],
             layerCount: [],
             enabledCount: [],
         },
@@ -155,7 +157,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
                 </>
             )}
             <hr />
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layerCount|enabledCount" socketsIn={"isolate"}>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layerArray|layerCount|enabledCount" socketsIn={"isolate"}>
+                <SocketOut node={node} socketId={"layerArray"}>
+                    Layer Array
+                </SocketOut>
                 <SocketOut node={node} socketId={"layerCount"}>
                     Layer Count
                 </SocketOut>
@@ -327,6 +332,9 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: ke
     if (outSocket === "output") {
         return ["layers", "isolate", ...(node.payload.layers.map((l) => l.socket) as `layer_${string}`[])];
     }
+    if (outSocket === "layerArray") {
+        return ["layers", ...(node.payload.layers.map((l) => l.socket) as `layer_${string}`[])];
+    }
     if (outSocket === "layerCount" || outSocket === "enabledCount") {
         return ["layers"];
     }
@@ -335,13 +343,13 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: ke
 
 const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket: keyof LayerDefinition["inputs"], _deps: AllDeps): (keyof LayerDefinition["outputs"])[] => {
     if (inSocket === "layers") {
-        return ["output", "layerCount"];
+        return ["output", "layerArray", "layerCount"];
     }
     if (inSocket === "isolate") {
         return ["output"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("layer_")) {
-        return ["output"];
+        return ["output", "layerArray"];
     }
     return [];
 };
@@ -429,6 +437,28 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
         };
     }
 
+    if (socket === "layerArray") {
+        const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
+        if (supersocketEval) {
+            return { kind: "array<layer>", data: supersocketEval.data };
+        }
+        const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
+        for (const entry of node.payload.layers) {
+            const resolved = context.resolve<"layer">(node.id, entry.socket) as DataTypes.AnyEval | null;
+            if (!resolved) {
+                layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
+                continue;
+            }
+            if (resolved.kind === "layer") {
+                const data = resolved.data;
+                layerData.push({ shape: data.shape, enabled: data.enabled ?? entry.enabled, blend: data.blend ?? entry.blend });
+            } else if (resolved.kind === "shape") {
+                layerData.push({ shape: resolved.data, enabled: entry.enabled, blend: entry.blend });
+            }
+        }
+        return { kind: "array<layer>", data: layerData };
+    }
+
     if (socket === "layerCount") {
         const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
         const count = supersocketEval ? supersocketEval.data.length : node.payload.layers.length;
@@ -463,6 +493,7 @@ const SOCKETTYPES_IN: { [key in keyof Required<LayerDefinition["inputs"]>]: Sock
 
 const SOCKETTYPES_OUT: { [key in keyof Required<LayerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
+    layerArray: { types: ["array<layer>"], mode: "and" },
     layerCount: {
         types: ["integer"],
         mode: "and",

@@ -699,13 +699,10 @@ export namespace Project {
                     for (const nodeId in input.nodes[graphId]) {
                         const node = input.nodes[graphId][nodeId];
                         if (node.type === "stringInput") {
-                            // v3 added a selectable input widget; backfill to Block (stringInputWidget.BLOCK = 2).
                             node.payload.widget = node.payload.widget ?? 2;
-                            // v3 added the "Character Count" output.
                             node.out.charCount = node.out.charCount ?? [];
                         }
                         if (node.type === "textPath") {
-                            // v3 added the "Character Count" output.
                             node.out.charCount = node.out.charCount ?? [];
                         }
                     }
@@ -717,7 +714,6 @@ export namespace Project {
                     for (const nodeId in input.nodes[graphId]) {
                         const node = input.nodes[graphId][nodeId];
                         if (node.type === "angleIterator") {
-                            // v4 added a Cyclical/Continuous continuity mode; existing iterators were implicitly Cyclical (angleContinuity.CYCLICAL = 0).
                             node.in.continuity = node.in.continuity ?? null;
                             node.payload.continuity = node.payload.continuity ?? 0;
                         }
@@ -742,6 +738,12 @@ export namespace Project {
                             case "pathArray":
                                 input.nodes[graphId][nodeId].type = "pathPattern";
                                 break;
+                        }
+                        if (node.type === "layers") {
+                            node.out.layerArray = node.out.layerArray ?? [];
+                        }
+                        if (node.type === "pathCombine") {
+                            node.out.pathOpArray = node.out.pathOpArray ?? [];
                         }
                     }
                 }

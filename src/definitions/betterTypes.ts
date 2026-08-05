@@ -83,6 +83,30 @@ import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interfac
 import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
 import { ArrayPathOpInputDefinition, ArrayPathOpInputType } from "./nodes/interface/arrayPathOpInputNode";
 import { ArrayPathOpOutputDefinition, ArrayPathOpOutputType } from "./nodes/interface/arrayPathOpOutputNode";
+import { LayerInputDefinition, LayerInputType } from "./nodes/interface/layerInputNode";
+import { LayerOutputDefinition, LayerOutputType } from "./nodes/interface/layerOutputNode";
+import { PathOpInputDefinition, PathOpInputType } from "./nodes/interface/pathOpInputNode";
+import { PathOpOutputDefinition, PathOpOutputType } from "./nodes/interface/pathOpOutputNode";
+import { StopColorInputDefinition, StopColorInputType } from "./nodes/interface/stopColorInputNode";
+import { StopColorOutputDefinition, StopColorOutputType } from "./nodes/interface/stopColorOutputNode";
+import { ArrayStopColorInputDefinition, ArrayStopColorInputType } from "./nodes/interface/arrayStopColorInputNode";
+import { ArrayStopColorOutputDefinition, ArrayStopColorOutputType } from "./nodes/interface/arrayStopColorOutputNode";
+import { StopFloatInputDefinition, StopFloatInputType } from "./nodes/interface/stopFloatInputNode";
+import { StopFloatOutputDefinition, StopFloatOutputType } from "./nodes/interface/stopFloatOutputNode";
+import { ArrayStopFloatInputDefinition, ArrayStopFloatInputType } from "./nodes/interface/arrayStopFloatInputNode";
+import { ArrayStopFloatOutputDefinition, ArrayStopFloatOutputType } from "./nodes/interface/arrayStopFloatOutputNode";
+import { StopAngleInputDefinition, StopAngleInputType } from "./nodes/interface/stopAngleInputNode";
+import { StopAngleOutputDefinition, StopAngleOutputType } from "./nodes/interface/stopAngleOutputNode";
+import { ArrayStopAngleInputDefinition, ArrayStopAngleInputType } from "./nodes/interface/arrayStopAngleInputNode";
+import { ArrayStopAngleOutputDefinition, ArrayStopAngleOutputType } from "./nodes/interface/arrayStopAngleOutputNode";
+import { StopIntegerInputDefinition, StopIntegerInputType } from "./nodes/interface/stopIntegerInputNode";
+import { StopIntegerOutputDefinition, StopIntegerOutputType } from "./nodes/interface/stopIntegerOutputNode";
+import { ArrayStopIntegerInputDefinition, ArrayStopIntegerInputType } from "./nodes/interface/arrayStopIntegerInputNode";
+import { ArrayStopIntegerOutputDefinition, ArrayStopIntegerOutputType } from "./nodes/interface/arrayStopIntegerOutputNode";
+import { StopLengthInputDefinition, StopLengthInputType } from "./nodes/interface/stopLengthInputNode";
+import { StopLengthOutputDefinition, StopLengthOutputType } from "./nodes/interface/stopLengthOutputNode";
+import { ArrayStopLengthInputDefinition, ArrayStopLengthInputType } from "./nodes/interface/arrayStopLengthInputNode";
+import { ArrayStopLengthOutputDefinition, ArrayStopLengthOutputType } from "./nodes/interface/arrayStopLengthOutputNode";
 import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
 import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
 import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/sequenceInputNode";
@@ -249,6 +273,30 @@ namespace Registries {
         arrayLayerOutput: ArrayLayerOutputDefinition;
         arrayPathOpInput: ArrayPathOpInputDefinition;
         arrayPathOpOutput: ArrayPathOpOutputDefinition;
+        layerInput: LayerInputDefinition;
+        layerOutput: LayerOutputDefinition;
+        pathOpInput: PathOpInputDefinition;
+        pathOpOutput: PathOpOutputDefinition;
+        stopColorInput: StopColorInputDefinition;
+        stopColorOutput: StopColorOutputDefinition;
+        arrayStopColorInput: ArrayStopColorInputDefinition;
+        arrayStopColorOutput: ArrayStopColorOutputDefinition;
+        stopFloatInput: StopFloatInputDefinition;
+        stopFloatOutput: StopFloatOutputDefinition;
+        arrayStopFloatInput: ArrayStopFloatInputDefinition;
+        arrayStopFloatOutput: ArrayStopFloatOutputDefinition;
+        stopAngleInput: StopAngleInputDefinition;
+        stopAngleOutput: StopAngleOutputDefinition;
+        arrayStopAngleInput: ArrayStopAngleInputDefinition;
+        arrayStopAngleOutput: ArrayStopAngleOutputDefinition;
+        stopIntegerInput: StopIntegerInputDefinition;
+        stopIntegerOutput: StopIntegerOutputDefinition;
+        arrayStopIntegerInput: ArrayStopIntegerInputDefinition;
+        arrayStopIntegerOutput: ArrayStopIntegerOutputDefinition;
+        stopLengthInput: StopLengthInputDefinition;
+        stopLengthOutput: StopLengthOutputDefinition;
+        arrayStopLengthInput: ArrayStopLengthInputDefinition;
+        arrayStopLengthOutput: ArrayStopLengthOutputDefinition;
         distributionInput: DistributionInputDefinition;
         distributionOutput: DistributionOutputDefinition;
         sequenceInput: SequenceInputDefinition;
@@ -454,6 +502,30 @@ namespace Registries {
         arrayLayerOutput: ArrayLayerOutputType,
         arrayPathOpInput: ArrayPathOpInputType,
         arrayPathOpOutput: ArrayPathOpOutputType,
+        layerInput: LayerInputType,
+        layerOutput: LayerOutputType,
+        pathOpInput: PathOpInputType,
+        pathOpOutput: PathOpOutputType,
+        stopColorInput: StopColorInputType,
+        stopColorOutput: StopColorOutputType,
+        arrayStopColorInput: ArrayStopColorInputType,
+        arrayStopColorOutput: ArrayStopColorOutputType,
+        stopFloatInput: StopFloatInputType,
+        stopFloatOutput: StopFloatOutputType,
+        arrayStopFloatInput: ArrayStopFloatInputType,
+        arrayStopFloatOutput: ArrayStopFloatOutputType,
+        stopAngleInput: StopAngleInputType,
+        stopAngleOutput: StopAngleOutputType,
+        arrayStopAngleInput: ArrayStopAngleInputType,
+        arrayStopAngleOutput: ArrayStopAngleOutputType,
+        stopIntegerInput: StopIntegerInputType,
+        stopIntegerOutput: StopIntegerOutputType,
+        arrayStopIntegerInput: ArrayStopIntegerInputType,
+        arrayStopIntegerOutput: ArrayStopIntegerOutputType,
+        stopLengthInput: StopLengthInputType,
+        stopLengthOutput: StopLengthOutputType,
+        arrayStopLengthInput: ArrayStopLengthInputType,
+        arrayStopLengthOutput: ArrayStopLengthOutputType,
         distributionInput: DistributionInputType,
         distributionOutput: DistributionOutputType,
         sequenceInput: SequenceInputType,
