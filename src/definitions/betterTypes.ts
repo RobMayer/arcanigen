@@ -130,7 +130,9 @@ import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collecti
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
-import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/collections/floatIteratorNode";
+import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/deprecated/floatIteratorNode";
+import { FloatIterator2Definition, FloatIterator2NodeType } from "./nodes/collections/floatIterator2Node";
+import { StopFloatBreakoutDefinition, FloatStopNodeType } from "./nodes/collections/floatStopNode";
 import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/collections/integerIteratorNode";
 import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/collections/lengthIteratorNode";
 import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/collections/angleIteratorNode";
@@ -283,6 +285,8 @@ namespace Registries {
         pathArray: PathArrayDefinition;
         colorIterator: ColorIteratorDefinition;
         floatIterator: FloatIteratorDefinition;
+        floatIterator2: FloatIterator2Definition;
+        floatStop: StopFloatBreakoutDefinition;
         integerIterator: IntegerIteratorDefinition;
         lengthIterator: LengthIteratorDefinition;
         angleIterator: AngleIteratorDefinition;
@@ -357,6 +361,8 @@ namespace Registries {
         pathArray: PathArrayNodeType,
         colorIterator: ColorIteratorNodeType,
         floatIterator: FloatIteratorNodeType,
+        floatIterator2: FloatIterator2NodeType,
+        floatStop: FloatStopNodeType,
         integerIterator: IntegerIteratorNodeType,
         lengthIterator: LengthIteratorNodeType,
         angleIterator: AngleIteratorNodeType,
@@ -491,6 +497,8 @@ namespace Registries {
         pathOp: { path: SVGPath | null; enabled: boolean | null; op: number | null };
         "array<pathOp>": { path: SVGPath | null; enabled: boolean | null; op: number | null }[];
         sequence: { senderId: string; count: number };
+        "stop<float>": { value: number | null; position: number | null; enabled: boolean | null };
+        "array<stop<float>>": { value: number | null; position: number | null; enabled: boolean | null }[];
     };
 
     export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {
@@ -511,6 +519,8 @@ namespace Registries {
         "array<pathOp>": "Path Op Array",
         distribution: "Distribution",
         sequence: "Sequence",
+        "stop<float>": "Float Stop",
+        "array<stop<float>>": "Float Stop Array",
     };
 
     export const NODECAT_FLAVOURS = {

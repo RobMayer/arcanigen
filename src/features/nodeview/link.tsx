@@ -291,7 +291,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="enum"],
     &[data-linktype~="angle"],
     &[data-linktype~="boolean"],
-    &[data-linktype~="tokens<length>"] {
+    &[data-linktype~="tokens<length>"],
+    &[data-linktype~="stop<float>"] {
         --flavour: var(--flavour-accent);
     }
     &[data-linktype~="path"],
@@ -303,7 +304,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     }
     &[data-linktype~="sequence"],
     &[data-linktype~="array<layer>"],
-    &[data-linktype~="array<pathOp>"] {
+    &[data-linktype~="array<pathOp>"],
+    &[data-linktype~="array<stop<float>>"] {
         --flavour: var(--flavour-danger);
     }
     &[data-linktype~="shape"],

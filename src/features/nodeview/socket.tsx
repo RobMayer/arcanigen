@@ -208,7 +208,8 @@ export const Socket = styled(
     &[data-sockettype~="enum"],
     &[data-sockettype~="angle"],
     &[data-sockettype~="boolean"],
-    &[data-sockettype~="tokens<length>"] {
+    &[data-sockettype~="tokens<length>"],
+    &[data-sockettype~="stop<float>"] {
         --flavour: var(--flavour-accent);
     }
     &[data-sockettype~="distribution"] {
@@ -220,7 +221,8 @@ export const Socket = styled(
     }
     &[data-sockettype~="sequence"],
     &[data-sockettype~="array<layer>"],
-    &[data-sockettype~="array<pathOp>"] {
+    &[data-sockettype~="array<pathOp>"],
+    &[data-sockettype~="array<stop<float>>"] {
         --flavour: var(--flavour-danger);
     }
     &[data-sockettype~="shape"],
@@ -359,7 +361,8 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             &[data-sockettype~="enum"],
             &[data-sockettype~="angle"],
             &[data-sockettype~="boolean"],
-            &[data-sockettype~="tokens<length>"] {
+            &[data-sockettype~="tokens<length>"],
+            &[data-sockettype~="stop<float>"] {
                 --flavour: var(--flavour-accent);
             }
             &[data-sockettype~="distribution"] {
@@ -372,7 +375,8 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             }
             &[data-sockettype~="sequence"],
             &[data-sockettype~="array<layer>"],
-            &[data-sockettype~="array<pathOp>"] {
+            &[data-sockettype~="array<pathOp>"],
+            &[data-sockettype~="array<stop<float>>"] {
                 --flavour: var(--flavour-danger);
             }
             &[data-sockettype~="shape"],

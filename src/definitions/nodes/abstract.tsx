@@ -446,7 +446,7 @@ export namespace Iteration {
         accordion?: boolean;
     }): ReactNode => {
         return (
-            <AccordionMaybe has={accordion} socketsIn={"mode|reverseSequence|startOffset|endOffset"} label={"Options"} nodeId={node.id}>
+            <AccordionMaybe has={accordion} socketsIn={"mode|reverseSequence|startOffset|endOffset"} label={"Iteration Options"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                     <RadioButton.Group
                         orientation={"horizontal"}

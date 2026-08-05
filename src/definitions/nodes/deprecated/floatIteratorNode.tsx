@@ -271,6 +271,7 @@ export const FloatIteratorNodeType: NodeTypes.Type<"floatIterator", FloatIterato
     type: "floatIterator",
     displayName: "Float Iterator",
     defaultLabel: "Float Iterator",
+    deprecated: true,
     iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
     category: "Collections",
     create,
