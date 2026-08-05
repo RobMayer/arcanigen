@@ -360,6 +360,7 @@ export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = 
     displayName: "Text Path",
     defaultLabel: "Text Path",
     iconNode: <NodeIcon shape={NODE_ICONS.textPath} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

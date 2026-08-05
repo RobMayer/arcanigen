@@ -10,31 +10,31 @@ import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { Enum } from "../../datatypes/enum";
-import { FloatInputDefinition } from "./floatInputNode";
-import { IntegerInputDefinition } from "./integerInputNode";
-import { AngleInputDefinition } from "./angleInputNode";
-import { LengthInputDefinition } from "./lengthInputNode";
-import { ColorInputDefinition } from "./colorInputNode";
-import { BooleanInputDefinition } from "./booleanInputNode";
+import { FloatInputDefinition } from "./inputs/floatInputNode";
+import { IntegerInputDefinition } from "./inputs/integerInputNode";
+import { AngleInputDefinition } from "./inputs/angleInputNode";
+import { LengthInputDefinition } from "./inputs/lengthInputNode";
+import { ColorInputDefinition } from "./inputs/colorInputNode";
+import { BooleanInputDefinition } from "./inputs/booleanInputNode";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { NumericString } from "../../datatypes/numericString";
-import { FloatOutputDefinition } from "./floatOutputNode";
-import { IntegerOutputDefinition } from "./integerOutputNode";
-import { AngleOutputDefinition } from "./angleOutputNode";
-import { LengthOutputDefinition } from "./lengthOutputNode";
-import { ShapeOutputDefinition } from "./shapeOutputNode";
-import { ColorOutputDefinition } from "./colorOutputNode";
-import { BooleanOutputDefinition } from "./booleanOutputNode";
-import { EnumInputDefinition } from "./enumInputNode";
-import { EnumOutputDefinition } from "./enumOutputNode";
-import { TokensLengthInputDefinition } from "./tokensLengthInputNode";
-import { TokensLengthOutputDefinition } from "./tokensLengthOutputNode";
-import { StringInputDefinition } from "./stringInputNode";
-import { StringOutputDefinition } from "./stringOutputNode";
+import { FloatOutputDefinition } from "./outputs/floatOutputNode";
+import { IntegerOutputDefinition } from "./outputs/integerOutputNode";
+import { AngleOutputDefinition } from "./outputs/angleOutputNode";
+import { LengthOutputDefinition } from "./outputs/lengthOutputNode";
+import { ShapeOutputDefinition } from "./outputs/shapeOutputNode";
+import { ColorOutputDefinition } from "./outputs/colorOutputNode";
+import { BooleanOutputDefinition } from "./outputs/booleanOutputNode";
+import { EnumInputDefinition } from "./inputs/enumInputNode";
+import { EnumOutputDefinition } from "./outputs/enumOutputNode";
+import { TokensLengthInputDefinition } from "./inputs/tokensLengthInputNode";
+import { TokensLengthOutputDefinition } from "./outputs/tokensLengthOutputNode";
+import { StringInputDefinition } from "./inputs/stringInputNode";
+import { StringOutputDefinition } from "./outputs/stringOutputNode";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { CheckBox } from "../../../components/buttons/CheckBox";
@@ -496,6 +496,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     displayName: "Custom",
     defaultLabel: "Custom",
     iconNode: <NodeIcon shape={NODE_ICONS.graph} />,
+    flavour: "emphasis",
     category: "Meta",
     evaluate,
     Controls,

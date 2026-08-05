@@ -306,6 +306,7 @@ export const TextNodeType: NodeTypes.Type<"text", TextDefinition> = {
     displayName: "Text",
     defaultLabel: "Text",
     iconNode: <NodeIcon shape={NODE_ICONS.text} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

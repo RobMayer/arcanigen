@@ -208,6 +208,7 @@ export const RootType: NodeTypes.Type<"root", RootDefinition> = {
     displayName: "Root",
     defaultLabel: "Root",
     iconNode: <NodeIcon shape={NODE_ICONS.root} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

@@ -237,6 +237,7 @@ export const DivideType: NodeTypes.Type<"divide", DivideDefinition> = {
     displayName: "Divide",
     defaultLabel: "Divide",
     iconNode: <NodeIcon shape={NODE_ICONS.divide} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

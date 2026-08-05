@@ -455,6 +455,7 @@ export const PolygonNodeType: NodeTypes.Type<"polygon", PolygonDefinition> = {
     displayName: "Polygon",
     defaultLabel: "Polygon",
     iconNode: <NodeIcon shape={NODE_ICONS.shapePolygon} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

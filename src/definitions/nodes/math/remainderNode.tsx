@@ -237,6 +237,7 @@ export const RemainderType: NodeTypes.Type<"remainder", RemainderDefinition> = {
     displayName: "Remainder",
     defaultLabel: "Remainder",
     iconNode: <NodeIcon shape={NODE_ICONS.percent} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

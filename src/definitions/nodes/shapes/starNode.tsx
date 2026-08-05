@@ -600,6 +600,7 @@ export const StarNodeType: NodeTypes.Type<"star", StarDefinition> = {
     displayName: "Star",
     defaultLabel: "Star",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeStar} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

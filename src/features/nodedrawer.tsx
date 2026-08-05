@@ -27,8 +27,8 @@ const LocalAccordion = styled(Accordion)`
 
 type DrawerItem = { kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | { kind: "newCustom" };
 
-const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["Custom", "Shapes", "Primitives", "Collections", "Logic", "Meta", "Math", "Effects"];
-const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["Custom", "Shapes", "Primitives", "Collections", "Logic", "Meta", "Math", "Inputs", "Outputs", "Effects"];
+const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math"];
+const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math", "Inputs", "Outputs"];
 
 const getForbiddenSubgraphs = (currentGraphId: string, users: UsersType): Set<string> => {
     const forbidden = new Set([currentGraphId]);
@@ -186,7 +186,7 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
                             All
                         </CheckBox>
                         {visibleCategories.map((cat) => (
-                            <CheckBox key={cat} checked={categoryFilter.has(cat)} onToggle={() => toggleCategory(cat)} flavour={NodeTypes.CATEGORY_FLAVOURS[cat]}>
+                            <CheckBox key={cat} checked={categoryFilter.has(cat)} onToggle={() => toggleCategory(cat)}>
                                 {cat}
                             </CheckBox>
                         ))}
@@ -374,7 +374,7 @@ const CardGrid = styled(({ className, items, paneControls, forbidden }: { classN
                                     disabled={isForbidden}
                                     onClick={() => addSubgraph(item.id, item.name)}
                                     onContextMenu={(e) => openContextMenu(e, { kind: "subgraph", id: item.id, name: item.name })}
-                                    data-flavour={NodeTypes.CATEGORY_FLAVOURS.Custom}
+                                    data-flavour={NodeTypes.DEFAULT_CUSTOM_FLAVOUR}
                                     draggable={!isForbidden}
                                     onDragStart={(e) => handleDragStart(e, item)}
                                 >
@@ -458,7 +458,7 @@ const NodeCard = styled(
             handleAdd(nodeType, {});
         }, [nodeType, handleAdd]);
         return (
-            <button className={className} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu} draggable onDragStart={onDragStart}>
+            <button className={className} data-flavour={nodeType.flavour} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu} draggable onDragStart={onDragStart}>
                 <div data-part={"title"} title={nodeType.displayName}>
                     {nodeType.displayName}
                 </div>

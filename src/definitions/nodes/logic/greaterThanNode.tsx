@@ -139,6 +139,7 @@ export const GreaterThanNodeType: NodeTypes.Type<"greaterThan", GreaterThanDefin
     displayName: "Greater Than",
     defaultLabel: "Greater Than",
     iconNode: <NodeIcon shape={NODE_ICONS.greater} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

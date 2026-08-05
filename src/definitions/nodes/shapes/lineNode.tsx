@@ -372,6 +372,7 @@ export const LineNodeType: NodeTypes.Type<"line", LineDefinition> = {
     displayName: "Line",
     defaultLabel: "Line",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeLine} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

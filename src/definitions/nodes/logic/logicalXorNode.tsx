@@ -126,6 +126,7 @@ export const LogicalXorNodeType: NodeTypes.Type<"logicalXor", LogicalXorDefiniti
     displayName: "Xor",
     defaultLabel: "Xor",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalXor} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

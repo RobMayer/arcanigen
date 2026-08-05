@@ -126,6 +126,7 @@ export const LogicalAndNodeType: NodeTypes.Type<"logicalAnd", LogicalAndDefiniti
     displayName: "And",
     defaultLabel: "And",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalAnd} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

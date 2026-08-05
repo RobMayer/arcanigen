@@ -527,6 +527,7 @@ export const PolygramNodeType: NodeTypes.Type<"polygram", PolygramDefinition> = 
     displayName: "Polygram",
     defaultLabel: "Polygram",
     iconNode: <NodeIcon shape={NODE_ICONS.shapePolygram} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

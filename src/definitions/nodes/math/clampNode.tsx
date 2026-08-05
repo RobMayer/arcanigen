@@ -265,6 +265,7 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     displayName: "Clamp",
     defaultLabel: "Clamp",
     iconNode: <NodeIcon shape={NODE_ICONS.round} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

@@ -237,6 +237,7 @@ export const SubtractType: NodeTypes.Type<"subtract", SubtractDefinition> = {
     displayName: "Subtract",
     defaultLabel: "Subtract",
     iconNode: <NodeIcon shape={NODE_ICONS.subtract} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

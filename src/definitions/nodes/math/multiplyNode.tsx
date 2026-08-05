@@ -237,6 +237,7 @@ export const MultiplyType: NodeTypes.Type<"multiply", MultiplyDefinition> = {
     displayName: "Multiply",
     defaultLabel: "Multiply",
     iconNode: <NodeIcon shape={NODE_ICONS.asterisk} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

@@ -99,6 +99,7 @@ export const ArctanType: NodeTypes.Type<"arctan", ArctanDefinition> = {
     displayName: "Arctan",
     defaultLabel: "Arctan",
     iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

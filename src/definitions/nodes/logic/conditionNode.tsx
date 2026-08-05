@@ -276,6 +276,7 @@ export const ConditionNodeType: NodeTypes.Type<"condition", ConditionDefinition>
     displayName: "Condition",
     defaultLabel: "Condition",
     iconNode: <NodeIcon shape={NODE_ICONS.option} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

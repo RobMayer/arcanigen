@@ -126,6 +126,7 @@ export const LogicalOrNodeType: NodeTypes.Type<"logicalOr", LogicalOrDefinition>
     displayName: "Or",
     defaultLabel: "Or",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalOr} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

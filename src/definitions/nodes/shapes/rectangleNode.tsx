@@ -313,6 +313,7 @@ export const RectangleNodeType: NodeTypes.Type<"rectangle", RectangleDefinition>
     displayName: "Rectangle",
     defaultLabel: "Rectangle",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeRect} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

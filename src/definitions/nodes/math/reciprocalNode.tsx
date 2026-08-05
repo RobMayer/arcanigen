@@ -181,6 +181,7 @@ export const ReciprocalType: NodeTypes.Type<"reciprocal", ReciprocalDefinition> 
     displayName: "Reciprocal",
     defaultLabel: "Reciprocal",
     iconNode: <NodeIcon shape={NODE_ICONS.divide} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

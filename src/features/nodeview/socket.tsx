@@ -93,7 +93,9 @@ export const Socket = styled(
             const tp = SocketTypes.toCSS(rule);
             const anyCSS = SocketTypes.toCSS(SocketTypes.ANY);
 
-            const sep = rule.mode === "and" ? " & " : " | ";
+            // `mode` is only meaningful on an output (canFlow reads the OUT rule's mode);
+            // an input always accepts any of its types, so it always reads as "|".
+            const sep = side === "out" && rule.mode === "and" ? " & " : " | ";
             let ti = tp.split(" ").join(sep);
             if (tp === "") {
                 ti = "« unknown »";
@@ -103,7 +105,7 @@ export const Socket = styled(
             }
 
             return [tp, ti];
-        }, [rule]);
+        }, [rule, side]);
 
         const canConnect = useMemo(() => {
             if (pendingConnection === null) {
@@ -180,15 +182,16 @@ export const Socket = styled(
     height: calc(1lh - (1lh - 1em) / 2);
     align-self: center;
     aspect-ratio: 1;
-    background: oklch(from var(--flavour) calc(l * 0.5) calc(c * 0.5) h);
     border-radius: 100%;
+    border-style: solid;
+    border-width: 2px;
     anchor-name: var(--socket);
     transition:
-        background-color 0.25s,
-        outline-color 0.25s;
-    outline: 2px solid oklch(from var(--flavour) l c h);
-    outline-offset: -4px;
-    border: 1px solid black;
+        outline-color 0.1s,
+        background 0.25s,
+        border-color 0.25s;
+    outline: 1px solid black;
+    outline-offset: 0px;
     z-index: 1;
 
     &[data-socketside="in"] {
@@ -198,70 +201,106 @@ export const Socket = styled(
         margin-right: calc(-1lh + 6px);
     }
 
-    --flavour: var(--flavour-base);
+    corner-shape: round;
+    &[data-sockettype*="array<"] {
+        corner-shape: bevel;
+    }
+
+    --tl: var(--flavour-base);
+    --br: var(--flavour-base);
 
     &[data-sockettype~="float"],
     &[data-sockettype~="integer"],
     &[data-sockettype~="string"],
     &[data-sockettype~="length"],
     &[data-sockettype~="color"],
-    &[data-sockettype~="gradient"],
     &[data-sockettype~="enum"],
     &[data-sockettype~="angle"],
     &[data-sockettype~="boolean"],
-    &[data-sockettype~="tokens<length>"],
+    &[data-sockettype~="tokens<length>"] {
+        --tl: var(--flavour-accent);
+        --br: var(--flavour-accent);
+    }
+    &[data-sockettype~="gradient"],
     &[data-sockettype~="stop<float>"],
     &[data-sockettype~="stop<color>"],
     &[data-sockettype~="stop<angle>"],
     &[data-sockettype~="stop<integer>"],
-    &[data-sockettype~="stop<length>"] {
-        --flavour: var(--flavour-accent);
-    }
-    &[data-sockettype~="distribution"] {
-        --flavour: var(--flavour-info);
-    }
-    &[data-sockettype~="path"],
-    &[data-sockettype~="pathOp"] {
-        --flavour: var(--flavour-emphasis);
-    }
-    &[data-sockettype~="sequence"],
-    &[data-sockettype~="array<layer>"],
-    &[data-sockettype~="array<pathOp>"],
+    &[data-sockettype~="stop<length>"],
     &[data-sockettype~="array<stop<float>>"],
     &[data-sockettype~="array<stop<color>>"],
     &[data-sockettype~="array<stop<angle>>"],
     &[data-sockettype~="array<stop<integer>>"],
     &[data-sockettype~="array<stop<length>>"] {
-        --flavour: var(--flavour-danger);
+        --tl: var(--flavour-info);
+        --br: var(--flavour-info);
+    }
+    &[data-sockettype~="path"],
+    &[data-sockettype~="pathOp"],
+    &[data-sockettype~="array<pathOp>"] {
+        --tl: var(--flavour-emphasis);
+        --br: var(--flavour-emphasis);
+    }
+    &[data-sockettype~="sequence"] {
+        --tl: var(--flavour-danger);
+        --br: var(--flavour-danger);
+    }
+    &[data-sockettype~="distribution"] {
+        --tl: var(--flavour-help);
+        --br: var(--flavour-help);
     }
     &[data-sockettype~="shape"],
-    &[data-sockettype~="layer"] {
-        --flavour: var(--flavour-confirm);
+    &[data-sockettype~="layer"],
+    &[data-sockettype~="array<layer>"] {
+        --tl: var(--flavour-confirm);
+        --br: var(--flavour-confirm);
     }
 
     &[data-socketmod="any"] {
-        --flavour: var(--flavour-base);
+        --tl: var(--flavour-base);
+        --br: var(--flavour-base);
     }
 
+    &[data-sockettype~="color"][data-sockettype~="gradient"] {
+        --tl: var(--flavour-base);
+        --tr: var(--flavour-info);
+    }
+
+    background: linear-gradient(135deg, oklch(from var(--tl) calc(l * 0.5) calc(c * 0.5) h) 0 50%, oklch(from var(--br) calc(l * 0.5) calc(c * 0.5) h) 50% 100%);
+    border-top-color: var(--tl);
+    border-left-color: var(--tl);
+    border-bottom-color: var(--br);
+    border-right-color: var(--br);
+
     &[data-state~="connected"] {
-        background-color: var(--flavour);
+        background: linear-gradient(135deg, var(--tl) 0 50%, var(--br) 50% 100%);
+        border-color: transparent;
     }
 
     &[data-state~="invalid"] {
-        background-color: #000;
-        outline-color: #333;
+        border-color: #333;
+        background: linear-gradient(135deg, #000 0 50%, #000 50% 100%);
+
         &[data-state~="connected"] {
-            background-color: #333;
+            background: linear-gradient(135deg, #333 0 50%, #333 50% 100%);
+            border-color: transparent;
         }
     }
 
     &:hover:not([data-state~="invalid"]),
     &[data-state~="active"] {
-        outline-color: oklch(from var(--flavour) calc(l * 1.2) c h);
-        border-color: #fff;
-        background-color: oklch(from var(--flavour) calc(l * 0.65) calc(c * 0.65) h);
+        outline-color: #fff;
+
+        border-top-color: oklch(from var(--tl) calc(l * 1.2) c h);
+        border-left-color: oklch(from var(--tl) calc(l * 1.2) c h);
+        border-bottom-color: oklch(from var(--br) calc(l * 1.2) c h);
+        border-right-color: oklch(from var(--br) calc(l * 1.2) c h);
+
+        background: linear-gradient(135deg, oklch(from var(--tl) calc(l * 0.65) calc(c * 0.65) h) 0 50%, oklch(from var(--br) calc(l * 0.65) calc(c * 0.65) h) 50% 100%);
+
         &[data-state~="connected"] {
-            background-color: oklch(from var(--flavour) calc(l * 1.2) c h);
+            background: linear-gradient(135deg, oklch(from var(--tl) calc(l * 1.2) c h) 0 50%, oklch(from var(--br) calc(l * 1.2) c h) 50% 100%);
+            border-color: transparent;
         }
     }
 `;
@@ -367,38 +406,40 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             &[data-sockettype~="string"],
             &[data-sockettype~="length"],
             &[data-sockettype~="color"],
-            &[data-sockettype~="gradient"],
             &[data-sockettype~="enum"],
             &[data-sockettype~="angle"],
             &[data-sockettype~="boolean"],
-            &[data-sockettype~="tokens<length>"],
+            &[data-sockettype~="tokens<length>"] {
+                --flavour: var(--flavour-accent);
+            }
+            &[data-sockettype~="gradient"],
             &[data-sockettype~="stop<float>"],
             &[data-sockettype~="stop<color>"],
             &[data-sockettype~="stop<angle>"],
             &[data-sockettype~="stop<integer>"],
-            &[data-sockettype~="stop<length>"] {
-                --flavour: var(--flavour-accent);
-            }
-            &[data-sockettype~="distribution"] {
-                --flavour: var(--flavour-info);
-            }
-
-            &[data-sockettype~="path"],
-            &[data-sockettype~="pathOp"] {
-                --flavour: var(--flavour-emphasis);
-            }
-            &[data-sockettype~="sequence"],
-            &[data-sockettype~="array<layer>"],
-            &[data-sockettype~="array<pathOp>"],
+            &[data-sockettype~="stop<length>"],
             &[data-sockettype~="array<stop<float>>"],
             &[data-sockettype~="array<stop<color>>"],
             &[data-sockettype~="array<stop<angle>>"],
             &[data-sockettype~="array<stop<integer>>"],
             &[data-sockettype~="array<stop<length>>"] {
+                --flavour: var(--flavour-info);
+            }
+
+            &[data-sockettype~="path"],
+            &[data-sockettype~="pathOp"],
+            &[data-sockettype~="array<pathOp>"] {
+                --flavour: var(--flavour-emphasis);
+            }
+            &[data-sockettype~="sequence"] {
                 --flavour: var(--flavour-danger);
             }
+            &[data-sockettype~="distribution"] {
+                --flavour: var(--flavour-help);
+            }
             &[data-sockettype~="shape"],
-            &[data-sockettype~="layer"] {
+            &[data-sockettype~="layer"],
+            &[data-sockettype~="array<layer>"] {
                 --flavour: var(--flavour-confirm);
             }
 

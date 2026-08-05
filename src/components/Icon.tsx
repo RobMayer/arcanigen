@@ -617,3 +617,7 @@ export const NODE_ICONS = {
         
     },
 }
+
+export const CUSTOM_ICONS = {
+    default: NODE_ICONS.graph,
+} as const;

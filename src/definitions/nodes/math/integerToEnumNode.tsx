@@ -83,6 +83,7 @@ export const IntegerToEnumNodeType: NodeTypes.Type<"integerToEnum", IntegerToEnu
     displayName: "Integer to Enum",
     defaultLabel: "Int → Enum",
     iconNode: <NodeIcon shape={NODE_ICONS.convert} />,
+    flavour: "help",
     category: "Math",
     create,
     dependsOn,

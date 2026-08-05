@@ -219,6 +219,7 @@ export const RoundType: NodeTypes.Type<"round", RoundDefinition> = {
     displayName: "Round",
     defaultLabel: "Round",
     iconNode: <NodeIcon shape={NODE_ICONS.round} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

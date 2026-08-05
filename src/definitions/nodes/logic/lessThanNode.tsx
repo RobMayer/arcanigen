@@ -139,6 +139,7 @@ export const LessThanNodeType: NodeTypes.Type<"lessThan", LessThanDefinition> = 
     displayName: "Less Than",
     defaultLabel: "Less Than",
     iconNode: <NodeIcon shape={NODE_ICONS.less} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

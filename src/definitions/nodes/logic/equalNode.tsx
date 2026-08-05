@@ -139,6 +139,7 @@ export const EqualNodeType: NodeTypes.Type<"equal", EqualDefinition> = {
     displayName: "Equal",
     defaultLabel: "Equal",
     iconNode: <NodeIcon shape={NODE_ICONS.equal} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

@@ -100,6 +100,7 @@ export const ArcsinType: NodeTypes.Type<"arcsin", ArcsinDefinition> = {
     displayName: "Arcsin",
     defaultLabel: "Arcsin",
     iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

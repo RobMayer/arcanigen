@@ -260,6 +260,7 @@ export const GlyphNodeType: NodeTypes.Type<"glyph", GlyphDefinition> = {
     displayName: "Glyph",
     defaultLabel: "Glyph",
     iconNode: <NodeIcon shape={NODE_ICONS.questionMark} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

@@ -239,6 +239,7 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     displayName: "Result",
     defaultLabel: "Result",
     iconNode: <NodeIcon shape={NODE_ICONS.result} />,
+    flavour: "emphasis",
     category: "Result",
     create,
     dependsOn,

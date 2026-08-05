@@ -288,37 +288,39 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="string"],
     &[data-linktype~="length"],
     &[data-linktype~="color"],
-    &[data-linktype~="gradient"],
     &[data-linktype~="enum"],
     &[data-linktype~="angle"],
     &[data-linktype~="boolean"],
-    &[data-linktype~="tokens<length>"],
+    &[data-linktype~="tokens<length>"] {
+        --flavour: var(--flavour-accent);
+    }
+    &[data-linktype~="path"],
+    &[data-linktype~="pathOp"],
+    &[data-linktype~="array<pathOp>"] {
+        --flavour: var(--flavour-emphasis);
+    }
+    &[data-linktype~="gradient"],
     &[data-linktype~="stop<float>"],
     &[data-linktype~="stop<color>"],
     &[data-linktype~="stop<angle>"],
     &[data-linktype~="stop<integer>"],
-    &[data-linktype~="stop<length>"] {
-        --flavour: var(--flavour-accent);
-    }
-    &[data-linktype~="path"],
-    &[data-linktype~="pathOp"] {
-        --flavour: var(--flavour-emphasis);
-    }
-    &[data-linktype~="distribution"] {
-        --flavour: var(--flavour-info);
-    }
-    &[data-linktype~="sequence"],
-    &[data-linktype~="array<layer>"],
-    &[data-linktype~="array<pathOp>"],
+    &[data-linktype~="stop<length>"],
     &[data-linktype~="array<stop<float>>"],
     &[data-linktype~="array<stop<color>>"],
     &[data-linktype~="array<stop<angle>>"],
     &[data-linktype~="array<stop<integer>>"],
     &[data-linktype~="array<stop<length>>"] {
+        --flavour: var(--flavour-info);
+    }
+    &[data-linktype~="sequence"] {
         --flavour: var(--flavour-danger);
     }
+    &[data-linktype~="distribution"] {
+        --flavour: var(--flavour-help);
+    }
     &[data-linktype~="shape"],
-    &[data-linktype~="layer"] {
+    &[data-linktype~="layer"],
+    &[data-linktype~="array<layer>"] {
         --flavour: var(--flavour-confirm);
     }
 

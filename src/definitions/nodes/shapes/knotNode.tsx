@@ -789,6 +789,7 @@ export const KnotNodeType: NodeTypes.Type<"knot", KnotDefinition> = {
     displayName: "Knot",
     defaultLabel: "Knot",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeKnot} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

@@ -125,6 +125,7 @@ export const PathLengthNodeType: NodeTypes.Type<"pathLength", PathLengthDefiniti
     displayName: "Path Length",
     defaultLabel: "Path Length",
     iconNode: <NodeIcon shape={NODE_ICONS.length} />,
+    flavour: "help",
     category: "Math",
     create,
     dependsOn,

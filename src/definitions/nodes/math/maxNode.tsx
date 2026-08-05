@@ -227,6 +227,7 @@ export const MaxType: NodeTypes.Type<"max", MaxDefinition> = {
     displayName: "Max",
     defaultLabel: "Max",
     iconNode: <NodeIcon shape={NODE_ICONS.max} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

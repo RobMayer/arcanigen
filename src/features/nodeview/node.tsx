@@ -224,9 +224,9 @@ const NodeTitle = styled(
         }, [onDelete, contextControls]);
 
         return (
-            <div className={className} data-nodecategory={nodeType.category} data-flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
+            <div className={className} data-nodecategory={nodeType.category} data-flavour={nodeType.flavour}>
                 <NodeFallback nodeId={node.id} side={"in"} />
-                <ActionButton.Lite onClick={toggleOpen} flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
+                <ActionButton.Lite onClick={toggleOpen} flavour={nodeType.flavour}>
                     <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
                 </ActionButton.Lite>
 
@@ -239,7 +239,7 @@ const NodeTitle = styled(
                     )}
                     <Icon shape={ICONS.Blank} />
                 </div>
-                <ActionButton.Lite onClick={onDelete} flavour={NodeTypes.CATEGORY_FLAVOURS[nodeType.category]}>
+                <ActionButton.Lite onClick={onDelete} flavour={nodeType.flavour}>
                     <Icon shape={ICONS.Close} />
                 </ActionButton.Lite>
                 <NodeFallback nodeId={node.id} side={"out"} />

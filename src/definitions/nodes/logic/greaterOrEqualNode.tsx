@@ -143,6 +143,7 @@ export const GreaterOrEqualNodeType: NodeTypes.Type<"greaterOrEqual", GreaterOrE
     displayName: "Greater or Equal",
     defaultLabel: "Greater or Equal",
     iconNode: <NodeIcon shape={NODE_ICONS.greaterEqual} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

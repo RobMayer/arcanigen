@@ -207,6 +207,7 @@ export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     displayName: "Pow",
     defaultLabel: "Pow",
     iconNode: <NodeIcon shape={NODE_ICONS.pow} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

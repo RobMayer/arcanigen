@@ -419,6 +419,7 @@ export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     displayName: "Spiral",
     defaultLabel: "Spiral",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeSpiral} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

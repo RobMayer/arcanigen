@@ -250,6 +250,7 @@ export const AddType: NodeTypes.Type<"add", AddDefinition> = {
     displayName: "Add",
     defaultLabel: "Add",
     iconNode: <NodeIcon shape={NODE_ICONS.plus} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

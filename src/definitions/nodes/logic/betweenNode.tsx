@@ -206,6 +206,7 @@ export const BetweenNodeType: NodeTypes.Type<"between", BetweenDefinition> = {
     displayName: "Between",
     defaultLabel: "Between",
     iconNode: <NodeIcon shape={NODE_ICONS.tilde} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

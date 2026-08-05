@@ -75,6 +75,7 @@ export const IsNullishNodeType: NodeTypes.Type<"isNullish", IsNullishDefinition>
     displayName: "Is Nullish",
     defaultLabel: "Is Nullish",
     iconNode: <NodeIcon shape={NODE_ICONS.nullish} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

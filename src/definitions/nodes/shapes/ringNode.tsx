@@ -310,6 +310,7 @@ export const RingNodeType: NodeTypes.Type<"ring", RingDefinition> = {
     displayName: "Ring",
     defaultLabel: "Ring",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeRing} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

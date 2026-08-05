@@ -366,6 +366,7 @@ export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     displayName: "Arc",
     defaultLabel: "Arc",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

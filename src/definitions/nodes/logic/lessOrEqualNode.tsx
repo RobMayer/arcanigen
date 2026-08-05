@@ -139,6 +139,7 @@ export const LessOrEqualNodeType: NodeTypes.Type<"lessOrEqual", LessOrEqualDefin
     displayName: "Less or Equal",
     defaultLabel: "Less or Equal",
     iconNode: <NodeIcon shape={NODE_ICONS.lessEqual} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

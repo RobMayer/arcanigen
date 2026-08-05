@@ -102,6 +102,7 @@ export const ArccosType: NodeTypes.Type<"arccos", ArccosDefinition> = {
     displayName: "Arccos",
     defaultLabel: "Arccos",
     iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

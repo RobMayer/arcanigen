@@ -237,6 +237,7 @@ export const ModuloType: NodeTypes.Type<"modulo", ModuloDefinition> = {
     displayName: "Modulo",
     defaultLabel: "Modulo",
     iconNode: <NodeIcon shape={NODE_ICONS.percent} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

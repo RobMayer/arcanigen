@@ -126,6 +126,7 @@ export const LogicalNandNodeType: NodeTypes.Type<"logicalNand", LogicalNandDefin
     displayName: "Nand",
     defaultLabel: "Nand",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalNand} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

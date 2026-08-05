@@ -252,6 +252,7 @@ export const LerpType: NodeTypes.Type<"lerp", LerpDefinition> = {
     displayName: "Lerp",
     defaultLabel: "Lerp",
     iconNode: <NodeIcon shape={NODE_ICONS.range} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

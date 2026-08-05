@@ -178,6 +178,7 @@ export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     displayName: "Circle",
     defaultLabel: "Circle",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeCircle} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

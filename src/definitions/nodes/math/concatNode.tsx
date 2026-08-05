@@ -126,6 +126,7 @@ export const ConcatNodeType: NodeTypes.Type<"concat", ConcatDefinition> = {
     displayName: "Concatenate",
     defaultLabel: "Concatenate",
     iconNode: <NodeIcon shape={NODE_ICONS.plus} />,
+    flavour: "help",
     category: "Math",
     create,
     dependsOn,

@@ -99,6 +99,7 @@ export const CosType: NodeTypes.Type<"cos", CosDefinition> = {
     displayName: "Cos",
     defaultLabel: "Cos",
     iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

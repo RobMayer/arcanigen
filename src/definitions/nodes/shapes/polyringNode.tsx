@@ -715,6 +715,7 @@ export const PolyringNodeType: NodeTypes.Type<"polyring", PolyringDefinition> = 
     displayName: "Polyring",
     defaultLabel: "Polyring",
     iconNode: <NodeIcon shape={NODE_ICONS.shapePolyring} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

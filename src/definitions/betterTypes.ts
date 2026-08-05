@@ -27,8 +27,8 @@ import { TokensLengthDefinition, TokensLengthPrimitiveType } from "./nodes/primi
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import type { Project } from "../state/project";
 import { ShapePreviewDefinition, ShapePreviewType } from "./nodes/debug/shapePreviewNode";
-import { FloatInputDefinition, FloatInputType } from "./nodes/interface/floatInputNode";
-import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/floatOutputNode";
+import { FloatInputDefinition, FloatInputType } from "./nodes/interface/inputs/floatInputNode";
+import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/outputs/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
 import { AddDefinition, AddType } from "./nodes/math/addNode";
 import { SubtractDefinition, SubtractType } from "./nodes/math/subtractNode";
@@ -61,58 +61,58 @@ import { PathOpComposeDefinition, PathOpComposeNodeType } from "./nodes/collecti
 import { TokenizerLengthDefinition, TokenizerLengthNodeType } from "./nodes/collections/tokenizerLengthNode";
 import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
 import { DistributionNodeType, DistributionNodeDefinition } from "./nodes/math/distributionNode";
-import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/integerInputNode";
-import { IntegerOutputDefinition, IntegerOutputType } from "./nodes/interface/integerOutputNode";
-import { AngleInputDefinition, AngleInputType } from "./nodes/interface/angleInputNode";
-import { AngleOutputDefinition, AngleOutputType } from "./nodes/interface/angleOutputNode";
-import { LengthInputDefinition, LengthInputType } from "./nodes/interface/lengthInputNode";
-import { LengthOutputDefinition, LengthOutputType } from "./nodes/interface/lengthOutputNode";
-import { ShapeInputDefinition, ShapeInputType } from "./nodes/interface/shapeInputNode";
-import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/shapeOutputNode";
-import { ColorInputDefinition, ColorInputType } from "./nodes/interface/colorInputNode";
-import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/colorOutputNode";
-import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/booleanInputNode";
-import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/booleanOutputNode";
-import { EnumInputDefinition, EnumInputType } from "./nodes/interface/enumInputNode";
-import { EnumOutputDefinition, EnumOutputType } from "./nodes/interface/enumOutputNode";
-import { StringInputDefinition, StringInputType } from "./nodes/interface/stringInputNode";
-import { StringOutputDefinition, StringOutputType } from "./nodes/interface/stringOutputNode";
-import { TokensLengthInputDefinition, TokensLengthInputType } from "./nodes/interface/tokensLengthInputNode";
-import { TokensLengthOutputDefinition, TokensLengthOutputType } from "./nodes/interface/tokensLengthOutputNode";
-import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interface/arrayLayerInputNode";
-import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/arrayLayerOutputNode";
-import { ArrayPathOpInputDefinition, ArrayPathOpInputType } from "./nodes/interface/arrayPathOpInputNode";
-import { ArrayPathOpOutputDefinition, ArrayPathOpOutputType } from "./nodes/interface/arrayPathOpOutputNode";
-import { LayerInputDefinition, LayerInputType } from "./nodes/interface/layerInputNode";
-import { LayerOutputDefinition, LayerOutputType } from "./nodes/interface/layerOutputNode";
-import { PathOpInputDefinition, PathOpInputType } from "./nodes/interface/pathOpInputNode";
-import { PathOpOutputDefinition, PathOpOutputType } from "./nodes/interface/pathOpOutputNode";
-import { StopColorInputDefinition, StopColorInputType } from "./nodes/interface/stopColorInputNode";
-import { StopColorOutputDefinition, StopColorOutputType } from "./nodes/interface/stopColorOutputNode";
-import { ArrayStopColorInputDefinition, ArrayStopColorInputType } from "./nodes/interface/arrayStopColorInputNode";
-import { ArrayStopColorOutputDefinition, ArrayStopColorOutputType } from "./nodes/interface/arrayStopColorOutputNode";
-import { StopFloatInputDefinition, StopFloatInputType } from "./nodes/interface/stopFloatInputNode";
-import { StopFloatOutputDefinition, StopFloatOutputType } from "./nodes/interface/stopFloatOutputNode";
-import { ArrayStopFloatInputDefinition, ArrayStopFloatInputType } from "./nodes/interface/arrayStopFloatInputNode";
-import { ArrayStopFloatOutputDefinition, ArrayStopFloatOutputType } from "./nodes/interface/arrayStopFloatOutputNode";
-import { StopAngleInputDefinition, StopAngleInputType } from "./nodes/interface/stopAngleInputNode";
-import { StopAngleOutputDefinition, StopAngleOutputType } from "./nodes/interface/stopAngleOutputNode";
-import { ArrayStopAngleInputDefinition, ArrayStopAngleInputType } from "./nodes/interface/arrayStopAngleInputNode";
-import { ArrayStopAngleOutputDefinition, ArrayStopAngleOutputType } from "./nodes/interface/arrayStopAngleOutputNode";
-import { StopIntegerInputDefinition, StopIntegerInputType } from "./nodes/interface/stopIntegerInputNode";
-import { StopIntegerOutputDefinition, StopIntegerOutputType } from "./nodes/interface/stopIntegerOutputNode";
-import { ArrayStopIntegerInputDefinition, ArrayStopIntegerInputType } from "./nodes/interface/arrayStopIntegerInputNode";
-import { ArrayStopIntegerOutputDefinition, ArrayStopIntegerOutputType } from "./nodes/interface/arrayStopIntegerOutputNode";
-import { StopLengthInputDefinition, StopLengthInputType } from "./nodes/interface/stopLengthInputNode";
-import { StopLengthOutputDefinition, StopLengthOutputType } from "./nodes/interface/stopLengthOutputNode";
-import { ArrayStopLengthInputDefinition, ArrayStopLengthInputType } from "./nodes/interface/arrayStopLengthInputNode";
-import { ArrayStopLengthOutputDefinition, ArrayStopLengthOutputType } from "./nodes/interface/arrayStopLengthOutputNode";
-import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/distributionInputNode";
-import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/distributionOutputNode";
-import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/sequenceInputNode";
-import { SequenceOutputDefinition, SequenceOutputType } from "./nodes/interface/sequenceOutputNode";
-import { PathInputDefinition, PathInputType } from "./nodes/interface/pathInputNode";
-import { PathOutputDefinition, PathOutputType } from "./nodes/interface/pathOutputNode";
+import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/inputs/integerInputNode";
+import { IntegerOutputDefinition, IntegerOutputType } from "./nodes/interface/outputs/integerOutputNode";
+import { AngleInputDefinition, AngleInputType } from "./nodes/interface/inputs/angleInputNode";
+import { AngleOutputDefinition, AngleOutputType } from "./nodes/interface/outputs/angleOutputNode";
+import { LengthInputDefinition, LengthInputType } from "./nodes/interface/inputs/lengthInputNode";
+import { LengthOutputDefinition, LengthOutputType } from "./nodes/interface/outputs/lengthOutputNode";
+import { ShapeInputDefinition, ShapeInputType } from "./nodes/interface/inputs/shapeInputNode";
+import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/outputs/shapeOutputNode";
+import { ColorInputDefinition, ColorInputType } from "./nodes/interface/inputs/colorInputNode";
+import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/outputs/colorOutputNode";
+import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/inputs/booleanInputNode";
+import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/outputs/booleanOutputNode";
+import { EnumInputDefinition, EnumInputType } from "./nodes/interface/inputs/enumInputNode";
+import { EnumOutputDefinition, EnumOutputType } from "./nodes/interface/outputs/enumOutputNode";
+import { StringInputDefinition, StringInputType } from "./nodes/interface/inputs/stringInputNode";
+import { StringOutputDefinition, StringOutputType } from "./nodes/interface/outputs/stringOutputNode";
+import { TokensLengthInputDefinition, TokensLengthInputType } from "./nodes/interface/inputs/tokensLengthInputNode";
+import { TokensLengthOutputDefinition, TokensLengthOutputType } from "./nodes/interface/outputs/tokensLengthOutputNode";
+import { ArrayLayerInputDefinition, ArrayLayerInputType } from "./nodes/interface/inputs/arrayLayerInputNode";
+import { ArrayLayerOutputDefinition, ArrayLayerOutputType } from "./nodes/interface/outputs/arrayLayerOutputNode";
+import { ArrayPathOpInputDefinition, ArrayPathOpInputType } from "./nodes/interface/inputs/arrayPathOpInputNode";
+import { ArrayPathOpOutputDefinition, ArrayPathOpOutputType } from "./nodes/interface/outputs/arrayPathOpOutputNode";
+import { LayerInputDefinition, LayerInputType } from "./nodes/interface/inputs/layerInputNode";
+import { LayerOutputDefinition, LayerOutputType } from "./nodes/interface/outputs/layerOutputNode";
+import { PathOpInputDefinition, PathOpInputType } from "./nodes/interface/inputs/pathOpInputNode";
+import { PathOpOutputDefinition, PathOpOutputType } from "./nodes/interface/outputs/pathOpOutputNode";
+import { StopColorInputDefinition, StopColorInputType } from "./nodes/interface/inputs/stopColorInputNode";
+import { StopColorOutputDefinition, StopColorOutputType } from "./nodes/interface/outputs/stopColorOutputNode";
+import { ArrayStopColorInputDefinition, ArrayStopColorInputType } from "./nodes/interface/inputs/arrayStopColorInputNode";
+import { ArrayStopColorOutputDefinition, ArrayStopColorOutputType } from "./nodes/interface/outputs/arrayStopColorOutputNode";
+import { StopFloatInputDefinition, StopFloatInputType } from "./nodes/interface/inputs/stopFloatInputNode";
+import { StopFloatOutputDefinition, StopFloatOutputType } from "./nodes/interface/outputs/stopFloatOutputNode";
+import { ArrayStopFloatInputDefinition, ArrayStopFloatInputType } from "./nodes/interface/inputs/arrayStopFloatInputNode";
+import { ArrayStopFloatOutputDefinition, ArrayStopFloatOutputType } from "./nodes/interface/outputs/arrayStopFloatOutputNode";
+import { StopAngleInputDefinition, StopAngleInputType } from "./nodes/interface/inputs/stopAngleInputNode";
+import { StopAngleOutputDefinition, StopAngleOutputType } from "./nodes/interface/outputs/stopAngleOutputNode";
+import { ArrayStopAngleInputDefinition, ArrayStopAngleInputType } from "./nodes/interface/inputs/arrayStopAngleInputNode";
+import { ArrayStopAngleOutputDefinition, ArrayStopAngleOutputType } from "./nodes/interface/outputs/arrayStopAngleOutputNode";
+import { StopIntegerInputDefinition, StopIntegerInputType } from "./nodes/interface/inputs/stopIntegerInputNode";
+import { StopIntegerOutputDefinition, StopIntegerOutputType } from "./nodes/interface/outputs/stopIntegerOutputNode";
+import { ArrayStopIntegerInputDefinition, ArrayStopIntegerInputType } from "./nodes/interface/inputs/arrayStopIntegerInputNode";
+import { ArrayStopIntegerOutputDefinition, ArrayStopIntegerOutputType } from "./nodes/interface/outputs/arrayStopIntegerOutputNode";
+import { StopLengthInputDefinition, StopLengthInputType } from "./nodes/interface/inputs/stopLengthInputNode";
+import { StopLengthOutputDefinition, StopLengthOutputType } from "./nodes/interface/outputs/stopLengthOutputNode";
+import { ArrayStopLengthInputDefinition, ArrayStopLengthInputType } from "./nodes/interface/inputs/arrayStopLengthInputNode";
+import { ArrayStopLengthOutputDefinition, ArrayStopLengthOutputType } from "./nodes/interface/outputs/arrayStopLengthOutputNode";
+import { DistributionInputDefinition, DistributionInputType } from "./nodes/interface/inputs/distributionInputNode";
+import { DistributionOutputDefinition, DistributionOutputType } from "./nodes/interface/outputs/distributionOutputNode";
+import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/inputs/sequenceInputNode";
+import { SequenceOutputDefinition, SequenceOutputType } from "./nodes/interface/outputs/sequenceOutputNode";
+import { PathInputDefinition, PathInputType } from "./nodes/interface/inputs/pathInputNode";
+import { PathOutputDefinition, PathOutputType } from "./nodes/interface/outputs/pathOutputNode";
 import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/logic/switchCaseNode";
 import { ConditionDefinition, ConditionNodeType } from "./nodes/logic/conditionNode";
 import { LogicalNotDefinition, LogicalNotNodeType } from "./nodes/logic/logicalNotNode";
@@ -658,19 +658,9 @@ namespace Registries {
         "array<stop<length>>": "Length Stop Array",
     };
 
-    export const NODECAT_FLAVOURS = {
-        Result: "emphasis",
-        Outputs: "emphasis",
-        Logic: "help",
-        Inputs: "emphasis",
-        Primitives: "accent",
-        Collections: "danger",
-        Shapes: "confirm",
-        Meta: "emphasis",
-        Math: "help",
-        Effects: "emphasis",
-        Custom: "info",
-    } as const satisfies { [key: string]: Flavour };
+    // Categories are decoupled from colour: a node's colour comes from its own `flavour`.
+    // This is just the set of category names (Custom is the transient subgraph bucket).
+    export const NODE_CATEGORIES = ["Result", "Outputs", "Inputs", "Logic", "Math", "Values", "Modifiers", "Shapes", "Meta", "Custom"] as const;
 }
 
 export namespace DataTypes {
@@ -726,9 +716,10 @@ export namespace NodeTypes {
     export type Key = keyof typeof Registries.NODETYPES;
     export type Use<K extends Key> = (typeof Registries.NODETYPES)[K];
 
-    export const CATEGORY_FLAVOURS = Registries.NODECAT_FLAVOURS;
+    export type Category = (typeof Registries.NODE_CATEGORIES)[number];
 
-    export type Category = keyof typeof Registries.NODECAT_FLAVOURS;
+    /** Fallback flavour for Custom (subgraph) nodes until a per-subgraph colour is chosen. */
+    export const DEFAULT_CUSTOM_FLAVOUR: Flavour = "info";
 
     export type RefreshReason = "constraintAdded" | "constraintRemoved";
 
@@ -757,6 +748,7 @@ export namespace NodeTypes {
         defaultLabel: string;
         iconNode: ReactNode;
         category: Category;
+        flavour: Flavour;
         /** Keeps the type loadable for existing saves but hides it from the Add Node drawer. */
         deprecated?: boolean;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;

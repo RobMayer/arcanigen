@@ -181,6 +181,7 @@ export const NegateType: NodeTypes.Type<"negate", NegateDefinition> = {
     displayName: "Negate",
     defaultLabel: "Negate",
     iconNode: <NodeIcon shape={NODE_ICONS.subtract} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

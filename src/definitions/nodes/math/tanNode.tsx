@@ -99,6 +99,7 @@ export const TanType: NodeTypes.Type<"tan", TanDefinition> = {
     displayName: "Tan",
     defaultLabel: "Tan",
     iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

@@ -181,6 +181,7 @@ export const AbsType: NodeTypes.Type<"abs", AbsDefinition> = {
     displayName: "Abs",
     defaultLabel: "Abs",
     iconNode: <NodeIcon shape={NODE_ICONS.abs} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

@@ -453,6 +453,7 @@ export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
     displayName: "Burst",
     defaultLabel: "Burst",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeBurst} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

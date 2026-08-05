@@ -227,6 +227,7 @@ export const MinType: NodeTypes.Type<"min", MinDefinition> = {
     displayName: "Min",
     defaultLabel: "Min",
     iconNode: <NodeIcon shape={NODE_ICONS.min} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

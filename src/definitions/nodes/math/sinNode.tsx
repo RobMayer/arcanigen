@@ -99,6 +99,7 @@ export const SinType: NodeTypes.Type<"sin", SinDefinition> = {
     displayName: "Sin",
     defaultLabel: "Sin",
     iconNode: <NodeIcon shape={NODE_ICONS.sine} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

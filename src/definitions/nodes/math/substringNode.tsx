@@ -182,6 +182,7 @@ export const SubstringNodeType: NodeTypes.Type<"substring", SubstringDefinition>
     displayName: "Substring",
     defaultLabel: "Substring",
     iconNode: <NodeIcon shape={NODE_ICONS.substring} />,
+    flavour: "help",
     category: "Math",
     create,
     dependsOn,

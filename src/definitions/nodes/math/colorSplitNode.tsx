@@ -544,6 +544,7 @@ export const ColorSplitNodeType: NodeTypes.Type<"colorSplit", ColorSplitDefiniti
     displayName: "Color Split",
     defaultLabel: "Color Split",
     iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.split} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

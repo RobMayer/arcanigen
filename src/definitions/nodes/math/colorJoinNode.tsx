@@ -562,6 +562,7 @@ export const ColorJoinNodeType: NodeTypes.Type<"colorJoin", ColorJoinDefinition>
     displayName: "Color Join",
     defaultLabel: "Color Join",
     iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.merge} />,
+    flavour: "help",
     category: "Math",
     evaluate,
     Controls,

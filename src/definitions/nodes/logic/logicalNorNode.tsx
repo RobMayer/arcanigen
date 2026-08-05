@@ -126,6 +126,7 @@ export const LogicalNorNodeType: NodeTypes.Type<"logicalNor", LogicalNorDefiniti
     displayName: "Nor",
     defaultLabel: "Nor",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalNor} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

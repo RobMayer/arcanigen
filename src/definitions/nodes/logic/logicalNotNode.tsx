@@ -73,6 +73,7 @@ export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefiniti
     displayName: "Not",
     defaultLabel: "Not",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalNot} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

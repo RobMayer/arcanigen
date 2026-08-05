@@ -158,6 +158,7 @@ export const FromPathNodeType: NodeTypes.Type<"fromPath", FromPathDefinition> = 
     displayName: "From Path",
     defaultLabel: "From Path",
     iconNode: <NodeIcon shape={NODE_ICONS.path} />,
+    flavour: "confirm",
     category: "Shapes",
     create,
     dependsOn,

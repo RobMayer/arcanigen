@@ -207,6 +207,7 @@ export const WithinNodeType: NodeTypes.Type<"within", WithinDefinition> = {
     displayName: "Within",
     defaultLabel: "Within",
     iconNode: <NodeIcon shape={NODE_ICONS.plusMinus} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,

@@ -126,6 +126,7 @@ export const LogicalXnorNodeType: NodeTypes.Type<"logicalXnor", LogicalXnorDefin
     displayName: "Xnor",
     defaultLabel: "Xnor",
     iconNode: <NodeIcon shape={NODE_ICONS.logicalXnor} />,
+    flavour: "help",
     category: "Logic",
     create,
     dependsOn,
