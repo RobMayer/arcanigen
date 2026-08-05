@@ -205,6 +205,9 @@ export const Socket = styled(
     &[data-sockettype*="array<"] {
         corner-shape: bevel;
     }
+    &[data-sockettype*="tokens<"] {
+        corner-shape: square;
+    }
 
     --tl: var(--flavour-base);
     --br: var(--flavour-base);
