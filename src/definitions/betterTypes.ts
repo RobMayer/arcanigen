@@ -128,14 +128,22 @@ import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/
 import { RepetitionArrayDefinition, RepetitionArrayNodeType } from "./nodes/collections/repetitionArrayNode";
 import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collections/sequenceIndexNode";
 import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
-import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
+import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecated/colorIteratorNode";
+import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
+import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
 import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/deprecated/floatIteratorNode";
 import { FloatIterator2Definition, FloatIterator2NodeType } from "./nodes/collections/floatIterator2Node";
 import { StopFloatBreakoutDefinition, FloatStopNodeType } from "./nodes/collections/floatStopNode";
-import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/collections/integerIteratorNode";
-import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/collections/lengthIteratorNode";
-import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/collections/angleIteratorNode";
+import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/deprecated/integerIteratorNode";
+import { IntegerIterator2Definition, IntegerIterator2NodeType } from "./nodes/collections/integerIterator2Node";
+import { IntegerStopBreakoutDefinition, IntegerStopNodeType } from "./nodes/collections/integerStopNode";
+import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/deprecated/lengthIteratorNode";
+import { LengthIterator2Definition, LengthIterator2NodeType } from "./nodes/collections/lengthIterator2Node";
+import { LengthStopBreakoutDefinition, LengthStopNodeType } from "./nodes/collections/lengthStopNode";
+import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/deprecated/angleIteratorNode";
+import { AngleIterator2Definition, AngleIterator2NodeType } from "./nodes/collections/angleIterator2Node";
+import { AngleStopBreakoutDefinition, AngleStopNodeType } from "./nodes/collections/angleStopNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
 import { PencilEffectDefinition, PencilEffectNodeType } from "./nodes/effects/pencilEffectNode";
 import { PenEffectDefinition, PenEffectNodeType } from "./nodes/effects/penEffectNode";
@@ -284,12 +292,20 @@ namespace Registries {
         sequenceIndex: SequenceIndexDefinition;
         pathArray: PathArrayDefinition;
         colorIterator: ColorIteratorDefinition;
+        colorIterator2: ColorIterator2Definition;
+        colorStop: ColorStopBreakoutDefinition;
         floatIterator: FloatIteratorDefinition;
         floatIterator2: FloatIterator2Definition;
         floatStop: StopFloatBreakoutDefinition;
         integerIterator: IntegerIteratorDefinition;
+        integerIterator2: IntegerIterator2Definition;
+        integerStop: IntegerStopBreakoutDefinition;
         lengthIterator: LengthIteratorDefinition;
+        lengthIterator2: LengthIterator2Definition;
+        lengthStop: LengthStopBreakoutDefinition;
         angleIterator: AngleIteratorDefinition;
+        angleIterator2: AngleIterator2Definition;
+        angleStop: AngleStopBreakoutDefinition;
         restyle: RestyleDefinition;
         switchCase: SwitchCaseDefinition;
         condition: ConditionDefinition;
@@ -360,12 +376,20 @@ namespace Registries {
         sequenceIndex: SequenceIndexNodeType,
         pathArray: PathArrayNodeType,
         colorIterator: ColorIteratorNodeType,
+        colorIterator2: ColorIterator2NodeType,
+        colorStop: ColorStopNodeType,
         floatIterator: FloatIteratorNodeType,
         floatIterator2: FloatIterator2NodeType,
         floatStop: FloatStopNodeType,
         integerIterator: IntegerIteratorNodeType,
+        integerIterator2: IntegerIterator2NodeType,
+        integerStop: IntegerStopNodeType,
         lengthIterator: LengthIteratorNodeType,
+        lengthIterator2: LengthIterator2NodeType,
+        lengthStop: LengthStopNodeType,
         angleIterator: AngleIteratorNodeType,
+        angleIterator2: AngleIterator2NodeType,
+        angleStop: AngleStopNodeType,
         restyle: RestyleNodeType,
         float: FloatPrimitiveType,
         string: StringPrimitiveType,
@@ -499,6 +523,14 @@ namespace Registries {
         sequence: { senderId: string; count: number };
         "stop<float>": { value: number | null; position: number | null; enabled: boolean | null };
         "array<stop<float>>": { value: number | null; position: number | null; enabled: boolean | null }[];
+        "stop<color>": { value: Color.Type; position: number | null; enabled: boolean | null };
+        "array<stop<color>>": { value: Color.Type; position: number | null; enabled: boolean | null }[];
+        "stop<angle>": { value: number | null; position: number | null; enabled: boolean | null };
+        "array<stop<angle>>": { value: number | null; position: number | null; enabled: boolean | null }[];
+        "stop<integer>": { value: number | null; position: number | null; enabled: boolean | null };
+        "array<stop<integer>>": { value: number | null; position: number | null; enabled: boolean | null }[];
+        "stop<length>": { value: string | null; position: number | null; enabled: boolean | null };
+        "array<stop<length>>": { value: string | null; position: number | null; enabled: boolean | null }[];
     };
 
     export const DATATYPE_LABELS: { [key in keyof DATATYPES]: string } = {
@@ -521,6 +553,14 @@ namespace Registries {
         sequence: "Sequence",
         "stop<float>": "Float Stop",
         "array<stop<float>>": "Float Stop Array",
+        "stop<color>": "Color Stop",
+        "array<stop<color>>": "Color Stop Array",
+        "stop<angle>": "Angle Stop",
+        "array<stop<angle>>": "Angle Stop Array",
+        "stop<integer>": "Integer Stop",
+        "array<stop<integer>>": "Integer Stop Array",
+        "stop<length>": "Length Stop",
+        "array<stop<length>>": "Length Stop Array",
     };
 
     export const NODECAT_FLAVOURS = {

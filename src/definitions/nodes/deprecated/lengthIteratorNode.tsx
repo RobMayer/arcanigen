@@ -9,29 +9,30 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Enum } from "../../datatypes/enum";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
+import { Length } from "../../datatypes/length";
+import { LengthInput } from "../../../components/inputs/LengthInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Iteration } from "../abstract";
 import { EmptyOr } from "../../../util/misc";
 import styled from "styled-components";
 
-export type IntegerIteratorDefinition = {
+export type LengthIteratorDefinition = {
     inputs: {
-        [value: `value_${string}`]: DataTypes.Use<"integer">;
+        [value: `value_${string}`]: DataTypes.Use<"length">;
         [pos: `pos_${string}`]: DataTypes.Use<"float">;
     } & Iteration.Definition["inputs"];
     outputs: {
-        sequencedOutput: DataTypes.Use<"integer">;
-        sampledOutput: DataTypes.Use<"integer">;
+        sequencedOutput: DataTypes.Use<"length">;
+        sampledOutput: DataTypes.Use<"length">;
     };
     payload: {
         label: string;
-        stops: { id: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type> }[];
+        stops: { id: string; value: DataTypes.TypeOf<DataTypes.Use<"length">>; position: EmptyOr<NumericString.Type> }[];
     } & Iteration.Definition["payload"];
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"integerIterator", IntegerIteratorDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LengthIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"lengthIterator", LengthIteratorDefinition> => {
     const s0 = nanoid();
     const s1 = nanoid();
     return {
@@ -60,19 +61,19 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerIteratorDefi
             endOffset: input.endOffset ?? "0",
             samplePosition: input.samplePosition ?? "50",
             stops: [
-                { id: s0, value: "0", position: "0" },
-                { id: s1, value: "10", position: "100" },
+                { id: s0, value: "0px", position: "0" },
+                { id: s1, value: "100px", position: "100" },
             ],
         },
-        type: "integerIterator",
+        type: "lengthIterator",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthIteratorDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<IntegerIteratorDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<LengthIteratorDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -85,7 +86,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIter
             in: { ...n.in, [`value_${stopId}`]: null, [`pos_${stopId}`]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as IntegerIteratorDefinition["payload"]).stops, { id: stopId, value: "5", position: "50" }],
+                stops: [...(n.payload as LengthIteratorDefinition["payload"]).stops, { id: stopId, value: "50px", position: "50" }],
             },
         }));
     }, [alterNode, node.id]);
@@ -105,7 +106,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIter
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as IntegerIteratorDefinition["payload"]).stops.filter((s) => s.id !== stopId),
+                        stops: (n.payload as LengthIteratorDefinition["payload"]).stops.filter((s) => s.id !== stopId),
                     },
                 };
             });
@@ -114,7 +115,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIter
     );
 
     const handleStopValue = useCallback(
-        (stopId: string, value: EmptyOr<NumericString.Type>) => {
+        (stopId: string, value: DataTypes.TypeOf<DataTypes.Use<"length">>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.id === stopId ? { ...s, value } : s)),
             });
@@ -152,7 +153,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIter
             <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
-
             <hr />
             <ActionButton onClick={handleAddStop} flavour={"accent"}>
                 Add Stop
@@ -160,7 +160,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIter
             {node.payload.stops.map((stop, idx) => (
                 <StopEntry key={stop.id}>
                     <SocketIn node={node} socketId={`value_${stop.id}`} label={`Stop ${idx}`} data-part="value">
-                        <IntegerInput value={stop.value} onCommit={(value) => handleStopValue(stop.id, value)} disabled={node.in[`value_${stop.id}`] !== null} />
+                        <LengthInput value={stop.value} onCommit={(value) => handleStopValue(stop.id, value)} disabled={node.in[`value_${stop.id}`] !== null} required />
                     </SocketIn>
                     <SocketIn node={node} socketId={`pos_${stop.id}`} data-part="position">
                         <DecimalInput value={stop.position} onCommit={(position) => handleStopPosition(stop.id, position)} disabled={node.in[`pos_${stop.id}`] !== null} min={"0"} max={"100"} />
@@ -195,8 +195,8 @@ const StopEntry = styled.div`
     }
 `;
 
-const dependsOn = (node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, outSocket: keyof IntegerIteratorDefinition["outputs"], _deps: AllDeps): (keyof IntegerIteratorDefinition["inputs"])[] => {
-    const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof IntegerIteratorDefinition["inputs"])[];
+const dependsOn = (node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, outSocket: keyof LengthIteratorDefinition["outputs"], _deps: AllDeps): (keyof LengthIteratorDefinition["inputs"])[] => {
+    const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof LengthIteratorDefinition["inputs"])[];
     if (outSocket === "sequencedOutput") {
         return [...Iteration.SEQUENCED_DEPS, ...stopSockets];
     }
@@ -206,17 +206,13 @@ const dependsOn = (node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, out
     return [];
 };
 
-const contributesTo = (
-    _node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>,
-    inSocket: keyof IntegerIteratorDefinition["inputs"],
-    _deps: AllDeps,
-): (keyof IntegerIteratorDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, inSocket: keyof LengthIteratorDefinition["inputs"], _deps: AllDeps): (keyof LengthIteratorDefinition["outputs"])[] => {
     if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
     if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
     return ["sequencedOutput", "sampledOutput"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, socket: keyof IntegerIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, socket: keyof LengthIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     let position: number;
     if (socket === "sequencedOutput") {
         const result = Iteration.evaluate(node, context);
@@ -231,40 +227,59 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, sock
     const stops = node.payload.stops;
     if (stops.length === 0) return null;
 
-    // Resolve all stops
-    const resolved: { value: number; position: number }[] = [];
+    // Resolve all stops — parse lengths and convert to the first stop's unit
+    const rawStops: { lengthStr: string; position: number }[] = [];
     for (const stop of stops) {
-        const valStr = context.resolve<"integer">(node.id, `value_${stop.id}`)?.data ?? stop.value;
+        const valStr = context.resolve<"length">(node.id, `value_${stop.id}`)?.data ?? stop.value;
         const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
-        const value = NumericString.Emptyable.asNumber(valStr) ?? 0;
         const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
-        resolved.push({ value, position: pos });
+        rawStops.push({ lengthStr: valStr, position: pos });
     }
 
     // Sort by position
-    resolved.sort((a, b) => a.position - b.position);
+    rawStops.sort((a, b) => a.position - b.position);
 
-    const value = Math.round(Iteration.sampleStops(resolved, position));
-    return { kind: "integer", data: `${value}` };
+    // Determine reference unit from first stop
+    const firstParsed = Length.parse(rawStops[0].lengthStr);
+    const unit = firstParsed ? firstParsed[1] : "px";
+
+    // Convert all to numeric values in reference unit
+    const resolved: { value: number; position: number }[] = [];
+    for (const rs of rawStops) {
+        const parsed = Length.parse(rs.lengthStr);
+        if (!parsed) {
+            resolved.push({ value: 0, position: rs.position });
+            continue;
+        }
+        if (parsed[1] === unit) {
+            resolved.push({ value: parsed[0], position: rs.position });
+        } else {
+            const converted = Length.parse(Length.convert(rs.lengthStr as Length.Type, unit));
+            resolved.push({ value: converted ? converted[0] : 0, position: rs.position });
+        }
+    }
+
+    const value = Iteration.sampleStops(resolved, position);
+    return { kind: "length", data: `${value}${unit}` };
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<IntegerIteratorDefinition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">>]: SocketTypes.SocketRule;
+    [key in keyof Required<Pick<LengthIteratorDefinition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">>]: SocketTypes.SocketRule;
 } = {
     ...Iteration.IN_SOCKET_TYPES,
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<IntegerIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["integer"], mode: "and" },
-    sampledOutput: { types: ["integer"], mode: "and" },
+const SOCKETTYPES_OUT: { [key in keyof Required<LengthIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    sequencedOutput: { types: ["length"], mode: "and" },
+    sampledOutput: { types: ["length"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
         return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
     if (socketId.startsWith("value_")) {
-        return { types: ["integer"], mode: "and" };
+        return { types: ["length"], mode: "and" };
     }
     if (socketId.startsWith("pos_")) {
         return { types: ["float"], mode: "and" };
@@ -272,11 +287,12 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>
     return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
-export const IntegerIteratorNodeType: NodeTypes.Type<"integerIterator", IntegerIteratorDefinition> = {
-    type: "integerIterator",
-    displayName: "Integer Iterator",
-    defaultLabel: "Integer Iterator",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+export const LengthIteratorNodeType: NodeTypes.Type<"lengthIterator", LengthIteratorDefinition> = {
+    type: "lengthIterator",
+    displayName: "Length Iterator",
+    defaultLabel: "Length Iterator",
+    deprecated: true,
+    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

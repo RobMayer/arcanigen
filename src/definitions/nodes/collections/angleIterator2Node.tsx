@@ -10,35 +10,49 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Enum } from "../../datatypes/enum";
+import { Angle } from "../../datatypes/angle";
+import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { Dropdown } from "../../../components/inputs/Dropdown";
+import { RadioButton } from "../../../components/buttons/RadioButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Iteration } from "../abstract";
 import { EmptyOr } from "../../../util/misc";
+import { lerpAngle } from "../../../util/colorSpaces";
 import styled from "styled-components";
 
-export type FloatIterator2Definition = {
+const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
+const ANGLE_CONTINUITY_OPTIONS = Enum.options(Enum.Common.angleContinuity);
+
+export type AngleIterator2Definition = {
     inputs: {
-        stops: DataTypes.Use<"array<stop<float>>">;
-        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<float>">;
+        stops: DataTypes.Use<"array<stop<angle>>">;
+        angleTraversal: DataTypes.Use<"enum">;
+        continuity: DataTypes.Use<"enum">;
+        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<angle>">;
     } & Iteration.Definition["inputs"];
     outputs: {
-        sequencedOutput: DataTypes.Use<"float">;
-        sampledOutput: DataTypes.Use<"float">;
-        stopsOutput: DataTypes.Use<"array<stop<float>>">;
+        sequencedOutput: DataTypes.Use<"angle">;
+        sampledOutput: DataTypes.Use<"angle">;
+        stopsOutput: DataTypes.Use<"array<stop<angle>>">;
     };
     payload: {
         label: string;
-        stops: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
+        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        continuity: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        stops: { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
     } & Iteration.Definition["payload"];
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIterator2Definition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
     const s1: `stop_${string}` = `stop_${nanoid()}`;
     return {
         id,
         in: {
             sequence: null,
+            angleTraversal: null,
+            continuity: null,
             mode: null,
             reverseSequence: null,
             startOffset: null,
@@ -55,6 +69,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Defin
         },
         payload: {
             label: "",
+            angleTraversal: input.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value,
+            continuity: input.continuity ?? Enum.Common.angleContinuity.CONTINUOUS.value,
             mode: input.mode ?? Enum.Common.sequencerMode.CLAMP.value,
             reverseSequence: input.reverseSequence ?? false,
             startOffset: input.startOffset ?? "0",
@@ -62,18 +78,18 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Defin
             samplePosition: input.samplePosition ?? "50",
             stops: input.stops ?? [
                 { socket: s0, value: "0", position: "0", enabled: true },
-                { socket: s1, value: "1", position: "100", enabled: true },
+                { socket: s1, value: "360", position: "100", enabled: true },
             ],
         },
-        type: "floatIterator2",
+        type: "angleIterator2",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Definition>>) => {
             methods.update(v);
         },
         [methods],
@@ -86,7 +102,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as FloatIterator2Definition["payload"]).stops, { socket, value: "0.5", position: "50", enabled: true }],
+                stops: [...(n.payload as AngleIterator2Definition["payload"]).stops, { socket, value: "180", position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -104,7 +120,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as FloatIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
+                        stops: (n.payload as AngleIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
                     },
                 };
             });
@@ -113,7 +129,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
     );
 
     const handleStopUpdate = useCallback(
-        (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
+        (socket: string, update: Partial<{ value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.socket === socket ? { ...s, ...update } : s)),
             });
@@ -138,6 +154,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
     );
 
     const supersocketConnected = node.in.stops !== null;
+    const isContinuous = node.payload.continuity === Enum.Common.angleContinuity.CONTINUOUS.value && node.in.continuity === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -173,19 +190,33 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                 </>
             )}
 
-            <Iteration.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampleOutput" socketsIn={"samplePosition"}>
+            <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="continuity|angleTraversal|mode|reverseSequence|startOffset|endOffset">
+                <SocketIn node={node} socketId={"continuity"} label={"Continuity"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.continuity}`}
+                        onValue={(v) => handleUpdate({ continuity: Number(v) })}
+                        disabled={node.in.continuity !== null}
+                        options={ANGLE_CONTINUITY_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"angleTraversal"} label={"Traversal"}>
+                    <Dropdown value={`${node.payload.angleTraversal}`} onValue={(v) => handleUpdate({ angleTraversal: Number(v) })} disabled={node.in.angleTraversal !== null || isContinuous}>
+                        {ANGLE_TRAVERSAL_OPTIONS.map((each) => (
+                            <option value={each.value} key={each.value}>
+                                {each.label}
+                            </option>
+                        ))}
+                    </Dropdown>
+                </SocketIn>
+                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
+            </NodeAccordion>
+            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampledOutput" socketsIn={"samplePosition"}>
                 <SocketOut node={node} socketId={"sampledOutput"}>
                     Sampled Output
                 </SocketOut>
                 <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
-                    <DecimalInput.SliderInput
-                        value={node.payload.samplePosition}
-                        onCommit={(samplePosition) => handleUpdate({ samplePosition })}
-                        disabled={node.in.samplePosition !== null}
-                        min={0}
-                        max={100}
-                    />
+                    <DecimalInput.SliderInput value={node.payload.samplePosition} onCommit={(samplePosition) => handleUpdate({ samplePosition })} disabled={node.in.samplePosition !== null} min={0} max={100} />
                 </SocketIn>
             </NodeAccordion>
         </TypicalNode>
@@ -202,10 +233,10 @@ const StopEntry = ({
     handleRemoveStop,
     handleReorderStop,
 }: {
-    entry: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
-    node: NodeDefinitions.NodeFor<FloatIterator2Definition>;
+    entry: { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
+    node: NodeDefinitions.NodeFor<AngleIterator2Definition>;
     index: number;
-    handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
+    handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
     handleRemoveStop: (socket: string) => void;
     handleReorderStop: (socket: string, toIndex: number) => void;
 }) => {
@@ -253,7 +284,7 @@ const StopEntry = ({
             <SocketIn node={node} socketId={entry.socket as `stop_${string}`}>
                 <StopRow>
                     <CheckBox checked={entry.enabled} onToggle={(enabled) => handleStopUpdate(entry.socket, { enabled })} disabled={connected} />
-                    <DecimalInput className={"stopValue"} value={entry.value} onCommit={(value) => handleStopUpdate(entry.socket, { value })} disabled={connected} />
+                    <AngleInput className={"stopValue"} value={entry.value} onCommit={(value) => handleStopUpdate(entry.socket, { value })} disabled={connected} unbound />
                     <DecimalInput className={"stopPosition"} value={entry.position} onCommit={(position) => handleStopUpdate(entry.socket, { position })} disabled={connected} min={"0"} max={"100"} />
                     <DragGrip draggable onDragStart={handleDragStart}>
                         <Icon shape={ICONS.Caret.Vertical} />
@@ -274,12 +305,12 @@ const StopRow = styled.div`
     width: 100%;
 
     & > .stopValue {
-        flex: 3.5 1 0;
+        flex: 1 1 0;
         width: 0;
         min-width: 0;
     }
 
-    & .stopPosition {
+    & > .stopPosition {
         flex: 1 1 0;
         width: 0;
         min-width: 0;
@@ -322,17 +353,17 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop<float>>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop<float>) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop<float>>">(node.id, "stops");
+// Resolve the effective stops: the supersocket (an array<stop<angle>>) overrides everything;
+// otherwise fold each per-stop socket (a connected stop<angle>) over its inline payload.
+const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
+    const supersocketEval = context.resolve<"array<stop<angle>>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: number; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop<float>">(node.id, entry.socket);
+        const connected = context.resolve<"stop<angle>">(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
@@ -350,13 +381,13 @@ const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, c
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outSocket: keyof FloatIterator2Definition["outputs"], _deps: AllDeps): (keyof FloatIterator2Definition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, outSocket: keyof AngleIterator2Definition["outputs"], _deps: AllDeps): (keyof AngleIterator2Definition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
     if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "stops", ...stopSockets];
+        return [...Iteration.SEQUENCED_DEPS, "angleTraversal", "continuity", "stops", ...stopSockets];
     }
     if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "stops", ...stopSockets];
+        return [...Iteration.SAMPLED_DEPS, "angleTraversal", "continuity", "stops", ...stopSockets];
     }
     if (outSocket === "stopsOutput") {
         return ["stops", ...stopSockets];
@@ -364,7 +395,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outS
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, inSocket: keyof FloatIterator2Definition["inputs"], _deps: AllDeps): (keyof FloatIterator2Definition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, inSocket: keyof AngleIterator2Definition["inputs"], _deps: AllDeps): (keyof AngleIterator2Definition["outputs"])[] => {
     if (inSocket === "stops") {
         return ["sequencedOutput", "sampledOutput", "stopsOutput"];
     }
@@ -380,10 +411,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>,
     return ["sequencedOutput", "sampledOutput", "stopsOutput"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socket: keyof FloatIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socket: keyof AngleIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopsOutput") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
-        return { kind: "array<stop<float>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
+        return { kind: "array<stop<angle>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
     }
 
     let position: number;
@@ -397,44 +428,53 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socke
         return null;
     }
 
+    const traversal = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value;
+    const continuity = Enum.resolve(context.resolve<"enum">(node.id, "continuity")?.data, Enum.Common.angleContinuity) ?? node.payload.continuity ?? Enum.Common.angleContinuity.CONTINUOUS.value;
+    const cyclical = continuity === Enum.Common.angleContinuity.CYCLICAL.value;
+
     const active = resolveStops(node, context).filter((s) => s.enabled);
     if (active.length === 0) return null;
     active.sort((a, b) => a.position - b.position);
 
-    const value = Iteration.sampleStopsWith(active, position, (a, b, t) => a + t * (b - a));
-    return { kind: "float", data: `${value}` };
+    // Cyclical segments wrap around the wheel (respecting traversal); continuous segments are plain
+    // numeric lerps that preserve absolute magnitude (e.g. 0→720 sweeps two full turns).
+    const lerp = cyclical ? (a: number, b: number, t: number) => lerpAngle(a, b, t, traversal) : (a: number, b: number, t: number) => a + (b - a) * t;
+
+    const value = Iteration.sampleStopsWith(active, position, lerp);
+    return { kind: "angle", data: `${value}` };
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<FloatIterator2Definition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">>]: SocketTypes.SocketRule;
+    [key in keyof Required<Pick<AngleIterator2Definition["inputs"], "sequence" | "angleTraversal" | "continuity" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">>]: SocketTypes.SocketRule;
 } = {
     ...Iteration.IN_SOCKET_TYPES,
-    stops: { types: ["array<stop<float>>"], mode: "or" },
+    angleTraversal: { types: ["enum"], mode: "and" },
+    continuity: { types: ["enum"], mode: "and" },
+    stops: { types: ["array<stop<angle>>"], mode: "or" },
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<FloatIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["float"], mode: "and" },
-    sampledOutput: { types: ["float"], mode: "and" },
-    stopsOutput: { types: ["array<stop<float>>"], mode: "and" },
+const SOCKETTYPES_OUT: { [key in keyof Required<AngleIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
+    sequencedOutput: { types: ["angle"], mode: "and" },
+    sampledOutput: { types: ["angle"], mode: "and" },
+    stopsOutput: { types: ["array<stop<angle>>"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
         return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
     if (socketId.startsWith("stop_")) {
-        return { types: ["stop<float>"], mode: "or" };
+        return { types: ["stop<angle>"], mode: "or" };
     }
     return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction !== "in") return;
 
     const link = ctx.getLink(graphId, linkId);
     if (!link || link.toSocket !== "stops") return;
 
-    // Supersocket just connected — clear the individual per-stop socket links.
     const currentNode = ctx.getNode(graphId, node.id);
     if (!currentNode) return;
     const linkIdsToRemove: string[] = [];
@@ -447,11 +487,11 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIter
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-export const FloatIterator2NodeType: NodeTypes.Type<"floatIterator2", FloatIterator2Definition> = {
-    type: "floatIterator2",
-    displayName: "Float Iterator",
-    defaultLabel: "Float Iterator",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+export const AngleIterator2NodeType: NodeTypes.Type<"angleIterator2", AngleIterator2Definition> = {
+    type: "angleIterator2",
+    displayName: "Angle Iterator",
+    defaultLabel: "Angle Iterator",
+    iconNode: <Icon shape={NODE_ICONS.angle} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

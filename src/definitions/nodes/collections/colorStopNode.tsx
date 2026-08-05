@@ -9,27 +9,29 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
+import { Color } from "../../datatypes/color";
+import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { EmptyOr } from "../../../util/misc";
 
-export type StopFloatBreakoutDefinition = {
+export type ColorStopBreakoutDefinition = {
     inputs: {
-        value: DataTypes.Use<"float">;
+        value: DataTypes.Use<"color">;
         position: DataTypes.Use<"float">;
         enabled: DataTypes.Use<"boolean">;
     };
     outputs: {
-        output: DataTypes.Use<"stop<float>">;
+        output: DataTypes.Use<"stop<color>">;
     };
     payload: {
         label: string;
-        value: EmptyOr<NumericString.Type>;
+        value: Color.Type;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
     };
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StopFloatBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatStop", StopFloatBreakoutDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorStopBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorStop", ColorStopBreakoutDefinition> => {
     return {
         id,
         in: {
@@ -42,17 +44,17 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StopFloatBreakoutDe
         },
         payload: {
             label: "",
-            value: input.value ?? "0",
+            value: input.value ?? { r: 0.5, g: 0.5, b: 0.5, a: 1 },
             position: input.position ?? "50",
             enabled: input.enabled ?? true,
         },
-        type: "floatStop",
+        type: "colorStop",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<StopFloatBreakoutDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<ColorStopBreakoutDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -63,8 +65,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StopFloatBr
             <SocketOut node={node} socketId={"output"}>
                 Stop
             </SocketOut>
-            <SocketIn node={node} socketId={"value"} label={"Value"}>
-                <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
+            <SocketIn node={node} socketId={"value"} label={"Color"}>
+                <ColorHexInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} alpha />
             </SocketIn>
             <SocketIn node={node} socketId={"position"} label={"Position"}>
                 <DecimalInput value={node.payload.position} onCommit={(position) => handleUpdate({ position })} disabled={node.in.position !== null} min={"0"} max={"100"} />
@@ -78,63 +80,55 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StopFloatBr
     );
 };
 
-const dependsOn = (
-    _node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>,
-    outSocket: keyof StopFloatBreakoutDefinition["outputs"],
-    _deps: AllDeps,
-): (keyof StopFloatBreakoutDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, outSocket: keyof ColorStopBreakoutDefinition["outputs"], _deps: AllDeps): (keyof ColorStopBreakoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ["value", "position", "enabled"];
     }
     return [];
 };
 
-const contributesTo = (
-    _node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>,
-    inSocket: keyof StopFloatBreakoutDefinition["inputs"],
-    _deps: AllDeps,
-): (keyof StopFloatBreakoutDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, inSocket: keyof ColorStopBreakoutDefinition["inputs"], _deps: AllDeps): (keyof ColorStopBreakoutDefinition["outputs"])[] => {
     if (inSocket === "value" || inSocket === "position" || inSocket === "enabled") {
         return ["output"];
     }
     return [];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>, socket: keyof StopFloatBreakoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, socket: keyof ColorStopBreakoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") {
         return null;
     }
-    const valStr = context.resolve<"float">(node.id, "value")?.data ?? node.payload.value;
+    const value = context.resolve<"color">(node.id, "value")?.data ?? node.payload.value;
     const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
     const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
-        kind: "stop<float>",
+        kind: "stop<color>",
         data: {
-            value: NumericString.Emptyable.asNumber(valStr),
+            value,
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<StopFloatBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["float"], mode: "and" },
+const SOCKETTYPES_IN: { [key in keyof Required<ColorStopBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+    value: { types: ["color"], mode: "and" },
     position: { types: ["float"], mode: "and" },
     enabled: { types: ["boolean"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
-        return { types: ["stop<float>"], mode: "and" };
+        return { types: ["stop<color>"], mode: "and" };
     }
     return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
-export const FloatStopNodeType: NodeTypes.Type<"floatStop", StopFloatBreakoutDefinition> = {
-    type: "floatStop",
-    displayName: "Float Stop",
-    defaultLabel: "Float Stop",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.stopOf} layerColor="#fff" />,
+export const ColorStopNodeType: NodeTypes.Type<"colorStop", ColorStopBreakoutDefinition> = {
+    type: "colorStop",
+    displayName: "Color Stop",
+    defaultLabel: "Color Stop",
+    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.stopOf} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

@@ -164,6 +164,64 @@ const CUTOUTS: { [key in LayerPlacement]: Partial<{ [key in Cutout]: string }> }
     },
 };
 
+type NodeIconProps = {
+    shape: IconDefinition | IconDefinition[];
+    color?: string;
+    modifierIcon?: IconDefinition;
+    directionIcon?: IconDefinition;
+};
+
+export const NodeIcon = styled(({ shape, color = "var(--icon-flavour)", modifierIcon, directionIcon, className, ...props }: SVGProps<SVGSVGElement> & NodeIconProps) => {
+    const colors = useMemo(() => color.split(" "), [color]);
+    const theShape = useMemo(() => (Array.isArray(shape) ? shape : [shape]), [shape]);
+
+    const cssStyle = useMemo(() => {
+        const cutouts: string[] = [];
+        if (modifierIcon) cutouts.push(CUTOUTS["bottom-left"].scoop!);
+        if (directionIcon) cutouts.push(CUTOUTS["top-right"].scoop!);
+        return cutouts.length ? { clipPath: `path(evenodd, "M0 0L640 0L640 640L0 640Z ${cutouts.join(" ")}") view-box` } : {};
+    }, [modifierIcon, directionIcon]);
+
+    return (
+        <svg {...props} viewBox={"0 0 640 640"} className={`${className ?? ""} meta-icon`}>
+            <g style={cssStyle}>
+                {theShape.map((each, i) => (
+                    <path
+                        key={i}
+                        fill={"stroke" in each ? undefined : (colors?.[i] ?? colors[0])}
+                        d={each.path}
+                        stroke={"stroke" in each ? (colors?.[i] ?? colors[0]) : undefined}
+                        strokeWidth={"stroke" in each ? each.stroke : undefined}
+                        strokeDasharray={"dash" in each ? each.dash : undefined}
+                    />
+                ))}
+            </g>
+            {modifierIcon ? (
+                <svg x={PLACEMENTS["bottom-left"].x} y={PLACEMENTS["bottom-left"].y} width={PLACEMENTS["bottom-left"].size} height={PLACEMENTS["bottom-left"].size} viewBox="0 0 640 640">
+                    <path fill={"#fff"} d={modifierIcon.path} />
+                </svg>
+            ) : null}
+            {directionIcon ? (
+                <svg x={PLACEMENTS["top-right"].x} y={PLACEMENTS["top-right"].y} width={PLACEMENTS["top-right"].size} height={PLACEMENTS["top-right"].size} viewBox="0 0 640 640">
+                    <path fill={"#fff"} d={directionIcon.path} />
+                </svg>
+            ) : null}
+        </svg>
+    );
+})`
+    width: 1lh;
+    height: 1lh;
+    aspect-ratio: 1;
+    display: inline-flex;
+    vertical-align: middle;
+    fill: none;
+    overflow: visible;
+    & * {
+        vector-effect: non-scaling-stroke;
+        stroke-width: 1.5px;
+    }
+`;
+
 // prettier-ignore
 export const ICONS = {
     Blank: { path: "M0,0" },
@@ -543,7 +601,7 @@ export const NODE_ICONS = {
     modifiers: {
         inputFor: { path: "M512 320C512 426 426 512 320 512L288 512L288 576L320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64L288 64L288 128L320 128C426 128 512 214 512 320zM318.6 430.6C388.2 361 425 324.2 429.2 320C425 315.8 388.1 278.9 318.6 209.4L296 186.7L250.7 232C264 245.3 282.7 264 306.7 288L64 288L64 352L306.7 352C282.7 376 264 394.7 250.7 408L296 453.3L318.6 430.7z" },
         outputFor: { path: "M509.5 320C509.5 214 423.5 128 317.5 128L285.5 128L285.5 64L317.5 64C458.9 64 573.5 178.6 573.5 320C573.5 461.4 458.9 576 317.5 576L285.5 576L285.5 512L317.5 512C423.5 512 509.5 426 509.5 320zM185.6 185.4L208.2 162.8L253.5 208.1C244.2 217.4 217.5 244.1 173.5 288.1L413.5 288.1L413.5 352.1L173.5 352.1L253.5 432.1L208.2 477.4C208 477.2 163.1 432.3 73.6 342.8L51 320C51.2 319.8 96.1 274.9 185.6 185.4z" },
-        tokenizerFor: { path: "M68 68l27 0 27 0 27 0 0 27 0 135 9 0 27 0 0 54 -27 0 -9 0 -54 0 -9 0 -27 0 0 -54 27 0 9 0 0 -108L68 122l0 -54zM41 428c0 -39.7125 32.2875 -72 72 -72l19.35 0c39.0375 0 70.65 31.6125 70.65 70.65c0 19.9125 -8.4375 38.925 -23.0625 52.3125L137.075 518l38.925 0 27 0 0 54 -27 0 -108 0L41 572l0 -27 0 -0.675 0 -11.925 8.775 -7.9875 93.7125 -85.3875c3.4875 -3.15 5.4 -7.65 5.4 -12.375c0 -9.225 -7.425 -16.65 -16.65 -16.65L113 410c-9.9 0 -18 8.1 -18 18L41 428zM284 104l288 0 36 0 0 72 -36 0 -288 0 -36 0 0 -72 36 0zm0 180l288 0 36 0 0 72 -36 0 -288 0 -36 0 0 -72 36 0zm0 180l288 0 36 0 0 72 -36 0 -288 0 -36 0 0 -72 36 0z" },
+        tokenizerFor: { path: "M168 112l-96 0 0 96 96 0 0-96zm80 16l-32 0 0 64 352 0 0-64-320 0zm0 160l-32 0 0 64 352 0 0-64-320 0zm0 160l-32 0 0 64 352 0 0-64-320 0zM72 272l0 96 96 0 0-96-96 0zm96 160l-96 0 0 96 96 0 0-96z" },
         splitOf: { path: "M440.1 33.5C473.7 62.8 512.7 97 557.2 135.9L584.7 160c-31 27.1-133.9 117.1-144.6 126.5l0-94.5-50.7 0-128 128 128 128 50.7 0 0-94.5c33.6 29.4 72.6 63.5 117.1 102.4L584.7 480c-31 27.1-133.9 117.1-144.6 126.5l0-94.5-77.3 0-9.4-9.4-150.6-150.6-146.7 0 0-64 146.7 0 150.6-150.6 9.4-9.4 77.3 0 0-94.5z" },
         joinOf: { path: "M216.1 128l15.4 0 9.6 12 118.4 148 80.6 0 0-94.5c33.6 29.4 72.6 63.5 117.1 102.4L584.7 320c-31 27.1-133.9 117.1-144.6 126.5l0-94.5-80.6 0-118.4 148-9.6 12-175.4 0 0-64 144.6 0 102.4-128-102.4-128-144.6 0 0-64 160 0z" },
         // this is for {shape} Array nodes
@@ -552,10 +610,10 @@ export const NODE_ICONS = {
         tokenOf: { path: "M246.9 182.6L269.5 160L224.2 114.7L201.6 137.3L41.6 297.3L19 319.9L41.6 342.5L201.6 502.5L224.2 525.1L269.5 479.8L246.9 457.2L109.5 319.8L246.9 182.4zM393.6 182.6L531 320L371 480L416.3 525.3L621.6 320L599 297.4L439 137.4L416.4 114.8L371.1 160.1L393.7 182.7z"},
         // this is for array<{type}> nodes
         arrayOf: { path: "M512 96L544 96L544 544L384 544L384 480L480 480L480 160L384 160L384 96L512 96zM128 96L256 96L256 160L160 160L160 480L256 480L256 544L96 544L96 96L128 96z" },
-        stopOf: { path: "M508 352C493.8 407.2 443.7 448 384 448C313.3 448 256 390.7 256 320C256 249.3 313.3 192 384 192C443.6 192 493.8 232.8 508 288L576 288C593.7 288 608 302.3 608 320C608 337.7 593.7 352 576 352L508 352zM64 288L210.9 288C209 298.4 208 309.1 208 320C208 330.9 209 341.6 210.9 352L64 352C46.3 352 32 337.7 32 320C32 302.3 46.3 288 64 288z"},
+        stopOf: { path: "M297.9 201.4C310.4 188.9 330.7 188.9 343.1 201.4L503.1 361.4C512.3 370.6 515 384.3 510 396.3C505 408.3 493.4 416 480.5 416L160.5 416C147.6 416 135.9 408.2 130.9 396.2C125.9 384.2 128.7 370.5 137.9 361.4L297.9 201.4z"},
         
         // compound
-        arrayOfStopOf: { path: "M512 96L544 96L544 544L384 544L384 480L480 480L480 160L384 160L384 96L512 96zM128 96L256 96L256 160L160 160L160 480L256 480L256 544L96 544L96 96L128 96zM260 320A60 60 0 1 0 380 320A60 60 0 1 0 260 320zM214 320A28 28 0 1 0 270 320A28 28 0 1 0 214 320zM370 320A28 28 0 1 0 426 320A28 28 0 1 0 370 320z" },
+        arrayOfStopOf: { path: "M512 96L544 96L544 544L384 544L384 480L480 480L480 160L384 160L384 96L512 96zM128 96L256 96L256 160L160 160L160 480L256 480L256 544L96 544L96 96L128 96z M297.9 201.4C310.4 188.9 330.7 188.9 343.1 201.4L503.1 361.4C512.3 370.6 515 384.3 510 396.3C505 408.3 493.4 416 480.5 416L160.5 416C147.6 416 135.9 408.2 130.9 396.2C125.9 384.2 128.7 370.5 137.9 361.4L297.9 201.4z" },
         
     },
 }

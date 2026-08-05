@@ -209,7 +209,11 @@ export const Socket = styled(
     &[data-sockettype~="angle"],
     &[data-sockettype~="boolean"],
     &[data-sockettype~="tokens<length>"],
-    &[data-sockettype~="stop<float>"] {
+    &[data-sockettype~="stop<float>"],
+    &[data-sockettype~="stop<color>"],
+    &[data-sockettype~="stop<angle>"],
+    &[data-sockettype~="stop<integer>"],
+    &[data-sockettype~="stop<length>"] {
         --flavour: var(--flavour-accent);
     }
     &[data-sockettype~="distribution"] {
@@ -222,7 +226,11 @@ export const Socket = styled(
     &[data-sockettype~="sequence"],
     &[data-sockettype~="array<layer>"],
     &[data-sockettype~="array<pathOp>"],
-    &[data-sockettype~="array<stop<float>>"] {
+    &[data-sockettype~="array<stop<float>>"],
+    &[data-sockettype~="array<stop<color>>"],
+    &[data-sockettype~="array<stop<angle>>"],
+    &[data-sockettype~="array<stop<integer>>"],
+    &[data-sockettype~="array<stop<length>>"] {
         --flavour: var(--flavour-danger);
     }
     &[data-sockettype~="shape"],
@@ -362,7 +370,11 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             &[data-sockettype~="angle"],
             &[data-sockettype~="boolean"],
             &[data-sockettype~="tokens<length>"],
-            &[data-sockettype~="stop<float>"] {
+            &[data-sockettype~="stop<float>"],
+            &[data-sockettype~="stop<color>"],
+            &[data-sockettype~="stop<angle>"],
+            &[data-sockettype~="stop<integer>"],
+            &[data-sockettype~="stop<length>"] {
                 --flavour: var(--flavour-accent);
             }
             &[data-sockettype~="distribution"] {
@@ -376,7 +388,11 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             &[data-sockettype~="sequence"],
             &[data-sockettype~="array<layer>"],
             &[data-sockettype~="array<pathOp>"],
-            &[data-sockettype~="array<stop<float>>"] {
+            &[data-sockettype~="array<stop<float>>"],
+            &[data-sockettype~="array<stop<color>>"],
+            &[data-sockettype~="array<stop<angle>>"],
+            &[data-sockettype~="array<stop<integer>>"],
+            &[data-sockettype~="array<stop<length>>"] {
                 --flavour: var(--flavour-danger);
             }
             &[data-sockettype~="shape"],

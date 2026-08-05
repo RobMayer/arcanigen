@@ -69,9 +69,10 @@ type ColorHexInputProps = {
     alpha?: boolean;
     disabled?: boolean;
     flavour?: Flavour;
+    className?: string;
 };
 
-export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, required, alpha, disabled, flavour }: ColorHexInputProps) => {
+export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, required, alpha, disabled, flavour, className }: ColorHexInputProps) => {
     const [hexCache, setHexCache] = useState<string>(() => {
         if (value === null) return "";
         const hex = Color.toHex(value);
@@ -145,7 +146,7 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, required, a
     );
 
     return (
-        <BaseDiv data-flavour={flavour}>
+        <BaseDiv className={className} data-flavour={flavour}>
             <BaseSwatch data-part={"swatch"} style={styleValue} />
             <BaseInput
                 data-flavour={"inherit"}

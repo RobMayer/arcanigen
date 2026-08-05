@@ -307,6 +307,14 @@ export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): Re
         case "sequence":
         case "stop<float>":
         case "array<stop<float>>":
+        case "stop<color>":
+        case "array<stop<color>>":
+        case "stop<angle>":
+        case "array<stop<angle>>":
+        case "stop<integer>":
+        case "array<stop<integer>>":
+        case "stop<length>":
+        case "array<stop<length>>":
             return <PreviewBase>{`« ${value.kind} »`}</PreviewBase>;
     }
 };

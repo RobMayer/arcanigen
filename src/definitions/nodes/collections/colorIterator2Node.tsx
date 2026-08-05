@@ -10,35 +10,58 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Enum } from "../../datatypes/enum";
+import { Color } from "../../datatypes/color";
+import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { Dropdown } from "../../../components/inputs/Dropdown";
+import { interpolateColor } from "../../../util/colorSpaces";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Iteration } from "../abstract";
 import { EmptyOr } from "../../../util/misc";
 import styled from "styled-components";
 
-export type FloatIterator2Definition = {
+const COLOR_SPACE_OPTIONS = Enum.options(Enum.Common.colorSpace);
+const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
+
+// Color spaces that have a hue component
+const HUE_SPACES: Set<number> = new Set([
+    Enum.Common.colorSpace.HSV.value,
+    Enum.Common.colorSpace.HSL.value,
+    Enum.Common.colorSpace.HWK.value,
+    Enum.Common.colorSpace.HSI.value,
+    Enum.Common.colorSpace.HCY.value,
+    Enum.Common.colorSpace.OKLCH.value,
+]);
+
+export type ColorIterator2Definition = {
     inputs: {
-        stops: DataTypes.Use<"array<stop<float>>">;
-        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<float>">;
+        stops: DataTypes.Use<"array<stop<color>>">;
+        colorSpace: DataTypes.Use<"enum">;
+        angleTraversal: DataTypes.Use<"enum">;
+        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<color>">;
     } & Iteration.Definition["inputs"];
     outputs: {
-        sequencedOutput: DataTypes.Use<"float">;
-        sampledOutput: DataTypes.Use<"float">;
-        stopsOutput: DataTypes.Use<"array<stop<float>>">;
+        sequencedOutput: DataTypes.Use<"color">;
+        sampledOutput: DataTypes.Use<"color">;
+        stopsOutput: DataTypes.Use<"array<stop<color>>">;
     };
     payload: {
         label: string;
-        stops: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
+        colorSpace: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        stops: { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
     } & Iteration.Definition["payload"];
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorIterator2", ColorIterator2Definition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
     const s1: `stop_${string}` = `stop_${nanoid()}`;
     return {
         id,
         in: {
             sequence: null,
+            colorSpace: null,
+            angleTraversal: null,
             mode: null,
             reverseSequence: null,
             startOffset: null,
@@ -55,25 +78,27 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Defin
         },
         payload: {
             label: "",
+            colorSpace: input.colorSpace ?? Enum.Common.colorSpace.RGB.value,
+            angleTraversal: input.angleTraversal ?? Enum.Common.angleTraversal.CLOSEST_CW.value,
             mode: input.mode ?? Enum.Common.sequencerMode.CLAMP.value,
             reverseSequence: input.reverseSequence ?? false,
             startOffset: input.startOffset ?? "0",
             endOffset: input.endOffset ?? "0",
             samplePosition: input.samplePosition ?? "50",
             stops: input.stops ?? [
-                { socket: s0, value: "0", position: "0", enabled: true },
-                { socket: s1, value: "1", position: "100", enabled: true },
+                { socket: s0, value: { r: 0, g: 0, b: 0, a: 1 }, position: "0", enabled: true },
+                { socket: s1, value: { r: 1, g: 1, b: 1, a: 1 }, position: "100", enabled: true },
             ],
         },
-        type: "floatIterator2",
+        type: "colorIterator2",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<ColorIterator2Definition>>) => {
             methods.update(v);
         },
         [methods],
@@ -86,7 +111,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as FloatIterator2Definition["payload"]).stops, { socket, value: "0.5", position: "50", enabled: true }],
+                stops: [...(n.payload as ColorIterator2Definition["payload"]).stops, { socket, value: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -104,7 +129,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as FloatIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
+                        stops: (n.payload as ColorIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
                     },
                 };
             });
@@ -113,7 +138,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
     );
 
     const handleStopUpdate = useCallback(
-        (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
+        (socket: string, update: Partial<{ value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.socket === socket ? { ...s, ...update } : s)),
             });
@@ -138,6 +163,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
     );
 
     const supersocketConnected = node.in.stops !== null;
+    const hueRelevant = HUE_SPACES.has(node.payload.colorSpace) && node.in.colorSpace === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -173,8 +199,28 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                 </>
             )}
 
-            <Iteration.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampleOutput" socketsIn={"samplePosition"}>
+            <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="colorSpace|angleTraversal|mode|reverseSequence|startOffset|endOffset">
+                <SocketIn node={node} socketId={"colorSpace"} label={"Color Space"}>
+                    <Dropdown value={`${node.payload.colorSpace}`} onValue={(v) => handleUpdate({ colorSpace: Number(v) })} disabled={node.in.colorSpace !== null}>
+                        {COLOR_SPACE_OPTIONS.map((each) => (
+                            <option value={each.value} key={each.value}>
+                                {each.label}
+                            </option>
+                        ))}
+                    </Dropdown>
+                </SocketIn>
+                <SocketIn node={node} socketId={"angleTraversal"} label={"Hue Traversal"}>
+                    <Dropdown value={`${node.payload.angleTraversal}`} onValue={(v) => handleUpdate({ angleTraversal: Number(v) })} disabled={node.in.angleTraversal !== null || !hueRelevant}>
+                        {ANGLE_TRAVERSAL_OPTIONS.map((each) => (
+                            <option value={each.value} key={each.value}>
+                                {each.label}
+                            </option>
+                        ))}
+                    </Dropdown>
+                </SocketIn>
+                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
+            </NodeAccordion>
+            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampledOutput" socketsIn={"samplePosition"}>
                 <SocketOut node={node} socketId={"sampledOutput"}>
                     Sampled Output
                 </SocketOut>
@@ -202,10 +248,10 @@ const StopEntry = ({
     handleRemoveStop,
     handleReorderStop,
 }: {
-    entry: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
-    node: NodeDefinitions.NodeFor<FloatIterator2Definition>;
+    entry: { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean };
+    node: NodeDefinitions.NodeFor<ColorIterator2Definition>;
     index: number;
-    handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
+    handleStopUpdate: (socket: string, update: Partial<{ value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
     handleRemoveStop: (socket: string) => void;
     handleReorderStop: (socket: string, toIndex: number) => void;
 }) => {
@@ -253,7 +299,7 @@ const StopEntry = ({
             <SocketIn node={node} socketId={entry.socket as `stop_${string}`}>
                 <StopRow>
                     <CheckBox checked={entry.enabled} onToggle={(enabled) => handleStopUpdate(entry.socket, { enabled })} disabled={connected} />
-                    <DecimalInput className={"stopValue"} value={entry.value} onCommit={(value) => handleStopUpdate(entry.socket, { value })} disabled={connected} />
+                    <ColorHexInput className={"stopValue"} value={entry.value} onCommit={(value) => handleStopUpdate(entry.socket, { value })} disabled={connected} alpha />
                     <DecimalInput className={"stopPosition"} value={entry.position} onCommit={(position) => handleStopUpdate(entry.socket, { position })} disabled={connected} min={"0"} max={"100"} />
                     <DragGrip draggable onDragStart={handleDragStart}>
                         <Icon shape={ICONS.Caret.Vertical} />
@@ -277,6 +323,11 @@ const StopRow = styled.div`
         flex: 3.5 1 0;
         width: 0;
         min-width: 0;
+    }
+
+    & > .stopValue [data-part="swatch"] {
+        flex-basis: 0.5lh;
+        aspect-ratio: auto;
     }
 
     & .stopPosition {
@@ -322,26 +373,26 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop<float>>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop<float>) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop<float>>">(node.id, "stops");
+// Resolve the effective stops: the supersocket (an array<stop<color>>) overrides everything;
+// otherwise fold each per-stop socket (a connected stop<color>) over its inline payload.
+const resolveStops = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
+    const supersocketEval = context.resolve<"array<stop<color>>">(node.id, "stops");
     if (supersocketEval) {
-        return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
+        return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
-    const resolved: { value: number; position: number; enabled: boolean }[] = [];
+    const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop<float>">(node.id, entry.socket);
+        const connected = context.resolve<"stop<color>">(node.id, entry.socket);
         if (connected) {
             resolved.push({
-                value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
+                value: connected.data.value ?? entry.value,
                 position: connected.data.position ?? NumericString.Emptyable.asNumber(entry.position) ?? 0,
                 enabled: connected.data.enabled ?? entry.enabled,
             });
         } else {
             resolved.push({
-                value: NumericString.Emptyable.asNumber(entry.value) ?? 0,
+                value: entry.value,
                 position: NumericString.Emptyable.asNumber(entry.position) ?? 0,
                 enabled: entry.enabled,
             });
@@ -350,13 +401,13 @@ const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, c
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outSocket: keyof FloatIterator2Definition["outputs"], _deps: AllDeps): (keyof FloatIterator2Definition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, outSocket: keyof ColorIterator2Definition["outputs"], _deps: AllDeps): (keyof ColorIterator2Definition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
     if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "stops", ...stopSockets];
+        return [...Iteration.SEQUENCED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
     }
     if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "stops", ...stopSockets];
+        return [...Iteration.SAMPLED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
     }
     if (outSocket === "stopsOutput") {
         return ["stops", ...stopSockets];
@@ -364,7 +415,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outS
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, inSocket: keyof FloatIterator2Definition["inputs"], _deps: AllDeps): (keyof FloatIterator2Definition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>, inSocket: keyof ColorIterator2Definition["inputs"], _deps: AllDeps): (keyof ColorIterator2Definition["outputs"])[] => {
     if (inSocket === "stops") {
         return ["sequencedOutput", "sampledOutput", "stopsOutput"];
     }
@@ -380,10 +431,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>,
     return ["sequencedOutput", "sampledOutput", "stopsOutput"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socket: keyof FloatIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socket: keyof ColorIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopsOutput") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
-        return { kind: "array<stop<float>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
+        return { kind: "array<stop<color>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
     }
 
     let position: number;
@@ -397,44 +448,50 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socke
         return null;
     }
 
-    const active = resolveStops(node, context).filter((s) => s.enabled);
+    const colorSpaceValue = Enum.resolve(context.resolve<"enum">(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
+    const angleTraversalValue = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? 0;
+
+    const active = resolveStops(node, context).filter((s): s is { value: NonNullable<Color.Type>; position: number; enabled: boolean } => s.enabled && s.value !== null);
     if (active.length === 0) return null;
     active.sort((a, b) => a.position - b.position);
 
-    const value = Iteration.sampleStopsWith(active, position, (a, b, t) => a + t * (b - a));
-    return { kind: "float", data: `${value}` };
+    const value = Iteration.sampleStopsWith(active, position, (a, b, t) => interpolateColor(a, b, t, colorSpaceValue, angleTraversalValue) as NonNullable<Color.Type>);
+    return { kind: "color", data: value };
 };
 
 const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<FloatIterator2Definition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">>]: SocketTypes.SocketRule;
+    [key in keyof Required<
+        Pick<ColorIterator2Definition["inputs"], "sequence" | "colorSpace" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">
+    >]: SocketTypes.SocketRule;
 } = {
     ...Iteration.IN_SOCKET_TYPES,
-    stops: { types: ["array<stop<float>>"], mode: "or" },
+    colorSpace: { types: ["enum"], mode: "and" },
+    angleTraversal: { types: ["enum"], mode: "and" },
+    stops: { types: ["array<stop<color>>"], mode: "or" },
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<FloatIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["float"], mode: "and" },
-    sampledOutput: { types: ["float"], mode: "and" },
-    stopsOutput: { types: ["array<stop<float>>"], mode: "and" },
+const SOCKETTYPES_OUT: { [key in keyof Required<ColorIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
+    sequencedOutput: { types: ["color"], mode: "and" },
+    sampledOutput: { types: ["color"], mode: "and" },
+    stopsOutput: { types: ["array<stop<color>>"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
         return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
     if (socketId.startsWith("stop_")) {
-        return { types: ["stop<float>"], mode: "or" };
+        return { types: ["stop<color>"], mode: "or" };
     }
     return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"colorIterator2", ColorIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction !== "in") return;
 
     const link = ctx.getLink(graphId, linkId);
     if (!link || link.toSocket !== "stops") return;
 
-    // Supersocket just connected — clear the individual per-stop socket links.
     const currentNode = ctx.getNode(graphId, node.id);
     if (!currentNode) return;
     const linkIdsToRemove: string[] = [];
@@ -447,11 +504,11 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIter
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-export const FloatIterator2NodeType: NodeTypes.Type<"floatIterator2", FloatIterator2Definition> = {
-    type: "floatIterator2",
-    displayName: "Float Iterator",
-    defaultLabel: "Float Iterator",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+export const ColorIterator2NodeType: NodeTypes.Type<"colorIterator2", ColorIterator2Definition> = {
+    type: "colorIterator2",
+    displayName: "Color Iterator",
+    defaultLabel: "Color Iterator",
+    iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

@@ -313,7 +313,7 @@ export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", Tokenize
     type: "tokenizerLength",
     displayName: "Tokenzer (Length)",
     defaultLabel: "Tokenzer (Length)",
-    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.list} layerColor="#fff" />,
+    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.tokenizerFor} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

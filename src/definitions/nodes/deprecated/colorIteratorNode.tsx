@@ -359,6 +359,7 @@ export const ColorIteratorNodeType: NodeTypes.Type<"colorIterator", ColorIterato
     type: "colorIterator",
     displayName: "Color Iterator",
     defaultLabel: "Color Iterator",
+    deprecated: true,
     iconNode: <Icon shape={NODE_ICONS.color} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
     category: "Collections",
     create,
