@@ -96,10 +96,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopIntegerOutputDefi
 export const ArrayStopIntegerOutputType: NodeTypes.Type<"arrayStopIntegerOutput", ArrayStopIntegerOutputDefinition> = {
     type: "arrayStopIntegerOutput",
     displayName: "Integer Stop Array Output",
-    defaultLabel: "Output",
+    defaultLabel: "Integer Stop Array Output",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.arrayOfStopOf} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

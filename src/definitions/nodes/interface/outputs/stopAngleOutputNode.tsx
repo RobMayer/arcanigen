@@ -89,10 +89,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StopAngleOutputDefinition>
 export const StopAngleOutputType: NodeTypes.Type<"stopAngleOutput", StopAngleOutputDefinition> = {
     type: "stopAngleOutput",
     displayName: "Angle Stop Output",
-    defaultLabel: "Output",
+    defaultLabel: "Angle Stop Output",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.modifiers.stopOf} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

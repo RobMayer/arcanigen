@@ -136,10 +136,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ColorInputDefinition>, soc
 export const ColorInputType: NodeTypes.Type<"colorInput", ColorInputDefinition> = {
     type: "colorInput",
     displayName: "Color Input",
-    defaultLabel: "Input",
+    defaultLabel: "Color Input",
     iconNode: <NodeIcon shape={NODE_ICONS.color} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

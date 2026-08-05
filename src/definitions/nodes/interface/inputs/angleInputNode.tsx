@@ -162,10 +162,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, soc
 export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> = {
     type: "angleInput",
     displayName: "Angle Input",
-    defaultLabel: "Input",
+    defaultLabel: "Angle Input",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

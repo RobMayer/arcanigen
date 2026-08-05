@@ -98,10 +98,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ColorOutputDefinition>, so
 export const ColorOutputType: NodeTypes.Type<"colorOutput", ColorOutputDefinition> = {
     type: "colorOutput",
     displayName: "Color Output",
-    defaultLabel: "Output",
+    defaultLabel: "Color Output",
     iconNode: <NodeIcon shape={NODE_ICONS.color} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

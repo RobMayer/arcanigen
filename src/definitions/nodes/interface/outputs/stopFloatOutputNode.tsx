@@ -89,10 +89,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StopFloatOutputDefinition>
 export const StopFloatOutputType: NodeTypes.Type<"stopFloatOutput", StopFloatOutputDefinition> = {
     type: "stopFloatOutput",
     displayName: "Float Stop Output",
-    defaultLabel: "Output",
+    defaultLabel: "Float Stop Output",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.stopOf} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

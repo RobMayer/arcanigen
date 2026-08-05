@@ -109,10 +109,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthOutputDefiniti
 export const TokensLengthOutputType: NodeTypes.Type<"tokensLengthOutput", TokensLengthOutputDefinition> = {
     type: "tokensLengthOutput",
     displayName: "Tokens Output",
-    defaultLabel: "Output",
+    defaultLabel: "Tokens Output",
     iconNode: <NodeIcon shape={NODE_ICONS.length} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

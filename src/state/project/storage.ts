@@ -1,13 +1,12 @@
 import { NodeTypes } from "../../definitions/betterTypes";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
 import type { NodesType, LinksType, InterfacesType, DepsType, UsersType } from "./types";
+import { makeSubgraphMeta } from "./types";
 import { buildInitialCache } from "./cache";
 
 const STARTING_STATE = {
     root: {
-        meta: {
-            name: "Root",
-        },
+        meta: makeSubgraphMeta("Root"),
         uses: [] as { node: string; target: string }[],
         nodes: {
             RESULT: {

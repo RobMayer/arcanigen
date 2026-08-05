@@ -88,10 +88,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ShapeInputDefinition>, soc
 export const ShapeInputType: NodeTypes.Type<"shapeInput", ShapeInputDefinition> = {
     type: "shapeInput",
     displayName: "Shape Input",
-    defaultLabel: "Input",
+    defaultLabel: "Shape Input",
     iconNode: <NodeIcon shape={NODE_ICONS.shape} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

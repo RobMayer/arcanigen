@@ -98,10 +98,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<AngleOutputDefinition>, so
 export const AngleOutputType: NodeTypes.Type<"angleOutput", AngleOutputDefinition> = {
     type: "angleOutput",
     displayName: "Angle Output",
-    defaultLabel: "Output",
+    defaultLabel: "Angle Output",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

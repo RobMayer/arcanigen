@@ -169,10 +169,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<EnumInputDefinition>, sock
 export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     type: "enumInput",
     displayName: "Enum Input",
-    defaultLabel: "Input",
+    defaultLabel: "Enum Input",
     iconNode: <NodeIcon shape={NODE_ICONS.list} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

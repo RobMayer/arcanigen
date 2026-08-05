@@ -90,10 +90,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionInputDefinitio
 export const DistributionInputType: NodeTypes.Type<"distributionInput", DistributionInputDefinition> = {
     type: "distributionInput",
     displayName: "Distribution Input",
-    defaultLabel: "Input",
+    defaultLabel: "Distribution Input",
     iconNode: <NodeIcon shape={NODE_ICONS.func} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

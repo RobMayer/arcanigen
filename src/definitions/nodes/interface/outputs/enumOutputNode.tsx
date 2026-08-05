@@ -98,10 +98,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<EnumOutputDefinition>, soc
 export const EnumOutputType: NodeTypes.Type<"enumOutput", EnumOutputDefinition> = {
     type: "enumOutput",
     displayName: "Enum Output",
-    defaultLabel: "Output",
+    defaultLabel: "Enum Output",
     iconNode: <NodeIcon shape={NODE_ICONS.list} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

@@ -106,10 +106,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthInputDefinitio
 export const TokensLengthInputType: NodeTypes.Type<"tokensLengthInput", TokensLengthInputDefinition> = {
     type: "tokensLengthInput",
     displayName: "Tokens Input",
-    defaultLabel: "Input",
+    defaultLabel: "Tokens Input",
     iconNode: <NodeIcon shape={NODE_ICONS.length} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

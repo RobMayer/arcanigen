@@ -150,10 +150,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<LengthInputDefinition>, so
 export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinition> = {
     type: "lengthInput",
     displayName: "Length Input",
-    defaultLabel: "Input",
+    defaultLabel: "Length Input",
     iconNode: <NodeIcon shape={NODE_ICONS.length} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

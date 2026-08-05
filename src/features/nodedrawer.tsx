@@ -1,7 +1,8 @@
 import styled from "styled-components";
 import { Accordion } from "../components/containers/Accordion";
 import { GraphIdContext } from "../state/graphId";
-import { Icon, ICONS } from "../components/Icon";
+import { Icon, ICONS, NodeIcon, CUSTOM_ICONS, CustomIconKey } from "../components/Icon";
+import { Flavour } from "../components/types";
 import { Dispatch, DragEvent, MouseEvent, SetStateAction, useCallback, useMemo, useState } from "react";
 import { Project } from "../state/project";
 import { DragPaneControls } from "../components/wrappers/DragPane";
@@ -25,10 +26,9 @@ const LocalAccordion = styled(Accordion)`
     font-variant: small-caps;
 `;
 
-type DrawerItem = { kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | { kind: "newCustom" };
+type DrawerItem = { kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string; flavour: Flavour; category: NodeTypes.Category; icon: CustomIconKey };
 
-const VISIBLE_CATEGORIES_ROOT: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math"];
-const VISIBLE_CATEGORIES_SUBGRAPH: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math", "Inputs", "Outputs"];
+const VISIBLE_CATEGORIES: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math", "Inputs", "Outputs"];
 
 const getForbiddenSubgraphs = (currentGraphId: string, users: UsersType): Set<string> => {
     const forbidden = new Set([currentGraphId]);
@@ -51,8 +51,10 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
 
     const meta = Project.useMeta();
     const users = Project.useUsers();
+    const subgraphMethods = Project.useSubgraphMethods();
+    const subgraphEditor = useSubgraphEditor();
 
-    const visibleCategories = graphId === "root" ? VISIBLE_CATEGORIES_ROOT : VISIBLE_CATEGORIES_SUBGRAPH;
+    const isRoot = graphId === "root";
 
     const allNodeTypes = useMemo(() => {
         return NodeTypes.list().filter((each) => {
@@ -62,12 +64,15 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
             if (each.deprecated) {
                 return false;
             }
-            if (graphId === "root" && (each.category === "Inputs" || each.category === "Outputs")) {
-                return false;
-            }
             return true;
         });
-    }, [graphId]);
+    }, []);
+
+    const handleCreateCustom = useCallback(() => {
+        const id = nanoid();
+        subgraphMethods.create(id, "Untitled");
+        subgraphEditor.open(id);
+    }, [subgraphMethods, subgraphEditor]);
 
     const filteredNodeTypes = useMemo(() => {
         return allNodeTypes.filter((each) => {
@@ -81,18 +86,15 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
         });
     }, [allNodeTypes, categoryFilter, searchFilter]);
 
-    const showCustomCategory = categoryFilter.size === 0 || categoryFilter.has("Custom");
-
     const forbidden = useMemo(() => getForbiddenSubgraphs(graphId, users), [graphId, users]);
 
     const subgraphs = useMemo(() => {
-        if (!showCustomCategory) return [];
         return Object.entries(meta)
             .filter(([id]) => id !== "root")
-            .filter(([, { name }]) => !searchFilter || name.toLowerCase().includes(searchFilter.toLowerCase()));
-    }, [meta, searchFilter, showCustomCategory]);
-
-    const showNewCustom = showCustomCategory && (!searchFilter || "new custom".includes(searchFilter.toLowerCase()));
+            .map(([id, m]) => ({ id, name: m.name, flavour: m.flavour, category: m.category, icon: m.icon }))
+            .filter((s) => categoryFilter.size === 0 || categoryFilter.has(s.category))
+            .filter((s) => !searchFilter || s.name.toLowerCase().includes(searchFilter.toLowerCase()));
+    }, [meta, searchFilter, categoryFilter]);
 
     const [sort, setSort] = useState<string>("groupAscending");
 
@@ -102,20 +104,19 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
         for (const nt of filteredNodeTypes) {
             items.push({ kind: "node", nodeType: nt });
         }
-        for (const [id, { name }] of subgraphs) {
-            items.push({ kind: "subgraph", id, name });
+        for (const s of subgraphs) {
+            items.push({ kind: "subgraph", ...s });
         }
 
         const getName = (item: DrawerItem): string => {
             if (item.kind === "node") return item.nodeType.displayName;
-            if (item.kind === "subgraph") return item.name;
-            return "";
+            return item.name;
         };
 
         const getCategoryIndex = (item: DrawerItem): number => {
-            const cat = item.kind === "node" ? item.nodeType.category : "Custom";
-            const idx = visibleCategories.indexOf(cat);
-            return idx === -1 ? visibleCategories.length : idx;
+            const cat = item.kind === "node" ? item.nodeType.category : item.category;
+            const idx = VISIBLE_CATEGORIES.indexOf(cat);
+            return idx === -1 ? VISIBLE_CATEGORIES.length : idx;
         };
 
         items.sort((a, b) => {
@@ -137,12 +138,8 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
             }
         });
 
-        if (showNewCustom) {
-            items.unshift({ kind: "newCustom" });
-        }
-
         return items;
-    }, [filteredNodeTypes, subgraphs, showNewCustom, sort, visibleCategories]);
+    }, [filteredNodeTypes, subgraphs, sort]);
 
     const toggleCategory = useCallback((cat: NodeTypes.Category) => {
         setCategoryFilter((prev) => {
@@ -181,18 +178,23 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
                             <Icon shape={ICONS.Sort.ZtoA} />
                         </RadioButton>
                     </SortOptions>
+                    <CreateRow>
+                        <CreateCustomButton onClick={handleCreateCustom} flavour={"info"} tooltip={isRoot ? "Create a new custom node" : "Create a nested custom node"}>
+                            <Icon shape={ICONS.Plus} /> Create Custom Node
+                        </CreateCustomButton>
+                    </CreateRow>
                     <Sidebar>
                         <CheckBox checked={categoryFilter.size === 0} onToggle={clearCategoryFilter}>
                             All
                         </CheckBox>
-                        {visibleCategories.map((cat) => (
+                        {VISIBLE_CATEGORIES.map((cat) => (
                             <CheckBox key={cat} checked={categoryFilter.has(cat)} onToggle={() => toggleCategory(cat)}>
                                 {cat}
                             </CheckBox>
                         ))}
                     </Sidebar>
                     <ContentPane>
-                        <CardGrid items={sortedItems} paneControls={paneControls} forbidden={forbidden} />
+                        <CardGrid items={sortedItems} paneControls={paneControls} forbidden={forbidden} isRoot={isRoot} />
                     </ContentPane>
                 </Pane>
             </LocalAccordion>
@@ -203,13 +205,19 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
 const Pane = styled.div`
     display: grid;
     grid-template-columns: auto 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     gap: 6px;
     padding: 6px;
     grid-template-areas:
         "filter filter sort"
+        "create create create"
         "sidebar contents contents";
     position: relative;
+`;
+
+const CreateRow = styled.div`
+    grid-area: create;
+    display: flex;
 `;
 
 const SearchBar = styled.div`
@@ -242,157 +250,142 @@ const ContentPane = styled.div`
     inset: 0;
 `;
 
-const CardGrid = styled(({ className, items, paneControls, forbidden }: { className?: string; items: DrawerItem[]; paneControls: DragPaneControls; forbidden: Set<string> }) => {
-    const { addNodeByType } = Project.useMethods();
-    const subgraphMethods = Project.useSubgraphMethods();
-    const subgraphEditor = useSubgraphEditor();
+const CardGrid = styled(
+    ({ className, items, paneControls, forbidden, isRoot }: { className?: string; items: DrawerItem[]; paneControls: DragPaneControls; forbidden: Set<string>; isRoot: boolean }) => {
+        const { addNodeByType } = Project.useMethods();
+        const subgraphMethods = Project.useSubgraphMethods();
+        const subgraphEditor = useSubgraphEditor();
 
-    const addNode = useCallback(
-        (nodeType: NodeTypes.Any) => {
-            const { x, y } = paneControls.get();
-            addNodeByType(nodeType, {}, { x: -x, y: -y });
-        },
-        [addNodeByType, paneControls],
-    );
-
-    const addSubgraph = useCallback(
-        (subgraphId: string, name: string) => {
-            const { x, y } = paneControls.get();
-            addNodeByType(NodeTypes.get("custom"), { graphId: subgraphId, label: name }, { x: -x, y: -y });
-        },
-        [addNodeByType, paneControls],
-    );
-
-    const createSubgraph = useCallback(() => {
-        const graphId = nanoid();
-        subgraphMethods.create(graphId, "Untitled");
-        subgraphEditor.open(graphId);
-    }, [subgraphMethods, subgraphEditor]);
-
-    const users = Project.useUsers();
-    const io = Project.useProjectIO();
-
-    const contextControls = ContextPopup.useControls();
-    const [menuTarget, setMenuTarget] = useState<{ kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | null>(null);
-
-    const openContextMenu = useCallback(
-        (evt: MouseEvent<HTMLElement>, target: NonNullable<typeof menuTarget>) => {
-            evt.preventDefault();
-            setMenuTarget(target);
-            contextControls.openOn(evt);
-        },
-        [contextControls],
-    );
-
-    const handleMenuAdd = useCallback(() => {
-        if (!menuTarget) return;
-        if (menuTarget.kind === "node") {
-            addNode(menuTarget.nodeType);
-        } else {
-            addSubgraph(menuTarget.id, menuTarget.name);
-        }
-        contextControls.close();
-    }, [menuTarget, addNode, addSubgraph, contextControls]);
-
-    const handleMenuEdit = useCallback(() => {
-        if (menuTarget?.kind === "subgraph") {
-            subgraphEditor.open(menuTarget.id);
-        }
-        contextControls.close();
-    }, [menuTarget, subgraphEditor, contextControls]);
-
-    const handleMenuDelete = useCallback(() => {
-        if (menuTarget?.kind === "subgraph") {
-            subgraphMethods.remove(menuTarget.id);
-        }
-        contextControls.close();
-    }, [menuTarget, subgraphMethods, contextControls]);
-
-    const handleMenuSave = useCallback(() => {
-        if (menuTarget?.kind === "subgraph") {
-            const data = io.saveSubgraph(menuTarget.id);
-            const json = JSON.stringify(data);
-            const name = menuTarget.name || "custom-node";
-            downloadBlob(new Blob([json], { type: "application/json" }), `${name}.json`);
-        }
-        contextControls.close();
-    }, [menuTarget, io, contextControls]);
-
-    const handleDragStart = useCallback((e: DragEvent<HTMLElement>, item: DrawerItem) => {
-        if (item.kind === "newCustom") return;
-        e.dataTransfer.effectAllowed = "copy";
-        e.dataTransfer.setData(
-            NODE_DRAG_MIME,
-            JSON.stringify(item.kind === "node" ? { kind: "node", type: item.nodeType.type } : { kind: "subgraph", id: item.id, name: item.name }),
+        const addNode = useCallback(
+            (nodeType: NodeTypes.Any) => {
+                const { x, y } = paneControls.get();
+                addNodeByType(nodeType, {}, { x: -x, y: -y });
+            },
+            [addNodeByType, paneControls],
         );
-        e.dataTransfer.setData(`${NODE_TYPE_MIME_PREFIX}${item.kind === "node" ? item.nodeType.type : "custom"}`, "");
-    }, []);
 
-    const hasUsers = menuTarget?.kind === "subgraph" && (users[menuTarget.id] ?? []).length > 0;
+        const addSubgraph = useCallback(
+            (subgraphId: string, name: string) => {
+                const { x, y } = paneControls.get();
+                addNodeByType(NodeTypes.get("custom"), { graphId: subgraphId, label: name }, { x: -x, y: -y });
+            },
+            [addNodeByType, paneControls],
+        );
 
-    return (
-        <>
-            <ContextPopup controls={contextControls}>
-                <ActionButton.Option onClick={handleMenuAdd}>Add Node</ActionButton.Option>
-                {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuEdit}>Edit Custom Node</ActionButton.Option>}
-                {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuSave}>Save Custom Node</ActionButton.Option>}
-                {menuTarget?.kind === "subgraph" && (
-                    <ActionButton.Option flavour={"danger"} onClick={handleMenuDelete} disabled={hasUsers}>
-                        Delete Custom Node
-                    </ActionButton.Option>
-                )}
-            </ContextPopup>
-            <div className={className}>
-                {items.map((item) => {
-                    switch (item.kind) {
-                        case "newCustom":
-                            return (
-                                <NewCustomCard key={"__newCustom"} data-flavour={"info"} onClick={createSubgraph}>
-                                    <div data-part={"title"} title={"New Custom"}>
-                                        Custom...
-                                    </div>
-                                    <div data-part={"icon"}>
-                                        <Icon shape={ICONS.User} />
-                                    </div>
-                                </NewCustomCard>
-                            );
-                        case "node":
-                            return (
-                                <NodeCard
-                                    key={item.nodeType.type}
-                                    nodeType={item.nodeType}
-                                    handleAdd={addNode}
-                                    onContextMenu={(e) => openContextMenu(e, { kind: "node", nodeType: item.nodeType })}
-                                    onDragStart={(e) => handleDragStart(e, item)}
-                                />
-                            );
-                        case "subgraph": {
-                            const isForbidden = forbidden.has(item.id);
-                            return (
-                                <SubgraphCard
-                                    key={item.id}
-                                    disabled={isForbidden}
-                                    onClick={() => addSubgraph(item.id, item.name)}
-                                    onContextMenu={(e) => openContextMenu(e, { kind: "subgraph", id: item.id, name: item.name })}
-                                    data-flavour={NodeTypes.DEFAULT_CUSTOM_FLAVOUR}
-                                    draggable={!isForbidden}
-                                    onDragStart={(e) => handleDragStart(e, item)}
-                                >
-                                    <div data-part={"title"} title={item.name || item.id}>
-                                        {item.name || item.id}
-                                    </div>
-                                    <div data-part={"icon"}>
-                                        <Icon shape={ICONS.Cascade} />
-                                    </div>
-                                </SubgraphCard>
-                            );
+        const users = Project.useUsers();
+        const io = Project.useProjectIO();
+
+        const contextControls = ContextPopup.useControls();
+        const [menuTarget, setMenuTarget] = useState<{ kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string } | null>(null);
+
+        const openContextMenu = useCallback(
+            (evt: MouseEvent<HTMLElement>, target: NonNullable<typeof menuTarget>) => {
+                evt.preventDefault();
+                setMenuTarget(target);
+                contextControls.openOn(evt);
+            },
+            [contextControls],
+        );
+
+        const handleMenuAdd = useCallback(() => {
+            if (!menuTarget) return;
+            if (menuTarget.kind === "node") {
+                addNode(menuTarget.nodeType);
+            } else {
+                addSubgraph(menuTarget.id, menuTarget.name);
+            }
+            contextControls.close();
+        }, [menuTarget, addNode, addSubgraph, contextControls]);
+
+        const handleMenuEdit = useCallback(() => {
+            if (menuTarget?.kind === "subgraph") {
+                subgraphEditor.open(menuTarget.id);
+            }
+            contextControls.close();
+        }, [menuTarget, subgraphEditor, contextControls]);
+
+        const handleMenuDelete = useCallback(() => {
+            if (menuTarget?.kind === "subgraph") {
+                subgraphMethods.remove(menuTarget.id);
+            }
+            contextControls.close();
+        }, [menuTarget, subgraphMethods, contextControls]);
+
+        const handleMenuSave = useCallback(() => {
+            if (menuTarget?.kind === "subgraph") {
+                const data = io.saveSubgraph(menuTarget.id);
+                const json = JSON.stringify(data);
+                const name = menuTarget.name || "custom-node";
+                downloadBlob(new Blob([json], { type: "application/json" }), `${name}.json`);
+            }
+            contextControls.close();
+        }, [menuTarget, io, contextControls]);
+
+        const handleDragStart = useCallback((e: DragEvent<HTMLElement>, item: DrawerItem) => {
+            e.dataTransfer.effectAllowed = "copy";
+            e.dataTransfer.setData(NODE_DRAG_MIME, JSON.stringify(item.kind === "node" ? { kind: "node", type: item.nodeType.type } : { kind: "subgraph", id: item.id, name: item.name }));
+            e.dataTransfer.setData(`${NODE_TYPE_MIME_PREFIX}${item.kind === "node" ? item.nodeType.type : "custom"}`, "");
+        }, []);
+
+        const hasUsers = menuTarget?.kind === "subgraph" && (users[menuTarget.id] ?? []).length > 0;
+
+        return (
+            <>
+                <ContextPopup controls={contextControls}>
+                    <ActionButton.Option onClick={handleMenuAdd}>Add Node</ActionButton.Option>
+                    {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuEdit}>Edit Custom Node</ActionButton.Option>}
+                    {menuTarget?.kind === "subgraph" && <ActionButton.Option onClick={handleMenuSave}>Save Custom Node</ActionButton.Option>}
+                    {menuTarget?.kind === "subgraph" && (
+                        <ActionButton.Option flavour={"danger"} onClick={handleMenuDelete} disabled={hasUsers}>
+                            Delete Custom Node
+                        </ActionButton.Option>
+                    )}
+                </ContextPopup>
+                <div className={className}>
+                    {items.map((item) => {
+                        switch (item.kind) {
+                            case "node": {
+                                const restricted = isRoot && !!item.nodeType.rootRestricted;
+                                return (
+                                    <NodeCard
+                                        key={item.nodeType.type}
+                                        nodeType={item.nodeType}
+                                        disabled={restricted}
+                                        tooltip={restricted ? "Only available inside a custom node" : undefined}
+                                        handleAdd={addNode}
+                                        onContextMenu={(e) => openContextMenu(e, { kind: "node", nodeType: item.nodeType })}
+                                        onDragStart={(e) => handleDragStart(e, item)}
+                                    />
+                                );
+                            }
+                            case "subgraph": {
+                                const isForbidden = forbidden.has(item.id);
+                                return (
+                                    <SubgraphCard
+                                        key={item.id}
+                                        disabled={isForbidden}
+                                        onClick={() => addSubgraph(item.id, item.name)}
+                                        onContextMenu={(e) => openContextMenu(e, { kind: "subgraph", id: item.id, name: item.name })}
+                                        data-flavour={item.flavour}
+                                        draggable={!isForbidden}
+                                        onDragStart={(e) => handleDragStart(e, item)}
+                                    >
+                                        <div data-part={"title"} title={item.name || item.id}>
+                                            {item.name || item.id}
+                                        </div>
+                                        <div data-part={"icon"}>
+                                            <NodeIcon shape={CUSTOM_ICONS[item.icon]} modifierIcon={ICONS.User} />
+                                        </div>
+                                    </SubgraphCard>
+                                );
+                            }
                         }
-                    }
-                })}
-            </div>
-        </>
-    );
-})`
+                    })}
+                </div>
+            </>
+        );
+    },
+)`
     display: grid;
     grid-template-columns: repeat(auto-fill, 148px);
     gap: 4px;
@@ -443,6 +436,7 @@ const NodeCard = styled(
         nodeType,
         className,
         disabled,
+        tooltip,
         handleAdd,
         onContextMenu,
         onDragStart,
@@ -450,6 +444,7 @@ const NodeCard = styled(
         nodeType: NodeTypes.Any;
         className?: string;
         disabled?: boolean;
+        tooltip?: string;
         handleAdd: (nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>) => void;
         onContextMenu?: (e: MouseEvent<HTMLElement>) => void;
         onDragStart?: (e: DragEvent<HTMLElement>) => void;
@@ -458,7 +453,16 @@ const NodeCard = styled(
             handleAdd(nodeType, {});
         }, [nodeType, handleAdd]);
         return (
-            <button className={className} data-flavour={nodeType.flavour} disabled={disabled} onClick={doAdd} onContextMenu={onContextMenu} draggable onDragStart={onDragStart}>
+            <button
+                className={className}
+                data-flavour={nodeType.flavour}
+                disabled={disabled}
+                title={tooltip}
+                onClick={doAdd}
+                onContextMenu={onContextMenu}
+                draggable={!disabled}
+                onDragStart={onDragStart}
+            >
                 <div data-part={"title"} title={nodeType.displayName}>
                     {nodeType.displayName}
                 </div>
@@ -474,12 +478,7 @@ const SubgraphCard = styled.button`
     ${CARD_STYLES}
 `;
 
-const NewCustomCard = styled.button`
-    ${CARD_STYLES}
-    border-style: dashed;
-    opacity: 0.8;
-    &:hover {
-        opacity: 1;
-        border-color: #888;
-    }
+const CreateCustomButton = styled(ActionButton)`
+    flex: 1 1 auto;
+    justify-content: center;
 `;

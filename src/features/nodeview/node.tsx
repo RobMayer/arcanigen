@@ -4,6 +4,7 @@ import { DragMove } from "../../components/wrappers/DragMove";
 import { Project } from "../../state/project";
 import { Session } from "../../state/session";
 import { Icon, ICONS } from "../../components/Icon";
+import { Flavour } from "../../components/types";
 import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
@@ -21,7 +22,21 @@ export const GraphNode = ({ nodeId }: { nodeId: string }) => {
 };
 
 export const TypicalNode = styled(
-    ({ className, node, methods, children }: { methods: ReturnType<typeof Project.useNode>[1]; node: NodeDefinitions.NodeFor<NodeDefinitions.Any>; className?: string; children?: ReactNode }) => {
+    ({
+        className,
+        node,
+        methods,
+        children,
+        flavour,
+        iconNode,
+    }: {
+        methods: ReturnType<typeof Project.useNode>[1];
+        node: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
+        className?: string;
+        children?: ReactNode;
+        flavour?: Flavour;
+        iconNode?: ReactNode;
+    }) => {
         const nodeId = node.id;
         const { update: updateNode, remove: removeNode } = methods;
         const { cloneNode } = Project.useMethods();
@@ -98,6 +113,8 @@ export const TypicalNode = styled(
                         setLabel={setLabel}
                         onDelete={removeNode}
                         onClone={handleClone}
+                        flavour={flavour}
+                        iconNode={iconNode}
                     />
                     {isClosed ? null : <NodeSlots>{children}</NodeSlots>}
                 </div>
@@ -153,6 +170,8 @@ const NodeTitle = styled(
         setLabel,
         onDelete,
         onClone,
+        flavour: flavourOverride,
+        iconNode: iconNodeOverride,
     }: {
         className?: string;
         handleRef: Ref<HTMLDivElement>;
@@ -162,6 +181,8 @@ const NodeTitle = styled(
         setLabel: (v: string) => void;
         onDelete: () => void;
         onClone: () => void;
+        flavour?: Flavour;
+        iconNode?: ReactNode;
     }) => {
         const [isEditing, setIsEditing] = useState<boolean>(false);
         const contextControls = ContextPopup.useControls();
@@ -169,6 +190,9 @@ const NodeTitle = styled(
         const nodeType = useMemo(() => {
             return NodeTypes.get(node.type);
         }, [node.type]);
+
+        const flavour = flavourOverride ?? nodeType.flavour;
+        const iconNode = iconNodeOverride ?? nodeType.iconNode;
 
         const startEdit = useCallback(() => {
             setIsEditing(true);
@@ -224,14 +248,14 @@ const NodeTitle = styled(
         }, [onDelete, contextControls]);
 
         return (
-            <div className={className} data-nodecategory={nodeType.category} data-flavour={nodeType.flavour}>
+            <div className={className} data-nodecategory={nodeType.category} data-flavour={flavour}>
                 <NodeFallback nodeId={node.id} side={"in"} />
-                <ActionButton.Lite onClick={toggleOpen} flavour={nodeType.flavour}>
+                <ActionButton.Lite onClick={toggleOpen} flavour={flavour}>
                     <Icon shape={isOpen ? ICONS.Caret.Down : ICONS.Caret.Right} />
                 </ActionButton.Lite>
 
                 <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit} onContextMenu={handleContextMenu}>
-                    {nodeType.iconNode}
+                    {iconNode}
                     {isEditing ? (
                         <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={nodeType.defaultLabel} />
                     ) : (
@@ -239,7 +263,7 @@ const NodeTitle = styled(
                     )}
                     <Icon shape={ICONS.Blank} />
                 </div>
-                <ActionButton.Lite onClick={onDelete} flavour={nodeType.flavour}>
+                <ActionButton.Lite onClick={onDelete} flavour={flavour}>
                     <Icon shape={ICONS.Close} />
                 </ActionButton.Lite>
                 <NodeFallback nodeId={node.id} side={"out"} />

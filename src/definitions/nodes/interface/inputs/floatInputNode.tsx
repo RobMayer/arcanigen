@@ -150,10 +150,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, soc
 export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> = {
     type: "floatInput",
     displayName: "Float Input",
-    defaultLabel: "Input",
+    defaultLabel: "Float Input",
     iconNode: <NodeIcon shape={NODE_ICONS.num} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

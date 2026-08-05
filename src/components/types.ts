@@ -2,6 +2,16 @@ import { ReactNode } from "react";
 
 export type Flavour = "base" | "accent" | "info" | "danger" | "emphasis" | "help" | "confirm" | "inherit";
 
+/** Human-facing colour names for the selectable flavours (excludes the abstract "accent"/"inherit"). */
+export const FLAVOUR_LABELS: { [key in Exclude<Flavour, "accent" | "inherit">]: string } = {
+    base: "None",
+    info: "Blue",
+    danger: "Red",
+    emphasis: "Yellow",
+    help: "Purple",
+    confirm: "Green",
+};
+
 export type PopoverPosition =
     | "top"
     | "top center"

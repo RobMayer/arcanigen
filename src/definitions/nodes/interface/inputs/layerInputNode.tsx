@@ -86,10 +86,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<LayerInputDefinition>, soc
 export const LayerInputType: NodeTypes.Type<"layerInput", LayerInputDefinition> = {
     type: "layerInput",
     displayName: "Layer Input",
-    defaultLabel: "Input",
+    defaultLabel: "Layer Input",
     iconNode: <NodeIcon shape={NODE_ICONS.layers} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

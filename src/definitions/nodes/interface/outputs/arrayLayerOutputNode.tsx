@@ -89,10 +89,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayLayerOutputDefinition
 export const ArrayLayerOutputType: NodeTypes.Type<"arrayLayerOutput", ArrayLayerOutputDefinition> = {
     type: "arrayLayerOutput",
     displayName: "Layers Output",
-    defaultLabel: "Output",
+    defaultLabel: "Layers Output",
     iconNode: <NodeIcon shape={NODE_ICONS.layers} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

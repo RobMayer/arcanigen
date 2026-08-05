@@ -90,10 +90,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StopLengthInputDefinition>
 export const StopLengthInputType: NodeTypes.Type<"stopLengthInput", StopLengthInputDefinition> = {
     type: "stopLengthInput",
     displayName: "Length Stop Input",
-    defaultLabel: "Input",
+    defaultLabel: "Length Stop Input",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.stopOf} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

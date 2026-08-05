@@ -90,10 +90,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayPathOpInputDefinition
 export const ArrayPathOpInputType: NodeTypes.Type<"arrayPathOpInput", ArrayPathOpInputDefinition> = {
     type: "arrayPathOpInput",
     displayName: "Path Ops Input",
-    defaultLabel: "Input",
+    defaultLabel: "Path Ops Input",
     iconNode: <NodeIcon shape={NODE_ICONS.combine} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

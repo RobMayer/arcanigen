@@ -13,7 +13,7 @@ import { Project } from "../../../state/project";
 import { Session } from "../../../state/session";
 import { Resolver } from "../../../util/resolver";
 import { useGraphId } from "../../../state/graphId";
-import { Flavour } from "../../../components/types";
+import { Flavour, FLAVOUR_LABELS } from "../../../components/types";
 import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
 
 export type ContainerDefinition = {
@@ -48,15 +48,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ContainerDefinition
 
 const MIN_WIDTH = 360;
 const MIN_HEIGHT = 360;
-
-const FLAVOUR_NAMES: { [key in Exclude<Flavour, "accent" | "inherit">]: string } = {
-    base: "None",
-    info: "Blue",
-    danger: "Red",
-    emphasis: "Yellow",
-    help: "Purple",
-    confirm: "Green",
-};
 
 const RESIZE_DIRS: Record<string, { sx: number; sy: number }> = {
     tl: { sx: -1, sy: -1 },
@@ -338,7 +329,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
                             </div>
                         </ContainerTitle>
                         <ContextPopup controls={contextControls}>
-                            {(Object.entries(FLAVOUR_NAMES) as [ContainerDefinition["payload"]["flavour"], string][]).map(([key, name]) => (
+                            {(Object.entries(FLAVOUR_LABELS) as [ContainerDefinition["payload"]["flavour"], string][]).map(([key, name]) => (
                                 <ActionButton.Option key={key} flavour={key === "base" ? undefined : key} onClick={() => handleSetFlavour(key)}>
                                     {name}
                                 </ActionButton.Option>

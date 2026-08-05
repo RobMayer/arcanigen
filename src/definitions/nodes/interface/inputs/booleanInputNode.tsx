@@ -127,10 +127,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanInputDefinition>, s
 export const BooleanInputType: NodeTypes.Type<"booleanInput", BooleanInputDefinition> = {
     type: "booleanInput",
     displayName: "Boolean Input",
-    defaultLabel: "Input",
+    defaultLabel: "Boolean Input",
     iconNode: <NodeIcon shape={NODE_ICONS.power} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

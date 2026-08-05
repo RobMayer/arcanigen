@@ -718,8 +718,8 @@ export namespace NodeTypes {
 
     export type Category = (typeof Registries.NODE_CATEGORIES)[number];
 
-    /** Fallback flavour for Custom (subgraph) nodes until a per-subgraph colour is chosen. */
-    export const DEFAULT_CUSTOM_FLAVOUR: Flavour = "info";
+    /** Default/fallback flavour for new Custom (subgraph) nodes. Pre-existing saves are backfilled to "info" by the v4→v5 migration (the historical default). */
+    export const DEFAULT_CUSTOM_FLAVOUR: Flavour = "base";
 
     export type RefreshReason = "constraintAdded" | "constraintRemoved";
 
@@ -751,6 +751,8 @@ export namespace NodeTypes {
         flavour: Flavour;
         /** Keeps the type loadable for existing saves but hides it from the Add Node drawer. */
         deprecated?: boolean;
+        /** Disables this node in the root drawer — it may only be added inside a subgraph (e.g. interface in/out nodes). */
+        rootRestricted?: boolean;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;
         Controls: (props: { node: NodeDefinitions.NodeFor<D>; methods: ReturnType<typeof Project.useNode>[1] }) => ReactNode;
         evaluate: (node: NodeDefinitions.NodeFor<D>, socket: keyof D["outputs"], context: Resolver.Context) => DataTypes.AnyEval | null;

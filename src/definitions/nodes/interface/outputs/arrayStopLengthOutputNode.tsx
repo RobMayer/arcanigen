@@ -92,10 +92,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopLengthOutputDefin
 export const ArrayStopLengthOutputType: NodeTypes.Type<"arrayStopLengthOutput", ArrayStopLengthOutputDefinition> = {
     type: "arrayStopLengthOutput",
     displayName: "Length Stop Array Output",
-    defaultLabel: "Output",
+    defaultLabel: "Length Stop Array Output",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.arrayOfStopOf} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

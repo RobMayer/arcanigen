@@ -100,10 +100,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, so
 export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
     type: "floatOutput",
     displayName: "Float Output",
-    defaultLabel: "Output",
+    defaultLabel: "Float Output",
     iconNode: <NodeIcon shape={NODE_ICONS.num} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

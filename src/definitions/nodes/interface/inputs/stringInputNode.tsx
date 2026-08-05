@@ -121,10 +121,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StringInputDefinition>, so
 export const StringInputType: NodeTypes.Type<"stringInput", StringInputDefinition> = {
     type: "stringInput",
     displayName: "String Input",
-    defaultLabel: "Input",
+    defaultLabel: "String Input",
     iconNode: <NodeIcon shape={NODE_ICONS.text} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

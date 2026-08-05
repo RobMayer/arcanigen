@@ -93,10 +93,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopAngleInputDefinit
 export const ArrayStopAngleInputType: NodeTypes.Type<"arrayStopAngleInput", ArrayStopAngleInputDefinition> = {
     type: "arrayStopAngleInput",
     displayName: "Angle Stop Array Input",
-    defaultLabel: "Input",
+    defaultLabel: "Angle Stop Array Input",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.modifiers.arrayOfStopOf} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

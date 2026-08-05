@@ -89,10 +89,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StopColorOutputDefinition>
 export const StopColorOutputType: NodeTypes.Type<"stopColorOutput", StopColorOutputDefinition> = {
     type: "stopColorOutput",
     displayName: "Color Stop Output",
-    defaultLabel: "Output",
+    defaultLabel: "Color Stop Output",
     iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.modifiers.stopOf} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

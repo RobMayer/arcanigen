@@ -90,10 +90,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayLayerInputDefinition>
 export const ArrayLayerInputType: NodeTypes.Type<"arrayLayerInput", ArrayLayerInputDefinition> = {
     type: "arrayLayerInput",
     displayName: "Layers Input",
-    defaultLabel: "Input",
+    defaultLabel: "Layers Input",
     iconNode: <NodeIcon shape={NODE_ICONS.layers} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

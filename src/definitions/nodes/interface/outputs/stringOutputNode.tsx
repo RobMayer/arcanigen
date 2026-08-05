@@ -98,10 +98,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StringOutputDefinition>, s
 export const StringOutputType: NodeTypes.Type<"stringOutput", StringOutputDefinition> = {
     type: "stringOutput",
     displayName: "String Output",
-    defaultLabel: "Output",
+    defaultLabel: "String Output",
     iconNode: <NodeIcon shape={NODE_ICONS.text} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

@@ -81,10 +81,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<LayerOutputDefinition>, so
 export const LayerOutputType: NodeTypes.Type<"layerOutput", LayerOutputDefinition> = {
     type: "layerOutput",
     displayName: "Layer Output",
-    defaultLabel: "Output",
+    defaultLabel: "Layer Output",
     iconNode: <NodeIcon shape={NODE_ICONS.layers} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

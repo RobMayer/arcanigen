@@ -90,10 +90,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StopIntegerInputDefinition
 export const StopIntegerInputType: NodeTypes.Type<"stopIntegerInput", StopIntegerInputDefinition> = {
     type: "stopIntegerInput",
     displayName: "Integer Stop Input",
-    defaultLabel: "Input",
+    defaultLabel: "Integer Stop Input",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.stopOf} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

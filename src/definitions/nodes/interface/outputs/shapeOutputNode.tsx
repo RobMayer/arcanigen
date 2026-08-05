@@ -98,10 +98,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ShapeOutputDefinition>, so
 export const ShapeOutputType: NodeTypes.Type<"shapeOutput", ShapeOutputDefinition> = {
     type: "shapeOutput",
     displayName: "Shape Output",
-    defaultLabel: "Output",
+    defaultLabel: "Shape Output",
     iconNode: <NodeIcon shape={NODE_ICONS.shape} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

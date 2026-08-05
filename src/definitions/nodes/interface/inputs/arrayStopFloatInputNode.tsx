@@ -93,10 +93,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopFloatInputDefinit
 export const ArrayStopFloatInputType: NodeTypes.Type<"arrayStopFloatInput", ArrayStopFloatInputDefinition> = {
     type: "arrayStopFloatInput",
     displayName: "Float Stop Array Input",
-    defaultLabel: "Input",
+    defaultLabel: "Float Stop Array Input",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.arrayOfStopOf} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

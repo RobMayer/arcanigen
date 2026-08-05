@@ -151,10 +151,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerInputDefinition>, s
 export const IntegerInputType: NodeTypes.Type<"integerInput", IntegerInputDefinition> = {
     type: "integerInput",
     displayName: "Integer Input",
-    defaultLabel: "Input",
+    defaultLabel: "Integer Input",
     iconNode: <NodeIcon shape={NODE_ICONS.num} directionIcon={ICONS.ArrowTo.RightArc} />,
     flavour: "info",
     category: "Inputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

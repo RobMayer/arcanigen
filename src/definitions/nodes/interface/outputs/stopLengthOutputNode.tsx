@@ -89,10 +89,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<StopLengthOutputDefinition
 export const StopLengthOutputType: NodeTypes.Type<"stopLengthOutput", StopLengthOutputDefinition> = {
     type: "stopLengthOutput",
     displayName: "Length Stop Output",
-    defaultLabel: "Output",
+    defaultLabel: "Length Stop Output",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.stopOf} directionIcon={ICONS.ArrowFrom.RightArc} />,
     flavour: "info",
     category: "Outputs",
+    rootRestricted: true,
     evaluate,
     Controls,
     dependsOn,

@@ -4,7 +4,8 @@ import { computeSubgraphDeps, computeForbiddenSockets } from "../../util/cycleDe
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { useGraphId } from "../graphId";
-import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, InterfaceMember } from "./types";
+import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, SubgraphMeta, InterfaceMember } from "./types";
+import { makeSubgraphMeta } from "./types";
 import { nanoid } from "nanoid";
 import { buildInitialCache, invalidateDownstream, rebuildDownstream } from "./cache";
 import { buildInitialDeps, INITIAL_STATE } from "./storage";
@@ -275,6 +276,16 @@ export namespace Project {
         return useSyncExternalStore(ctx.meta.subscribe, ctx.meta.get);
     };
 
+    export const useGraphMeta = (graphId: GraphId) => {
+        const ctx = useContext(CTX)!;
+
+        const selector = useCallback(() => {
+            return ctx.meta.get()[graphId];
+        }, [graphId, ctx]);
+
+        return useSyncExternalStore(ctx.meta.subscribe, selector);
+    };
+
     export const useUsers = () => {
         const ctx = useContext(CTX)!;
         return useSyncExternalStore(ctx.users.subscribe, ctx.users.get);
@@ -293,7 +304,7 @@ export namespace Project {
                 ctx.users.ref.current = { ...ctx.users.ref.current, [graphId]: [] };
                 ctx.interfaces.ref.current = { ...ctx.interfaces.ref.current, [graphId]: [] };
                 ctx.cache.ref.current = { ...ctx.cache.ref.current, [graphId]: {} };
-                ctx.meta.ref.current = { ...ctx.meta.ref.current, [graphId]: { name } };
+                ctx.meta.ref.current = { ...ctx.meta.ref.current, [graphId]: makeSubgraphMeta(name) };
 
                 ctx.nodes.notify();
                 ctx.nodeList.notify();
@@ -308,6 +319,13 @@ export namespace Project {
 
             const rename = (graphId: string, name: string) => {
                 ctx.meta.ref.current = { ...ctx.meta.ref.current, [graphId]: { ...ctx.meta.ref.current[graphId], name } };
+                ctx.meta.notify();
+            };
+
+            const setMeta = (graphId: string, patch: Partial<SubgraphMeta>) => {
+                const prev = ctx.meta.ref.current[graphId];
+                if (!prev) return;
+                ctx.meta.ref.current = { ...ctx.meta.ref.current, [graphId]: { ...prev, ...patch } };
                 ctx.meta.notify();
             };
 
@@ -438,7 +456,7 @@ export namespace Project {
                 ctx.deps.notify();
             };
 
-            return { create, rename, remove, alterInterface };
+            return { create, rename, setMeta, remove, alterInterface };
         }, [ctx]);
     };
 
@@ -560,7 +578,7 @@ export namespace Project {
                     currentLinks = { ...currentLinks, [newId]: data.links[oldId] ?? {} };
                     currentPositions = { ...currentPositions, [newId]: data.positions[oldId] ?? {} };
                     currentInterfaces = { ...currentInterfaces, [newId]: data.interfaces[oldId] ?? [] };
-                    currentMeta = { ...currentMeta, [newId]: data.meta[oldId] ?? { name: "Imported" } };
+                    currentMeta = { ...currentMeta, [newId]: data.meta[oldId] ?? makeSubgraphMeta("Imported") };
                     currentUsers = { ...currentUsers, [newId]: [] };
                 }
 
@@ -656,7 +674,7 @@ export namespace Project {
                     positions[gid] = ctx.positions.ref.current[gid] ?? {};
                     users[gid] = (ctx.users.ref.current[gid] ?? []).filter((u) => collected.has(u.scope));
                     interfaces[gid] = ctx.interfaces.ref.current[gid] ?? [];
-                    meta[gid] = ctx.meta.ref.current[gid] ?? { name: "Untitled" };
+                    meta[gid] = ctx.meta.ref.current[gid] ?? makeSubgraphMeta("Untitled");
                 }
                 // Filter uiState keys relevant to collected graphs
                 const uiState: UiStateType = {};
@@ -746,6 +764,13 @@ export namespace Project {
                             node.out.pathOpArray = node.out.pathOpArray ?? [];
                         }
                     }
+                }
+                // Subgraph meta gained flavour/category/icon (custom-node appearance in the drawer).
+                for (const graphId in input.meta) {
+                    const m = input.meta[graphId];
+                    m.flavour = m.flavour ?? "info";
+                    m.category = m.category ?? "Custom";
+                    m.icon = m.icon ?? "default";
                 }
                 input.version = 5;
             }

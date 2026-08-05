@@ -6,9 +6,12 @@ import { NodeDrawer } from "./nodedrawer";
 import { GraphIdContext } from "../state/graphId";
 import { Project } from "../state/project";
 import { TextInput } from "../components/inputs/TextInput";
+import { Dropdown } from "../components/inputs/Dropdown";
+import { Flavour, FLAVOUR_LABELS } from "../components/types";
+import { NodeTypes } from "../definitions/betterTypes";
 import { useDragPane } from "../components/wrappers/DragPane";
 import { ResizeHandle } from "../components/containers/ResizeHandle";
-import { parseInterface, InterfaceMember, InterfaceAccordion } from "../state/project/types";
+import { parseInterface, interfaceMemberLabel, InterfaceMember, InterfaceAccordion } from "../state/project/types";
 import { Session } from "../state/session";
 import { Icon, ICONS } from "../components/Icon";
 import { ActionButton } from "../components/buttons/ActionButton";
@@ -51,6 +54,9 @@ export const SubgraphEditorProvider = ({ children }: { children: ReactNode }) =>
     );
 };
 
+/** Categories a custom node may be filed under (the hidden Result bucket is excluded). */
+const ASSIGNABLE_CATEGORIES: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math", "Inputs", "Outputs"];
+
 const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
     const subgraphMethods = Project.useSubgraphMethods();
     const [, modalControls] = Modal.useInternal();
@@ -59,11 +65,28 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
 
     const meta = Project.useMeta();
-    const name = meta[graphId]?.name ?? "";
+    const metaEntry = meta[graphId];
+    const name = metaEntry?.name ?? "";
+    const category = metaEntry?.category ?? "Custom";
+    const flavour = metaEntry?.flavour ?? NodeTypes.DEFAULT_CUSTOM_FLAVOUR;
 
     const handleRename = useCallback(
         (newName: string) => {
             subgraphMethods.rename(graphId, newName);
+        },
+        [subgraphMethods, graphId],
+    );
+
+    const handleSetCategory = useCallback(
+        (c: string) => {
+            subgraphMethods.setMeta(graphId, { category: c as NodeTypes.Category });
+        },
+        [subgraphMethods, graphId],
+    );
+
+    const handleSetFlavour = useCallback(
+        (f: string) => {
+            subgraphMethods.setMeta(graphId, { flavour: f as Flavour });
         },
         [subgraphMethods, graphId],
     );
@@ -95,9 +118,9 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
     return (
         <GraphIdContext value={graphId}>
             <Modal.Title
-                flavour={"accent"}
+                flavour={"base"}
                 options={
-                    <ActionButton.Lite onClick={handleClose}>
+                    <ActionButton.Lite onClick={handleClose} flavour={"danger"}>
                         <Icon shape={ICONS.Close} />
                     </ActionButton.Lite>
                 }
@@ -113,6 +136,28 @@ const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
                 </div>
                 <div data-area={"interfacelist"}>
                     <TextInput value={name} onCommit={handleRename} placeholder="Subgraph name" />
+                    <MetaRow>
+                        <label>
+                            <span>Category</span>
+                            <Dropdown value={category} onValue={handleSetCategory}>
+                                {ASSIGNABLE_CATEGORIES.map((cat) => (
+                                    <option key={cat} value={cat}>
+                                        {cat}
+                                    </option>
+                                ))}
+                            </Dropdown>
+                        </label>
+                        <label>
+                            <span>Colour</span>
+                            <Dropdown value={flavour} onValue={handleSetFlavour}>
+                                {(Object.entries(FLAVOUR_LABELS) as [Flavour, string][]).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </Dropdown>
+                        </label>
+                    </MetaRow>
                     <InterfaceMemberList graphId={graphId} />
                 </div>
                 <div data-area={"rowResize"}>
@@ -158,6 +203,23 @@ const Toolbar = ({ graphId }: { graphId: string }) => {
         </ToolbarWrapper>
     );
 };
+
+const MetaRow = styled.div`
+    display: flex;
+    gap: 6px;
+    & > label {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-variant: small-caps;
+        font-size: 0.85em;
+        min-width: 0;
+    }
+    & select {
+        width: 100%;
+    }
+`;
 
 const Sep = styled.div`
     align-self: stretch;
@@ -453,7 +515,7 @@ const TopLevelItem = ({
 const SocketEntry = ({ ref, entry, graphId, onDragStart }: { ref: React.Ref<HTMLDivElement>; entry: `in:${string}` | `out:${string}`; graphId: string; onDragStart: (e: DragEvent) => void }) => {
     const parsed = parseInterface(entry);
     const [node] = Project.useNode(graphId, parsed.nodeId);
-    const label = (node.payload as { label?: string }).label || node.type;
+    const label = interfaceMemberLabel(node);
 
     return (
         <ItemRow ref={ref}>
@@ -600,7 +662,7 @@ const EditorLayout = styled.div`
         background: #222;
         border: 1px solid var(--flavour);
         display: grid;
-        grid-template-rows: auto 1fr;
+        grid-template-rows: auto auto 1fr;
         grid-auto-rows: auto;
         gap: 4px;
         padding: 4px;
