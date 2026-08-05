@@ -123,14 +123,19 @@ import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
 import { ClipDefinition, ClipNodeType } from "./nodes/collections/clipNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
-import { PolygonArrayDefinition, PolygonArrayNodeType } from "./nodes/collections/polygonArrayNode";
-import { RadialArrayDefinition, RadialArrayNodeType } from "./nodes/collections/radialArrayNode";
-import { RepetitionArrayDefinition, RepetitionArrayNodeType } from "./nodes/collections/repetitionArrayNode";
+import { PolygonPatternDefinition, PolygonPatternNodeType } from "./nodes/patterns/polygonPatternNode";
+import { RadialPatternDefinition, RadialPatternNodeType } from "./nodes/patterns/radialPatternNode";
+import { RepeatedPatternDefinition, RepeatedPatternNodeType } from "./nodes/patterns/repeatedPatternNode";
 import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collections/sequenceIndexNode";
-import { PathArrayDefinition, PathArrayNodeType } from "./nodes/collections/pathArrayNode";
+import { PathPatternDefinition, PathPatternNodeType } from "./nodes/patterns/pathPatternNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecated/colorIteratorNode";
 import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
+import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
+import { FloatStopArrayDefinition, FloatStopArrayNodeType } from "./nodes/collections/floatStopArrayNode";
+import { AngleStopArrayDefinition, AngleStopArrayNodeType } from "./nodes/collections/angleStopArrayNode";
+import { IntegerStopArrayDefinition, IntegerStopArrayNodeType } from "./nodes/collections/integerStopArrayNode";
+import { LengthStopArrayDefinition, LengthStopArrayNodeType } from "./nodes/collections/lengthStopArrayNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
 import { LinearGradientDefinition, LinearGradientNodeType } from "./nodes/collections/linearGradientNode";
 import { RadialGradientDefinition, RadialGradientNodeType } from "./nodes/collections/radialGradientNode";
@@ -288,14 +293,19 @@ namespace Registries {
         mask: MaskDefinition;
         clip: ClipDefinition;
         sequencer: SequencerDefinition;
-        polygonArray: PolygonArrayDefinition;
-        radialArray: RadialArrayDefinition;
-        repetitionArray: RepetitionArrayDefinition;
+        polygonPattern: PolygonPatternDefinition;
+        radialPattern: RadialPatternDefinition;
+        repeatedPattern: RepeatedPatternDefinition;
         sequenceIndex: SequenceIndexDefinition;
-        pathArray: PathArrayDefinition;
+        pathPattern: PathPatternDefinition;
         colorIterator: ColorIteratorDefinition;
         colorIterator2: ColorIterator2Definition;
         colorStop: ColorStopBreakoutDefinition;
+        colorStopArray: ColorStopArrayDefinition;
+        floatStopArray: FloatStopArrayDefinition;
+        angleStopArray: AngleStopArrayDefinition;
+        integerStopArray: IntegerStopArrayDefinition;
+        lengthStopArray: LengthStopArrayDefinition;
         floatIterator: FloatIteratorDefinition;
         floatIterator2: FloatIterator2Definition;
         floatStop: StopFloatBreakoutDefinition;
@@ -374,14 +384,19 @@ namespace Registries {
         mask: MaskNodeType,
         clip: ClipNodeType,
         sequencer: SequencerNodeType,
-        polygonArray: PolygonArrayNodeType,
-        radialArray: RadialArrayNodeType,
-        repetitionArray: RepetitionArrayNodeType,
+        polygonPattern: PolygonPatternNodeType,
+        radialPattern: RadialPatternNodeType,
+        repeatedPattern: RepeatedPatternNodeType,
         sequenceIndex: SequenceIndexNodeType,
-        pathArray: PathArrayNodeType,
+        pathPattern: PathPatternNodeType,
         colorIterator: ColorIteratorNodeType,
         colorIterator2: ColorIterator2NodeType,
         colorStop: ColorStopNodeType,
+        colorStopArray: ColorStopArrayNodeType,
+        floatStopArray: FloatStopArrayNodeType,
+        angleStopArray: AngleStopArrayNodeType,
+        integerStopArray: IntegerStopArrayNodeType,
+        lengthStopArray: LengthStopArrayNodeType,
         floatIterator: FloatIteratorNodeType,
         floatIterator2: FloatIterator2NodeType,
         floatStop: FloatStopNodeType,

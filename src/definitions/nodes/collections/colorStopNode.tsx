@@ -68,13 +68,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorStopBr
             <SocketIn node={node} socketId={"value"} label={"Color"}>
                 <ColorHexInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} alpha />
             </SocketIn>
-            <SocketIn node={node} socketId={"position"} label={"Position"}>
-                <DecimalInput value={node.payload.position} onCommit={(position) => handleUpdate({ position })} disabled={node.in.position !== null} min={"0"} max={"100"} />
-            </SocketIn>
             <SocketIn node={node} socketId={"enabled"}>
                 <CheckBox checked={node.payload.enabled} onToggle={(enabled) => handleUpdate({ enabled })} disabled={node.in.enabled !== null}>
                     Enabled
                 </CheckBox>
+            </SocketIn>
+            <SocketIn node={node} socketId={"position"} label={"Position"}>
+                <DecimalInput value={node.payload.position} onCommit={(position) => handleUpdate({ position })} disabled={node.in.position !== null} min={"0"} max={"100"} />
             </SocketIn>
         </TypicalNode>
     );

@@ -26,7 +26,6 @@ export type LengthIterator2Definition = {
     outputs: {
         sequencedOutput: DataTypes.Use<"length">;
         sampledOutput: DataTypes.Use<"length">;
-        stopsOutput: DataTypes.Use<"array<stop<length>>">;
         stopCount: DataTypes.Use<"integer">;
     };
     payload: {
@@ -54,7 +53,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LengthIterator2Defi
         out: {
             sequencedOutput: [],
             sampledOutput: [],
-            stopsOutput: [],
             stopCount: [],
         },
         payload: {
@@ -152,9 +150,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
                 Sequence
             </SocketIn>
             <hr />
-            <SocketOut node={node} socketId={"stopsOutput"}>
-                Stops Output
-            </SocketOut>
             <SocketIn node={node} socketId={"stops"}>
                 Stops Input
             </SocketIn>
@@ -359,7 +354,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LengthIterator2Definition>, out
     if (outSocket === "sampledOutput") {
         return [...Iteration.SAMPLED_DEPS, "stops", ...stopSockets];
     }
-    if (outSocket === "stopsOutput" || outSocket === "stopCount") {
+    if (outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
@@ -371,7 +366,7 @@ const contributesTo = (
     _deps: AllDeps,
 ): (keyof LengthIterator2Definition["outputs"])[] => {
     if (inSocket === "stops") {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
+        return ["sequencedOutput", "sampledOutput", "stopCount"];
     }
     if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
         return ["sequencedOutput"];
@@ -380,19 +375,14 @@ const contributesTo = (
         return ["sampledOutput"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
-        return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
+        return ["sequencedOutput", "sampledOutput", "stopCount"];
     }
-    return ["sequencedOutput", "sampledOutput", "stopsOutput", "stopCount"];
+    return ["sequencedOutput", "sampledOutput", "stopCount"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LengthIterator2Definition>, socket: keyof LengthIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopCount") {
         return { kind: "integer", data: `${resolveStops(node, context).length}` };
-    }
-
-    if (socket === "stopsOutput") {
-        const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
-        return { kind: "array<stop<length>>", data: stops.map((s) => ({ value: s.value === "" ? null : s.value, position: s.position, enabled: s.enabled })) };
     }
 
     let position: number;
@@ -435,7 +425,6 @@ const SOCKETTYPES_IN: {
 const SOCKETTYPES_OUT: { [key in keyof Required<LengthIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
     sequencedOutput: { types: ["length"], mode: "and" },
     sampledOutput: { types: ["length"], mode: "and" },
-    stopsOutput: { types: ["array<stop<length>>"], mode: "and" },
     stopCount: { types: ["integer"], mode: "and" },
 };
 

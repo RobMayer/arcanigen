@@ -20,7 +20,7 @@ import { OffsetPathShape } from "../../shapeTypes";
 import { distroInterpolator } from "../../../util/misc";
 import { GroupShape } from "../../shapeTypes";
 
-export type PathArrayDefinition = {
+export type PathPatternDefinition = {
     inputs: {
         input: DataTypes.Use<"shape">;
         path: DataTypes.Use<"path">;
@@ -68,7 +68,7 @@ const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
 const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathArray", PathArrayDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathPatternDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathPattern", PathPatternDefinition> => {
     return {
         id,
         in: {
@@ -112,13 +112,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition
             memberRotation: "0",
             ...input,
         },
-        type: "pathArray",
+        type: "pathPattern",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathPatternDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<PathArrayDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<PathPatternDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -236,7 +236,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathArrayDe
     );
 };
 
-const ALL_INPUTS: (keyof PathArrayDefinition["inputs"])[] = [
+const ALL_INPUTS: (keyof PathPatternDefinition["inputs"])[] = [
     "input",
     "path",
     "count",
@@ -256,7 +256,7 @@ const ALL_INPUTS: (keyof PathArrayDefinition["inputs"])[] = [
     "memberRotation",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, outSocket: keyof PathArrayDefinition["outputs"], _deps: AllDeps): (keyof PathArrayDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<PathPatternDefinition>, outSocket: keyof PathPatternDefinition["outputs"], _deps: AllDeps): (keyof PathPatternDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ALL_INPUTS;
     }
@@ -266,14 +266,14 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, outSocke
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, inSocket: keyof PathArrayDefinition["inputs"], _deps: AllDeps): (keyof PathArrayDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<PathPatternDefinition>, inSocket: keyof PathPatternDefinition["inputs"], _deps: AllDeps): (keyof PathPatternDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence"];
     }
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: keyof PathArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<PathPatternDefinition>, socket: keyof PathPatternDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
@@ -385,7 +385,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathArrayDefinition>, socket: ke
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PathArrayDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<PathPatternDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     input: { types: ["shape"], mode: "or" },
     path: { types: ["path"], mode: "or" },
     count: { types: ["integer"], mode: "or" },
@@ -405,12 +405,12 @@ const SOCKETTYPES_IN: { [key in keyof Required<PathArrayDefinition["inputs"]>]: 
     memberRotation: { types: ["angle"], mode: "or" },
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<PathArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_OUT: { [key in keyof Required<PathPatternDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<PathPatternDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
             return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
@@ -419,11 +419,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<PathArrayDefinition>, sock
     }
 };
 
-export const PathArrayNodeType: NodeTypes.Type<"pathArray", PathArrayDefinition> = {
-    type: "pathArray",
-    displayName: "Path Array",
-    defaultLabel: "Path Array",
-    iconNode: <Icon shape={NODE_ICONS.bezier} color={"var(--icon-flavour)"} />,
+export const PathPatternNodeType: NodeTypes.Type<"pathPattern", PathPatternDefinition> = {
+    type: "pathPattern",
+    displayName: "Path Pattern",
+    defaultLabel: "Path Pattern",
+    iconNode: <Icon shape={NODE_ICONS.path} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.patternFor} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

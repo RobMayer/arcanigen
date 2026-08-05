@@ -679,7 +679,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 4;
+        export const CURRENT = 5;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -724,6 +724,28 @@ export namespace Project {
                     }
                 }
                 input.version = 4;
+            }
+            if (input.version === 4) {
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        switch (node.type) {
+                            case "repetitionArray":
+                                input.nodes[graphId][nodeId].type = "repeatedPattern";
+                                break;
+                            case "polygonArray":
+                                input.nodes[graphId][nodeId].type = "polygonPattern";
+                                break;
+                            case "radialArray":
+                                input.nodes[graphId][nodeId].type = "radialPattern";
+                                break;
+                            case "pathArray":
+                                input.nodes[graphId][nodeId].type = "pathPattern";
+                                break;
+                        }
+                    }
+                }
+                input.version = 5;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

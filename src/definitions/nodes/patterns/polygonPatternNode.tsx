@@ -20,7 +20,7 @@ import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { GroupShape } from "../../shapeTypes";
 
-export type PolygonArrayDefinition = {
+export type PolygonPatternDefinition = {
     inputs: {
         input: DataTypes.Use<"shape">;
         count: DataTypes.Use<"integer">;
@@ -48,7 +48,7 @@ export type PolygonArrayDefinition = {
 
 const SCRIBE_MODE_OPTIONS = Enum.options(Enum.Common.scribeMode);
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"polygonArray", PolygonArrayDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonPatternDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"polygonPattern", PolygonPatternDefinition> => {
     return {
         id,
         in: {
@@ -88,13 +88,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonArrayDefinit
             positionTheta: "0",
             rotation: "0",
         },
-        type: "polygonArray",
+        type: "polygonPattern",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArrayDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonPatternDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<PolygonArrayDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<PolygonPatternDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -155,7 +155,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonArra
     );
 };
 
-const GEOMETRY_INPUTS: (keyof PolygonArrayDefinition["inputs"])[] = [
+const GEOMETRY_INPUTS: (keyof PolygonPatternDefinition["inputs"])[] = [
     "input",
     "count",
     "radius",
@@ -171,7 +171,7 @@ const GEOMETRY_INPUTS: (keyof PolygonArrayDefinition["inputs"])[] = [
     "rotation",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, outSocket: keyof PolygonArrayDefinition["outputs"], _deps: AllDeps): (keyof PolygonArrayDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, outSocket: keyof PolygonPatternDefinition["outputs"], _deps: AllDeps): (keyof PolygonPatternDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return GEOMETRY_INPUTS;
     }
@@ -184,7 +184,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, outSo
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, inSocket: keyof PolygonArrayDefinition["inputs"], _deps: AllDeps): (keyof PolygonArrayDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, inSocket: keyof PolygonPatternDefinition["inputs"], _deps: AllDeps): (keyof PolygonPatternDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence", "eCircumradius", "eApothem"];
     }
@@ -197,7 +197,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, i
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket: keyof PolygonArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, socket: keyof PolygonPatternDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
@@ -278,7 +278,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socket:
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PolygonArrayDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<PolygonPatternDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     input: { types: ["shape"], mode: "or" },
     count: { types: ["integer"], mode: "or" },
     radius: { types: ["length"], mode: "or" },
@@ -289,14 +289,14 @@ const SOCKETTYPES_IN: { [key in keyof Required<PolygonArrayDefinition["inputs"]>
     ...Transforms.IN_SOCKET_TYPES,
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<PolygonArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_OUT: { [key in keyof Required<PolygonPatternDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
     eCircumradius: { types: ["length"], mode: "and" },
     eApothem: { types: ["length"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
             return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
@@ -305,11 +305,11 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonArrayDefinition>, s
     }
 };
 
-export const PolygonArrayNodeType: NodeTypes.Type<"polygonArray", PolygonArrayDefinition> = {
-    type: "polygonArray",
-    displayName: "Polygon Array",
-    defaultLabel: "Polygon Array",
-    iconNode: <Icon shape={NODE_ICONS.squareArrangement} color={"var(--icon-flavour)"} />,
+export const PolygonPatternNodeType: NodeTypes.Type<"polygonPattern", PolygonPatternDefinition> = {
+    type: "polygonPattern",
+    displayName: "Polygon Pattern",
+    defaultLabel: "Polygon Pattern",
+    iconNode: <Icon shape={NODE_ICONS.shapePolygon} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.patternFor} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

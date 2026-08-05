@@ -101,7 +101,7 @@ export const TokensLengthPrimitiveType: NodeTypes.Type<"tokensLength", TokensLen
     type: "tokensLength",
     displayName: "Tokens (Length)",
     defaultLabel: "Tokens (Length)",
-    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.length} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.tokenOf} layerColor="#fff" />,
     category: "Primitives",
     evaluate,
     Controls,

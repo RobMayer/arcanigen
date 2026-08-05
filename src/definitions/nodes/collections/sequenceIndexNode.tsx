@@ -109,7 +109,7 @@ export const SequenceIndexNodeType: NodeTypes.Type<"sequenceIndex", SequenceInde
     type: "sequenceIndex",
     displayName: "Sequence Index",
     defaultLabel: "Sequence Index",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.timeline} layerColor="#fff" />,
+    iconNode: <Icon shape={NODE_ICONS.timeline} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.num} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

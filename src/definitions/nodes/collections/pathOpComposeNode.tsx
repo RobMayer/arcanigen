@@ -131,7 +131,7 @@ export const PathOpComposeNodeType: NodeTypes.Type<"pathOpCompose", PathOpCompos
     type: "pathOpCompose",
     displayName: "Compose Path Op",
     defaultLabel: "Compose Path Op",
-    iconNode: <Icon shape={NODE_ICONS.combineCompose} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.combine} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.joinOf} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

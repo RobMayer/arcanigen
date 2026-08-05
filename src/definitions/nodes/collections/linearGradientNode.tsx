@@ -48,7 +48,6 @@ export type LinearGradientDefinition = {
     };
     outputs: {
         output: DataTypes.Use<"gradient">;
-        stopsOutput: DataTypes.Use<"array<stop<color>>">;
         stopCount: DataTypes.Use<"integer">;
     };
     payload: {
@@ -95,7 +94,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LinearGradientDefin
         },
         out: {
             output: [],
-            stopsOutput: [],
             stopCount: [],
         },
         payload: {
@@ -208,10 +206,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LinearGradi
                 Gradient
             </SocketOut>
             <hr />
-            <SocketOut node={node} socketId={"stopsOutput"}>
-                Stops Output
-            </SocketOut>
-
             <SocketIn node={node} socketId={"stops"}>
                 Stops Input
             </SocketIn>
@@ -523,7 +517,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, outS
     if (outSocket === "output") {
         return ["stops", "spread", ...GEOMETRY_INPUTS, ...stopSockets];
     }
-    if (outSocket === "stopsOutput" || outSocket === "stopCount") {
+    if (outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
@@ -531,17 +525,12 @@ const dependsOn = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, outS
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<LinearGradientDefinition>, inSocket: keyof LinearGradientDefinition["inputs"], _deps: AllDeps): (keyof LinearGradientDefinition["outputs"])[] => {
     if (inSocket === "stops" || (typeof inSocket === "string" && inSocket.startsWith("stop_"))) {
-        return ["output", "stopsOutput", "stopCount"];
+        return ["output", "stopCount"];
     }
     return ["output"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, socket: keyof LinearGradientDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket === "stopsOutput") {
-        const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
-        return { kind: "array<stop<color>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
-    }
-
     if (socket === "stopCount") {
         return { kind: "integer", data: `${resolveStops(node, context).length}` };
     }
@@ -607,7 +596,6 @@ const SOCKETTYPES_IN: {
 
 const SOCKETTYPES_OUT: { [key in keyof Required<LinearGradientDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["gradient"], mode: "and" },
-    stopsOutput: { types: ["array<stop<color>>"], mode: "and" },
     stopCount: { types: ["integer"], mode: "and" },
 };
 

@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
+import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
@@ -9,87 +10,59 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
-import { Enum } from "../../datatypes/enum";
 import { Angle } from "../../datatypes/angle";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { Dropdown } from "../../../components/inputs/Dropdown";
-import { RadioButton } from "../../../components/buttons/RadioButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { Iteration } from "../abstract";
 import { EmptyOr } from "../../../util/misc";
-import { lerpAngle } from "../../../util/colorSpaces";
-import styled from "styled-components";
 
-const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
-const ANGLE_CONTINUITY_OPTIONS = Enum.options(Enum.Common.angleContinuity);
+type StopEntryData = { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
 
-export type AngleIterator2Definition = {
+export type AngleStopArrayDefinition = {
     inputs: {
         stops: DataTypes.Use<"array<stop<angle>>">;
-        angleTraversal: DataTypes.Use<"enum">;
-        continuity: DataTypes.Use<"enum">;
         [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<angle>">;
-    } & Iteration.Definition["inputs"];
+    };
     outputs: {
-        sequencedOutput: DataTypes.Use<"angle">;
-        sampledOutput: DataTypes.Use<"angle">;
+        output: DataTypes.Use<"array<stop<angle>>">;
         stopCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: string;
-        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        continuity: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        stops: { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
-    } & Iteration.Definition["payload"];
+        stops: StopEntryData[];
+    };
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIterator2Definition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleStopArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleStopArray", AngleStopArrayDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
     const s1: `stop_${string}` = `stop_${nanoid()}`;
     return {
         id,
         in: {
-            sequence: null,
-            angleTraversal: null,
-            continuity: null,
-            mode: null,
-            reverseSequence: null,
-            startOffset: null,
-            endOffset: null,
-            samplePosition: null,
             stops: null,
             [s0]: null,
             [s1]: null,
         },
         out: {
-            sequencedOutput: [],
-            sampledOutput: [],
+            output: [],
             stopCount: [],
         },
         payload: {
             label: "",
-            angleTraversal: input.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value,
-            continuity: input.continuity ?? Enum.Common.angleContinuity.CONTINUOUS.value,
-            mode: input.mode ?? Enum.Common.sequencerMode.CLAMP.value,
-            reverseSequence: input.reverseSequence ?? false,
-            startOffset: input.startOffset ?? "0",
-            endOffset: input.endOffset ?? "0",
-            samplePosition: input.samplePosition ?? "50",
             stops: input.stops ?? [
                 { socket: s0, value: "0", position: "0", enabled: true },
                 { socket: s1, value: "360", position: "100", enabled: true },
             ],
         },
-        type: "angleIterator2",
+        type: "angleStopArray",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Definition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleStopArrayDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -102,7 +75,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as AngleIterator2Definition["payload"]).stops, { socket, value: "180", position: "50", enabled: true }],
+                stops: [...(n.payload as AngleStopArrayDefinition["payload"]).stops, { socket, value: "180", position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -120,7 +93,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as AngleIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
+                        stops: (n.payload as AngleStopArrayDefinition["payload"]).stops.filter((s) => s.socket !== socket),
                     },
                 };
             });
@@ -129,7 +102,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
     );
 
     const handleStopUpdate = useCallback(
-        (socket: string, update: Partial<{ value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
+        (socket: string, update: Partial<StopEntryData>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.socket === socket ? { ...s, ...update } : s)),
             });
@@ -154,17 +127,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
     );
 
     const supersocketConnected = node.in.stops !== null;
-    const isContinuous = node.payload.continuity === Enum.Common.angleContinuity.CONTINUOUS.value && node.in.continuity === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"sequencedOutput"}>
-                Sequenced Output
+            <SocketOut node={node} socketId={"output"}>
+                Stops
             </SocketOut>
-            <SocketIn node={node} socketId={"sequence"}>
-                Sequence
-            </SocketIn>
-            <hr />
             <SocketIn node={node} socketId={"stops"}>
                 Stops Input
             </SocketIn>
@@ -186,42 +154,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                     ))}
                 </>
             )}
-
-            <NodeAccordion label={"Options"} nodeId={node.id} socketsIn="continuity|angleTraversal|mode|reverseSequence|startOffset|endOffset">
-                <SocketIn node={node} socketId={"continuity"} label={"Continuity"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.continuity}`}
-                        onValue={(v) => handleUpdate({ continuity: Number(v) })}
-                        disabled={node.in.continuity !== null}
-                        options={ANGLE_CONTINUITY_OPTIONS}
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"angleTraversal"} label={"Traversal"}>
-                    <Dropdown value={`${node.payload.angleTraversal}`} onValue={(v) => handleUpdate({ angleTraversal: Number(v) })} disabled={node.in.angleTraversal !== null || isContinuous}>
-                        {ANGLE_TRAVERSAL_OPTIONS.map((each) => (
-                            <option value={each.value} key={each.value}>
-                                {each.label}
-                            </option>
-                        ))}
-                    </Dropdown>
-                </SocketIn>
-                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
-            </NodeAccordion>
-            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampledOutput" socketsIn={"samplePosition"}>
-                <SocketOut node={node} socketId={"sampledOutput"}>
-                    Sampled Output
-                </SocketOut>
-                <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
-                    <DecimalInput.SliderInput
-                        value={node.payload.samplePosition}
-                        onCommit={(samplePosition) => handleUpdate({ samplePosition })}
-                        disabled={node.in.samplePosition !== null}
-                        min={0}
-                        max={100}
-                    />
-                </SocketIn>
-            </NodeAccordion>
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="stopCount">
                 <SocketOut node={node} socketId={"stopCount"}>
                     Stop Count
@@ -241,10 +173,10 @@ const StopEntry = ({
     handleRemoveStop,
     handleReorderStop,
 }: {
-    entry: { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
-    node: NodeDefinitions.NodeFor<AngleIterator2Definition>;
+    entry: StopEntryData;
+    node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>;
     index: number;
-    handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
+    handleStopUpdate: (socket: string, update: Partial<StopEntryData>) => void;
     handleRemoveStop: (socket: string) => void;
     handleReorderStop: (socket: string, toIndex: number) => void;
 }) => {
@@ -363,7 +295,7 @@ const DragGrip = styled.div`
 
 // Resolve the effective stops: the supersocket (an array<stop<angle>>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop<angle>) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
+const resolveStops = (node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
     const supersocketEval = context.resolve<"array<stop<angle>>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
@@ -389,96 +321,49 @@ const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, c
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, outSocket: keyof AngleIterator2Definition["outputs"], _deps: AllDeps): (keyof AngleIterator2Definition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, outSocket: keyof AngleStopArrayDefinition["outputs"], _deps: AllDeps): (keyof AngleStopArrayDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
-    if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "angleTraversal", "continuity", "stops", ...stopSockets];
-    }
-    if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "angleTraversal", "continuity", "stops", ...stopSockets];
-    }
-    if (outSocket === "stopCount") {
+    if (outSocket === "output" || outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, inSocket: keyof AngleIterator2Definition["inputs"], _deps: AllDeps): (keyof AngleIterator2Definition["outputs"])[] => {
-    if (inSocket === "stops") {
-        return ["sequencedOutput", "sampledOutput", "stopCount"];
-    }
-    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
-        return ["sequencedOutput"];
-    }
-    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket as string)) {
-        return ["sampledOutput"];
-    }
-    if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
-        return ["sequencedOutput", "sampledOutput", "stopCount"];
-    }
-    return ["sequencedOutput", "sampledOutput", "stopCount"];
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>,
+    _inSocket: keyof AngleStopArrayDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof AngleStopArrayDefinition["outputs"])[] => {
+    return ["output", "stopCount"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socket: keyof AngleIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, socket: keyof AngleStopArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopCount") {
         return { kind: "integer", data: `${resolveStops(node, context).length}` };
     }
-
-    let position: number;
-    if (socket === "sequencedOutput") {
-        const result = Iteration.evaluate(node, context);
-        if (result === null) return null;
-        position = result.t * 100;
-    } else if (socket === "sampledOutput") {
-        position = Iteration.resolveSamplePosition(node, context);
-    } else {
-        return null;
+    if (socket === "output") {
+        const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
+        return { kind: "array<stop<angle>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
     }
-
-    const traversal = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value;
-    const continuity = Enum.resolve(context.resolve<"enum">(node.id, "continuity")?.data, Enum.Common.angleContinuity) ?? node.payload.continuity ?? Enum.Common.angleContinuity.CONTINUOUS.value;
-    const cyclical = continuity === Enum.Common.angleContinuity.CYCLICAL.value;
-
-    const active = resolveStops(node, context).filter((s) => s.enabled);
-    if (active.length === 0) return null;
-    active.sort((a, b) => a.position - b.position);
-
-    // Cyclical segments wrap around the wheel (respecting traversal); continuous segments are plain
-    // numeric lerps that preserve absolute magnitude (e.g. 0→720 sweeps two full turns).
-    const lerp = cyclical ? (a: number, b: number, t: number) => lerpAngle(a, b, t, traversal) : (a: number, b: number, t: number) => a + (b - a) * t;
-
-    const value = Iteration.sampleStopsWith(active, position, lerp);
-    return { kind: "angle", data: `${value}` };
+    return null;
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<
-        Pick<AngleIterator2Definition["inputs"], "sequence" | "angleTraversal" | "continuity" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">
-    >]: SocketTypes.SocketRule;
-} = {
-    ...Iteration.IN_SOCKET_TYPES,
-    angleTraversal: { types: ["enum"], mode: "and" },
-    continuity: { types: ["enum"], mode: "and" },
-    stops: { types: ["array<stop<angle>>"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<AngleIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["angle"], mode: "and" },
-    sampledOutput: { types: ["angle"], mode: "and" },
+const SOCKETTYPES_OUT: { [key in keyof Required<AngleStopArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["array<stop<angle>>"], mode: "and" },
     stopCount: { types: ["integer"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
         return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
     if (socketId.startsWith("stop_")) {
         return { types: ["stop<angle>"], mode: "or" };
     }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+    return { types: ["array<stop<angle>>"], mode: "or" };
 };
 
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleStopArray", AngleStopArrayDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction !== "in") return;
 
     const link = ctx.getLink(graphId, linkId);
@@ -496,11 +381,11 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIter
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-export const AngleIterator2NodeType: NodeTypes.Type<"angleIterator2", AngleIterator2Definition> = {
-    type: "angleIterator2",
-    displayName: "Angle Iterator",
-    defaultLabel: "Angle Iterator",
-    iconNode: <Icon shape={NODE_ICONS.angle} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+export const AngleStopArrayNodeType: NodeTypes.Type<"angleStopArray", AngleStopArrayDefinition> = {
+    type: "angleStopArray",
+    displayName: "Angle Stop Array",
+    defaultLabel: "Angle Stop Array",
+    iconNode: <Icon shape={NODE_ICONS.angle} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.arrayOfStopOf} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

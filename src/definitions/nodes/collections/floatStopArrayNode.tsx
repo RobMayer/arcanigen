@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import { Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
+import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
@@ -9,71 +10,57 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
-import { Enum } from "../../datatypes/enum";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { Iteration } from "../abstract";
 import { EmptyOr } from "../../../util/misc";
-import styled from "styled-components";
 
-export type FloatIterator2Definition = {
+type StopEntryData = { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
+
+export type FloatStopArrayDefinition = {
     inputs: {
         stops: DataTypes.Use<"array<stop<float>>">;
         [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<float>">;
-    } & Iteration.Definition["inputs"];
+    };
     outputs: {
-        sequencedOutput: DataTypes.Use<"float">;
-        sampledOutput: DataTypes.Use<"float">;
+        output: DataTypes.Use<"array<stop<float>>">;
         stopCount: DataTypes.Use<"integer">;
     };
     payload: {
         label: string;
-        stops: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
-    } & Iteration.Definition["payload"];
+        stops: StopEntryData[];
+    };
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatStopArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatStopArray", FloatStopArrayDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
     const s1: `stop_${string}` = `stop_${nanoid()}`;
     return {
         id,
         in: {
-            sequence: null,
-            mode: null,
-            reverseSequence: null,
-            startOffset: null,
-            endOffset: null,
-            samplePosition: null,
             stops: null,
             [s0]: null,
             [s1]: null,
         },
         out: {
-            sequencedOutput: [],
-            sampledOutput: [],
+            output: [],
             stopCount: [],
         },
         payload: {
             label: "",
-            mode: input.mode ?? Enum.Common.sequencerMode.CLAMP.value,
-            reverseSequence: input.reverseSequence ?? false,
-            startOffset: input.startOffset ?? "0",
-            endOffset: input.endOffset ?? "0",
-            samplePosition: input.samplePosition ?? "50",
             stops: input.stops ?? [
                 { socket: s0, value: "0", position: "0", enabled: true },
                 { socket: s1, value: "1", position: "100", enabled: true },
             ],
         },
-        type: "floatIterator2",
+        type: "floatStopArray",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatStopArrayDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -86,7 +73,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as FloatIterator2Definition["payload"]).stops, { socket, value: "0.5", position: "50", enabled: true }],
+                stops: [...(n.payload as FloatStopArrayDefinition["payload"]).stops, { socket, value: "0.5", position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -104,7 +91,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as FloatIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
+                        stops: (n.payload as FloatStopArrayDefinition["payload"]).stops.filter((s) => s.socket !== socket),
                     },
                 };
             });
@@ -113,7 +100,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
     );
 
     const handleStopUpdate = useCallback(
-        (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
+        (socket: string, update: Partial<StopEntryData>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.socket === socket ? { ...s, ...update } : s)),
             });
@@ -141,13 +128,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"sequencedOutput"}>
-                Sequenced Output
+            <SocketOut node={node} socketId={"output"}>
+                Stops
             </SocketOut>
-            <SocketIn node={node} socketId={"sequence"}>
-                Sequence
-            </SocketIn>
-            <hr />
             <SocketIn node={node} socketId={"stops"}>
                 Stops Input
             </SocketIn>
@@ -169,22 +152,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                     ))}
                 </>
             )}
-
-            <Iteration.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampleOutput" socketsIn={"samplePosition"}>
-                <SocketOut node={node} socketId={"sampledOutput"}>
-                    Sampled Output
-                </SocketOut>
-                <SocketIn node={node} socketId={"samplePosition"} label={"Sample Position"}>
-                    <DecimalInput.SliderInput
-                        value={node.payload.samplePosition}
-                        onCommit={(samplePosition) => handleUpdate({ samplePosition })}
-                        disabled={node.in.samplePosition !== null}
-                        min={0}
-                        max={100}
-                    />
-                </SocketIn>
-            </NodeAccordion>
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="stopCount">
                 <SocketOut node={node} socketId={"stopCount"}>
                     Stop Count
@@ -204,10 +171,10 @@ const StopEntry = ({
     handleRemoveStop,
     handleReorderStop,
 }: {
-    entry: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
-    node: NodeDefinitions.NodeFor<FloatIterator2Definition>;
+    entry: StopEntryData;
+    node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>;
     index: number;
-    handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
+    handleStopUpdate: (socket: string, update: Partial<StopEntryData>) => void;
     handleRemoveStop: (socket: string) => void;
     handleReorderStop: (socket: string, toIndex: number) => void;
 }) => {
@@ -326,7 +293,7 @@ const DragGrip = styled.div`
 
 // Resolve the effective stops: the supersocket (an array<stop<float>>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop<float>) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
+const resolveStops = (node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
     const supersocketEval = context.resolve<"array<stop<float>>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
@@ -352,90 +319,54 @@ const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, c
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outSocket: keyof FloatIterator2Definition["outputs"], _deps: AllDeps): (keyof FloatIterator2Definition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, outSocket: keyof FloatStopArrayDefinition["outputs"], _deps: AllDeps): (keyof FloatStopArrayDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
-    if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "stops", ...stopSockets];
-    }
-    if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "stops", ...stopSockets];
-    }
-    if (outSocket === "stopCount") {
+    if (outSocket === "output" || outSocket === "stopCount") {
         return ["stops", ...stopSockets];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, inSocket: keyof FloatIterator2Definition["inputs"], _deps: AllDeps): (keyof FloatIterator2Definition["outputs"])[] => {
-    if (inSocket === "stops") {
-        return ["sequencedOutput", "sampledOutput", "stopCount"];
-    }
-    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
-        return ["sequencedOutput"];
-    }
-    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket as string)) {
-        return ["sampledOutput"];
-    }
-    if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
-        return ["sequencedOutput", "sampledOutput", "stopCount"];
-    }
-    return ["sequencedOutput", "sampledOutput", "stopCount"];
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>,
+    _inSocket: keyof FloatStopArrayDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof FloatStopArrayDefinition["outputs"])[] => {
+    return ["output", "stopCount"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socket: keyof FloatIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, socket: keyof FloatStopArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopCount") {
         return { kind: "integer", data: `${resolveStops(node, context).length}` };
     }
-
-    let position: number;
-    if (socket === "sequencedOutput") {
-        const result = Iteration.evaluate(node, context);
-        if (result === null) return null;
-        position = result.t * 100;
-    } else if (socket === "sampledOutput") {
-        position = Iteration.resolveSamplePosition(node, context);
-    } else {
-        return null;
+    if (socket === "output") {
+        const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
+        return { kind: "array<stop<float>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
     }
-
-    const active = resolveStops(node, context).filter((s) => s.enabled);
-    if (active.length === 0) return null;
-    active.sort((a, b) => a.position - b.position);
-
-    const value = Iteration.sampleStopsWith(active, position, (a, b, t) => a + t * (b - a));
-    return { kind: "float", data: `${value}` };
+    return null;
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<FloatIterator2Definition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">>]: SocketTypes.SocketRule;
-} = {
-    ...Iteration.IN_SOCKET_TYPES,
-    stops: { types: ["array<stop<float>>"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<FloatIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["float"], mode: "and" },
-    sampledOutput: { types: ["float"], mode: "and" },
+const SOCKETTYPES_OUT: { [key in keyof Required<FloatStopArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+    output: { types: ["array<stop<float>>"], mode: "and" },
     stopCount: { types: ["integer"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     if (side === "out") {
         return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
     }
     if (socketId.startsWith("stop_")) {
         return { types: ["stop<float>"], mode: "or" };
     }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
+    return { types: ["array<stop<float>>"], mode: "or" };
 };
 
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatStopArray", FloatStopArrayDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction !== "in") return;
 
     const link = ctx.getLink(graphId, linkId);
     if (!link || link.toSocket !== "stops") return;
 
-    // Supersocket just connected — clear the individual per-stop socket links.
     const currentNode = ctx.getNode(graphId, node.id);
     if (!currentNode) return;
     const linkIdsToRemove: string[] = [];
@@ -448,11 +379,11 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIter
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-export const FloatIterator2NodeType: NodeTypes.Type<"floatIterator2", FloatIterator2Definition> = {
-    type: "floatIterator2",
-    displayName: "Float Iterator",
-    defaultLabel: "Float Iterator",
-    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.loop} layerColor="#fff" />,
+export const FloatStopArrayNodeType: NodeTypes.Type<"floatStopArray", FloatStopArrayDefinition> = {
+    type: "floatStopArray",
+    displayName: "Float Stop Array",
+    defaultLabel: "Float Stop Array",
+    iconNode: <Icon shape={NODE_ICONS.num} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.arrayOfStopOf} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,

@@ -135,7 +135,7 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     type: "layerCompose",
     displayName: "Compose Layer",
     defaultLabel: "Compose Layer",
-    iconNode: <Icon shape={NODE_ICONS.layerCompose} color={"var(--icon-flavour)"} />,
+    iconNode: <Icon shape={NODE_ICONS.layers} color={"var(--icon-flavour)"} cutout={"scoop"} layer={NODE_ICONS.modifiers.joinOf} layerColor="#fff" />,
     category: "Collections",
     create,
     dependsOn,
