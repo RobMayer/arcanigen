@@ -66,7 +66,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleStopBr
                 Stop
             </SocketOut>
             <SocketIn node={node} socketId={"value"} label={"Angle"}>
-                <AngleInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound />
+                <AngleInput.SliderInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound />
             </SocketIn>
             <SocketIn node={node} socketId={"position"} label={"Position"}>
                 <DecimalInput value={node.payload.position} onCommit={(position) => handleUpdate({ position })} disabled={node.in.position !== null} min={"0"} max={"100"} />
