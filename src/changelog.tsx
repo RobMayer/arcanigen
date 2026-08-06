@@ -4,6 +4,15 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-05"} version={"3.4.0"}>
+                <Feature>Gradients!</Feature>
+                <Improvement>tweaked node categories, colors, and icons</Improvement>
+                <Improvement>imrpoved the layout and function of iterators (old ones stay as they are)</Improvement>
+                <Feature>individual "stop" node breakdouts on iterators and gradients</Feature>
+                <Feature>added all missing input/output types for custom nodes</Feature>
+                <Improvement>custom nodes can now set their own category and color</Improvement>
+                <Improvement>some other UI improvements</Improvement>
+            </Build>
             <Build date={"2026-08-03"} version={"3.3.6"}>
                 <Feature>Added Sequence Index node</Feature>
                 <Feature>Added Repetition Array node</Feature>

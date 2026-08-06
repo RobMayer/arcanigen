@@ -20,7 +20,7 @@ import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { GroupShape } from "../../shapeTypes";
 
-export type PolygonPatternDefinition = {
+export type PolygonLayoutDefinition = {
     inputs: {
         input: DataTypes.Use<"shape">;
         count: DataTypes.Use<"integer">;
@@ -48,7 +48,7 @@ export type PolygonPatternDefinition = {
 
 const SCRIBE_MODE_OPTIONS = Enum.options(Enum.Common.scribeMode);
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonPatternDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"polygonPattern", PolygonPatternDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"polygonLayout", PolygonLayoutDefinition> => {
     return {
         id,
         in: {
@@ -88,13 +88,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonPatternDefin
             positionTheta: "0",
             rotation: "0",
         },
-        type: "polygonPattern",
+        type: "polygonLayout",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonPatternDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<PolygonPatternDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<PolygonLayoutDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -155,7 +155,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonPatt
     );
 };
 
-const GEOMETRY_INPUTS: (keyof PolygonPatternDefinition["inputs"])[] = [
+const GEOMETRY_INPUTS: (keyof PolygonLayoutDefinition["inputs"])[] = [
     "input",
     "count",
     "radius",
@@ -171,7 +171,7 @@ const GEOMETRY_INPUTS: (keyof PolygonPatternDefinition["inputs"])[] = [
     "rotation",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, outSocket: keyof PolygonPatternDefinition["outputs"], _deps: AllDeps): (keyof PolygonPatternDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, outSocket: keyof PolygonLayoutDefinition["outputs"], _deps: AllDeps): (keyof PolygonLayoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return GEOMETRY_INPUTS;
     }
@@ -184,7 +184,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, out
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, inSocket: keyof PolygonPatternDefinition["inputs"], _deps: AllDeps): (keyof PolygonPatternDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, inSocket: keyof PolygonLayoutDefinition["inputs"], _deps: AllDeps): (keyof PolygonLayoutDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence", "eCircumradius", "eApothem"];
     }
@@ -197,7 +197,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>,
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, socket: keyof PolygonPatternDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket: keyof PolygonLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
@@ -278,7 +278,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, socke
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PolygonPatternDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<PolygonLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     input: { types: ["shape"], mode: "or" },
     count: { types: ["integer"], mode: "or" },
     radius: { types: ["length"], mode: "or" },
@@ -289,14 +289,14 @@ const SOCKETTYPES_IN: { [key in keyof Required<PolygonPatternDefinition["inputs"
     ...Transforms.IN_SOCKET_TYPES,
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<PolygonPatternDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_OUT: { [key in keyof Required<PolygonLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
     eCircumradius: { types: ["length"], mode: "and" },
     eApothem: { types: ["length"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
             return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
@@ -305,10 +305,10 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonPatternDefinition>,
     }
 };
 
-export const PolygonPatternNodeType: NodeTypes.Type<"polygonPattern", PolygonPatternDefinition> = {
-    type: "polygonPattern",
-    displayName: "Polygon Pattern",
-    defaultLabel: "Polygon Pattern",
+export const PolygonLayoutNodeType: NodeTypes.Type<"polygonLayout", PolygonLayoutDefinition> = {
+    type: "polygonLayout",
+    displayName: "Polygon Layout",
+    defaultLabel: "Polygon Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.shapePolygon} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
     flavour: "danger",
     category: "Modifiers",

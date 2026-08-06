@@ -19,7 +19,7 @@ import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { GroupShape } from "../../shapeTypes";
 
-export type RadialPatternDefinition = {
+export type RadialLayoutDefinition = {
     inputs: {
         input: DataTypes.Use<"shape">;
         count: DataTypes.Use<"integer">;
@@ -55,7 +55,7 @@ export type RadialPatternDefinition = {
 
 const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialPatternDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"radialPattern", RadialPatternDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"radialLayout", RadialLayoutDefinition> => {
     return {
         id,
         in: {
@@ -103,13 +103,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialPatternDefini
             positionTheta: "0",
             rotation: "0",
         },
-        type: "radialPattern",
+        type: "radialLayout",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialPatternDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialLayoutDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<RadialPatternDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -183,7 +183,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialPatte
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RadialPatternDefinition["inputs"])[] = [
+const GEOMETRY_INPUTS: (keyof RadialLayoutDefinition["inputs"])[] = [
     "input",
     "count",
     "radius",
@@ -204,7 +204,7 @@ const GEOMETRY_INPUTS: (keyof RadialPatternDefinition["inputs"])[] = [
     "rotation",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<RadialPatternDefinition>, outSocket: keyof RadialPatternDefinition["outputs"], _deps: AllDeps): (keyof RadialPatternDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, outSocket: keyof RadialLayoutDefinition["outputs"], _deps: AllDeps): (keyof RadialLayoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return GEOMETRY_INPUTS;
     }
@@ -214,14 +214,14 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RadialPatternDefinition>, outS
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<RadialPatternDefinition>, inSocket: keyof RadialPatternDefinition["inputs"], _deps: AllDeps): (keyof RadialPatternDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, inSocket: keyof RadialLayoutDefinition["inputs"], _deps: AllDeps): (keyof RadialLayoutDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence"];
     }
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<RadialPatternDefinition>, socket: keyof RadialPatternDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket: keyof RadialLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
@@ -302,7 +302,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialPatternDefinition>, socket
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<RadialPatternDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<RadialLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     input: { types: ["shape"], mode: "or" },
     count: { types: ["integer"], mode: "or" },
     radius: { types: ["length"], mode: "or" },
@@ -318,12 +318,12 @@ const SOCKETTYPES_IN: { [key in keyof Required<RadialPatternDefinition["inputs"]
     ...Transforms.IN_SOCKET_TYPES,
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<RadialPatternDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_OUT: { [key in keyof Required<RadialLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<RadialPatternDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
             return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
@@ -332,10 +332,10 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<RadialPatternDefinition>, 
     }
 };
 
-export const RadialPatternNodeType: NodeTypes.Type<"radialPattern", RadialPatternDefinition> = {
-    type: "radialPattern",
-    displayName: "Radial Pattern",
-    defaultLabel: "Radial Pattern",
+export const RadialLayoutNodeType: NodeTypes.Type<"radialLayout", RadialLayoutDefinition> = {
+    type: "radialLayout",
+    displayName: "Radial Layout",
+    defaultLabel: "Radial Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
     flavour: "danger",
     category: "Modifiers",

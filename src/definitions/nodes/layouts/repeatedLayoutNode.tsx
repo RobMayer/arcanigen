@@ -13,7 +13,7 @@ import { NumericString } from "../../datatypes/numericString";
 import { Transforms } from "../abstract";
 import { GroupShape } from "../../shapeTypes";
 
-export type RepeatedPatternDefinition = {
+export type RepeatedLayoutDefinition = {
     inputs: {
         input: DataTypes.Use<"shape">;
         count: DataTypes.Use<"integer">;
@@ -28,7 +28,7 @@ export type RepeatedPatternDefinition = {
     } & Transforms.Definition["payload"];
 };
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RepeatedPatternDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"repeatedPattern", RepeatedPatternDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RepeatedLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"repeatedLayout", RepeatedLayoutDefinition> => {
     return {
         id,
         in: {
@@ -57,13 +57,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RepeatedPatternDefi
             positionTheta: "0",
             rotation: "0",
         },
-        type: "repeatedPattern",
+        type: "repeatedLayout",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<RepeatedPatternDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<RepeatedLayoutDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -88,9 +88,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RepeatedPat
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RepeatedPatternDefinition["inputs"])[] = ["input", "count", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof RepeatedLayoutDefinition["inputs"])[] = ["input", "count", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>, outSocket: keyof RepeatedPatternDefinition["outputs"], _deps: AllDeps): (keyof RepeatedPatternDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, outSocket: keyof RepeatedLayoutDefinition["outputs"], _deps: AllDeps): (keyof RepeatedLayoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return GEOMETRY_INPUTS;
     }
@@ -101,17 +101,17 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>, ou
 };
 
 const contributesTo = (
-    _node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>,
-    inSocket: keyof RepeatedPatternDefinition["inputs"],
+    _node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>,
+    inSocket: keyof RepeatedLayoutDefinition["inputs"],
     _deps: AllDeps,
-): (keyof RepeatedPatternDefinition["outputs"])[] => {
+): (keyof RepeatedLayoutDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence"];
     }
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>, socket: keyof RepeatedPatternDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socket: keyof RepeatedLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
@@ -154,18 +154,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>, sock
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<RepeatedPatternDefinition["inputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_IN: { [key in keyof Required<RepeatedLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
     input: { types: ["shape"], mode: "or" },
     count: { types: ["integer"], mode: "or" },
     ...Transforms.IN_SOCKET_TYPES,
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<RepeatedPatternDefinition["outputs"]>]: SocketTypes.SocketRule } = {
+const SOCKETTYPES_OUT: { [key in keyof Required<RepeatedLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
     sequence: { types: ["sequence"], mode: "and" },
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
+const getSocketType = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
     switch (side) {
         case "in":
             return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
@@ -174,10 +174,10 @@ const getSocketType = (_node: NodeDefinitions.NodeFor<RepeatedPatternDefinition>
     }
 };
 
-export const RepeatedPatternNodeType: NodeTypes.Type<"repeatedPattern", RepeatedPatternDefinition> = {
-    type: "repeatedPattern",
-    displayName: "Repeated Pattern",
-    defaultLabel: "Repeated Pattern",
+export const RepeatedLayoutNodeType: NodeTypes.Type<"repeatedLayout", RepeatedLayoutDefinition> = {
+    type: "repeatedLayout",
+    displayName: "Repeated Layout",
+    defaultLabel: "Repeated Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.loop} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
     flavour: "danger",
     category: "Modifiers",

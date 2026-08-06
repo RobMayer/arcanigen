@@ -745,16 +745,16 @@ export namespace Project {
                         const node = input.nodes[graphId][nodeId];
                         switch (node.type) {
                             case "repetitionArray":
-                                input.nodes[graphId][nodeId].type = "repeatedPattern";
+                                input.nodes[graphId][nodeId].type = "repeatedLayout";
                                 break;
                             case "polygonArray":
-                                input.nodes[graphId][nodeId].type = "polygonPattern";
+                                input.nodes[graphId][nodeId].type = "polygonLayout";
                                 break;
                             case "radialArray":
-                                input.nodes[graphId][nodeId].type = "radialPattern";
+                                input.nodes[graphId][nodeId].type = "radialLayout";
                                 break;
                             case "pathArray":
-                                input.nodes[graphId][nodeId].type = "pathPattern";
+                                input.nodes[graphId][nodeId].type = "pathLayout";
                                 break;
                         }
                         if (node.type === "layers") {

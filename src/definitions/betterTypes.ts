@@ -148,11 +148,11 @@ import { GlyphDefinition, GlyphNodeType } from "./nodes/shapes/glyphNode";
 import { MaskDefinition, MaskNodeType } from "./nodes/collections/maskNode";
 import { ClipDefinition, ClipNodeType } from "./nodes/collections/clipNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collections/sequencerNode";
-import { PolygonPatternDefinition, PolygonPatternNodeType } from "./nodes/patterns/polygonPatternNode";
-import { RadialPatternDefinition, RadialPatternNodeType } from "./nodes/patterns/radialPatternNode";
-import { RepeatedPatternDefinition, RepeatedPatternNodeType } from "./nodes/patterns/repeatedPatternNode";
+import { PolygonLayoutDefinition, PolygonLayoutNodeType } from "./nodes/layouts/polygonLayoutNode";
+import { RadialLayoutDefinition, RadialLayoutNodeType } from "./nodes/layouts/radialLayoutNode";
+import { RepeatedLayoutDefinition, RepeatedLayoutNodeType } from "./nodes/layouts/repeatedLayoutNode";
 import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collections/sequenceIndexNode";
-import { PathPatternDefinition, PathPatternNodeType } from "./nodes/patterns/pathPatternNode";
+import { PathLayoutDefinition, PathLayoutNodeType } from "./nodes/layouts/pathLayoutNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecated/colorIteratorNode";
 import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
@@ -343,11 +343,11 @@ namespace Registries {
         mask: MaskDefinition;
         clip: ClipDefinition;
         sequencer: SequencerDefinition;
-        polygonPattern: PolygonPatternDefinition;
-        radialPattern: RadialPatternDefinition;
-        repeatedPattern: RepeatedPatternDefinition;
+        polygonLayout: PolygonLayoutDefinition;
+        radialLayout: RadialLayoutDefinition;
+        repeatedLayout: RepeatedLayoutDefinition;
         sequenceIndex: SequenceIndexDefinition;
-        pathPattern: PathPatternDefinition;
+        pathLayout: PathLayoutDefinition;
         colorIterator: ColorIteratorDefinition;
         colorIterator2: ColorIterator2Definition;
         colorStop: ColorStopBreakoutDefinition;
@@ -434,11 +434,11 @@ namespace Registries {
         mask: MaskNodeType,
         clip: ClipNodeType,
         sequencer: SequencerNodeType,
-        polygonPattern: PolygonPatternNodeType,
-        radialPattern: RadialPatternNodeType,
-        repeatedPattern: RepeatedPatternNodeType,
+        polygonLayout: PolygonLayoutNodeType,
+        radialLayout: RadialLayoutNodeType,
+        repeatedLayout: RepeatedLayoutNodeType,
         sequenceIndex: SequenceIndexNodeType,
-        pathPattern: PathPatternNodeType,
+        pathLayout: PathLayoutNodeType,
         colorIterator: ColorIteratorNodeType,
         colorIterator2: ColorIterator2NodeType,
         colorStop: ColorStopNodeType,
