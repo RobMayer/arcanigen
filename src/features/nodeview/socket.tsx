@@ -277,7 +277,10 @@ export const Socket = styled(
 
     &[data-state~="connected"] {
         background: linear-gradient(135deg, var(--tl) 0 50%, var(--br) 50% 100%);
-        border-color: transparent;
+        border-top-color: var(--tl);
+        border-left-color: var(--tl);
+        border-bottom-color: var(--br);
+        border-right-color: var(--br);
     }
 
     &[data-state~="invalid"] {
@@ -286,7 +289,7 @@ export const Socket = styled(
 
         &[data-state~="connected"] {
             background: linear-gradient(135deg, #333 0 50%, #333 50% 100%);
-            border-color: transparent;
+            border-color: #333;
         }
     }
 
@@ -303,7 +306,10 @@ export const Socket = styled(
 
         &[data-state~="connected"] {
             background: linear-gradient(135deg, oklch(from var(--tl) calc(l * 1.2) c h) 0 50%, oklch(from var(--br) calc(l * 1.2) c h) 50% 100%);
-            border-color: transparent;
+            border-top-color: oklch(from var(--tl) calc(l * 1.2) c h);
+            border-left-color: oklch(from var(--tl) calc(l * 1.2) c h);
+            border-bottom-color: oklch(from var(--br) calc(l * 1.2) c h);
+            border-right-color: oklch(from var(--br) calc(l * 1.2) c h);
         }
     }
 `;

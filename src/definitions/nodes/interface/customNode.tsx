@@ -198,6 +198,7 @@ const storedValueToEval = (storedValue: unknown, nodeType: string): DataTypes.An
         case "lengthInput":
             return { kind: "length", data: storedValue as Length.Type };
         case "colorInput":
+        case "paintInput":
             return { kind: "color", data: storedValue as Color.Type };
         case "booleanInput":
             return { kind: "boolean", data: storedValue as boolean };
@@ -425,6 +426,7 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
     lengthInput: { types: ["length"], mode: "and" },
     lengthOutput: { types: ["length"], mode: "and" },
     colorInput: { types: ["color"], mode: "and" },
+    paintInput: { types: ["color", "gradient"], mode: "and" },
     colorOutput: { types: ["color"], mode: "and" },
     booleanInput: { types: ["boolean"], mode: "and" },
     booleanOutput: { types: ["boolean"], mode: "and" },
@@ -552,6 +554,8 @@ const DynamicSlot = ({
         case "colorOutput":
             return <OutputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorOutputDefinition>} />;
         case "colorInput":
+        // Paint Input reuses the Color Input slot UI (identical payload/widget); its socket accepts colour or gradient.
+        case "paintInput":
             return <InputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorInputDefinition>} handleValue={handleValue} />;
         case "booleanOutput":
             return <OutputSlotBoolean host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<BooleanOutputDefinition>} />;

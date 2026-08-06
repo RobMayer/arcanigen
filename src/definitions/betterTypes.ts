@@ -70,6 +70,7 @@ import { LengthOutputDefinition, LengthOutputType } from "./nodes/interface/outp
 import { ShapeInputDefinition, ShapeInputType } from "./nodes/interface/inputs/shapeInputNode";
 import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/outputs/shapeOutputNode";
 import { ColorInputDefinition, ColorInputType } from "./nodes/interface/inputs/colorInputNode";
+import { PaintInputDefinition, PaintInputType } from "./nodes/interface/inputs/paintInputNode";
 import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/outputs/colorOutputNode";
 import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/inputs/booleanInputNode";
 import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/outputs/booleanOutputNode";
@@ -260,6 +261,7 @@ namespace Registries {
         shapeInput: ShapeInputDefinition;
         shapeOutput: ShapeOutputDefinition;
         colorInput: ColorInputDefinition;
+        paintInput: PaintInputDefinition;
         colorOutput: ColorOutputDefinition;
         booleanInput: BooleanInputDefinition;
         booleanOutput: BooleanOutputDefinition;
@@ -489,6 +491,7 @@ namespace Registries {
         shapeInput: ShapeInputType,
         shapeOutput: ShapeOutputType,
         colorInput: ColorInputType,
+        paintInput: PaintInputType,
         colorOutput: ColorOutputType,
         booleanInput: BooleanInputType,
         booleanOutput: BooleanOutputType,
