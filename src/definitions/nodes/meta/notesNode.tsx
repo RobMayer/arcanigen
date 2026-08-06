@@ -298,8 +298,9 @@ const NoteBody = styled.div`
 `;
 
 const NoteTextArea = styled(AbstractInput.Block)`
-    width: 480px;
-    height: 240px;
+    min-width: 360px;
+    min-height: 3lh;
+    field-sizing: content;
     background: transparent;
     border-color: transparent;
     color: #ccc;

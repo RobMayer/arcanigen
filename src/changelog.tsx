@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-06"} version={"3.4.1"}>
+                <Improvement>Notes node is dynamically resized based on content on browsers that support it.</Improvement>
+            </Build>
             <Build date={"2026-08-05"} version={"3.4.0"}>
                 <Feature>Gradients!</Feature>
                 <Improvement>tweaked node categories, colors, and icons</Improvement>
