@@ -179,9 +179,9 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
                         </RadioButton>
                     </SortOptions>
                     <CreateRow>
-                        <CreateCustomButton onClick={handleCreateCustom} flavour={"info"} tooltip={isRoot ? "Create a new custom node" : "Create a nested custom node"}>
+                        <ActionButton onClick={handleCreateCustom} flavour={"info"} tooltip={isRoot ? "Create a new custom node" : "Create a nested custom node"}>
                             <Icon shape={ICONS.Plus} /> Create Custom Node
-                        </CreateCustomButton>
+                        </ActionButton>
                     </CreateRow>
                     <Sidebar>
                         <CheckBox checked={categoryFilter.size === 0} onToggle={clearCategoryFilter}>
@@ -204,7 +204,7 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
 
 const Pane = styled.div`
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     grid-template-rows: auto auto 1fr;
     gap: 6px;
     padding: 6px;
@@ -218,6 +218,7 @@ const Pane = styled.div`
 const CreateRow = styled.div`
     grid-area: create;
     display: flex;
+    justify-content: end;
 `;
 
 const SearchBar = styled.div`
@@ -476,9 +477,4 @@ const NodeCard = styled(
 
 const SubgraphCard = styled.button`
     ${CARD_STYLES}
-`;
-
-const CreateCustomButton = styled(ActionButton)`
-    flex: 1 1 auto;
-    justify-content: center;
 `;
