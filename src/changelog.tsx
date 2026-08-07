@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-06"} version={"3.4.2"}>
+                <Improvement>Removed DPI from Glyph node - it didn't do what it needed to do.</Improvement>
+            </Build>
             <Build date={"2026-08-06"} version={"3.4.1"}>
                 <Improvement>Notes node is dynamically resized based on content on browsers that support it.</Improvement>
             </Build>

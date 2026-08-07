@@ -23,7 +23,6 @@ export type GlyphDefinition = {
         viewY: DataTypes.Use<"float" | "integer">;
         viewW: DataTypes.Use<"float" | "integer">;
         viewH: DataTypes.Use<"float" | "integer">;
-        dpi: DataTypes.Use<"float" | "integer">;
         path: DataTypes.Use<"string">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
@@ -39,7 +38,6 @@ export type GlyphDefinition = {
         viewY: DataTypes.TypeOf<DataTypes.Use<"float">>;
         viewW: DataTypes.TypeOf<DataTypes.Use<"float">>;
         viewH: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        dpi: DataTypes.TypeOf<DataTypes.Use<"float">>;
     } & Stylings.Definition["payload"] &
         Transforms.Definition["payload"];
 };
@@ -54,7 +52,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, 
             viewY: null,
             viewW: null,
             viewH: null,
-            dpi: null,
             path: null,
             // styling
             strokeWidth: null,
@@ -85,7 +82,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, 
             viewY: "0",
             viewW: "512",
             viewH: "512",
-            dpi: "96",
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
@@ -143,9 +139,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
             <SocketIn node={node} socketId={"viewH"} label={"ViewBox H"}>
                 <DecimalInput value={node.payload.viewH} onCommit={(viewH) => handleUpdate({ viewH })} disabled={node.in.viewH !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"dpi"} label={"DPI"}>
-                <DecimalInput value={node.payload.dpi} onCommit={(dpi) => handleUpdate({ dpi })} min={1} required />
-            </SocketIn>
             <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
@@ -192,15 +185,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const viewH = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
-    const dpi = Math.max(1, NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "dpi")?.data ?? node.payload.dpi) ?? 96);
-    const dpiScale = 72 / dpi;
-
-    // Scale viewbox by DPI conversion
-    const scaledViewX = viewX * dpiScale;
-    const scaledViewY = viewY * dpiScale;
-    const scaledViewW = viewW * dpiScale;
-    const scaledViewH = viewH * dpiScale;
-
     const paint = Stylings.evaluate(node, context);
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
@@ -215,9 +199,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
                     paint,
                     vectorEffect: "non-scaling-stroke",
                     transform: "",
-                    preview: { x: scaledViewX, y: scaledViewY, w: scaledViewW, h: scaledViewH },
+                    preview: { x: viewX, y: viewY, w: viewW, h: viewH },
                 },
-                viewBox: `${scaledViewX} ${scaledViewY} ${scaledViewW} ${scaledViewH}`,
+                viewBox: `${viewX} ${viewY} ${viewW} ${viewH}`,
                 width: `${width}`,
                 height: `${height}`,
                 x: `${-width / 2}`,
@@ -236,7 +220,6 @@ const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: Sock
     viewY: { types: ["float", "integer"], mode: "or" },
     viewW: { types: ["float", "integer"], mode: "or" },
     viewH: { types: ["float", "integer"], mode: "or" },
-    dpi: { types: ["float", "integer"], mode: "or" },
     path: { types: ["string"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
     ...Transforms.IN_SOCKET_TYPES,

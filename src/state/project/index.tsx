@@ -697,7 +697,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 5;
+        export const CURRENT = 6;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -773,6 +773,30 @@ export namespace Project {
                     m.icon = m.icon ?? "default";
                 }
                 input.version = 5;
+            }
+            if (input.version === 5) {
+                // Glyph dropped its DPI socket/payload; the viewBox is now used as-authored.
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type === "glyph") {
+                            const theLink = node.in.dpi;
+                            if (theLink) {
+                                const link = input.links?.[graphId]?.[theLink];
+                                if (link) {
+                                    const outArr = input.nodes[graphId][link.fromNode]?.out?.[link.fromSocket];
+                                    if (outArr) {
+                                        input.nodes[graphId][link.fromNode].out[link.fromSocket] = outArr.filter((lid: string) => lid !== theLink);
+                                    }
+                                    delete input.links[graphId][theLink];
+                                }
+                            }
+                            delete node.in.dpi;
+                            delete node.payload.dpi;
+                        }
+                    }
+                }
+                input.version = 6;
             }
             // next version alterations go here...
             return input as Project.SavedProject;
