@@ -82,6 +82,6 @@ export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefiniti
     evaluate,
     Controls,
     getSocketType,
-    canInterject: passthroughCanInterject(SocketTypes.of("boolean"), SocketTypes.of("boolean")),
+    canInterject: passthroughCanInterject({ types: ["boolean"], mode: "and" }, { types: ["boolean"], mode: "and" }),
     onInterject: passthroughInterject("input", "output"),
 };
