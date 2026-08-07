@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
@@ -8,7 +9,7 @@ import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/sl
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, queryUpstreamOutType, dominantKind, wrapResult, extractSingle, numericCanInterject, makeOnInterject } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, dominantKind, wrapResult, extractSingle, numericCanInterject } from "./numericMath";
 
 export type ClampDefinition = {
     inputs: {
@@ -277,5 +278,5 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     onDisconnect,
     onRefreshRequest,
     canInterject: numericCanInterject,
-    onInterject: makeOnInterject("input", "output"),
+    onInterject: passthroughInterject("input", "output"),
 };

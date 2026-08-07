@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Enum } from "../../datatypes/enum";
@@ -9,7 +10,6 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Stylings } from "../abstract";
-import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 import { Paint, Shape } from "../../shapeTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
@@ -401,6 +401,6 @@ export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
-    onInterject: makeOnInterject("shape", "output"),
+    canInterject: passthroughCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
+    onInterject: passthroughInterject("shape", "output"),
 };

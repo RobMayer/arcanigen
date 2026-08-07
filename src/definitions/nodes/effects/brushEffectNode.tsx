@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -13,7 +14,6 @@ import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { FilterPrimitive } from "../../shapeTypes";
-import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 
 export type BrushEffectDefinition = {
     inputs: {
@@ -177,6 +177,6 @@ export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefin
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
-    onInterject: makeOnInterject("input", "output"),
+    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("input", "output"),
 };

@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
@@ -8,7 +9,7 @@ import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/sl
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, numericCanInterject, makeOnInterject } from "./numericMath";
+import { NUMERIC_TYPES, extractSingle, wrapResult, numericCanInterject } from "./numericMath";
 
 export type AbsDefinition = {
     inputs: {
@@ -193,5 +194,5 @@ export const AbsType: NodeTypes.Type<"abs", AbsDefinition> = {
     onDisconnect,
     onRefreshRequest,
     canInterject: numericCanInterject,
-    onInterject: makeOnInterject("input", "output"),
+    onInterject: passthroughInterject("input", "output"),
 };

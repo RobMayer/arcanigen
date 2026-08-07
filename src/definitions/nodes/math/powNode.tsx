@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
@@ -9,7 +10,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, numericCanInterject, makeOnInterject } from "./numericMath";
+import { NUMERIC_TYPES, extractSingle, wrapResult, numericCanInterject } from "./numericMath";
 
 export type PowDefinition = {
     inputs: {
@@ -219,5 +220,5 @@ export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     onDisconnect,
     onRefreshRequest,
     canInterject: numericCanInterject,
-    onInterject: makeOnInterject("input", "output"),
+    onInterject: passthroughInterject("input", "output"),
 };

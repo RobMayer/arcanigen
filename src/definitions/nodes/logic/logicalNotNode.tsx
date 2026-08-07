@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
@@ -81,4 +82,6 @@ export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefiniti
     evaluate,
     Controls,
     getSocketType,
+    canInterject: passthroughCanInterject(SocketTypes.of("boolean"), SocketTypes.of("boolean")),
+    onInterject: passthroughInterject("input", "output"),
 };

@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -148,4 +149,6 @@ export const ClipNodeType: NodeTypes.Type<"clip", ClipDefinition> = {
     evaluate,
     Controls,
     getSocketType,
+    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("content", "output"),
 };

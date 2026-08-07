@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
@@ -9,7 +10,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { extractSingle, makeCanInterject, makeOnInterject } from "./numericMath";
+import { extractSingle } from "./numericMath";
 
 const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
 const ANGLE_OUT: SocketTypes.SocketRule = { types: ["angle"], mode: "or" };
@@ -107,6 +108,6 @@ export const ArctanType: NodeTypes.Type<"arctan", ArctanDefinition> = {
     contributesTo,
     create,
     getSocketType,
-    canInterject: makeCanInterject(DIMENSIONLESS_IN, ANGLE_OUT),
-    onInterject: makeOnInterject("input", "output"),
+    canInterject: passthroughCanInterject(DIMENSIONLESS_IN, ANGLE_OUT),
+    onInterject: passthroughInterject("input", "output"),
 };

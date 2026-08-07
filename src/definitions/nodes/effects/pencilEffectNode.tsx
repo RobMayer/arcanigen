@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -10,7 +11,6 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { FilterPrimitive } from "../../shapeTypes";
-import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 
 export type PencilEffectDefinition = {
     inputs: {
@@ -126,6 +126,6 @@ export const PencilEffectNodeType: NodeTypes.Type<"pencilEffect", PencilEffectDe
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
-    onInterject: makeOnInterject("input", "output"),
+    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("input", "output"),
 };

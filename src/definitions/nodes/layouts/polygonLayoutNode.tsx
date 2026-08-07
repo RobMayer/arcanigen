@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
@@ -318,4 +319,6 @@ export const PolygonLayoutNodeType: NodeTypes.Type<"polygonLayout", PolygonLayou
     evaluate,
     Controls,
     getSocketType,
+    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("input", "output"),
 };

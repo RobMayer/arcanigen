@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
@@ -9,7 +10,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { extractSingle, makeCanInterject, makeOnInterject } from "./numericMath";
+import { extractSingle } from "./numericMath";
 
 const TRIG_IN: SocketTypes.SocketRule = { types: ["angle", "float", "integer"], mode: "or" };
 const FLOAT_OUT: SocketTypes.SocketRule = { types: ["float"], mode: "or" };
@@ -107,6 +108,6 @@ export const TanType: NodeTypes.Type<"tan", TanDefinition> = {
     contributesTo,
     create,
     getSocketType,
-    canInterject: makeCanInterject(TRIG_IN, FLOAT_OUT),
-    onInterject: makeOnInterject("input", "output"),
+    canInterject: passthroughCanInterject(TRIG_IN, FLOAT_OUT),
+    onInterject: passthroughInterject("input", "output"),
 };

@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
@@ -190,4 +191,6 @@ export const SubstringNodeType: NodeTypes.Type<"substring", SubstringDefinition>
     evaluate,
     Controls,
     getSocketType,
+    canInterject: passthroughCanInterject(SOCKETTYPES_IN.string, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("string", "output"),
 };

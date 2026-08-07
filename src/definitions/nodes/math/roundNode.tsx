@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
@@ -8,7 +9,7 @@ import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/sl
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, queryUpstreamOutType, extractSingle, wrapResult, applyRounding, numericCanInterject, makeOnInterject } from "./numericMath";
+import { NUMERIC_TYPES, extractSingle, wrapResult, applyRounding, numericCanInterject } from "./numericMath";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 
@@ -231,5 +232,5 @@ export const RoundType: NodeTypes.Type<"round", RoundDefinition> = {
     onDisconnect,
     onRefreshRequest,
     canInterject: numericCanInterject,
-    onInterject: makeOnInterject("input", "output"),
+    onInterject: passthroughInterject("input", "output"),
 };

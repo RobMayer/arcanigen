@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { ReactNode } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -7,7 +8,6 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NodeIcon, ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
-import { makeCanInterject, makeOnInterject } from "./numericMath";
 
 export type ReversePathDefinition = {
     inputs: {
@@ -104,6 +104,6 @@ export const ReversePathNodeType: NodeTypes.Type<"reversePath", ReversePathDefin
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SOCKETTYPES_IN.path, SOCKETTYPES_OUT.output),
-    onInterject: makeOnInterject("path", "output"),
+    canInterject: passthroughCanInterject(SOCKETTYPES_IN.path, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("path", "output"),
 };

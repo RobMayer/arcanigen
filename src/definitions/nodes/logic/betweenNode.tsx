@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
@@ -8,7 +9,7 @@ import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
-import { NUMERIC_TYPES, constrainForPartner, queryUpstreamOutType, extractPair } from "../math/numericMath";
+import { NUMERIC_TYPES, constrainForPartner, extractPair } from "../math/numericMath";
 
 export type BetweenDefinition = {
     inputs: {

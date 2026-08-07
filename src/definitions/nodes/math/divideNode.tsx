@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
@@ -8,7 +9,7 @@ import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/sl
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, constrainForPartnerMultiplicative, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, numericCanInterject, makeOnInterject } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartnerMultiplicative, constrainForOutput, computeOutputType, extractPair, dominantKind, wrapResult, numericCanInterject } from "./numericMath";
 
 export type DivideDefinition = {
     inputs: {
@@ -249,5 +250,5 @@ export const DivideType: NodeTypes.Type<"divide", DivideDefinition> = {
     onDisconnect,
     onRefreshRequest,
     canInterject: numericCanInterject,
-    onInterject: makeOnInterject("a", "output"),
+    onInterject: passthroughInterject("a", "output"),
 };

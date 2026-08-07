@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { ReactNode } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -7,7 +8,6 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
-import { makeCanInterject, makeOnInterject } from "./numericMath";
 
 export type PathExcludeDefinition = {
     inputs: {
@@ -106,6 +106,6 @@ export const PathExcludeNodeType: NodeTypes.Type<"pathExclude", PathExcludeDefin
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SOCKETTYPES_IN.pathA, SOCKETTYPES_OUT.output),
-    onInterject: makeOnInterject("pathA", "output"),
+    canInterject: passthroughCanInterject(SOCKETTYPES_IN.pathA, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("pathA", "output"),
 };

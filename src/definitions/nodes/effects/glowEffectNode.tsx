@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -18,7 +19,6 @@ import { Length } from "../../datatypes/length";
 import { Color } from "../../datatypes/color";
 import { Enum } from "../../datatypes/enum";
 import { FilterPrimitive } from "../../shapeTypes";
-import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 
@@ -276,6 +276,6 @@ export const GlowEffectNodeType: NodeTypes.Type<"glowEffect", GlowEffectDefiniti
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
-    onInterject: makeOnInterject("input", "output"),
+    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    onInterject: passthroughInterject("input", "output"),
 };

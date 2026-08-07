@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
@@ -10,7 +11,7 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, queryUpstreamOutType, extractPair, dominantKind, wrapResult, extractSingle, numericCanInterject, makeOnInterject } from "./numericMath";
+import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, computeOutputType, extractPair, dominantKind, wrapResult, extractSingle, numericCanInterject } from "./numericMath";
 
 const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
 
@@ -264,5 +265,5 @@ export const LerpType: NodeTypes.Type<"lerp", LerpDefinition> = {
     onDisconnect,
     onRefreshRequest,
     canInterject: numericCanInterject,
-    onInterject: makeOnInterject("a", "output"),
+    onInterject: passthroughInterject("a", "output"),
 };

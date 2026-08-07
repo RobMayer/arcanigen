@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
@@ -10,7 +11,6 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { makeCanInterject, makeOnInterject } from "../math/numericMath";
 import { MaskedShape } from "../../shapeTypes";
 
 export type MaskDefinition = {
@@ -170,6 +170,6 @@ export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     evaluate,
     Controls,
     getSocketType,
-    canInterject: makeCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
-    onInterject: makeOnInterject("content", "output"),
+    canInterject: passthroughCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
+    onInterject: passthroughInterject("content", "output"),
 };

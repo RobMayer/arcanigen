@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { CSSProperties, DragEvent, MouseEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -14,7 +15,6 @@ import { useGraphId } from "../../../state/graphId";
 import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
 import { SocketPair } from "../../../features/nodeview/slots";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
-import { queryUpstreamOutType } from "../math/numericMath";
 
 type Pair = {
     id: `pair_${string}`;
@@ -434,6 +434,19 @@ const PatchPairRow = ({
     );
 };
 
+// A patch is a universal reroute: any wire can pass through a pair, and the pair adopts the
+// wire's type once connected. So any link may be interjected; splice through the first pair.
+const canInterject = (_link: ArcaneGraph.Link, _graphId: string, _ctx: NodeTypes.MethodContext): boolean => true;
+
+const onInterject = (node: PatchNode, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const firstPair = node.payload.pairs[0]?.id;
+    if (!firstPair) return;
+
+    ctx.removeLinks(graphId, link.id);
+    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, inKey(firstPair), link.type);
+    ctx.connect(graphId, node.id, link.toNode, outKey(firstPair), link.toSocket, link.type);
+};
+
 export const PatchNodeType: NodeTypes.Type<"patch", PatchDefinition> = {
     type: "patch",
     displayName: "Patch",
@@ -450,6 +463,8 @@ export const PatchNodeType: NodeTypes.Type<"patch", PatchDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
+    canInterject,
+    onInterject,
 };
 
 // ─── Styled components ───────────────────────────────────────────────────────

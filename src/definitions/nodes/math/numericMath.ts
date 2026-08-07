@@ -1,8 +1,8 @@
-import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
+import { DataTypes, SocketTypes } from "../../betterTypes";
 import { Enum } from "../../datatypes/enum";
 import { Length } from "../../datatypes/length";
 import { NumericString } from "../../datatypes/numericString";
+import { passthroughCanInterject } from "../nodeHelpers";
 
 // --- Constants ---
 
@@ -16,22 +16,6 @@ export const WITHOUT_LENGTH: SocketTypes.SocketRule = { types: ["angle", "float"
 
 /** Numeric types excluding angle (when length is connected) */
 export const WITHOUT_ANGLE: SocketTypes.SocketRule = { types: ["float", "integer", "length"], mode: "or" };
-
-// --- Type helpers for lifecycle hooks ---
-
-/**
- * Query the OUT type of the upstream node connected to one of our IN sockets.
- * Returns NONE if nothing is connected.
- */
-export const queryUpstreamOutType = (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const linkId = (node.in as Record<string, string | null>)[socketId];
-    if (!linkId) return SocketTypes.NONE;
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return SocketTypes.NONE;
-    const neighbor = ctx.getNode(graphId, link.fromNode);
-    if (!neighbor) return SocketTypes.NONE;
-    return NodeTypes.getSocketType(neighbor, link.fromSocket, "out", ctx);
-};
 
 /** Dimensionless numeric types (float and integer only) */
 export const DIMENSIONLESS: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
@@ -219,37 +203,14 @@ export const wrapResult = (value: number, outputKind: string, unit: Length.Unit 
     }
 };
 
-/**
- * Apply a rounding mode to a number. Used by round node and integer cast.
- */
-// --- Interjection helpers ---
-
-/** Factory: canInterject that checks if a link's data types are compatible with given input/output rules */
-export const makeCanInterject =
-    (inRule: SocketTypes.SocketRule, outRule: SocketTypes.SocketRule) =>
-    (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
-        const fromNode = ctx.getNode(graphId, link.fromNode);
-        const toNode = ctx.getNode(graphId, link.toNode);
-        if (!fromNode || !toNode) return false;
-        const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
-        const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
-        return SocketTypes.canFlow(sourceOut, inRule) && SocketTypes.canFlow(outRule, destIn);
-    };
-
-/** Factory: onInterject that removes existing link and wires through given sockets */
-export const makeOnInterject =
-    (inSocket: string, outSocket: string) =>
-    (node: NodeDefinitions.NodeFor<NodeDefinitions.Generic>, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): void => {
-        ctx.removeLinks(graphId, link.id);
-        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, inSocket, link.type);
-        ctx.connect(graphId, node.id, link.toNode, outSocket, link.toSocket, link.type);
-    };
-
-/** Pre-built canInterject for numeric pass-through nodes */
-export const numericCanInterject = makeCanInterject(NUMERIC_TYPES, NUMERIC_TYPES);
+/** Pre-built canInterject for numeric pass-through nodes (straight-through splice on any numeric wire). */
+export const numericCanInterject = passthroughCanInterject(NUMERIC_TYPES, NUMERIC_TYPES);
 
 // --- Rounding ---
 
+/**
+ * Apply a rounding mode to a number. Used by round node and integer cast.
+ */
 export const applyRounding = (value: number, mode: number): number => {
     switch (mode) {
         case Enum.Common.roundingMode.CEIL.value:
