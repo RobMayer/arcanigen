@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-08"} version={"3.4.4"}>
+                <Improvement>Added path output to glyph.</Improvement>
+            </Build>
             <Build date={"2026-08-06"} version={"3.4.3"}>
                 <Improvement>Added add-onto-wire function for a few more node types.</Improvement>
             </Build>

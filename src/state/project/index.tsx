@@ -697,7 +697,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 6;
+        export const CURRENT = 7;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -797,6 +797,31 @@ export namespace Project {
                     }
                 }
                 input.version = 6;
+            }
+            if (input.version === 6) {
+                // Glyph's string path-data input was renamed "path" → "pathData" to free the "path"
+                // socket id for the node's new geometry (path) output.
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type === "glyph") {
+                            if ("path" in node.payload) {
+                                node.payload.pathData = node.payload.path;
+                                delete node.payload.path;
+                            }
+                            const theLink = node.in.path;
+                            node.in.pathData = theLink ?? null;
+                            delete node.in.path;
+                            if (theLink) {
+                                const link = input.links?.[graphId]?.[theLink];
+                                if (link) {
+                                    link.toSocket = "pathData";
+                                }
+                            }
+                        }
+                    }
+                }
+                input.version = 7;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

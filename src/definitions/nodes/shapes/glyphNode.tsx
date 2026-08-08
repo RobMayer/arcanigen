@@ -23,15 +23,16 @@ export type GlyphDefinition = {
         viewY: DataTypes.Use<"float" | "integer">;
         viewW: DataTypes.Use<"float" | "integer">;
         viewH: DataTypes.Use<"float" | "integer">;
-        path: DataTypes.Use<"string">;
+        pathData: DataTypes.Use<"string">;
     } & Stylings.Definition["inputs"] &
         Transforms.Definition["inputs"];
     outputs: {
         output: DataTypes.Use<"shape">;
+        path: DataTypes.Use<"path">;
     };
     payload: {
         label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        path: DataTypes.TypeOf<DataTypes.Use<"string">>;
+        pathData: DataTypes.TypeOf<DataTypes.Use<"string">>;
         width: DataTypes.TypeOf<DataTypes.Use<"length">>;
         height: DataTypes.TypeOf<DataTypes.Use<"length">>;
         viewX: DataTypes.TypeOf<DataTypes.Use<"float">>;
@@ -52,7 +53,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, 
             viewY: null,
             viewW: null,
             viewH: null,
-            path: null,
+            pathData: null,
             // styling
             strokeWidth: null,
             strokeColor: null,
@@ -72,10 +73,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, 
         },
         out: {
             output: [],
+            path: [],
         },
         payload: {
             label: "",
-            path: "",
+            pathData: "",
             width: "100px",
             height: "100px",
             viewX: "0",
@@ -118,8 +120,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"path"} label={"Path Data"}>
-                <BlockInput.Modal value={node.payload.path} onCommit={(path) => handleUpdate({ path })} title={"Edit Path Data"} buttonLabel={"Edit Path Data…"} />
+            <SocketOut node={node} socketId={"path"}>
+                Path
+            </SocketOut>
+            <SocketIn node={node} socketId={"pathData"} label={"Path Data"}>
+                <BlockInput.Modal value={node.payload.pathData} onCommit={(pathData) => handleUpdate({ pathData })} title={"Edit Path Data"} buttonLabel={"Edit Path Data…"} />
             </SocketIn>
             <SocketIn node={node} socketId={"width"} label={"Width"}>
                 <LengthInput value={node.payload.width} onCommit={(width) => handleUpdate({ width })} disabled={node.in.width !== null} min={"0px"} required />
@@ -161,18 +166,22 @@ const GEOMETRY_INPUTS: (keyof GlyphDefinition["inputs"])[] = [
 ];
 const STYLING_INPUTS: (keyof GlyphDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, _outSocket: keyof GlyphDefinition["outputs"], _deps: AllDeps): (keyof GlyphDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, outSocket: keyof GlyphDefinition["outputs"], _deps: AllDeps): (keyof GlyphDefinition["inputs"])[] => {
+    if (outSocket === "path") {
+        return GEOMETRY_INPUTS;
+    }
     return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, _inSocket: keyof GlyphDefinition["inputs"], _deps: AllDeps): (keyof GlyphDefinition["outputs"])[] => {
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, inSocket: keyof GlyphDefinition["inputs"], _deps: AllDeps): (keyof GlyphDefinition["outputs"])[] => {
+    if (STYLING_INPUTS.includes(inSocket)) {
+        return ["output"];
+    }
+    return ["output", "path"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof GlyphDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
-
-    const pathD = node.payload.path;
+    const pathD = node.payload.pathData;
     if (!pathD) return null;
 
     const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "width")?.data ?? node.payload.width, "0px"));
@@ -185,32 +194,37 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const viewH = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
-    const paint = Stylings.evaluate(node, context);
     const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
 
-    return {
-        kind: "shape",
-        data: {
-            type: "symbol",
-            symbol: {
-                content: {
-                    type: "path" as const,
-                    d: pathD,
-                    paint,
-                    vectorEffect: "non-scaling-stroke",
-                    transform: "",
-                    preview: { x: viewX, y: viewY, w: viewW, h: viewH },
-                },
-                viewBox: `${viewX} ${viewY} ${viewW} ${viewH}`,
-                width: `${width}`,
-                height: `${height}`,
-                x: `${-width / 2}`,
-                y: `${-height / 2}`,
+    // The old <symbol> did a viewBox→width/height fit (xMidYMid meet) inside a <use> box centered on
+    // the origin. That fit is affine — a uniform scale plus a translate — so we bake it as a matrix
+    // here instead, which lets a raw <path> stand in for the symbol (and carry a `path` output). The
+    // only thing lost vs. the symbol is clipping to the viewBox rect, which glyphs don't rely on.
+    const scale = Math.min(width / viewW, height / viewH);
+    const fitX = (width - scale * viewW) / 2 - viewX * scale - width / 2;
+    const fitY = (height - scale * viewH) / 2 - viewY * scale - height / 2;
+    const transform = [...transforms, `matrix(${scale}, 0, 0, ${scale}, ${fitX}, ${fitY})`].join(" ");
+    const preview = { x: -width / 2 + translateX, y: -height / 2 + translateY, w: width, h: height };
+
+    if (socket === "path") {
+        return { kind: "path", data: { d: pathD, transform, preview } };
+    }
+
+    if (socket === "output") {
+        return {
+            kind: "shape",
+            data: {
+                type: "path",
+                d: pathD,
+                paint: Stylings.evaluate(node, context),
+                vectorEffect: "non-scaling-stroke",
+                transform,
+                preview,
             },
-            transform: transforms.join(" "),
-            preview: { x: -width / 2 + translateX, y: -height / 2 + translateY, w: width, h: height },
-        },
-    };
+        };
+    }
+
+    return null;
 };
 
 const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: SocketTypes.SocketRule } = {
@@ -220,13 +234,14 @@ const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: Sock
     viewY: { types: ["float", "integer"], mode: "or" },
     viewW: { types: ["float", "integer"], mode: "or" },
     viewH: { types: ["float", "integer"], mode: "or" },
-    path: { types: ["string"], mode: "or" },
+    pathData: { types: ["string"], mode: "or" },
     ...Stylings.IN_SOCKET_TYPES,
     ...Transforms.IN_SOCKET_TYPES,
 };
 
 const SOCKETTYPES_OUT: { [key in keyof Required<GlyphDefinition["outputs"]>]: SocketTypes.SocketRule } = {
     output: { types: ["shape"], mode: "and" },
+    path: { types: ["path"], mode: "and" },
 };
 
 const getSocketType = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
