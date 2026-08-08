@@ -140,6 +140,8 @@ import { StarDefinition, StarNodeType } from "./nodes/shapes/starNode";
 import { BurstDefinition, BurstNodeType } from "./nodes/shapes/burstNode";
 import { ArcDefinition, ArcNodeType } from "./nodes/shapes/arcNode";
 import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
+import { SpirographDefinition, SpirographNodeType } from "./nodes/shapes/spirographNode";
+import { SpiroringDefinition, SpiroringNodeType } from "./nodes/shapes/spiroringNode";
 import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
 import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textPathNode";
 import { TextDefinition, TextNodeType } from "./nodes/shapes/textNode";
@@ -219,6 +221,8 @@ namespace Registries {
         burst: BurstDefinition;
         arc: ArcDefinition;
         spiral: SpiralDefinition;
+        spirograph: SpirographDefinition;
+        spiroring: SpiroringDefinition;
         line: LineDefinition;
         textPath: TextPathDefinition;
         text: TextDefinition;
@@ -419,6 +423,8 @@ namespace Registries {
         rectangle: RectangleNodeType,
         arc: ArcNodeType,
         spiral: SpiralNodeType,
+        spirograph: SpirographNodeType,
+        spiroring: SpiroringNodeType,
         line: LineNodeType,
         textPath: TextPathNodeType,
         text: TextNodeType,

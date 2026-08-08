@@ -141,6 +141,29 @@ export namespace Enum {
             FROM_TO: { value: 1, label: "From / To" },
         } as const;
 
+        // Spirograph: which side the rolling wheel travels on the fixed ring.
+        // Inside = hypotrochoid, Outside = epitrochoid.
+        export const spiroMode = {
+            INSIDE: { value: 0, label: "Inside" },
+            OUTSIDE: { value: 1, label: "Outside" },
+        } as const;
+
+        // Spirograph: how the gear geometry is specified. Geared uses integer tooth
+        // counts (closes automatically); Radii uses explicit lengths + a turn count.
+        export const spiroParam = {
+            GEARED: { value: 0, label: "Geared" },
+            RADII: { value: 1, label: "Radii" },
+        } as const;
+
+        // Spirograph (Geared mode): which radius the `radius` input pins.
+        // Major = the figure's outer extent (circumradius), Minor = its inner extent (apothem),
+        // Mechanical = the ring radius R (the gear you'd physically pick).
+        export const spiroRadiusMode = {
+            MAJOR: { value: 0, label: "Major" },
+            MINOR: { value: 1, label: "Minor" },
+            MECHANICAL: { value: 2, label: "Mechanical" },
+        } as const;
+
         export const cornerShape = {
             ROUND: { value: 0, label: "Round" },
             BEVEL: { value: 1, label: "Bevel" },
@@ -339,6 +362,9 @@ export namespace Enum {
         { label: "Overflow Mode", options: Common.overflowMode },
         { label: "Sequencer Mode", options: Common.sequencerMode },
         { label: "Arc Mode", options: Common.arcMode },
+        { label: "Spiro Mode", options: Common.spiroMode },
+        { label: "Spiro Param", options: Common.spiroParam },
+        { label: "Spiro Radius", options: Common.spiroRadiusMode },
         { label: "Expand Mode", options: Common.expandMode },
         { label: "Color Space", options: Common.colorSpace },
         { label: "Alpha Scale", options: Common.alphaScale },
