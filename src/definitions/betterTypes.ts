@@ -186,6 +186,7 @@ import { GlowEffectDefinition, GlowEffectNodeType } from "./nodes/effects/glowEf
 import { RandomSeedDefinition, RandomSeedNodeType } from "./nodes/primitives/randomSeedNode";
 import { NotesDefinition, NotesNodeType } from "./nodes/meta/notesNode";
 import { PathUnifyDefinition, PathUnitfyNodeType } from "./nodes/math/pathUnifyNode";
+import { PathJoinDefinition, PathJoinNodeType } from "./nodes/math/pathJoinNode";
 import { FromPathDefinition, FromPathNodeType } from "./nodes/shapes/fromPathNode";
 import { PathSubtractDefinition, PathSubtractNodeType } from "./nodes/math/pathSubtractNode";
 import { PathExcludeDefinition, PathExcludeNodeType } from "./nodes/math/pathExcludeNode";
@@ -394,6 +395,7 @@ namespace Registries {
         isNullish: IsNullishDefinition;
 
         pathUnify: PathUnifyDefinition;
+        pathJoin: PathJoinDefinition;
         pathSubtract: PathSubtractDefinition;
         pathExclude: PathExcludeDefinition;
         pathIntersect: PathIntersectDefinition;
@@ -588,6 +590,7 @@ namespace Registries {
         isNullish: IsNullishNodeType,
 
         pathUnify: PathUnitfyNodeType,
+        pathJoin: PathJoinNodeType,
         pathSubtract: PathSubtractNodeType,
         pathExclude: PathExcludeNodeType,
         pathIntersect: PathIntersectNodeType,

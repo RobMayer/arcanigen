@@ -35,7 +35,7 @@ export type PathCombineDefinition = {
 const OP_OPTIONS = Enum.options(Enum.Common.pathOp);
 
 // Enum value (index) -> PaperHelper op kind. Order must match Enum.Common.pathOp.
-const OP_KINDS: PaperHelper.PathOpKind[] = ["unify", "intersect", "exclude", "subtract", "inverseSubtract", "divide", "inverseDivide"];
+const OP_KINDS: PaperHelper.PathOpKind[] = ["unify", "intersect", "exclude", "subtract", "inverseSubtract", "divide", "inverseDivide", "join"];
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathCombineDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathCombine", PathCombineDefinition> => {
     const socketId: `path_${string}` = `path_${nanoid()}`;

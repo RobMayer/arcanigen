@@ -96,7 +96,26 @@ export namespace PaperHelper {
      * The seven fold operations a Path Combine row can apply. `inverse*` variants swap the operands
      * (the row's path becomes the minuend/dividend), which only matters for the non-commutative ops.
      */
-    export type PathOpKind = "unify" | "intersect" | "exclude" | "subtract" | "inverseSubtract" | "divide" | "inverseDivide";
+    export type PathOpKind = "unify" | "intersect" | "exclude" | "subtract" | "inverseSubtract" | "divide" | "inverseDivide" | "join";
+
+    // Permissive import used by the fold: keeps open paths (unlike importPath, which drops them).
+    // Transforms are baked into the geometry, so pathData comes back in world space.
+    function importAny(pathData: SVGPath): paper.PathItem | null {
+        ensurePaper();
+        const item = paper.project.importSVG(`<path d="${pathData.d}" transform="${pathData.transform}"/>`, { insert: false }) as paper.PathItem;
+        return item ?? null;
+    }
+
+    // Join keeps every operand intact rather than resolving geometry: concatenate both operands'
+    // (already transform-baked) subpaths into one compound path.
+    function joinItems(a: paper.PathItem, b: paper.PathItem): paper.PathItem {
+        return paper.project.importSVG(`<path d="${a.pathData} ${b.pathData}"/>`, { insert: false }) as paper.PathItem;
+    }
+
+    // Boolean ops need closed regions; an open path acts as the empty set. Join has no such rule.
+    function isOpen(item: paper.PathItem): boolean {
+        return item instanceof paper.Path && !item.closed;
+    }
 
     /**
      * How each op behaves when exactly one operand is missing. Derived by treating null as the empty
@@ -118,11 +137,24 @@ export namespace PaperHelper {
         inverseSubtract: { compute: (a, b) => b.subtract(a, { insert: false }), whenBNull: "null", whenANull: "B" },
         divide: { compute: (a, b) => a.divide(b, { insert: false }), whenBNull: "A", whenANull: "null" },
         inverseDivide: { compute: (a, b) => b.divide(a, { insert: false }), whenBNull: "null", whenANull: "B" },
+        join: { compute: joinItems, whenBNull: "A", whenANull: "B" },
     };
 
     // Folds one row into the running accumulator. Consumes (removes) the operands it no longer needs.
     function applyOp(op: PathOpKind, a: paper.PathItem | null, b: paper.PathItem | null): paper.PathItem | null {
         const rule = OP_TABLE[op];
+
+        // Every op but Join treats an open path as the empty set; drop opens before folding.
+        if (op !== "join") {
+            if (a && isOpen(a)) {
+                a.remove();
+                a = null;
+            }
+            if (b && isOpen(b)) {
+                b.remove();
+                b = null;
+            }
+        }
 
         if (a && b) {
             try {
@@ -165,7 +197,7 @@ export namespace PaperHelper {
         let seeded = false;
 
         for (const entry of entries) {
-            const imported: paper.PathItem | null = entry.path ? importPath(entry.path) : null;
+            const imported: paper.PathItem | null = entry.path ? importAny(entry.path) : null;
             if (!seeded) {
                 acc = imported;
                 seeded = true;
@@ -176,6 +208,23 @@ export namespace PaperHelper {
 
         if (!acc) return null;
         return toResult(acc);
+    };
+
+    /**
+     * Join a set of paths into one compound path, keeping every subpath intact (no boolean
+     * resolution). Transforms are baked on import so differently-transformed paths line up; open
+     * paths are preserved. Nulls are skipped. Returns null if nothing survives.
+     */
+    export const join = (paths: (SVGPath | null)[]): DataTypes.AnyEval | null => {
+        ensurePaper();
+        const items = paths.filter((p): p is SVGPath => p !== null).map(importAny);
+        const live = items.filter((i): i is paper.PathItem => i !== null);
+        if (live.length === 0) return null;
+
+        const d = live.map((i) => i.pathData).join(" ");
+        live.forEach((i) => i.remove());
+        const result = paper.project.importSVG(`<path d="${d}"/>`, { insert: false }) as paper.PathItem;
+        return toResult(result);
     };
 
     export const reverseD = (d: string): string | null => {

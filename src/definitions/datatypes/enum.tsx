@@ -85,6 +85,7 @@ export namespace Enum {
             INVERSE_SUBTRACT: { value: 4, label: "Inverse Subtract" },
             DIVIDE: { value: 5, label: "Divide" },
             INVERSE_DIVIDE: { value: 6, label: "Inverse Divide" },
+            JOIN: { value: 7, label: "Join" },
         } as const;
 
         export const blendMode = {
