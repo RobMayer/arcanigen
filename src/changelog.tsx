@@ -4,6 +4,11 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-08"} version={"3.4.5"}>
+                <Feature>Added Spirograph Node.</Feature>
+                <Feature>Added SpiroRing Node.</Feature>
+                <Improvement>Added Path Join node and pathOp option.</Improvement>
+            </Build>
             <Build date={"2026-08-08"} version={"3.4.4"}>
                 <Improvement>Added path output to glyph.</Improvement>
             </Build>
