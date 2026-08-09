@@ -11,6 +11,7 @@ import { Flavour } from "../components/types";
 import { InterfaceMember } from "../state/project/types";
 import { ResultDefinition, ResultNodeType } from "./nodes/resultNode";
 import { AngleDefinition, AnglePrimitiveType } from "./nodes/primitives/angleNode";
+import { PointDefinition, PointPrimitiveType } from "./nodes/primitives/pointNode";
 import { BooleanDefinition, BooleanPrimitiveType } from "./nodes/primitives/booleanNode";
 import { ColorDefinition, ColorPrimitiveType } from "./nodes/primitives/colorNode";
 import { ColorSplitDefinition, ColorSplitNodeType } from "./nodes/math/colorSplitNode";
@@ -155,12 +156,15 @@ import { RadialLayoutDefinition, RadialLayoutNodeType } from "./nodes/layouts/ra
 import { RepeatedLayoutDefinition, RepeatedLayoutNodeType } from "./nodes/layouts/repeatedLayoutNode";
 import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collections/sequenceIndexNode";
 import { PathLayoutDefinition, PathLayoutNodeType } from "./nodes/layouts/pathLayoutNode";
+import { ScatterLayoutDefinition, ScatterLayoutNodeType } from "./nodes/layouts/scatterLayoutNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecated/colorIteratorNode";
 import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
 import { FloatStopArrayDefinition, FloatStopArrayNodeType } from "./nodes/collections/floatStopArrayNode";
 import { AngleStopArrayDefinition, AngleStopArrayNodeType } from "./nodes/collections/angleStopArrayNode";
+import { PointArrayDefinition, PointArrayNodeType } from "./nodes/collections/pointArrayNode";
+import { FromCrossingsDefinition, FromCrossingsNodeType } from "./nodes/collections/fromCrossingsNode";
 import { IntegerStopArrayDefinition, IntegerStopArrayNodeType } from "./nodes/collections/integerStopArrayNode";
 import { LengthStopArrayDefinition, LengthStopArrayNodeType } from "./nodes/collections/lengthStopArrayNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
@@ -245,6 +249,7 @@ namespace Registries {
         length: LengthDefinition;
         tokensLength: TokensLengthDefinition;
         randomSeed: RandomSeedDefinition;
+        point: PointDefinition;
 
         // meta
         notes: NotesDefinition;
@@ -353,12 +358,15 @@ namespace Registries {
         repeatedLayout: RepeatedLayoutDefinition;
         sequenceIndex: SequenceIndexDefinition;
         pathLayout: PathLayoutDefinition;
+        scatterLayout: ScatterLayoutDefinition;
         colorIterator: ColorIteratorDefinition;
         colorIterator2: ColorIterator2Definition;
         colorStop: ColorStopBreakoutDefinition;
         colorStopArray: ColorStopArrayDefinition;
         floatStopArray: FloatStopArrayDefinition;
         angleStopArray: AngleStopArrayDefinition;
+        pointArray: PointArrayDefinition;
+        fromCrossings: FromCrossingsDefinition;
         integerStopArray: IntegerStopArrayDefinition;
         lengthStopArray: LengthStopArrayDefinition;
         floatIterator: FloatIteratorDefinition;
@@ -447,12 +455,15 @@ namespace Registries {
         repeatedLayout: RepeatedLayoutNodeType,
         sequenceIndex: SequenceIndexNodeType,
         pathLayout: PathLayoutNodeType,
+        scatterLayout: ScatterLayoutNodeType,
         colorIterator: ColorIteratorNodeType,
         colorIterator2: ColorIterator2NodeType,
         colorStop: ColorStopNodeType,
         colorStopArray: ColorStopArrayNodeType,
         floatStopArray: FloatStopArrayNodeType,
         angleStopArray: AngleStopArrayNodeType,
+        pointArray: PointArrayNodeType,
+        fromCrossings: FromCrossingsNodeType,
         integerStopArray: IntegerStopArrayNodeType,
         lengthStopArray: LengthStopArrayNodeType,
         floatIterator: FloatIteratorNodeType,
@@ -483,6 +494,7 @@ namespace Registries {
         length: LengthPrimitiveType,
         tokensLength: TokensLengthPrimitiveType,
         randomSeed: RandomSeedNodeType,
+        point: PointPrimitiveType,
         notes: NotesNodeType,
         container: ContainerNodeType,
         patch: PatchNodeType,
@@ -626,6 +638,8 @@ namespace Registries {
         "array<layer>": { shape: Shape | null; enabled: boolean | null; blend: number | null }[];
         pathOp: { path: SVGPath | null; enabled: boolean | null; op: number | null };
         "array<pathOp>": { path: SVGPath | null; enabled: boolean | null; op: number | null }[];
+        point: { x: number; y: number };
+        "array<point>": { x: number; y: number }[];
         sequence: { senderId: string; count: number };
         "stop<float>": { value: number | null; position: number | null; enabled: boolean | null };
         "array<stop<float>>": { value: number | null; position: number | null; enabled: boolean | null }[];
@@ -656,6 +670,8 @@ namespace Registries {
         "array<layer>": "Layer Array",
         pathOp: "Path Op",
         "array<pathOp>": "Path Op Array",
+        point: "Point",
+        "array<point>": "Point Array",
         distribution: "Distribution",
         sequence: "Sequence",
         "stop<float>": "Float Stop",

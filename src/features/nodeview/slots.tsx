@@ -305,6 +305,8 @@ export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): Re
         case "array<layer>":
         case "pathOp":
         case "array<pathOp>":
+        case "point":
+        case "array<point>":
         case "sequence":
         case "stop<float>":
         case "array<stop<float>>":

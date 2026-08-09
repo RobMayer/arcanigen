@@ -291,6 +291,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="enum"],
     &[data-linktype~="angle"],
     &[data-linktype~="boolean"],
+    &[data-linktype~="point"],
+    &[data-linktype~="array<point>"],
     &[data-linktype~="tokens<length>"] {
         --flavour: var(--flavour-accent);
     }

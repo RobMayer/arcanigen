@@ -93,6 +93,29 @@ export namespace PaperHelper {
     };
 
     /**
+     * Self-crossings of a single path: the points where the path (or any of a compound path's
+     * subpaths) crosses itself or another subpath. Uses getCrossings, so only true crossings count
+     * (where a curve changes side) — tangential touches are ignored, being a numerically degenerate
+     * case (get those points another way if ever needed). Uses importAny so OPEN paths are kept
+     * (unlike importPath) — combine upstream with Path Join into one path first. Transforms are baked
+     * on import, so points come back in world space.
+     */
+    export const crossings = (pathData: SVGPath): { x: number; y: number }[] | null => {
+        ensurePaper();
+        const item = importAny(pathData);
+        if (!item) return null;
+        try {
+            const points = item.getCrossings().map((loc) => ({ x: loc.point.x, y: loc.point.y }));
+            item.remove();
+            return points;
+        } catch (e) {
+            console.warn(e);
+            item.remove();
+            return null;
+        }
+    };
+
+    /**
      * The seven fold operations a Path Combine row can apply. `inverse*` variants swap the operands
      * (the row's path becomes the minuend/dividend), which only matters for the non-commutative ops.
      */

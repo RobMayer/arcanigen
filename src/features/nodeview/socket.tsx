@@ -220,6 +220,8 @@ export const Socket = styled(
     &[data-sockettype~="enum"],
     &[data-sockettype~="angle"],
     &[data-sockettype~="boolean"],
+    &[data-sockettype~="point"],
+    &[data-sockettype~="array<point>"],
     &[data-sockettype~="tokens<length>"] {
         --tl: var(--flavour-accent);
         --br: var(--flavour-accent);
