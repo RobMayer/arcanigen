@@ -99,7 +99,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
 
     for (let i = 0; i < points.length; i++) {
         // Sequence-resolve the member so upstream iterators can vary it per index.
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.sequenceData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
         const { x, y } = points[i];

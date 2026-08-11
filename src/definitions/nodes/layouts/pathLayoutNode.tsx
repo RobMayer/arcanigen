@@ -336,7 +336,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         if (skipFirst && i === 0) continue;
         if (skipLast && i === count - 1) continue;
 
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.sequenceData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
         // Compute spacing for this index

@@ -85,7 +85,11 @@ export namespace SignatureEngine {
                 const inner = term.args[0];
                 if (inner?.t === "var") {
                     const d = dom[inner.id];
-                    if (!d) return side === "in" ? SocketTypes.ANY : SocketTypes.NONE;
+                    // Unbound element: keep the array SHAPE (stay array-only), don't collapse to a bare
+                    // ANY/NONE. Wildcard element on IN (`array<?>` -> accepts any array, rejects scalars);
+                    // empty-set element on OUT (`array<NONE>` -> flows into any array<X>, and the
+                    // connection then binds the element). Mirrors the bare-var line above, ctor-wrapped.
+                    if (!d) return SocketTypes.ctor(term.name, side === "in" ? SocketTypes.any() : SocketTypes.NONE);
                     return SocketTypes.set("or", ...[...d].sort().map((k) => SocketTypes.ctor(term.name, SocketTypes.atom(k))));
                 }
                 return term;

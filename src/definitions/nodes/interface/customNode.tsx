@@ -219,13 +219,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     const { graphId } = node.payload;
     if (!graphId) return null;
 
-    // Translate seqData for subgraph boundary crossing
-    const { innerSeqData, strippedKeys } = Resolver.translateInward(context.sequenceData, node.id);
+    // Translate cursorData for subgraph boundary crossing
+    const { innerCursorData, strippedKeys } = Resolver.translateInward(context.cursorData, node.id);
 
-    // Lazy input resolver: called by Input nodes inside the subgraph with the current seqData
-    const resolveInput = (inputNodeId: string, seqData: Resolver.SequenceData): DataTypes.AnyEval | null => {
-        // Translate inner seqData back to parent-level keys
-        const outerSeqData = Resolver.translateOutward(seqData, strippedKeys, node.id, context.sequenceData);
+    // Lazy input resolver: called by Input nodes inside the subgraph with the current cursorData
+    const resolveInput = (inputNodeId: string, cursorData: Resolver.CursorData): DataTypes.AnyEval | null => {
+        // Translate inner cursorData back to parent-level keys
+        const outerCursorData = Resolver.translateOutward(cursorData, strippedKeys, node.id, context.cursorData);
 
         // Layer group handling
         const layersKey = `layers_${inputNodeId}`;
@@ -233,13 +233,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             const layerEntries = (node.payload as Record<string, unknown>)[layersKey] as { socket: string; enabled: boolean; blend: number }[];
 
             // Check supersocket first — if connected, use its data directly
-            const supersocketEval = context.resolve<"array<layer>">(node.id, inputNodeId, outerSeqData);
+            const supersocketEval = context.resolve<"array<layer>">(node.id, inputNodeId, outerCursorData);
             if (supersocketEval) return supersocketEval;
 
             // Build from individual layer sockets
             const layerData: { shape: DataTypes.TypeOf<"shape"> | null; enabled: boolean | null; blend: number | null }[] = [];
             for (const entry of layerEntries) {
-                const resolved = context.resolve(node.id, entry.socket, outerSeqData);
+                const resolved = context.resolve(node.id, entry.socket, outerCursorData);
                 if (!resolved) {
                     layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
                     continue;
@@ -268,13 +268,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             const pathOpEntries = (node.payload as Record<string, unknown>)[pathOpsKey] as { socket: string; enabled: boolean; op: number }[];
 
             // Check supersocket first — if connected, use its data directly
-            const supersocketEval = context.resolve<"array<pathOp>">(node.id, inputNodeId, outerSeqData);
+            const supersocketEval = context.resolve<"array<pathOp>">(node.id, inputNodeId, outerCursorData);
             if (supersocketEval) return supersocketEval;
 
             // Build from individual pathOp sockets
             const pathOpData: { path: DataTypes.TypeOf<"path"> | null; enabled: boolean | null; op: number | null }[] = [];
             for (const entry of pathOpEntries) {
-                const resolved = context.resolve(node.id, entry.socket, outerSeqData);
+                const resolved = context.resolve(node.id, entry.socket, outerCursorData);
                 if (!resolved) {
                     pathOpData.push({ path: null, enabled: entry.enabled, op: entry.op });
                     continue;
@@ -297,8 +297,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             return { kind: "array<pathOp>", data: pathOpData };
         }
 
-        // Regular socket: resolve in parent graph with translated seqData
-        const resolved = context.resolve(node.id, inputNodeId, outerSeqData);
+        // Regular socket: resolve in parent graph with translated cursorData
+        const resolved = context.resolve(node.id, inputNodeId, outerCursorData);
         if (resolved) return resolved;
 
         // Stored value fallback (connected or unsocketed inputs)
@@ -314,7 +314,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     };
 
     // Evaluate just the requested output from the subgraph
-    const raw = context.subgraph(graphId, socket, resolveInput, innerSeqData);
+    const raw = context.subgraph(graphId, socket, resolveInput, innerCursorData);
 
     // Remap sequence token senderIds on output
     if (raw?.kind === "sequence") {

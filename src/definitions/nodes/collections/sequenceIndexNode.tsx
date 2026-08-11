@@ -82,7 +82,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, socket
     }
 
     if (socket === "index") {
-        const iter = context.sequenceData[senderId] ?? 0;
+        const iter = context.cursorData[senderId] ?? 0;
         return { kind: "integer", data: `${iter}` };
     }
 

@@ -90,23 +90,7 @@ export const Socket = styled(
         const graphId = useGraphId();
 
         const rule = Project.useSocketType(graphId, node, socketId, side);
-        const [type, title] = useMemo(() => {
-            const tp = SocketTypes.toCSS(rule);
-            const anyCSS = SocketTypes.toCSS(SocketTypes.ANY);
-
-            // conjunctive display ("&") is only meaningful on an output; an input always accepts any of
-            // its kinds, so it always reads as "|".
-            const sep = side === "out" && SocketTypes.projectMode(rule) === "and" ? " & " : " | ";
-            let ti = tp.split(" ").join(sep);
-            if (tp === "") {
-                ti = "« unknown »";
-            }
-            if (tp === anyCSS) {
-                ti = "« any »";
-            }
-
-            return [tp, ti];
-        }, [rule, side]);
+        const { attr, title } = useMemo(() => SocketTypes.toRepresentation(rule, side), [rule, side]);
 
         const canConnect = useMemo(() => {
             if (pendingConnection === null) {
@@ -172,8 +156,7 @@ export const Socket = styled(
                 className={className}
                 style={style}
                 data-socketside={side}
-                data-sockettype={type}
-                data-socketmod={title === "« any »" ? "any" : title === "« unknown »" ? "unknown" : undefined}
+                data-sockettype={attr}
                 data-state={state}
                 title={title}
             />
@@ -203,16 +186,12 @@ export const Socket = styled(
     }
 
     corner-shape: round;
-    &[data-sockettype*="array<"] {
+    /* Leading space -> only the OUTERMOST ctor matches, so loopFor<array<...>> shapes as loopFor, not array.
+       "any"/"unknown" serialize without an "array<" token, so they stay round for free. */
+    &[data-sockettype*=" array<"] {
         corner-shape: bevel;
     }
     /* Future: Bus<T> -> corner-shape: square; LoopFor<T> -> shape TBD. */
-
-    /* "any"/"unknown" sockets stay circular even though their accept-set includes array kinds. */
-    &[data-socketmod="any"],
-    &[data-socketmod="unknown"] {
-        corner-shape: round;
-    }
 
     --tl: var(--flavour-base);
     --br: var(--flavour-base);
@@ -226,7 +205,6 @@ export const Socket = styled(
     &[data-sockettype~="angle"],
     &[data-sockettype~="boolean"],
     &[data-sockettype~="point"],
-    &[data-sockettype~="array<point>"],
     &[data-sockettype~="tokens:length"] {
         --tl: var(--flavour-accent);
         --br: var(--flavour-accent);
@@ -236,18 +214,12 @@ export const Socket = styled(
     &[data-sockettype~="stop:color"],
     &[data-sockettype~="stop:angle"],
     &[data-sockettype~="stop:integer"],
-    &[data-sockettype~="stop:length"],
-    &[data-sockettype~="array<stop:float>"],
-    &[data-sockettype~="array<stop:color>"],
-    &[data-sockettype~="array<stop:angle>"],
-    &[data-sockettype~="array<stop:integer>"],
-    &[data-sockettype~="array<stop:length>"] {
+    &[data-sockettype~="stop:length"] {
         --tl: var(--flavour-info);
         --br: var(--flavour-info);
     }
     &[data-sockettype~="path"],
-    &[data-sockettype~="pathOp"],
-    &[data-sockettype~="array<pathOp>"] {
+    &[data-sockettype~="pathOp"] {
         --tl: var(--flavour-emphasis);
         --br: var(--flavour-emphasis);
     }
@@ -260,13 +232,12 @@ export const Socket = styled(
         --br: var(--flavour-help);
     }
     &[data-sockettype~="shape"],
-    &[data-sockettype~="layer"],
-    &[data-sockettype~="array<layer>"] {
+    &[data-sockettype~="layer"] {
         --tl: var(--flavour-confirm);
         --br: var(--flavour-confirm);
     }
 
-    &[data-socketmod="any"] {
+    &[data-sockettype~="any"] {
         --tl: var(--flavour-base);
         --br: var(--flavour-base);
     }
@@ -373,7 +344,7 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
     return (
         <div className={className} style={style} ref={ref}>
             <svg preserveAspectRatio="none">
-                <path ref={pathRef} data-sockettype={type} data-typeany={type === SocketTypes.toCSS(SocketTypes.ANY) ? "" : undefined} />
+                <path ref={pathRef} data-sockettype={type} />
             </svg>
             <div className="markerFrom" ref={fromMarkerRef} />
         </div>
@@ -433,18 +404,12 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             &[data-sockettype~="stop:color"],
             &[data-sockettype~="stop:angle"],
             &[data-sockettype~="stop:integer"],
-            &[data-sockettype~="stop:length"],
-            &[data-sockettype~="array<stop:float>"],
-            &[data-sockettype~="array<stop:color>"],
-            &[data-sockettype~="array<stop:angle>"],
-            &[data-sockettype~="array<stop:integer>"],
-            &[data-sockettype~="array<stop:length>"] {
+            &[data-sockettype~="stop:length"] {
                 --flavour: var(--flavour-info);
             }
 
             &[data-sockettype~="path"],
-            &[data-sockettype~="pathOp"],
-            &[data-sockettype~="array<pathOp>"] {
+            &[data-sockettype~="pathOp"] {
                 --flavour: var(--flavour-emphasis);
             }
             &[data-sockettype~="sequence"] {
@@ -454,12 +419,11 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
                 --flavour: var(--flavour-help);
             }
             &[data-sockettype~="shape"],
-            &[data-sockettype~="layer"],
-            &[data-sockettype~="array<layer>"] {
+            &[data-sockettype~="layer"] {
                 --flavour: var(--flavour-confirm);
             }
 
-            &[data-typeany] {
+            &[data-sockettype~="any"] {
                 --flavour: var(--flavour-base);
             }
         }

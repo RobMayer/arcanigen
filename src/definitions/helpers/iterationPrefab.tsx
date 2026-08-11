@@ -50,7 +50,7 @@ export namespace IterationPrefab {
         const modeEnum = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
         const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
 
-        let iter = context.sequenceData[senderId] ?? 0;
+        let iter = context.cursorData[senderId] ?? 0;
 
         if (reverseSequence) {
             iter = count - 1 - iter;

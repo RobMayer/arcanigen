@@ -129,7 +129,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
 
     const children = [];
     for (let i = 0; i < count; i++) {
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.sequenceData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
         children.push(shape);
     }

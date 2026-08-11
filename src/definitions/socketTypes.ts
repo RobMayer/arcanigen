@@ -384,15 +384,14 @@ export namespace SocketTypes {
 
     // --- Concrete socket surface (kind-aware constructors, bounds, edge projections) -------------
 
-    /** All concrete data types, sorted (atomic leaves + one array level). Backs `ANY`. */
-    const SORTED_KINDS: readonly DataTypes.Kind[] = [...DataTypes.ALL_KINDS].sort();
-
     /** Empty set -- unconstrained OUT ("no type yet"); an empty OUT flows anywhere (subsumes). */
     export const NONE: Term = set("and");
 
-    /** Full set -- unconstrained IN (accepts every concrete kind). Kept as the ALL-kinds set (not the `any`
-     *  wildcard) so `toCSS(ANY)` stays a non-empty string, distinct from `toCSS(NONE)` in socket rendering. */
-    export const ANY: Term = set("and", ...SORTED_KINDS.map((k) => atom(k)));
+    /** Top / gradual wildcard -- unconstrained IN (accepts anything). The honest "any": a real wildcard,
+     *  not an enumerated all-kinds set (kinds are an open, recursive space -- there is nothing finite to
+     *  enumerate). `subsumes` already accepts it on an IN, `intersect` treats it as the universe, and
+     *  `toRepresentation` renders it as the token "any". */
+    export const ANY: Term = any();
 
     /** Single-kind rule (Kind-typed sugar over `atom`). */
     export const of = (kind: DataTypes.Kind): Term => atom(kind);
@@ -403,14 +402,69 @@ export namespace SocketTypes {
     /** Disjunctive rule -- "one of these". */
     export const or = (...kinds: DataTypes.Kind[]): Term => set("or", ...[...kinds].sort().map((k) => atom(k)));
 
-    /** Project a rule to a CSS-friendly string (space-joined concrete kinds) for the Socket type prop. */
-    export const toCSS = (rule: Term): string => project(rule).join(" ");
+    // --- Display representation (Term -> { attr, title }) ----------------------------------------
+
+    // The machine `attr` string is load-bearing: the socket stylesheet rides its exact spacing.
+    // Convention: the whole value is space-padded; atoms are space-joined; a ctor pads a LEAF inner
+    // (`array< color >`) but jams a nested ctor tight (`loopFor<array< x >>`) so that only the
+    // OUTERMOST ctor is space-preceded -- that is what lets `[data-sockettype*=" array<"]` select the
+    // outer shape while ignoring inner ones. Wildcards spell out: `any()` -> "any", empty-set -> "unknown".
+    const attrOf = (t: Term): string => {
+        switch (t.t) {
+            case "atom":
+                return t.kind;
+            case "any":
+            case "var": // materialized terms are var-free; defensive
+                return "any";
+            case "ctor": {
+                const inner = attrOf(t.args[0]);
+                return t.args[0].t === "ctor" ? `${t.name}<${inner}>` : `${t.name}< ${inner} >`;
+            }
+            case "set":
+            case "union":
+                return t.members.length === 0 ? "unknown" : t.members.map(attrOf).join(" ");
+        }
+    };
+
+    // Human title: readable kinds joined by `|` (or `&` on a conjunctive output); ctors tight.
+    const titleOf = (t: Term, side: "in" | "out"): string => {
+        switch (t.t) {
+            case "atom":
+                return t.kind;
+            case "any":
+            case "var":
+                return "any";
+            case "ctor":
+                return `${t.name}<${t.args.map((a) => titleOf(a, side)).join(", ")}>`;
+            case "set":
+            case "union": {
+                if (t.members.length === 0) return "unknown";
+                const sep = side === "out" && projectMode(t) === "and" ? " & " : " | ";
+                return t.members.map((m) => titleOf(m, side)).join(sep);
+            }
+        }
+    };
+
+    /** The strict machine attr string for the `data-sockettype` prop (space-padded; see `attrOf`). */
+    export const toCSS = (rule: Term): string => ` ${attrOf(rule)} `;
+
+    /** Both socket display strings from one Term walk: the `data-sockettype` attr + the human title.
+     *  `side` only affects the title separator (`|` vs a conjunctive-output `&`); the attr is side-neutral. */
+    export const toRepresentation = (rule: Term, side: "in" | "out"): { attr: string; title: string } => {
+        const attr = toCSS(rule);
+        let title = titleOf(rule, side);
+        if (rule.t === "any") title = "« any »";
+        else if ((rule.t === "set" || rule.t === "union") && rule.members.length === 0) title = "« unknown »";
+        return { attr, title };
+    };
 
     /** Representative concrete Kind for the link's wire color (cosmetic -- one-way projection). */
     export const representativeKind = (out: Term, inp: Term): string => project(out)[0] ?? project(inp)[0] ?? "float";
 
-    /** Intersection of two rules' concrete kinds (mode from the first operand). */
+    /** Intersection of two rules' concrete kinds (mode from the first operand). `any` is the universe. */
     export const intersect = (a: Term, b: Term): Term => {
+        if (a.t === "any") return b;
+        if (b.t === "any") return a;
         const kb = new Set(project(b));
         return set(
             projectMode(a),
