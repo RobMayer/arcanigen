@@ -4,23 +4,26 @@ import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
-import { extractSingle } from "./numericMath";
+import { extractSingle } from "../../helpers/mathHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type IntegerToEnumDefinition = {
-    inputs: {
-        input: DataTypes.Use<"integer">;
-    };
-    outputs: {
-        output: DataTypes.Use<"enum">;
-    };
-    payload: {
+const def = signature({
+    in: { input: "integer" },
+    out: { output: "enum" },
+});
+
+export type IntegerToEnumDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<IntegerToEnumDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"integerToEnum", IntegerToEnumDefinition> => {
     return {
@@ -67,21 +70,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerToEnumDefinition>, socket
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerToEnumDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "input":
-            return SocketTypes.of("integer");
-        case "output":
-            return SocketTypes.of("enum");
-        default:
-            return SocketTypes.NONE;
-    }
-};
-
 export const IntegerToEnumNodeType: NodeTypes.Type<"integerToEnum", IntegerToEnumDefinition> = {
     type: "integerToEnum",
     displayName: "Integer to Enum",
-    defaultLabel: "Int → Enum",
+    defaultLabel: "Int -> Enum",
     iconNode: <NodeIcon shape={NODE_ICONS.convert} />,
     flavour: "help",
     category: "Math",
@@ -90,5 +82,6 @@ export const IntegerToEnumNodeType: NodeTypes.Type<"integerToEnum", IntegerToEnu
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

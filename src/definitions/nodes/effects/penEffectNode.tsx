@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -8,32 +8,32 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { SliderInput } from "../../../components/inputs/SliderInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { FilterPrimitive } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PenEffectDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        nib: DataTypes.Use<"length">;
-        seed: DataTypes.Use<"integer">;
-        smudge: DataTypes.Use<"float">;
-        jitter: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        nib: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        seed: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        smudge: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        jitter: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+const def = signature({
+    in: { input: "shape", nib: "length", seed: "integer", smudge: "float", jitter: "float" },
+    out: { output: "shape" },
+});
+
+export type PenEffectDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        nib: DataTypes.TypeOf<"length">;
+        seed: DataTypes.TypeOf<"integer">;
+        smudge: DataTypes.TypeOf<"float">;
+        jitter: DataTypes.TypeOf<"float">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PenEffectDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"penEffect", PenEffectDefinition> => {
     return {
@@ -127,23 +127,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PenEffectDefinition>, socket: "o
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof PenEffectDefinition["inputs"]]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "and" },
-    nib: { types: ["length"], mode: "and" },
-    seed: { types: ["integer"], mode: "and" },
-    smudge: { types: ["float"], mode: "and" },
-    jitter: { types: ["float"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof PenEffectDefinition["outputs"]]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PenEffectDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT] ?? { types: ["shape"], mode: "and" };
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN] ?? { types: ["shape"], mode: "and" };
-};
-
 export const PenEffectNodeType: NodeTypes.Type<"penEffect", PenEffectDefinition> = {
     type: "penEffect",
     displayName: "Pen Stroke",
@@ -156,7 +139,8 @@ export const PenEffectNodeType: NodeTypes.Type<"penEffect", PenEffectDefinition>
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

@@ -5,8 +5,9 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { DecimalInput } from "../../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
@@ -14,23 +15,27 @@ import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
 import { NumericString } from "../../../datatypes/numericString";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type FloatInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"float">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        initialValue: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        min: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        max: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        step: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        snap: DataTypes.TypeOf<DataTypes.Use<"float">>;
+const def = signature({
+    in: {},
+    out: { output: "float" },
+});
+
+export type FloatInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        initialValue: DataTypes.TypeOf<"float">;
+        widget: DataTypes.TypeOf<"enum">;
+        min: DataTypes.TypeOf<"float">;
+        max: DataTypes.TypeOf<"float">;
+        step: DataTypes.TypeOf<"float">;
+        snap: DataTypes.TypeOf<"float">;
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefinition> => {
     return {
@@ -139,14 +144,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatInput", FloatInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<FloatInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["float"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> = {
     type: "floatInput",
     displayName: "Float Input",
@@ -163,5 +160,6 @@ export const FloatInputType: NodeTypes.Type<"floatInput", FloatInputDefinition> 
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

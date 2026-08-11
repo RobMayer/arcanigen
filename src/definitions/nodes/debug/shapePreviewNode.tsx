@@ -5,22 +5,27 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { ShapePreview, SocketIn, Slot } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { Color } from "../../datatypes/color";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ShapePreviewDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-    };
-    outputs: never;
-    payload: {
+const def = signature({
+    in: { input: "shape" },
+    out: {},
+});
+
+export type ShapePreviewDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         backgroundColor: Color.Type;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ShapePreviewDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"shapePreview", ShapePreviewDefinition> => {
     return {
@@ -74,14 +79,6 @@ const evaluate = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, _socke
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ShapePreviewDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ShapePreviewDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefinition> = {
     type: "shapePreview",
     displayName: "Preview",
@@ -94,5 +91,6 @@ export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefini
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

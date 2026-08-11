@@ -9,71 +9,82 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, gcd, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type KnotDefinition = {
-    inputs: {
-        pointCount: DataTypes.Use<"integer">;
-        skipCount: DataTypes.Use<"integer">;
-        radius: DataTypes.Use<"length">;
-        spread: DataTypes.Use<"length">;
-        innerRadius: DataTypes.Use<"length">;
-        outerRadius: DataTypes.Use<"length">;
-        spanMode: DataTypes.Use<"enum">;
-        spreadAlign: DataTypes.Use<"enum">;
-        rScribe: DataTypes.Use<"enum">;
-        iScribe: DataTypes.Use<"enum">;
-        oScribe: DataTypes.Use<"enum">;
-        expandMode: DataTypes.Use<"enum">;
-        pointDistro: DataTypes.Use<"distribution">;
-        outerCornerRadius: DataTypes.Use<"length">;
-        outerCornerShape: DataTypes.Use<"enum">;
-        innerCornerRadius: DataTypes.Use<"length">;
-        innerCornerShape: DataTypes.Use<"enum">;
-        markerShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-        removeCrossings: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-        eOuterCircumradius: DataTypes.Use<"length">;
-        eOuterApothem: DataTypes.Use<"length">;
-        eInnerCircumradius: DataTypes.Use<"length">;
-        eInnerApothem: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        pointCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        skipCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        rScribe: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        iScribe: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        oScribe: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        expandMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        innerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        outerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spanMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        spreadAlign: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        outerCornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        outerCornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        innerCornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        innerCornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-        removeCrossings: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        pointCount: "integer",
+        skipCount: "integer",
+        radius: "length",
+        spread: "length",
+        innerRadius: "length",
+        outerRadius: "length",
+        spanMode: "enum",
+        spreadAlign: "enum",
+        rScribe: "enum",
+        iScribe: "enum",
+        oScribe: "enum",
+        expandMode: "enum",
+        pointDistro: "distribution",
+        outerCornerRadius: "length",
+        outerCornerShape: "enum",
+        innerCornerRadius: "length",
+        innerCornerShape: "enum",
+        markerShape: "shape",
+        markerAlign: "boolean",
+        removeCrossings: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
+    },
+    out: {
+        output: "shape",
+        path: "path",
+        eOuterCircumradius: "length",
+        eOuterApothem: "length",
+        eInnerCircumradius: "length",
+        eInnerApothem: "length",
+    },
+});
+
+export type KnotDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        pointCount: DataTypes.TypeOf<"integer">;
+        skipCount: DataTypes.TypeOf<"integer">;
+        rScribe: DataTypes.TypeOf<"enum">;
+        iScribe: DataTypes.TypeOf<"enum">;
+        oScribe: DataTypes.TypeOf<"enum">;
+        radius: DataTypes.TypeOf<"length">;
+        spread: DataTypes.TypeOf<"length">;
+        expandMode: DataTypes.TypeOf<"enum">;
+        innerRadius: DataTypes.TypeOf<"length">;
+        outerRadius: DataTypes.TypeOf<"length">;
+        spanMode: DataTypes.TypeOf<"enum">;
+        spreadAlign: DataTypes.TypeOf<"enum">;
+        outerCornerRadius: DataTypes.TypeOf<"length">;
+        outerCornerShape: DataTypes.TypeOf<"enum">;
+        innerCornerRadius: DataTypes.TypeOf<"length">;
+        innerCornerShape: DataTypes.TypeOf<"enum">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+        removeCrossings: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<KnotDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"knot", KnotDefinition> => {
     return {
@@ -359,8 +370,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     </CheckBox>
                 </SocketIn>
             </NodeAccordion>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eOuterCircumradius|eOuterApothem|eInnerCircumradius|eInnerApothem"}>
                 <SocketOut node={node} socketId={"eOuterCircumradius"} label={"Outer Circumradius"}>
                     <ValuePreview value={previewOuterCircumradius} />
@@ -657,7 +668,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         if (removeCrossings) {
             d = PaperHelper.healD(d) ?? d;
         }
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+        const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {
             return {
@@ -667,7 +678,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         }
 
         const hasInner = innerResults.length > 0;
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
         if (hasCut) paint.fill = null;
 
         return {
@@ -741,49 +752,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<KnotDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    pointCount: { types: ["integer"], mode: "and" },
-    skipCount: { types: ["integer"], mode: "and" },
-    radius: { types: ["length"], mode: "and" },
-    spread: { types: ["length"], mode: "and" },
-    innerRadius: { types: ["length"], mode: "and" },
-    outerRadius: { types: ["length"], mode: "and" },
-    spanMode: { types: ["enum"], mode: "and" },
-    spreadAlign: { types: ["enum"], mode: "and" },
-    rScribe: { types: ["enum"], mode: "and" },
-    iScribe: { types: ["enum"], mode: "and" },
-    oScribe: { types: ["enum"], mode: "and" },
-    expandMode: { types: ["enum"], mode: "and" },
-    pointDistro: { types: ["distribution"], mode: "and" },
-    outerCornerRadius: { types: ["length"], mode: "and" },
-    outerCornerShape: { types: ["enum"], mode: "and" },
-    innerCornerRadius: { types: ["length"], mode: "and" },
-    innerCornerShape: { types: ["enum"], mode: "and" },
-    markerShape: { types: ["shape"], mode: "and" },
-    markerAlign: { types: ["boolean"], mode: "and" },
-    removeCrossings: { types: ["boolean"], mode: "and" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<KnotDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-    eOuterCircumradius: { types: ["length"], mode: "and" },
-    eOuterApothem: { types: ["length"], mode: "and" },
-    eInnerCircumradius: { types: ["length"], mode: "and" },
-    eInnerApothem: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<KnotDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const KnotNodeType: NodeTypes.Type<"knot", KnotDefinition> = {
     type: "knot",
     displayName: "Knot",
@@ -796,5 +764,6 @@ export const KnotNodeType: NodeTypes.Type<"knot", KnotDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

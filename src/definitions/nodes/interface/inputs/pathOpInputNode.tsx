@@ -5,20 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type PathOpInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"pathOp">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: {},
+    out: { output: "pathOp" },
+});
+
+export type PathOpInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathOpInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathOpInput", PathOpInputDefinition> => {
     return {
@@ -75,14 +80,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"pathOpInput", PathOpInputDe
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<PathOpInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["pathOp"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathOpInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const PathOpInputType: NodeTypes.Type<"pathOpInput", PathOpInputDefinition> = {
     type: "pathOpInput",
     displayName: "Path Op Input",
@@ -98,5 +95,6 @@ export const PathOpInputType: NodeTypes.Type<"pathOpInput", PathOpInputDefinitio
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

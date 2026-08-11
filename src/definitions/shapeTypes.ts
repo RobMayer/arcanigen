@@ -23,7 +23,7 @@ export type GradientPaint = {
     units: "objectBoundingBox" | "userSpaceOnUse"; // Auto = objectBoundingBox, Manual = userSpaceOnUse
     stops: GradientStop[];
     spread: "pad" | "reflect" | "repeat";
-    angle: number; // Auto linear only: degrees, maps to bounding-box endpoints (0° = L→R)
+    angle: number; // Auto linear only: degrees, maps to bounding-box endpoints (0° = L->R)
     linear?: { x1: number; y1: number; x2: number; y2: number }; // Manual linear: explicit user-space vector
     radial?: { cx: number; cy: number; r: number; fx: number; fy: number; fr: number }; // Manual radial: explicit user-space circles
 };

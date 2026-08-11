@@ -4,24 +4,29 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
 import { Length } from "../../../datatypes/length";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type TokensLengthInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"tokens<length>">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        initialValue: DataTypes.TypeOf<DataTypes.Use<"tokens<length>">>;
+const def = signature({
+    in: {},
+    out: { output: "tokens:length" },
+});
+
+export type TokensLengthInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        initialValue: DataTypes.TypeOf<"tokens:length">;
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TokensLengthInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"tokensLengthInput", TokensLengthInputDefinition> => {
     return {
@@ -78,9 +83,9 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"tokens<length>">(node.id);
+        const providedInput = context.getInput?.<"tokens:length">(node.id);
         return {
-            kind: "tokens<length>",
+            kind: "tokens:length",
             data: providedInput?.data ?? node.payload.initialValue,
         };
     }
@@ -93,14 +98,6 @@ const onCreate = (node: NodeDefinitions.BuiltNodeOf<"tokensLengthInput", TokensL
 
 const onDelete = (node: NodeDefinitions.BuiltNodeOf<"tokensLengthInput", TokensLengthInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     removeInterface(ctx, graphId, node.id, "in");
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<TokensLengthInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["tokens<length>"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
 };
 
 export const TokensLengthInputType: NodeTypes.Type<"tokensLengthInput", TokensLengthInputDefinition> = {
@@ -119,5 +116,6 @@ export const TokensLengthInputType: NodeTypes.Type<"tokensLengthInput", TokensLe
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

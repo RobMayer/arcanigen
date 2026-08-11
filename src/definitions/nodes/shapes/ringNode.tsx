@@ -8,36 +8,43 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type RingDefinition = {
-    inputs: {
-        radius: DataTypes.Use<"length">;
-        spread: DataTypes.Use<"length">;
-        innerRadius: DataTypes.Use<"length">;
-        outerRadius: DataTypes.Use<"length">;
-        spanMode: DataTypes.Use<"enum">;
-        spreadAlign: DataTypes.Use<"enum">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        innerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        outerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spanMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        spreadAlign: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        radius: "length",
+        spread: "length",
+        innerRadius: "length",
+        outerRadius: "length",
+        spanMode: "enum",
+        spreadAlign: "enum",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type RingDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        radius: DataTypes.TypeOf<"length">;
+        spread: DataTypes.TypeOf<"length">;
+        innerRadius: DataTypes.TypeOf<"length">;
+        outerRadius: DataTypes.TypeOf<"length">;
+        spanMode: DataTypes.TypeOf<"enum">;
+        spreadAlign: DataTypes.TypeOf<"enum">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"ring", RingDefinition> => {
     return {
@@ -177,8 +184,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     disabled={node.in.spreadAlign !== null || (node.payload.spanMode === 0 && node.in.spanMode === null)}
                 />
             </SocketIn>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -255,7 +262,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
     }
 
     const d = `M ${rO},0 A ${rO},${rO} 0 0,0 ${-rO},0 A ${rO},${rO} 0 0,0 ${rO},0 z M ${rI},0 A ${rI},${rI} 0 0,1 ${-rI},0 A ${rI},${rI} 0 0,1 ${rI},0 z`;
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
@@ -270,7 +277,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
                 preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
@@ -278,31 +285,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
     }
 
     return null;
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<RingDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    radius: { types: ["length"], mode: "or" },
-    spread: { types: ["length"], mode: "or" },
-    innerRadius: { types: ["length"], mode: "or" },
-    outerRadius: { types: ["length"], mode: "or" },
-    spanMode: { types: ["enum"], mode: "or" },
-    spreadAlign: { types: ["enum"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<RingDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RingDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
 };
 
 export const RingNodeType: NodeTypes.Type<"ring", RingDefinition> = {
@@ -317,5 +299,6 @@ export const RingNodeType: NodeTypes.Type<"ring", RingDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

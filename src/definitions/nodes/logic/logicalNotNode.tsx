@@ -1,26 +1,30 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LogicalNotDefinition = {
-    inputs: {
-        input: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"boolean">;
-    };
-    payload: {
+const def = signature({
+    in: { input: "boolean" },
+    out: { output: "boolean" },
+});
+
+export type LogicalNotDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LogicalNotDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"logicalNot", LogicalNotDefinition> => {
     return {
@@ -65,10 +69,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LogicalNotDefinition>, socket: k
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalNotDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SocketTypes.of("boolean");
-};
-
 export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefinition> = {
     type: "logicalNot",
     displayName: "Not",
@@ -81,7 +81,8 @@ export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["boolean"], mode: "and" }, { types: ["boolean"], mode: "and" }),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("boolean"), SocketTypes.of("boolean")),
     onInterject: passthroughInterject("input", "output"),
 };

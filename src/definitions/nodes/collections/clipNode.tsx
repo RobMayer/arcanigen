@@ -1,30 +1,32 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { ClippedShape, PathShape } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ClipDefinition = {
-    inputs: {
-        content: DataTypes.Use<"shape">;
-        clip: DataTypes.Use<"path">;
-        showClip: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
+const def = signature({
+    in: { content: "shape", clip: "path", showClip: "boolean" },
+    out: { output: "shape" },
+});
+
+export type ClipDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         showClip: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ClipDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"clip", ClipDefinition> => {
     return {
@@ -117,25 +119,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ClipDefinition>, socket: keyof C
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ClipDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    content: { types: ["shape"], mode: "or" },
-    clip: { types: ["path"], mode: "or" },
-    showClip: { types: ["boolean"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ClipDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ClipDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ClipNodeType: NodeTypes.Type<"clip", ClipDefinition> = {
     type: "clip",
     displayName: "Clip",
@@ -148,7 +131,8 @@ export const ClipNodeType: NodeTypes.Type<"clip", ClipDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("content", "output"),
 };

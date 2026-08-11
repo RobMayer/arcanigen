@@ -1,12 +1,14 @@
 import { nanoid } from "nanoid";
-import { queryUpstreamOutType } from "../nodeHelpers";
+import { queryUpstreamOutType, commitSocketTypes } from "../../helpers/nodeHelper";
 import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../../components/Icon";
 import { CSSProperties, DragEvent, MouseEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { DragMove } from "../../../components/wrappers/DragMove";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { ContextPopup } from "../../../components/popups/ContextPopup";
 import { Project } from "../../../state/project";
 import { Session } from "../../../state/session";
@@ -18,11 +20,6 @@ import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 
 type Pair = {
     id: `pair_${string}`;
-    // Cached type state (mirrors absNode): the concrete OUT type feeding this pair's `in`
-    // (NONE when nothing is connected), and the intersected accept-rule of every consumer
-    // on this pair's `out` (ANY when nothing downstream constrains it).
-    connectedType: SocketTypes.SocketRule;
-    resolvedInTypes: SocketTypes.SocketRule;
 };
 
 export type PatchDefinition = {
@@ -30,10 +27,10 @@ export type PatchDefinition = {
     // `out_<pairId>`. They must differ — the socket anchor name is keyed by nodeId+socketId
     // (with no side), so reusing one key for both halves would make wires snap to the wrong end.
     inputs: {
-        [inSocket: `in_${string}`]: DataTypes.Use<DataTypes.Kind>;
+        [inSocket: `in_${string}`]: DataTypes.Kind;
     };
     outputs: {
-        [outSocket: `out_${string}`]: DataTypes.Use<DataTypes.Kind>;
+        [outSocket: `out_${string}`]: DataTypes.Kind;
     };
     payload: {
         label: string;
@@ -43,7 +40,7 @@ export type PatchDefinition = {
 
 type PatchNode = NodeDefinitions.BuiltNodeOf<"patch", PatchDefinition>;
 
-const freshPair = (): Pair => ({ id: `pair_${nanoid()}`, connectedType: SocketTypes.NONE, resolvedInTypes: SocketTypes.ANY });
+const freshPair = (): Pair => ({ id: `pair_${nanoid()}` });
 
 // Socket-key <-> pair-id mapping. `base` is the pair id (`pair_...`).
 const inKey = (base: string): `in_${string}` => `in_${base}`;
@@ -69,115 +66,59 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PatchDefinition>>, 
 
 // ─── Type inference (per pair — see absNode for the single-pair version) ─────
 
-const getPair = (node: NodeDefinitions.NodeFor<PatchDefinition>, pairId: string): Pair | undefined => node.payload.pairs.find((p) => p.id === pairId);
-
-const setPairTypes = (nodeId: string, pairId: string, updates: Partial<Pair>, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const current = ctx.getNode(graphId, nodeId) as PatchNode | undefined;
-    if (!current) return;
-    ctx.setNode(graphId, nodeId, {
-        ...current,
-        payload: {
-            ...current.payload,
-            pairs: current.payload.pairs.map((p) => (p.id === pairId ? { ...p, ...updates } : p)),
-        },
-    } as NodeDefinitions.NodeFor<NodeDefinitions.Any>);
-};
-
 /** Intersect the accept-rule of every consumer wired to this pair's `out` socket. Null when nothing is downstream. */
-const queryDownstreamTypes = (node: PatchNode, outSocket: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
+const queryDownstreamTypes = (node: PatchNode, outSocket: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term | null => {
     const linkIds = (node.out as Record<string, string[]>)[outSocket] ?? [];
     if (linkIds.length === 0) return null;
-    let result: SocketTypes.SocketRule | null = null;
+    let result: SocketTypes.Term | null = null;
     for (const linkId of linkIds) {
         const link = ctx.getLink(graphId, linkId);
         if (!link) continue;
         const neighbor = ctx.getNode(graphId, link.toNode);
         if (!neighbor) continue;
-        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
+        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", graphId, ctx);
         result = result === null ? st : SocketTypes.intersect(result, st);
     }
     return result;
 };
 
-const onConnect = (node: PatchNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-
-    if (direction === "in") {
-        // Something wired into our `in` — read its type and push it out the far side.
-        const base = pairBase(link.toSocket);
-        const upstream = queryUpstreamOutType(node, link.toSocket, graphId, ctx);
-        setPairTypes(node.id, base, { connectedType: upstream }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, outKey(base), "out", "constraintAdded");
-    } else {
-        // Something wired onto our `out` — intersect the consumer constraints back onto the `in`.
-        const base = pairBase(link.fromSocket);
-        const currentNode = ctx.getNode(graphId, node.id) as PatchNode | undefined;
-        if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, link.fromSocket, graphId, ctx);
-        const pair = getPair(currentNode, base);
-        if (downstream !== null && pair && !SocketTypes.equals(downstream, pair.resolvedInTypes)) {
-            setPairTypes(node.id, base, { resolvedInTypes: downstream }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, inKey(base), "in", "constraintAdded");
+// Resolve both halves of every pair from the live graph. Once an upstream drives a pair, both halves
+// report that concrete type; otherwise the IN accepts whatever downstream allows (ANY unconstrained)
+// and the OUT presents that same constraint (NONE when unconstrained — so it can flow anywhere, yet a
+// second, incompatible consumer can't jam the pair). Recomputed on every hook, stashed per-socket.
+const resolvePatch = (node: PatchNode, graphId: string, ctx: NodeTypes.MethodContext): { in: Record<string, SocketTypes.Term>; out: Record<string, SocketTypes.Term> } => {
+    const inMap: Record<string, SocketTypes.Term> = {};
+    const outMap: Record<string, SocketTypes.Term> = {};
+    for (const pair of node.payload.pairs) {
+        const connectedType = queryUpstreamOutType(node, inKey(pair.id), graphId, ctx);
+        const resolvedInTypes = queryDownstreamTypes(node, outKey(pair.id), graphId, ctx) ?? SocketTypes.ANY;
+        if (SocketTypes.project(connectedType).length > 0) {
+            inMap[inKey(pair.id)] = connectedType;
+            outMap[outKey(pair.id)] = connectedType;
+        } else {
+            inMap[inKey(pair.id)] = resolvedInTypes;
+            outMap[outKey(pair.id)] = SocketTypes.equals(resolvedInTypes, SocketTypes.ANY) ? SocketTypes.NONE : resolvedInTypes;
         }
     }
+    return { in: inMap, out: outMap };
 };
 
-const onDisconnect = (node: PatchNode, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction === "in") {
-        const base = pairBase(link.toSocket);
-        ctx.requestRefresh(graphId, node.id, outKey(base), "out", "constraintRemoved");
-        setPairTypes(node.id, base, { connectedType: SocketTypes.NONE }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, outKey(base), "out", "constraintAdded");
-    } else {
-        const base = pairBase(link.fromSocket);
-        ctx.requestRefresh(graphId, node.id, inKey(base), "in", "constraintRemoved");
-        const currentNode = ctx.getNode(graphId, node.id) as PatchNode | undefined;
-        if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, link.fromSocket, graphId, ctx);
-        setPairTypes(node.id, base, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, inKey(base), "in", "constraintAdded");
-    }
+const recompute = (node: PatchNode, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const current = ctx.getNode(graphId, node.id) as PatchNode | undefined;
+    if (!current) return;
+    commitSocketTypes(current, graphId, ctx, resolvePatch(current, graphId, ctx));
 };
 
-const onRefreshRequest = (node: PatchNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const currentNode = ctx.getNode(graphId, node.id) as PatchNode | undefined;
-    if (!currentNode) return;
-    const base = pairBase(socketId);
-    const pair = getPair(currentNode, base);
-    if (!pair) return;
+const onConnect = (node: PatchNode, _linkId: string, _direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => recompute(node, graphId, ctx);
+const onDisconnect = (node: PatchNode, _link: ArcaneGraph.Link, _direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => recompute(node, graphId, ctx);
+const onRefreshRequest = (node: PatchNode, _socketId: string, _side: "in" | "out", _reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => recompute(node, graphId, ctx);
 
-    if (side === "in") {
-        // Our upstream changed — re-read it and propagate the new type out the far side.
-        const newUpstream = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
-        if (!SocketTypes.equals(newUpstream, pair.connectedType)) {
-            setPairTypes(node.id, base, { connectedType: newUpstream }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, outKey(base), "out", reason);
-        }
-    } else {
-        // A downstream constraint changed — re-intersect and propagate back to our upstream.
-        const newInTypes = queryDownstreamTypes(currentNode, socketId, graphId, ctx) ?? SocketTypes.ANY;
-        if (!SocketTypes.equals(newInTypes, pair.resolvedInTypes)) {
-            setPairTypes(node.id, base, { resolvedInTypes: newInTypes }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, inKey(base), "in", reason);
-        }
-    }
-};
-
-const getSocketType = (node: NodeDefinitions.NodeFor<PatchDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const pair = getPair(node, pairBase(socketId));
-    if (!pair) return side === "in" ? SocketTypes.ANY : SocketTypes.NONE;
-
-    // Once an upstream drives the pair, both halves report that concrete type.
-    if (pair.connectedType.types.length > 0) return pair.connectedType;
-
-    if (side === "in") {
-        // Accept whatever the downstream consumers allow (ANY when unconstrained).
-        return pair.resolvedInTypes;
-    }
-    // OUT with no upstream: flow anywhere when unconstrained, else present the downstream
-    // constraint so a second, incompatible consumer can't jam the pair.
-    return SocketTypes.equals(pair.resolvedInTypes, SocketTypes.ANY) ? SocketTypes.NONE : pair.resolvedInTypes;
+const getSocketType = (node: NodeDefinitions.NodeFor<PatchDefinition>, socketId: string, side: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term => {
+    const stored = ctx.readSocketType(graphId, node.id, socketId, side);
+    if (stored) return stored;
+    // Unsolved (fresh pair / post-load, before any hook fired): an undriven, unconstrained pair
+    // accepts anything on its `in` and offers nothing on its `out`.
+    return side === "in" ? SocketTypes.ANY : SocketTypes.NONE;
 };
 
 // ─── Graph plumbing ──────────────────────────────────────────────────────────
@@ -443,8 +384,8 @@ const onInterject = (node: PatchNode, link: ArcaneGraph.Link, graphId: string, c
     if (!firstPair) return;
 
     ctx.removeLinks(graphId, link.id);
-    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, inKey(firstPair), link.type);
-    ctx.connect(graphId, node.id, link.toNode, outKey(firstPair), link.toSocket, link.type);
+    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, inKey(firstPair));
+    ctx.connect(graphId, node.id, link.toNode, outKey(firstPair), link.toSocket);
 };
 
 export const PatchNodeType: NodeTypes.Type<"patch", PatchDefinition> = {

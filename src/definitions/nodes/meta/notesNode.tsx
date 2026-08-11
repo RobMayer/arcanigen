@@ -7,24 +7,29 @@ import { DragMove } from "../../../components/wrappers/DragMove";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { AbstractInput } from "../../../components/abstract/Inputs";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { ContextPopup } from "../../../components/popups/ContextPopup";
 import { Project } from "../../../state/project";
 import { Session } from "../../../state/session";
 import { Resolver } from "../../../util/resolver";
 import { useGraphId } from "../../../state/graphId";
 import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type NotesDefinition = {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    inputs: {};
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    outputs: {};
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+const def = signature({
+    in: {},
+    out: {},
+});
+
+export type NotesDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
         text: string;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<NotesDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"notes", NotesDefinition> => {
     return {
@@ -199,10 +204,6 @@ const evaluate = (_node: NodeDefinitions.NodeFor<NotesDefinition>, _socket: neve
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<NotesDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return { types: [], mode: "and" };
-};
-
 export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
     type: "notes",
     displayName: "Note",
@@ -215,7 +216,8 @@ export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };
 
 // ─── Styled Components ──────────────────────────────────────────────────────

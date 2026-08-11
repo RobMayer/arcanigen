@@ -6,7 +6,8 @@ import styled from "styled-components";
 import { DragMove } from "../../../components/wrappers/DragMove";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { ContextPopup } from "../../../components/popups/ContextPopup";
 import { useStable } from "../../../util/hooks/useStable";
 import { Project } from "../../../state/project";
@@ -15,19 +16,23 @@ import { Resolver } from "../../../util/resolver";
 import { useGraphId } from "../../../state/graphId";
 import { Flavour, FLAVOUR_LABELS } from "../../../components/types";
 import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ContainerDefinition = {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    inputs: {};
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    outputs: {};
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+const def = signature({
+    in: {},
+    out: {},
+});
+
+export type ContainerDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
         width: number;
         height: number;
         flavour: Exclude<Flavour, "accent" | "inherit">;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ContainerDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"container", ContainerDefinition> => {
     return {
@@ -362,10 +367,6 @@ const evaluate = (_node: NodeDefinitions.NodeFor<ContainerDefinition>, _socket: 
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ContainerDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return { types: [], mode: "and" };
-};
-
 export const ContainerNodeType: NodeTypes.Type<"container", ContainerDefinition> = {
     type: "container",
     displayName: "Container",
@@ -378,7 +379,8 @@ export const ContainerNodeType: NodeTypes.Type<"container", ContainerDefinition>
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };
 
 // ─── Styled Components ──────────────────────────────────────────────────────

@@ -4,20 +4,25 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketIn } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { Project } from "../../../../state/project";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type ArrayStopAngleOutputDefinition = {
-    inputs: {
-        input: DataTypes.Use<"array<stop<angle>>">;
-    };
-    outputs: never;
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { input: $.arrayOf("stop:angle") },
+    out: {},
+});
+
+export type ArrayStopAngleOutputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (
     _input: Partial<NodeDefinitions.PayloadTypeOf<ArrayStopAngleOutputDefinition>>,
@@ -81,14 +86,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayStopAngleOutput", Arra
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ArrayStopAngleOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["array<stop<angle>>"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopAngleOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const ArrayStopAngleOutputType: NodeTypes.Type<"arrayStopAngleOutput", ArrayStopAngleOutputDefinition> = {
     type: "arrayStopAngleOutput",
     displayName: "Angle Stop Array Output",
@@ -104,5 +101,6 @@ export const ArrayStopAngleOutputType: NodeTypes.Type<"arrayStopAngleOutput", Ar
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -7,25 +7,26 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PathOpComposeDefinition = {
-    inputs: {
-        path: DataTypes.Use<"path">;
-        enabled: DataTypes.Use<"boolean">;
-        op: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"pathOp">;
-    };
-    payload: {
+const def = signature({
+    in: { path: "path", enabled: "boolean", op: "enum" },
+    out: { output: "pathOp" },
+});
+
+export type PathOpComposeDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         enabled: boolean;
-        op: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    };
-};
+        op: DataTypes.TypeOf<"enum">;
+    }
+>;
 
 const OP_OPTIONS = Enum.options(Enum.Common.pathOp);
 
@@ -108,25 +109,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathOpComposeDefinition>, socket
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PathOpComposeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    path: { types: ["path"], mode: "or" },
-    enabled: { types: ["boolean"], mode: "or" },
-    op: { types: ["enum"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PathOpComposeDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["pathOp"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathOpComposeDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PathOpComposeNodeType: NodeTypes.Type<"pathOpCompose", PathOpComposeDefinition> = {
     type: "pathOpCompose",
     displayName: "Compose Path Op",
@@ -139,5 +121,6 @@ export const PathOpComposeNodeType: NodeTypes.Type<"pathOpCompose", PathOpCompos
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

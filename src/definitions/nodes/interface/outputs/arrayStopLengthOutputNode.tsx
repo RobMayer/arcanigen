@@ -4,20 +4,25 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketIn } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { Project } from "../../../../state/project";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type ArrayStopLengthOutputDefinition = {
-    inputs: {
-        input: DataTypes.Use<"array<stop<length>>">;
-    };
-    outputs: never;
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { input: $.arrayOf("stop:length") },
+    out: {},
+});
+
+export type ArrayStopLengthOutputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (
     _input: Partial<NodeDefinitions.PayloadTypeOf<ArrayStopLengthOutputDefinition>>,
@@ -81,14 +86,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayStopLengthOutput", Arr
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ArrayStopLengthOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["array<stop<length>>"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopLengthOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const ArrayStopLengthOutputType: NodeTypes.Type<"arrayStopLengthOutput", ArrayStopLengthOutputDefinition> = {
     type: "arrayStopLengthOutput",
     displayName: "Length Stop Array Output",
@@ -104,5 +101,6 @@ export const ArrayStopLengthOutputType: NodeTypes.Type<"arrayStopLengthOutput", 
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

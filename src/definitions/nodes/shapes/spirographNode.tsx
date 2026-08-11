@@ -10,57 +10,62 @@ import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../featu
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { NumericString } from "../../datatypes/numericString";
 
-import { Spirograph } from "./spirographHelper";
+import { SpirographHelper } from "../../helpers/spirographHelper";
+import { $, signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type SpirographDefinition = {
-    inputs: {
-        spiroMode: DataTypes.Use<"enum">;
-        paramMode: DataTypes.Use<"enum">;
-        ringTeeth: DataTypes.Use<"integer">;
-        wheelTeeth: DataTypes.Use<"integer">;
-        penOffset: DataTypes.Use<"float" | "integer">;
-        radius: DataTypes.Use<"length">;
-        radiusMode: DataTypes.Use<"enum">;
-        ringRadius: DataTypes.Use<"length">;
-        wheelRadius: DataTypes.Use<"length">;
-        penRadius: DataTypes.Use<"length">;
-        turns: DataTypes.Use<"float" | "integer">;
-        markerStartShape: DataTypes.Use<"shape">;
-        markerEndShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-        eCircumradius: DataTypes.Use<"length">;
-        eApothem: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        spiroMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        paramMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        ringTeeth: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        wheelTeeth: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        penOffset: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        radiusMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        ringRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        wheelRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        penRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        turns: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        spiroMode: "enum",
+        paramMode: "enum",
+        ringTeeth: "integer",
+        wheelTeeth: "integer",
+        penOffset: $.oneOf("float", "integer"),
+        radius: "length",
+        radiusMode: "enum",
+        ringRadius: "length",
+        wheelRadius: "length",
+        penRadius: "length",
+        turns: $.oneOf("float", "integer"),
+        markerStartShape: "shape",
+        markerEndShape: "shape",
+        markerAlign: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", path: "path", eCircumradius: "length", eApothem: "length" },
+});
+
+export type SpirographDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        spiroMode: DataTypes.TypeOf<"enum">;
+        paramMode: DataTypes.TypeOf<"enum">;
+        ringTeeth: DataTypes.TypeOf<"integer">;
+        wheelTeeth: DataTypes.TypeOf<"integer">;
+        penOffset: DataTypes.TypeOf<"float">;
+        radius: DataTypes.TypeOf<"length">;
+        radiusMode: DataTypes.TypeOf<"enum">;
+        ringRadius: DataTypes.TypeOf<"length">;
+        wheelRadius: DataTypes.TypeOf<"length">;
+        penRadius: DataTypes.TypeOf<"length">;
+        turns: DataTypes.TypeOf<"float">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpirographDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"spirograph", SpirographDefinition> => {
     return {
@@ -249,8 +254,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpirographD
                 </SocketIn>
             </NodeAccordion>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
 
             <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eCircumradius|eApothem"}>
                 <SocketOut node={node} socketId={"eCircumradius"} label={"Circumradius"}>
@@ -331,10 +336,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpirographDefinition>, socket: k
 
         const ratio = wheelTeeth / ringTeeth;
         const mode = radiusMode === Enum.Common.spiroRadiusMode.MAJOR.value ? "major" : radiusMode === Enum.Common.spiroRadiusMode.MINOR.value ? "minor" : "mechanical";
-        R = Spirograph.gearedRingRadius(radius, mode, ratio, penOffset, inside);
+        R = SpirographHelper.gearedRingRadius(radius, mode, ratio, penOffset, inside);
         r = R * ratio;
         d = r * penOffset;
-        turns = Spirograph.closingTurns(ringTeeth, wheelTeeth);
+        turns = SpirographHelper.closingTurns(ringTeeth, wheelTeeth);
         closed = true;
     }
 
@@ -343,17 +348,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpirographDefinition>, socket: k
     }
 
     if (socket === "eCircumradius" || socket === "eApothem") {
-        const { circum, apothem } = Spirograph.figureMetrics({ ringRadius: R, wheelRadius: r, penDistance: d, inside });
+        const { circum, apothem } = SpirographHelper.figureMetrics({ ringRadius: R, wheelRadius: r, penDistance: d, inside });
         return { kind: "length", data: `${socket === "eCircumradius" ? circum : apothem}px` };
     }
 
     const samples = Math.min(MAX_SAMPLES, Math.max(32, Math.ceil(turns * SAMPLES_PER_TURN)));
 
-    const points = Spirograph.sample({ ringRadius: R, wheelRadius: r, penDistance: d, inside, turns, samples, closed });
-    const dPath = Spirograph.toPath(points, closed);
-    const maxR = Spirograph.maxRadius({ ringRadius: R, wheelRadius: r, penDistance: d, inside });
+    const points = SpirographHelper.sample({ ringRadius: R, wheelRadius: r, penDistance: d, inside, turns, samples, closed });
+    const dPath = SpirographHelper.toPath(points, closed);
+    const maxR = SpirographHelper.maxRadius({ ringRadius: R, wheelRadius: r, penDistance: d, inside });
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
     const preview = { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR };
 
     if (socket === "path") {
@@ -364,7 +369,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpirographDefinition>, socket: k
     }
 
     if (socket === "output") {
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
 
         const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
         const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
@@ -394,41 +399,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpirographDefinition>, socket: k
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<SpirographDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    spiroMode: { types: ["enum"], mode: "or" },
-    paramMode: { types: ["enum"], mode: "or" },
-    ringTeeth: { types: ["integer"], mode: "or" },
-    wheelTeeth: { types: ["integer"], mode: "or" },
-    penOffset: { types: ["float", "integer"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    radiusMode: { types: ["enum"], mode: "or" },
-    ringRadius: { types: ["length"], mode: "or" },
-    wheelRadius: { types: ["length"], mode: "or" },
-    penRadius: { types: ["length"], mode: "or" },
-    turns: { types: ["float", "integer"], mode: "or" },
-    markerStartShape: { types: ["shape"], mode: "or" },
-    markerEndShape: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<SpirographDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-    eCircumradius: { types: ["length"], mode: "and" },
-    eApothem: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<SpirographDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const SpirographNodeType: NodeTypes.Type<"spirograph", SpirographDefinition> = {
     type: "spirograph",
     displayName: "Spirograph",
@@ -441,5 +411,6 @@ export const SpirographNodeType: NodeTypes.Type<"spirograph", SpirographDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

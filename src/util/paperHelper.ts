@@ -1,6 +1,6 @@
 import paper from "paper/dist/paper-core";
 import { SVGPath } from "../types";
-import { DataTypes } from "../definitions/betterTypes";
+import { DataTypes } from "../definitions/dataTypes";
 
 export namespace PaperHelper {
     let initialized = false;

@@ -6,23 +6,32 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type FromPathDefinition = {
-    inputs: {
-        path: DataTypes.Use<"path">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        path: "path",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
+    },
+    out: { output: "shape" },
+});
+
+export type FromPathDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FromPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"fromPath", FromPathDefinition> => {
     return {
@@ -90,8 +99,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FromPathDef
             <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -117,7 +126,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<FromPathDefinition>, socket: key
     if (!pathVal) return null;
 
     const { d, transform: inputTransform, preview } = pathVal.data;
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     // Combine input path's transform with this node's transforms
     const allTransforms = [inputTransform, ...transforms].filter(Boolean).join(" ");
@@ -127,30 +136,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<FromPathDefinition>, socket: key
         data: {
             type: "path",
             d,
-            paint: Stylings.evaluate(node, context),
+            paint: StylingPrefab.evaluate(node, context),
             transform: allTransforms,
             preview: { x: preview.x + translateX, y: preview.y + translateY, w: preview.w, h: preview.h },
         },
     };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<FromPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    path: { types: ["path"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<FromPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<FromPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
 };
 
 export const FromPathNodeType: NodeTypes.Type<"fromPath", FromPathDefinition> = {
@@ -165,5 +155,6 @@ export const FromPathNodeType: NodeTypes.Type<"fromPath", FromPathDefinition> = 
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -1,105 +1,43 @@
 import { nanoid } from "nanoid";
-import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, constrainForPartner, constrainForOutput, dominantKind, wrapResult, extractSingle, numericCanInterject } from "./numericMath";
+import { dominantKind, wrapResult, extractSingle } from "../../helpers/mathHelper";
+import { SocketTypes } from "../../socketTypes";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ClampDefinition = {
-    inputs: {
-        input: DataTypes.Use<"float">;
-        min: DataTypes.Use<"float">;
-        max: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"float">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        connectedTypeInput: SocketTypes.SocketRule;
-        connectedTypeMin: SocketTypes.SocketRule;
-        connectedTypeMax: SocketTypes.SocketRule;
-        resolvedInTypes: SocketTypes.SocketRule;
-    };
-};
+const def = signature({
+    args: { T: $.combine.NUMERIC_ADDABLE },
+    in: ({ T }) => ({ input: T, min: T, max: T }),
+    out: ({ T }) => ({ output: T }),
+});
 
-type ClampNode = NodeDefinitions.BuiltNodeOf<"clamp", ClampDefinition>;
+export type ClampDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: string;
+    }
+>;
 
-const SOCKET_KEYS = ["input", "min", "max"] as const;
-type SocketKey = (typeof SOCKET_KEYS)[number];
-const PAYLOAD_KEY: Record<SocketKey, "connectedTypeInput" | "connectedTypeMin" | "connectedTypeMax"> = {
-    input: "connectedTypeInput",
-    min: "connectedTypeMin",
-    max: "connectedTypeMax",
-};
-
-const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>, id: string = nanoid()): ClampNode => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"clamp", ClampDefinition> => {
     return {
         id,
         in: { input: null, min: null, max: null },
         out: { output: [] },
         payload: {
             label: "",
-            connectedTypeInput: SocketTypes.NONE,
-            connectedTypeMin: SocketTypes.NONE,
-            connectedTypeMax: SocketTypes.NONE,
-            resolvedInTypes: SocketTypes.ANY,
         },
         type: "clamp",
     };
-};
-
-/** Effective type for one socket, considering the other two as partners */
-const effectiveInputType = (
-    myConnected: SocketTypes.SocketRule,
-    partnerA: SocketTypes.SocketRule,
-    partnerB: SocketTypes.SocketRule,
-    resolvedInTypes: SocketTypes.SocketRule,
-): SocketTypes.SocketRule => {
-    if (myConnected.types.length > 0) return myConnected;
-    // Forward constraint: intersection of both partners' constraints
-    const fwdA = constrainForPartner(partnerA);
-    const fwdB = constrainForPartner(partnerB);
-    const forward = SocketTypes.intersect(fwdA, fwdB);
-    // Backward: use the "best" partner (first connected one) for output constraint
-    const bestPartner = partnerA.types.length > 0 ? partnerA : partnerB;
-    const backward = constrainForOutput(resolvedInTypes, bestPartner);
-    return SocketTypes.intersect(forward, backward);
-};
-
-const computeOutputType3 = (a: SocketTypes.SocketRule, b: SocketTypes.SocketRule, c: SocketTypes.SocketRule): SocketTypes.SocketRule => {
-    if (a.types.length === 0 || b.types.length === 0 || c.types.length === 0) return NUMERIC_TYPES;
-    const result = new Set<DataTypes.Kind>();
-    for (const ak of a.types) {
-        for (const bk of b.types) {
-            for (const ck of c.types) {
-                const d = dominantKind(dominantKind(ak, bk), ck) as DataTypes.Kind;
-                result.add(d);
-            }
-        }
-    }
-    return { types: [...result].sort(), mode: "or" };
-};
-
-const queryDownstreamTypes = (node: ClampNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
-    const linkIds = node.out.output;
-    if (linkIds.length === 0) return null;
-    let result: SocketTypes.SocketRule | null = null;
-    for (const linkId of linkIds) {
-        const link = ctx.getLink(graphId, linkId);
-        if (!link) continue;
-        const neighbor = ctx.getNode(graphId, link.toNode);
-        if (!neighbor) continue;
-        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
-        result = result === null ? st : SocketTypes.intersect(result, st);
-    }
-    return result;
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
@@ -149,118 +87,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ClampDefinition>, socket: "outpu
     return null;
 };
 
-const setPayload = (nodeId: string, updates: Partial<ClampDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const current = ctx.getNode(graphId, nodeId);
-    if (!current) return;
-    ctx.setNode(graphId, nodeId, {
-        ...current,
-        payload: { ...current.payload, ...updates },
-    });
-};
-
-const onConnect = (node: ClampNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-
-    if (direction === "in") {
-        const socket = link.toSocket as SocketKey;
-        const upstreamType = queryUpstreamOutType(node, socket, graphId, ctx);
-        setPayload(node.id, { [PAYLOAD_KEY[socket]]: upstreamType }, graphId, ctx);
-
-        for (const other of SOCKET_KEYS) {
-            if (other !== socket) ctx.requestRefresh(graphId, node.id, other, "in", "constraintAdded");
-        }
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else {
-        const currentNode = ctx.getNode(graphId, node.id) as ClampNode | undefined;
-        if (!currentNode) return;
-        const downstreamTypes = queryDownstreamTypes(currentNode, graphId, ctx);
-        if (downstreamTypes !== null) {
-            const newInTypes = SocketTypes.intersect(currentNode.payload.resolvedInTypes, downstreamTypes);
-            if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
-                setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
-                for (const s of SOCKET_KEYS) ctx.requestRefresh(graphId, node.id, s, "in", "constraintAdded");
-            }
-        }
-    }
-};
-
-const onDisconnect = (
-    node: ClampNode,
-    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
-    direction: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    if (direction === "in") {
-        const socket = link.toSocket as SocketKey;
-        for (const other of SOCKET_KEYS) {
-            if (other !== socket) ctx.requestRefresh(graphId, node.id, other, "in", "constraintRemoved");
-        }
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
-
-        setPayload(node.id, { [PAYLOAD_KEY[socket]]: SocketTypes.NONE }, graphId, ctx);
-
-        for (const other of SOCKET_KEYS) {
-            if (other !== socket) ctx.requestRefresh(graphId, node.id, other, "in", "constraintAdded");
-        }
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else {
-        for (const s of SOCKET_KEYS) ctx.requestRefresh(graphId, node.id, s, "in", "constraintRemoved");
-
-        const currentNode = ctx.getNode(graphId, node.id) as ClampNode | undefined;
-        if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, graphId, ctx);
-        setPayload(node.id, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
-
-        for (const s of SOCKET_KEYS) ctx.requestRefresh(graphId, node.id, s, "in", "constraintAdded");
-    }
-};
-
-const onRefreshRequest = (node: ClampNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const currentNode = ctx.getNode(graphId, node.id) as ClampNode | undefined;
-    if (!currentNode) return;
-
-    if (side === "in") {
-        const socket = socketId as SocketKey;
-        const newUpstreamType = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
-        const oldType = currentNode.payload[PAYLOAD_KEY[socket]];
-
-        if (!SocketTypes.equals(newUpstreamType, oldType)) {
-            setPayload(node.id, { [PAYLOAD_KEY[socket]]: newUpstreamType }, graphId, ctx);
-            for (const other of SOCKET_KEYS) {
-                if (other !== socket) ctx.requestRefresh(graphId, node.id, other, "in", reason);
-            }
-            ctx.requestRefresh(graphId, node.id, "output", "out", reason);
-        }
-    } else {
-        const newInTypes = queryDownstreamTypes(currentNode, graphId, ctx) ?? SocketTypes.ANY;
-        if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
-            setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
-            for (const s of SOCKET_KEYS) ctx.requestRefresh(graphId, node.id, s, "in", reason);
-        }
-    }
-};
-
-const getSocketType = (node: NodeDefinitions.NodeFor<ClampDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const { connectedTypeInput, connectedTypeMin, connectedTypeMax, resolvedInTypes } = node.payload;
-    const eInput = effectiveInputType(connectedTypeInput, connectedTypeMin, connectedTypeMax, resolvedInTypes);
-    const eMin = effectiveInputType(connectedTypeMin, connectedTypeInput, connectedTypeMax, resolvedInTypes);
-    const eMax = effectiveInputType(connectedTypeMax, connectedTypeInput, connectedTypeMin, resolvedInTypes);
-    switch (socketId) {
-        case "input":
-            return eInput;
-        case "min":
-            return eMin;
-        case "max":
-            return eMax;
-        case "output":
-            return computeOutputType3(eInput, eMin, eMax);
-        default:
-            return NUMERIC_TYPES;
-    }
-};
-
 export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     type: "clamp",
     displayName: "Clamp",
@@ -273,10 +99,8 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
-    onConnect,
-    onDisconnect,
-    onRefreshRequest,
-    canInterject: numericCanInterject,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.NUMERIC, SocketTypes.NUMERIC),
     onInterject: passthroughInterject("input", "output"),
 };

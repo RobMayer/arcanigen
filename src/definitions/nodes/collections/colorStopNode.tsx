@@ -5,7 +5,8 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -13,23 +14,23 @@ import { Color } from "../../datatypes/color";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { EmptyOr } from "../../../util/misc";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ColorStopBreakoutDefinition = {
-    inputs: {
-        value: DataTypes.Use<"color">;
-        position: DataTypes.Use<"float">;
-        enabled: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"stop<color>">;
-    };
-    payload: {
+const def = signature({
+    in: { value: "color", position: "float", enabled: "boolean" },
+    out: { output: "stop:color" },
+});
+
+export type ColorStopBreakoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         value: Color.Type;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorStopBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorStop", ColorStopBreakoutDefinition> => {
     return {
@@ -80,14 +81,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorStopBr
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, outSocket: keyof ColorStopBreakoutDefinition["outputs"], _deps: AllDeps): (keyof ColorStopBreakoutDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>,
+    outSocket: keyof ColorStopBreakoutDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof ColorStopBreakoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ["value", "position", "enabled"];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, inSocket: keyof ColorStopBreakoutDefinition["inputs"], _deps: AllDeps): (keyof ColorStopBreakoutDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>,
+    inSocket: keyof ColorStopBreakoutDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof ColorStopBreakoutDefinition["outputs"])[] => {
     if (inSocket === "value" || inSocket === "position" || inSocket === "enabled") {
         return ["output"];
     }
@@ -102,26 +111,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, so
     const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
     const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
-        kind: "stop<color>",
+        kind: "stop:color",
         data: {
             value,
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },
     };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<ColorStopBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["color"], mode: "and" },
-    position: { types: ["float"], mode: "and" },
-    enabled: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorStopBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return { types: ["stop<color>"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const ColorStopNodeType: NodeTypes.Type<"colorStop", ColorStopBreakoutDefinition> = {
@@ -136,5 +132,6 @@ export const ColorStopNodeType: NodeTypes.Type<"colorStop", ColorStopBreakoutDef
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

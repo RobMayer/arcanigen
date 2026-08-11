@@ -10,36 +10,39 @@ import { RadioButton } from "../../../components/buttons/RadioButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { ICONS } from "../../../components/Icon";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { NumericString } from "../../datatypes/numericString";
 import { EmptyOr } from "../../../util/misc";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type SequencerDefinition = {
-    inputs: {
-        sequence: DataTypes.Use<"sequence">;
-        mode: DataTypes.Use<"enum">;
-        reverseSequence: DataTypes.Use<"boolean">;
-        reverseSteps: DataTypes.Use<"boolean">;
-        offset: DataTypes.Use<"integer">;
-        [step: `step_${string}`]: DataTypes.Any;
-    };
-    outputs: {
-        output: DataTypes.Any;
-    };
-    payload: {
+const def = signature({
+    args: { S: $.each($.ANY) },
+    in: ({ S }) => ({
+        sequence: "sequence",
+        mode: "enum",
+        reverseSequence: "boolean",
+        reverseSteps: "boolean",
+        offset: "integer",
+        "step_*": S,
+    }),
+    out: ({ S }) => ({ output: S }),
+});
+
+export type SequencerDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        mode: DataTypes.TypeOf<"enum">;
         reverseSequence: boolean;
         reverseSteps: boolean;
         offset: EmptyOr<NumericString.Type>;
-        resolvedOutTypes: SocketTypes.SocketRule;
-        resolvedInTypes: SocketTypes.SocketRule;
         steps: { socket: string }[];
-    };
-};
+    }
+>;
 
 const SEQUENCER_MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 
@@ -66,8 +69,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<SequencerDefinition
             reverseSequence: input.reverseSequence ?? false,
             reverseSteps: input.reverseSteps ?? false,
             offset: input.offset ?? "0",
-            resolvedOutTypes: SocketTypes.NONE,
-            resolvedInTypes: SocketTypes.ANY,
             steps: [{ socket: s0 }, { socket: s1 }],
         },
         type: "sequencer",
@@ -208,7 +209,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     // Pipeline step 2: Offset
     idx = (((idx + offset) % count) + count) % count;
 
-    // Pipeline step 3: Mode maps idx (0..count-1) → stepIdx (0..socketCount-1)
+    // Pipeline step 3: Mode maps idx (0..count-1) -> stepIdx (0..socketCount-1)
     let stepIdx: number | null;
     switch (modeKey) {
         case "WRAP":
@@ -246,164 +247,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     return context.resolve(node.id, stepSocket, restSeqData);
 };
 
-// --- Helpers ---
-
-type SeqNode = NodeDefinitions.BuiltNodeOf<"sequencer", SequencerDefinition>;
-
-const isStepSocket = (socket: string, steps: SequencerDefinition["payload"]["steps"]): boolean => {
-    return steps.some((s) => s.socket === socket);
-};
-
-const queryUpstreamType = (node: SeqNode, socketId: string, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
-    const linkId = (node.in as Record<string, string | null>)[socketId];
-    if (!linkId) return null;
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return null;
-    const neighbor = ctx.getNode(graphId, link.fromNode);
-    if (!neighbor) return null;
-    return NodeTypes.getSocketType(neighbor, link.fromSocket, "out", ctx);
-};
-
-const queryDownstreamTypes = (node: SeqNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
-    const linkIds = (node.out as Record<string, string[]>)["output"];
-    if (!linkIds || linkIds.length === 0) return null;
-    let result: SocketTypes.SocketRule | null = null;
-    for (const linkId of linkIds) {
-        const link = ctx.getLink(graphId, linkId);
-        if (!link) continue;
-        const neighbor = ctx.getNode(graphId, link.toNode);
-        if (!neighbor) continue;
-        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
-        result = result === null ? st : SocketTypes.intersect(result, st);
-    }
-    return result;
-};
-
-const recomputeOutTypes = (node: SeqNode, excludeSocket: string | null, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    let result = SocketTypes.NONE;
-    for (const s of node.payload.steps) {
-        if (s.socket !== excludeSocket) {
-            const t = queryUpstreamType(node, s.socket, graphId, ctx);
-            if (t !== null) result = SocketTypes.union(result, t);
-        }
-    }
-    return result;
-};
-
-const recomputeInTypes = (node: SeqNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const result = queryDownstreamTypes(node, graphId, ctx);
-    return result ?? SocketTypes.ANY;
-};
-
-const setPayloadTypes = (nodeId: string, resolvedOutTypes: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const n = ctx.getNode(graphId, nodeId);
-    if (!n) return;
-    ctx.setNode(graphId, nodeId, {
-        ...n,
-        payload: { ...n.payload, resolvedOutTypes, resolvedInTypes } as NodeDefinitions.NodeFor<NodeDefinitions.Any>["payload"],
-    });
-};
-
-const propagateToStepIns = (nodeId: string, steps: SequencerDefinition["payload"]["steps"], reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    for (const s of steps) {
-        ctx.requestRefresh(graphId, nodeId, s.socket, "in", reason);
-    }
-};
-
-// --- Lifecycle hooks ---
-
-const onConnect = (node: SeqNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-    const socket = direction === "out" ? link.fromSocket : link.toSocket;
-
-    if (direction === "in" && isStepSocket(socket, node.payload.steps)) {
-        const upstreamType = queryUpstreamType(node, socket, graphId, ctx);
-        if (upstreamType !== null && upstreamType.types.length > 0) {
-            const newOutTypes = SocketTypes.union(node.payload.resolvedOutTypes, upstreamType);
-            if (!SocketTypes.equals(newOutTypes, node.payload.resolvedOutTypes)) {
-                setPayloadTypes(node.id, newOutTypes, node.payload.resolvedInTypes, graphId, ctx);
-                ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-            }
-        }
-    } else if (direction === "out" && socket === "output") {
-        const downstreamTypes = queryDownstreamTypes(node, graphId, ctx);
-        if (downstreamTypes !== null) {
-            const newInTypes = SocketTypes.intersect(node.payload.resolvedInTypes, downstreamTypes);
-            if (!SocketTypes.equals(newInTypes, node.payload.resolvedInTypes)) {
-                setPayloadTypes(node.id, node.payload.resolvedOutTypes, newInTypes, graphId, ctx);
-                propagateToStepIns(node.id, node.payload.steps, "constraintAdded", graphId, ctx);
-            }
-        }
-    }
-};
-
-const onDisconnect = (node: SeqNode, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const socket = direction === "out" ? link.fromSocket : link.toSocket;
-
-    if (direction === "in" && isStepSocket(socket, node.payload.steps)) {
-        // Phase 1: propagate constraintRemoved downstream
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
-
-        // Phase 2: recompute from remaining step INs
-        const refreshedNode = ctx.getNode(graphId, node.id) as SeqNode | undefined;
-        if (!refreshedNode) return;
-        const newOutTypes = recomputeOutTypes(refreshedNode, null, graphId, ctx);
-        setPayloadTypes(node.id, newOutTypes, refreshedNode.payload.resolvedInTypes, graphId, ctx);
-
-        // Phase 3: propagate constraintAdded downstream
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else if (direction === "out" && socket === "output") {
-        // Phase 1: propagate constraintRemoved to step IN upstreams
-        propagateToStepIns(node.id, node.payload.steps, "constraintRemoved", graphId, ctx);
-
-        // Phase 2: recompute from remaining downstreams
-        const refreshedNode = ctx.getNode(graphId, node.id) as SeqNode | undefined;
-        if (!refreshedNode) return;
-        const newInTypes = recomputeInTypes(refreshedNode, graphId, ctx);
-        setPayloadTypes(node.id, refreshedNode.payload.resolvedOutTypes, newInTypes, graphId, ctx);
-
-        // Phase 3: propagate constraintAdded to step IN upstreams
-        propagateToStepIns(node.id, refreshedNode.payload.steps, "constraintAdded", graphId, ctx);
-    }
-};
-
-const onRefreshRequest = (node: SeqNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const currentNode = ctx.getNode(graphId, node.id) as SeqNode | undefined;
-    if (!currentNode) return;
-
-    if (side === "in" && isStepSocket(socketId, currentNode.payload.steps)) {
-        if (reason === "constraintRemoved") {
-            const newOutTypes = recomputeOutTypes(currentNode, socketId, graphId, ctx);
-            setPayloadTypes(node.id, newOutTypes, currentNode.payload.resolvedInTypes, graphId, ctx);
-        } else {
-            const newOutTypes = recomputeOutTypes(currentNode, null, graphId, ctx);
-            setPayloadTypes(node.id, newOutTypes, currentNode.payload.resolvedInTypes, graphId, ctx);
-        }
-        ctx.requestRefresh(graphId, node.id, "output", "out", reason);
-    } else if (side === "out" && socketId === "output") {
-        const newInTypes = recomputeInTypes(currentNode, graphId, ctx);
-        setPayloadTypes(node.id, currentNode.payload.resolvedOutTypes, newInTypes, graphId, ctx);
-        propagateToStepIns(node.id, currentNode.payload.steps, reason, graphId, ctx);
-    }
-};
-
-// --- Socket types ---
-
-const SOCKETTYPES_IN: { [key in keyof Required<Pick<SequencerDefinition["inputs"], "sequence" | "mode" | "reverseSequence" | "reverseSteps" | "offset">>]: SocketTypes.SocketRule } = {
-    sequence: { types: ["sequence"], mode: "and" },
-    mode: { types: ["enum"], mode: "and" },
-    reverseSequence: { types: ["boolean"], mode: "and" },
-    reverseSteps: { types: ["boolean"], mode: "and" },
-    offset: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socketId: string, side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    if (side === "out" && socketId === "output") return node.payload.resolvedOutTypes;
-    if (side === "in" && socketId.startsWith("step_")) return node.payload.resolvedInTypes;
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition> = {
     type: "sequencer",
     displayName: "Sequencer",
@@ -416,8 +259,6 @@ export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition>
     contributesTo,
     evaluate,
     Controls,
-    onConnect,
-    onDisconnect,
-    onRefreshRequest,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

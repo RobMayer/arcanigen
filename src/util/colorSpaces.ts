@@ -134,7 +134,7 @@ const HWK: ColorSpaceConverter = {
     },
     toRGB: (c) => {
         const [h, w, k] = c;
-        // HWK → RGB: start with pure hue, then mix with white and black
+        // HWK -> RGB: start with pure hue, then mix with white and black
         const hNorm = h / 360;
         const r1 = hueToRGB(0, 1, hNorm + 1 / 3);
         const g1 = hueToRGB(0, 1, hNorm);
@@ -232,21 +232,21 @@ const CIELAB_EPSILON = 216 / 24389;
 const CIELAB_KAPPA = 24389 / 27;
 
 const rgbToXYZ = (r: number, g: number, b: number): [number, number, number] => {
-    // sRGB → linear
+    // sRGB -> linear
     const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
     const rl = toLinear(r);
     const gl = toLinear(g);
     const bl = toLinear(b);
-    // Linear RGB → XYZ (sRGB D65 matrix)
+    // Linear RGB -> XYZ (sRGB D65 matrix)
     return [0.4124564 * rl + 0.3575761 * gl + 0.1804375 * bl, 0.2126729 * rl + 0.7151522 * gl + 0.072175 * bl, 0.0193339 * rl + 0.119192 * gl + 0.9503041 * bl];
 };
 
 const xyzToRGB = (x: number, y: number, z: number): [number, number, number] => {
-    // XYZ → linear RGB
+    // XYZ -> linear RGB
     const rl = 3.2404542 * x - 1.5371385 * y - 0.4985314 * z;
     const gl = -0.969266 * x + 1.8760108 * y + 0.041556 * z;
     const bl = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z;
-    // linear → sRGB
+    // linear -> sRGB
     const toSRGB = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
     return [toSRGB(rl), toSRGB(gl), toSRGB(bl)];
 };
@@ -277,7 +277,7 @@ const CIELAB: ColorSpaceConverter = {
 // Oklab M1 and M2 matrices (from Björn Ottosson's paper)
 const OKLAB: ColorSpaceConverter = {
     fromRGB: (r, g, b) => {
-        // sRGB → linear
+        // sRGB -> linear
         const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
         const rl = toLinear(r);
         const gl = toLinear(g);
@@ -308,7 +308,7 @@ const OKLAB: ColorSpaceConverter = {
         const gl = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
         const bl = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.707614701 * s3;
 
-        // linear → sRGB
+        // linear -> sRGB
         const toSRGB = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
         return [toSRGB(rl), toSRGB(gl), toSRGB(bl)];
     },
@@ -379,9 +379,9 @@ export const lerpAngle = (hA: number, hB: number, t: number, traversal: number):
     hB = ((hB % 360) + 360) % 360;
 
     // Forward (CW) delta: how far CW from A to B
-    const cwDelta = ((hB - hA) % 360 + 360) % 360;
+    const cwDelta = (((hB - hA) % 360) + 360) % 360;
     // Backward (CCW) delta: how far CCW from A to B
-    const ccwDelta = ((hA - hB) % 360 + 360) % 360;
+    const ccwDelta = (((hA - hB) % 360) + 360) % 360;
 
     let delta: number;
 
@@ -408,7 +408,7 @@ export const lerpAngle = (hA: number, hB: number, t: number, traversal: number):
             delta = cwDelta <= 180 ? cwDelta : -ccwDelta;
     }
 
-    return ((hA + delta * t) % 360 + 360) % 360;
+    return (((hA + delta * t) % 360) + 360) % 360;
 };
 
 // ============================================================================

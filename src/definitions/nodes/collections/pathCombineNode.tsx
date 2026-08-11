@@ -9,28 +9,37 @@ import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/s
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PathCombineDefinition = {
-    inputs: {
-        pathOps: DataTypes.Use<"array<pathOp>">;
-        [pathSocket: `path_${string}`]: DataTypes.Use<"path" | "pathOp">;
-    };
-    outputs: {
-        output: DataTypes.Use<"path">;
-        pathOpArray: DataTypes.Use<"array<pathOp>">;
-        operationCount: DataTypes.Use<"integer">;
-        enabledCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        pathOps: $.arrayOf("pathOp"),
+        "path_*": $.oneOf("path", "pathOp"),
+    },
+    out: {
+        output: "path",
+        pathOpArray: $.arrayOf("pathOp"),
+        operationCount: "integer",
+        enabledCount: "integer",
+    },
+});
+
+export type PathCombineDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         paths: { socket: string; enabled: boolean; op: number }[];
-    };
-};
+    }
+>;
 
 const OP_OPTIONS = Enum.options(Enum.Common.pathOp);
 
@@ -198,11 +207,12 @@ const PathEntry = ({
     handleReorderPath: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(node.in[entry.socket]);
+    const linkType = Project.useLinkType(useGraphId(), theLink);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
     // A connected pathOp carries its own op/enabled, so freeze the row's controls (mirrors Layers).
-    const overridden = theLink?.type === "pathOp";
+    const overridden = linkType === "pathOp";
 
     const handleDragStart = useCallback(
         (e: DragEvent) => {
@@ -301,24 +311,25 @@ const DragGrip = styled.div`
     }
 `;
 
+// Supersocket override: connecting the whole `array<pathOp>` clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"pathCombine", PathCombineDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    // Only react when the supersocket itself is connected.
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "pathOps") return;
-
-    // Clear all individual path_* links — the supersocket now drives the fold.
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("path_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "pathOps") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("path_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-    if (linkIdsToRemove.length === 0) return;
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 const dependsOn = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, outSocket: keyof PathCombineDefinition["outputs"], _deps: AllDeps): (keyof PathCombineDefinition["inputs"])[] => {
@@ -355,7 +366,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
         if (supersocketEval) {
             return { kind: "array<pathOp>", data: supersocketEval.data };
         }
-        const pathOpData: { path: DataTypes.TypeOf<DataTypes.Use<"path">> | null; enabled: boolean | null; op: number | null }[] = [];
+        const pathOpData: { path: DataTypes.TypeOf<"path"> | null; enabled: boolean | null; op: number | null }[] = [];
         for (const row of node.payload.paths) {
             const resolved = context.resolve<"pathOp">(node.id, row.socket) as DataTypes.AnyEval | null;
             if (resolved && resolved.kind === "pathOp") {
@@ -371,7 +382,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
 
     if (socket !== "output") return null;
 
-    const entries: { op: PaperHelper.PathOpKind; path: DataTypes.TypeOf<DataTypes.Use<"path">> | null }[] = [];
+    const entries: { op: PaperHelper.PathOpKind; path: DataTypes.TypeOf<"path"> | null }[] = [];
 
     // Supersocket path: fold the provided array<pathOp> directly.
     const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
@@ -385,7 +396,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
         for (const row of node.payload.paths) {
             const resolved = context.resolve<"pathOp">(node.id, row.socket) as DataTypes.AnyEval | null;
 
-            let path: DataTypes.TypeOf<DataTypes.Use<"path">> | null;
+            let path: DataTypes.TypeOf<"path"> | null;
             let enabled: boolean;
             let op: number;
             if (resolved && resolved.kind === "pathOp") {
@@ -412,31 +423,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
     return PaperHelper.combine(entries);
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        if (socketId === "operationCount" || socketId === "enabledCount") {
-            return { types: ["integer"], mode: "and" };
-        }
-        if (socketId === "pathOpArray") {
-            return { types: ["array<pathOp>"], mode: "and" };
-        }
-        return { types: ["path"], mode: "and" };
-    }
-    if (socketId === "pathOps") {
-        return { types: ["array<pathOp>"], mode: "or" };
-    }
-    return { types: ["path", "pathOp"], mode: "or" };
-};
-
 const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
     const fromNode = ctx.getNode(graphId, link.fromNode);
     const toNode = ctx.getNode(graphId, link.toNode);
     if (!fromNode || !toNode) return false;
 
-    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
-    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
-    const pathIn: SocketTypes.SocketRule = { types: ["path"], mode: "or" };
-    const pathOut: SocketTypes.SocketRule = { types: ["path"], mode: "and" };
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
+    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", graphId, ctx);
+    const pathIn: SocketTypes.Term = SocketTypes.of("path");
+    const pathOut: SocketTypes.Term = SocketTypes.of("path");
 
     return SocketTypes.canFlow(sourceOut, pathIn) && SocketTypes.canFlow(pathOut, destIn);
 };
@@ -446,8 +441,8 @@ const onInterject = (node: NodeDefinitions.BuiltNodeOf<"pathCombine", PathCombin
     if (!firstSocket) return;
 
     ctx.removeLinks(graphId, link.id);
-    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, firstSocket, link.type);
-    ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket, "path");
+    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, firstSocket);
+    ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket);
 };
 
 export const PathCombineNodeType: NodeTypes.Type<"pathCombine", PathCombineDefinition> = {
@@ -462,8 +457,9 @@ export const PathCombineNodeType: NodeTypes.Type<"pathCombine", PathCombineDefin
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
     canInterject,
     onInterject,
-    getSocketType,
 };

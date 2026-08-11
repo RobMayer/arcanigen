@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Enum } from "../../datatypes/enum";
@@ -7,9 +7,11 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
-import { Stylings } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
 import { Paint, Shape } from "../../shapeTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
@@ -19,28 +21,35 @@ import { TextInput } from "../../../components/inputs/TextInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Length } from "../../datatypes/length";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const STROKE_CAP_OPTIONS = Enum.options(Enum.Common.strokeCap);
 const STROKE_JOIN_OPTIONS = Enum.options(Enum.Common.strokeJoin);
 const PAINT_ORDER_OPTIONS = Enum.options(Enum.Common.paintOrder);
 
-export type RestyleDefinition = {
-    inputs: {
-        shape: DataTypes.Use<"shape">;
-        overrideStrokeColor: DataTypes.Use<"boolean">;
-        overrideStrokeWidth: DataTypes.Use<"boolean">;
-        overrideStrokeCap: DataTypes.Use<"boolean">;
-        overrideStrokeJoin: DataTypes.Use<"boolean">;
-        overrideStrokeDash: DataTypes.Use<"boolean">;
-        overrideStrokeDashOffset: DataTypes.Use<"boolean">;
-        overrideFillColor: DataTypes.Use<"boolean">;
-        overridePaintOrder: DataTypes.Use<"boolean">;
-        overrideOpacity: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        shape: "shape",
+        overrideStrokeColor: "boolean",
+        overrideStrokeWidth: "boolean",
+        overrideStrokeCap: "boolean",
+        overrideStrokeJoin: "boolean",
+        overrideStrokeDash: "boolean",
+        overrideStrokeDashOffset: "boolean",
+        overrideFillColor: "boolean",
+        overridePaintOrder: "boolean",
+        overrideOpacity: "boolean",
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
+    },
+    out: { output: "shape" },
+});
+
+export type RestyleDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         overrideStrokeColor: boolean;
         overrideStrokeWidth: boolean;
@@ -51,8 +60,8 @@ export type RestyleDefinition = {
         overrideFillColor: boolean;
         overridePaintOrder: boolean;
         overrideOpacity: boolean;
-    } & Stylings.Definition["payload"];
-};
+    } & StylingPrefab.Definition["payload"]
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<RestyleDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"restyle", RestyleDefinition> => {
     return {
@@ -119,18 +128,22 @@ type OverrideFlags = {
     opacity: boolean;
 };
 
-const OVERRIDE_KEYS: { socket: keyof Stylings.Definition["inputs"]; flag: keyof OverrideFlags; payloadFlag: keyof RestyleDefinition["payload"]; overrideSocket: keyof RestyleDefinition["inputs"] }[] =
-    [
-        { socket: "strokeColor", flag: "strokeColor", payloadFlag: "overrideStrokeColor", overrideSocket: "overrideStrokeColor" },
-        { socket: "strokeWidth", flag: "strokeWidth", payloadFlag: "overrideStrokeWidth", overrideSocket: "overrideStrokeWidth" },
-        { socket: "strokeCap", flag: "strokeCap", payloadFlag: "overrideStrokeCap", overrideSocket: "overrideStrokeCap" },
-        { socket: "strokeJoin", flag: "strokeJoin", payloadFlag: "overrideStrokeJoin", overrideSocket: "overrideStrokeJoin" },
-        { socket: "strokeDash", flag: "strokeDash", payloadFlag: "overrideStrokeDash", overrideSocket: "overrideStrokeDash" },
-        { socket: "strokeDashOffset", flag: "strokeDashOffset", payloadFlag: "overrideStrokeDashOffset", overrideSocket: "overrideStrokeDashOffset" },
-        { socket: "fillColor", flag: "fillColor", payloadFlag: "overrideFillColor", overrideSocket: "overrideFillColor" },
-        { socket: "paintOrder", flag: "paintOrder", payloadFlag: "overridePaintOrder", overrideSocket: "overridePaintOrder" },
-        { socket: "opacity", flag: "opacity", payloadFlag: "overrideOpacity", overrideSocket: "overrideOpacity" },
-    ];
+const OVERRIDE_KEYS: {
+    socket: keyof StylingPrefab.Definition["inputs"];
+    flag: keyof OverrideFlags;
+    payloadFlag: keyof RestyleDefinition["payload"];
+    overrideSocket: keyof RestyleDefinition["inputs"];
+}[] = [
+    { socket: "strokeColor", flag: "strokeColor", payloadFlag: "overrideStrokeColor", overrideSocket: "overrideStrokeColor" },
+    { socket: "strokeWidth", flag: "strokeWidth", payloadFlag: "overrideStrokeWidth", overrideSocket: "overrideStrokeWidth" },
+    { socket: "strokeCap", flag: "strokeCap", payloadFlag: "overrideStrokeCap", overrideSocket: "overrideStrokeCap" },
+    { socket: "strokeJoin", flag: "strokeJoin", payloadFlag: "overrideStrokeJoin", overrideSocket: "overrideStrokeJoin" },
+    { socket: "strokeDash", flag: "strokeDash", payloadFlag: "overrideStrokeDash", overrideSocket: "overrideStrokeDash" },
+    { socket: "strokeDashOffset", flag: "strokeDashOffset", payloadFlag: "overrideStrokeDashOffset", overrideSocket: "overrideStrokeDashOffset" },
+    { socket: "fillColor", flag: "fillColor", payloadFlag: "overrideFillColor", overrideSocket: "overrideFillColor" },
+    { socket: "paintOrder", flag: "paintOrder", payloadFlag: "overridePaintOrder", overrideSocket: "overridePaintOrder" },
+    { socket: "opacity", flag: "opacity", payloadFlag: "overrideOpacity", overrideSocket: "overrideOpacity" },
+];
 
 const getOverrideFlags = (node: NodeDefinitions.NodeFor<RestyleDefinition>, context: Resolver.Context): OverrideFlags => {
     const flags: Record<string, boolean> = {};
@@ -353,40 +366,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<RestyleDefinition>, socket: keyo
         return { kind: "shape", data: inputShape };
     }
 
-    const resolvedPaint = Stylings.evaluate(node, context);
+    const resolvedPaint = StylingPrefab.evaluate(node, context);
     const restyled = restyleShape(inputShape, resolvedPaint, overrides);
     return { kind: "shape", data: restyled };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<RestyleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    shape: { types: ["shape"], mode: "or" },
-    overrideStrokeColor: { types: ["boolean"], mode: "or" },
-    overrideStrokeWidth: { types: ["boolean"], mode: "or" },
-    overrideStrokeCap: { types: ["boolean"], mode: "or" },
-    overrideStrokeJoin: { types: ["boolean"], mode: "or" },
-    overrideStrokeDash: { types: ["boolean"], mode: "or" },
-    overrideStrokeDashOffset: { types: ["boolean"], mode: "or" },
-    overrideFillColor: { types: ["boolean"], mode: "or" },
-    overridePaintOrder: { types: ["boolean"], mode: "or" },
-    overrideOpacity: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<RestyleDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RestyleDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
-const SHAPE_RULE_IN: SocketTypes.SocketRule = { types: ["shape"], mode: "or" };
-const SHAPE_RULE_OUT: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+const SHAPE_RULE_IN: SocketTypes.Term = SocketTypes.of("shape");
+const SHAPE_RULE_OUT: SocketTypes.Term = SocketTypes.of("shape");
 
 export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     type: "restyle",
@@ -400,7 +386,8 @@ export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     canInterject: passthroughCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
     onInterject: passthroughInterject("shape", "output"),
 };

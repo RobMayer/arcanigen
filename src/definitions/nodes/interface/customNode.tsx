@@ -5,7 +5,9 @@ import { Resolver } from "../../../util/resolver";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { InterfaceKey } from "../../../util/cycleDetection";
 import { Project } from "../../../state/project";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
@@ -52,13 +54,13 @@ import { Length } from "../../datatypes/length";
 type StoredValueKey = `value_${string}`;
 
 export type CustomDefinition = {
-    inputs: Record<string, DataTypes.Any>;
-    outputs: Record<string, DataTypes.Any>;
+    inputs: Record<string, DataTypes.Kind>;
+    outputs: Record<string, DataTypes.Kind>;
     payload: {
         label: string;
         graphId: string;
     } & {
-        [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any>;
+        [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Kind>;
     };
 };
 
@@ -77,7 +79,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CustomDefinition>>,
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CustomDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleValue = useCallback(
-        (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => {
+        (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Kind> }>) => {
             methods.update(v);
         },
         [methods],
@@ -205,7 +207,7 @@ const storedValueToEval = (storedValue: unknown, nodeType: string): DataTypes.An
         case "enumInput":
             return { kind: "enum", data: storedValue as number };
         case "tokensLengthInput":
-            return { kind: "tokens<length>", data: storedValue as string };
+            return { kind: "tokens:length", data: storedValue as string };
         case "stringInput":
             return { kind: "string", data: storedValue as string };
         default:
@@ -235,7 +237,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             if (supersocketEval) return supersocketEval;
 
             // Build from individual layer sockets
-            const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
+            const layerData: { shape: DataTypes.TypeOf<"shape"> | null; enabled: boolean | null; blend: number | null }[] = [];
             for (const entry of layerEntries) {
                 const resolved = context.resolve(node.id, entry.socket, outerSeqData);
                 if (!resolved) {
@@ -270,7 +272,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             if (supersocketEval) return supersocketEval;
 
             // Build from individual pathOp sockets
-            const pathOpData: { path: DataTypes.TypeOf<DataTypes.Use<"path">> | null; enabled: boolean | null; op: number | null }[] = [];
+            const pathOpData: { path: DataTypes.TypeOf<"path"> | null; enabled: boolean | null; op: number | null }[] = [];
             for (const entry of pathOpEntries) {
                 const resolved = context.resolve(node.id, entry.socket, outerSeqData);
                 if (!resolved) {
@@ -416,65 +418,65 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
     ctx.removeLinks(graphId, ...linkIdsToRemove);
 };
 
-const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.SocketRule> = {
-    floatInput: { types: ["float"], mode: "and" },
-    floatOutput: { types: ["float"], mode: "and" },
-    integerInput: { types: ["integer"], mode: "and" },
-    integerOutput: { types: ["integer"], mode: "and" },
-    angleInput: { types: ["angle"], mode: "and" },
-    angleOutput: { types: ["angle"], mode: "and" },
-    lengthInput: { types: ["length"], mode: "and" },
-    lengthOutput: { types: ["length"], mode: "and" },
-    colorInput: { types: ["color"], mode: "and" },
-    paintInput: { types: ["color", "gradient"], mode: "and" },
-    colorOutput: { types: ["color"], mode: "and" },
-    booleanInput: { types: ["boolean"], mode: "and" },
-    booleanOutput: { types: ["boolean"], mode: "and" },
-    enumInput: { types: ["enum"], mode: "and" },
-    enumOutput: { types: ["enum"], mode: "and" },
-    stringInput: { types: ["string"], mode: "and" },
-    stringOutput: { types: ["string"], mode: "and" },
-    tokensLengthInput: { types: ["tokens<length>"], mode: "and" },
-    tokensLengthOutput: { types: ["tokens<length>"], mode: "and" },
-    shapeInput: { types: ["shape"], mode: "and" },
-    shapeOutput: { types: ["shape"], mode: "and" },
-    arrayLayerInput: { types: ["array<layer>"], mode: "and" },
-    arrayLayerOutput: { types: ["array<layer>"], mode: "and" },
-    arrayPathOpInput: { types: ["array<pathOp>"], mode: "and" },
-    arrayPathOpOutput: { types: ["array<pathOp>"], mode: "and" },
-    layerInput: { types: ["layer"], mode: "and" },
-    layerOutput: { types: ["layer"], mode: "and" },
-    pathOpInput: { types: ["pathOp"], mode: "and" },
-    pathOpOutput: { types: ["pathOp"], mode: "and" },
-    stopColorInput: { types: ["stop<color>"], mode: "and" },
-    stopColorOutput: { types: ["stop<color>"], mode: "and" },
-    arrayStopColorInput: { types: ["array<stop<color>>"], mode: "and" },
-    arrayStopColorOutput: { types: ["array<stop<color>>"], mode: "and" },
-    stopFloatInput: { types: ["stop<float>"], mode: "and" },
-    stopFloatOutput: { types: ["stop<float>"], mode: "and" },
-    arrayStopFloatInput: { types: ["array<stop<float>>"], mode: "and" },
-    arrayStopFloatOutput: { types: ["array<stop<float>>"], mode: "and" },
-    stopAngleInput: { types: ["stop<angle>"], mode: "and" },
-    stopAngleOutput: { types: ["stop<angle>"], mode: "and" },
-    arrayStopAngleInput: { types: ["array<stop<angle>>"], mode: "and" },
-    arrayStopAngleOutput: { types: ["array<stop<angle>>"], mode: "and" },
-    stopIntegerInput: { types: ["stop<integer>"], mode: "and" },
-    stopIntegerOutput: { types: ["stop<integer>"], mode: "and" },
-    arrayStopIntegerInput: { types: ["array<stop<integer>>"], mode: "and" },
-    arrayStopIntegerOutput: { types: ["array<stop<integer>>"], mode: "and" },
-    stopLengthInput: { types: ["stop<length>"], mode: "and" },
-    stopLengthOutput: { types: ["stop<length>"], mode: "and" },
-    arrayStopLengthInput: { types: ["array<stop<length>>"], mode: "and" },
-    arrayStopLengthOutput: { types: ["array<stop<length>>"], mode: "and" },
-    distributionInput: { types: ["distribution"], mode: "and" },
-    distributionOutput: { types: ["distribution"], mode: "and" },
-    sequenceInput: { types: ["sequence"], mode: "and" },
-    sequenceOutput: { types: ["sequence"], mode: "and" },
-    pathInput: { types: ["path"], mode: "and" },
-    pathOutput: { types: ["path"], mode: "and" },
+const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
+    floatInput: SocketTypes.of("float"),
+    floatOutput: SocketTypes.of("float"),
+    integerInput: SocketTypes.of("integer"),
+    integerOutput: SocketTypes.of("integer"),
+    angleInput: SocketTypes.of("angle"),
+    angleOutput: SocketTypes.of("angle"),
+    lengthInput: SocketTypes.of("length"),
+    lengthOutput: SocketTypes.of("length"),
+    colorInput: SocketTypes.of("color"),
+    paintInput: SocketTypes.and("color", "gradient"),
+    colorOutput: SocketTypes.of("color"),
+    booleanInput: SocketTypes.of("boolean"),
+    booleanOutput: SocketTypes.of("boolean"),
+    enumInput: SocketTypes.of("enum"),
+    enumOutput: SocketTypes.of("enum"),
+    stringInput: SocketTypes.of("string"),
+    stringOutput: SocketTypes.of("string"),
+    tokensLengthInput: SocketTypes.of("tokens:length"),
+    tokensLengthOutput: SocketTypes.of("tokens:length"),
+    shapeInput: SocketTypes.of("shape"),
+    shapeOutput: SocketTypes.of("shape"),
+    arrayLayerInput: SocketTypes.of("array<layer>"),
+    arrayLayerOutput: SocketTypes.of("array<layer>"),
+    arrayPathOpInput: SocketTypes.of("array<pathOp>"),
+    arrayPathOpOutput: SocketTypes.of("array<pathOp>"),
+    layerInput: SocketTypes.of("layer"),
+    layerOutput: SocketTypes.of("layer"),
+    pathOpInput: SocketTypes.of("pathOp"),
+    pathOpOutput: SocketTypes.of("pathOp"),
+    stopColorInput: SocketTypes.of("stop:color"),
+    stopColorOutput: SocketTypes.of("stop:color"),
+    arrayStopColorInput: SocketTypes.of("array<stop:color>"),
+    arrayStopColorOutput: SocketTypes.of("array<stop:color>"),
+    stopFloatInput: SocketTypes.of("stop:float"),
+    stopFloatOutput: SocketTypes.of("stop:float"),
+    arrayStopFloatInput: SocketTypes.of("array<stop:float>"),
+    arrayStopFloatOutput: SocketTypes.of("array<stop:float>"),
+    stopAngleInput: SocketTypes.of("stop:angle"),
+    stopAngleOutput: SocketTypes.of("stop:angle"),
+    arrayStopAngleInput: SocketTypes.of("array<stop:angle>"),
+    arrayStopAngleOutput: SocketTypes.of("array<stop:angle>"),
+    stopIntegerInput: SocketTypes.of("stop:integer"),
+    stopIntegerOutput: SocketTypes.of("stop:integer"),
+    arrayStopIntegerInput: SocketTypes.of("array<stop:integer>"),
+    arrayStopIntegerOutput: SocketTypes.of("array<stop:integer>"),
+    stopLengthInput: SocketTypes.of("stop:length"),
+    stopLengthOutput: SocketTypes.of("stop:length"),
+    arrayStopLengthInput: SocketTypes.of("array<stop:length>"),
+    arrayStopLengthOutput: SocketTypes.of("array<stop:length>"),
+    distributionInput: SocketTypes.of("distribution"),
+    distributionOutput: SocketTypes.of("distribution"),
+    sequenceInput: SocketTypes.of("sequence"),
+    sequenceOutput: SocketTypes.of("sequence"),
+    pathInput: SocketTypes.of("path"),
+    pathOutput: SocketTypes.of("path"),
 };
 
-const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
+const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", _graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term => {
     const subgraphId = node.payload.graphId;
     if (!subgraphId) return SocketTypes.ANY;
 
@@ -514,7 +516,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     getSocketType,
 };
 
-type SlotUpdateHandler = (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Any> }>) => void;
+type SlotUpdateHandler = (v: Partial<{ [key: StoredValueKey]: DataTypes.TypeOf<DataTypes.Kind> }>) => void;
 
 const DynamicSlot = ({
     sourceNodeId,
@@ -1138,7 +1140,7 @@ const InputSlotEnum = ({ host, source, handleValue }: InputWidgetProps<EnumInput
 
 const OutputSlotTokensLength = ({ host, source }: OutputWidgetProps<TokensLengthOutputDefinition>) => {
     const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
-    const output = resolved?.kind === "tokens<length>" ? resolved.data : "« none »";
+    const output = resolved?.kind === "tokens:length" ? resolved.data : "« none »";
 
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.NONE.value: {
@@ -1292,7 +1294,7 @@ const OutputSlotPath = ({ host, source }: { host: NodeDefinitions.NodeFor<Custom
     );
 };
 
-// Label-only slots for pass-through interface types (layer, pathOp, stop<T>, array<stop<T>>) — no inline editor.
+// Label-only slots for pass-through interface types (layer, pathOp, stop:*, array<stop:*>) — no inline editor.
 const InputSlotPassthrough = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
     return (
         <SocketIn node={host} socketId={source.id}>
@@ -1431,6 +1433,7 @@ const LayerGroupEntry = ({
     handleReorderLayer: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(host.in[entry.socket]);
+    const linkType = Project.useLinkType(useGraphId(), theLink);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -1476,8 +1479,8 @@ const LayerGroupEntry = ({
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
             <SocketIn node={host} socketId={entry.socket}>
-                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
-                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={linkType === "layer"} />
+                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={linkType === "layer"}>
                     {BLEND_MODE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -1670,11 +1673,12 @@ const PathOpGroupEntry = ({
     handleReorderPathOp: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(host.in[entry.socket]);
+    const linkType = Project.useLinkType(useGraphId(), theLink);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
     // A connected pathOp carries its own op/enabled, so freeze the row's controls.
-    const overridden = theLink?.type === "pathOp";
+    const overridden = linkType === "pathOp";
 
     const handleDragStart = useCallback(
         (e: DragEvent) => {

@@ -5,20 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
+import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type ArrayStopIntegerInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"array<stop<integer>>">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: {},
+    out: { output: $.arrayOf("stop:integer") },
+});
+
+export type ArrayStopIntegerInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (
     _input: Partial<NodeDefinitions.PayloadTypeOf<ArrayStopIntegerInputDefinition>>,
@@ -68,7 +73,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<ArrayStopIntegerInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"array<stop<integer>>">(node.id);
+        const providedInput = context.getInput?.<"array<stop:integer>">(node.id);
         if (providedInput) return providedInput;
     }
     return null;
@@ -80,14 +85,6 @@ const onCreate = (node: NodeDefinitions.BuiltNodeOf<"arrayStopIntegerInput", Arr
 
 const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayStopIntegerInput", ArrayStopIntegerInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     removeInterface(ctx, graphId, node.id, "in");
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ArrayStopIntegerInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["array<stop<integer>>"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopIntegerInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
 };
 
 export const ArrayStopIntegerInputType: NodeTypes.Type<"arrayStopIntegerInput", ArrayStopIntegerInputDefinition> = {
@@ -105,5 +102,6 @@ export const ArrayStopIntegerInputType: NodeTypes.Type<"arrayStopIntegerInput", 
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -6,7 +6,8 @@ import styled from "styled-components";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -21,6 +22,8 @@ import { AngleInput } from "../../../components/inputs/AngleInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { EmptyOr } from "../../../util/misc";
 import { GradientPaint, GradientStop } from "../../shapeTypes";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const SPREAD_OPTIONS = Enum.options(Enum.Common.gradientSpread);
 const FRAMING_OPTIONS = Enum.options(Enum.Common.framing);
@@ -28,46 +31,47 @@ const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 
 type StopEntryData = { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean };
 
-export type LinearGradientDefinition = {
-    inputs: {
-        stops: DataTypes.Use<"array<stop<color>>">;
-        framing: DataTypes.Use<"enum">;
-        spread: DataTypes.Use<"enum">;
-        angle: DataTypes.Use<"angle">;
-        startMode: DataTypes.Use<"enum">;
-        startX: DataTypes.Use<"length">;
-        startY: DataTypes.Use<"length">;
-        startRadius: DataTypes.Use<"length">;
-        startTheta: DataTypes.Use<"angle">;
-        endMode: DataTypes.Use<"enum">;
-        endX: DataTypes.Use<"length">;
-        endY: DataTypes.Use<"length">;
-        endRadius: DataTypes.Use<"length">;
-        endTheta: DataTypes.Use<"angle">;
-        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<color>">;
-    };
-    outputs: {
-        output: DataTypes.Use<"gradient">;
-        stopCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        stops: $.arrayOf("stop:color"),
+        framing: "enum",
+        spread: "enum",
+        angle: "angle",
+        startMode: "enum",
+        startX: "length",
+        startY: "length",
+        startRadius: "length",
+        startTheta: "angle",
+        endMode: "enum",
+        endX: "length",
+        endY: "length",
+        endRadius: "length",
+        endTheta: "angle",
+        "stop_*": "stop:color",
+    },
+    out: { output: "gradient", stopCount: "integer" },
+});
+
+export type LinearGradientDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        framing: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        angle: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        startMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        startX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        endMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        endX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        endY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        endRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        endTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        framing: DataTypes.TypeOf<"enum">;
+        spread: DataTypes.TypeOf<"enum">;
+        angle: DataTypes.TypeOf<"angle">;
+        startMode: DataTypes.TypeOf<"enum">;
+        startX: DataTypes.TypeOf<"length">;
+        startY: DataTypes.TypeOf<"length">;
+        startRadius: DataTypes.TypeOf<"length">;
+        startTheta: DataTypes.TypeOf<"angle">;
+        endMode: DataTypes.TypeOf<"enum">;
+        endX: DataTypes.TypeOf<"length">;
+        endY: DataTypes.TypeOf<"length">;
+        endRadius: DataTypes.TypeOf<"length">;
+        endTheta: DataTypes.TypeOf<"angle">;
         stops: StopEntryData[];
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LinearGradientDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"linearGradient", LinearGradientDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
@@ -447,17 +451,17 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop<color>>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop<color>) over its inline payload.
+// Resolve the effective stops: the supersocket (an array<stop:color>) overrides everything;
+// otherwise fold each per-stop socket (a connected stop:color) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop<color>>">(node.id, "stops");
+    const supersocketEval = context.resolve<"array<stop:color>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop<color>">(node.id, entry.socket);
+        const connected = context.resolve<"stop:color">(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,
@@ -575,56 +579,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, socke
     return { kind: "gradient", data: gradient };
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<Omit<LinearGradientDefinition["inputs"], `stop_${string}`>>]: SocketTypes.SocketRule;
-} = {
-    stops: { types: ["array<stop<color>>"], mode: "or" },
-    framing: { types: ["enum"], mode: "and" },
-    spread: { types: ["enum"], mode: "and" },
-    angle: { types: ["angle"], mode: "and" },
-    startMode: { types: ["enum"], mode: "and" },
-    startX: { types: ["length"], mode: "and" },
-    startY: { types: ["length"], mode: "and" },
-    startRadius: { types: ["length"], mode: "and" },
-    startTheta: { types: ["angle"], mode: "and" },
-    endMode: { types: ["enum"], mode: "and" },
-    endX: { types: ["length"], mode: "and" },
-    endY: { types: ["length"], mode: "and" },
-    endRadius: { types: ["length"], mode: "and" },
-    endTheta: { types: ["angle"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<LinearGradientDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["gradient"], mode: "and" },
-    stopCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LinearGradientDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("stop_")) {
-        return { types: ["stop<color>"], mode: "or" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
+// Supersocket override: connecting the whole `array<stop:color>` clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"linearGradient", LinearGradientDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "stops") return;
-
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("stop_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "stops") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("stop_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-    if (linkIdsToRemove.length === 0) return;
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 export const LinearGradientNodeType: NodeTypes.Type<"linearGradient", LinearGradientDefinition> = {
@@ -639,6 +612,7 @@ export const LinearGradientNodeType: NodeTypes.Type<"linearGradient", LinearGrad
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
-    getSocketType,
 };

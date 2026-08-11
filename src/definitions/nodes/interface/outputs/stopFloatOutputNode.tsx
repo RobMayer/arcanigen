@@ -4,20 +4,25 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketIn } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { Project } from "../../../../state/project";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type StopFloatOutputDefinition = {
-    inputs: {
-        input: DataTypes.Use<"stop<float>">;
-    };
-    outputs: never;
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { input: "stop:float" },
+    out: {},
+});
+
+export type StopFloatOutputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<StopFloatOutputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"stopFloatOutput", StopFloatOutputDefinition> => {
     return {
@@ -78,14 +83,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"stopFloatOutput", StopFloat
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<StopFloatOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["stop<float>"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<StopFloatOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const StopFloatOutputType: NodeTypes.Type<"stopFloatOutput", StopFloatOutputDefinition> = {
     type: "stopFloatOutput",
     displayName: "Float Stop Output",
@@ -101,5 +98,6 @@ export const StopFloatOutputType: NodeTypes.Type<"stopFloatOutput", StopFloatOut
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

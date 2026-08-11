@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
@@ -10,49 +10,55 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
-import { Transforms } from "../abstract";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { GroupShape } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type RadialLayoutDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        count: DataTypes.Use<"integer">;
-        radius: DataTypes.Use<"length">;
-        arcMode: DataTypes.Use<"enum">;
-        thetaStart: DataTypes.Use<"angle">;
-        sweep: DataTypes.Use<"angle">;
-        thetaFrom: DataTypes.Use<"angle">;
-        thetaTo: DataTypes.Use<"angle">;
-        thetaInclusive: DataTypes.Use<"boolean">;
-        thetaCurve: DataTypes.Use<"distribution">;
-        memberAlign: DataTypes.Use<"boolean">;
-        memberRotation: DataTypes.Use<"angle">;
-    } & Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        sequence: DataTypes.Use<"sequence">;
-    };
-    payload: {
-        label: string;
-        count: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaFrom: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaTo: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+const def = signature({
+    in: {
+        input: "shape",
+        count: "integer",
+        radius: "length",
+        arcMode: "enum",
+        thetaStart: "angle",
+        sweep: "angle",
+        thetaFrom: "angle",
+        thetaTo: "angle",
+        thetaInclusive: "boolean",
+        thetaCurve: "distribution",
+        memberAlign: "boolean",
+        memberRotation: "angle",
+        ...TransformPrefab.SIG_IN,
+    },
+    out: { output: "shape", sequence: "sequence" },
+});
+
+export type RadialLayoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        count: DataTypes.TypeOf<"integer">;
+        radius: DataTypes.TypeOf<"length">;
+        arcMode: DataTypes.TypeOf<"enum">;
+        thetaStart: DataTypes.TypeOf<"angle">;
+        sweep: DataTypes.TypeOf<"angle">;
+        thetaFrom: DataTypes.TypeOf<"angle">;
+        thetaTo: DataTypes.TypeOf<"angle">;
         thetaInclusive: boolean;
         memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-    } & Transforms.Definition["payload"];
-};
+        memberRotation: DataTypes.TypeOf<"angle">;
+    } & TransformPrefab.Definition["payload"]
+>;
 
 const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 
@@ -179,7 +185,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialLayou
                     <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
                 </SocketIn>
             </NodeAccordion>
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -262,7 +268,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
     const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
     const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
-    const [groupTransforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     const denominator = thetaInclusive ? Math.max(1, count - 1) : count;
 
@@ -303,36 +309,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<RadialLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-    count: { types: ["integer"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    arcMode: { types: ["enum"], mode: "or" },
-    thetaStart: { types: ["angle"], mode: "or" },
-    sweep: { types: ["angle"], mode: "or" },
-    thetaFrom: { types: ["angle"], mode: "or" },
-    thetaTo: { types: ["angle"], mode: "or" },
-    thetaInclusive: { types: ["boolean"], mode: "or" },
-    thetaCurve: { types: ["distribution"], mode: "or" },
-    memberAlign: { types: ["boolean"], mode: "or" },
-    memberRotation: { types: ["angle"], mode: "or" },
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<RadialLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    sequence: { types: ["sequence"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const RadialLayoutNodeType: NodeTypes.Type<"radialLayout", RadialLayoutDefinition> = {
     type: "radialLayout",
     displayName: "Radial Layout",
@@ -345,7 +321,8 @@ export const RadialLayoutNodeType: NodeTypes.Type<"radialLayout", RadialLayoutDe
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

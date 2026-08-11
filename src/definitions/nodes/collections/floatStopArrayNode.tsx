@@ -6,30 +6,31 @@ import styled from "styled-components";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { EmptyOr } from "../../../util/misc";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 type StopEntryData = { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
 
-export type FloatStopArrayDefinition = {
-    inputs: {
-        stops: DataTypes.Use<"array<stop<float>>">;
-        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<float>">;
-    };
-    outputs: {
-        output: DataTypes.Use<"array<stop<float>>">;
-        stopCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: { stops: $.arrayOf("stop:float"), "stop_*": "stop:float" },
+    out: { output: $.arrayOf("stop:float"), stopCount: "integer" },
+});
+
+export type FloatStopArrayDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         stops: StopEntryData[];
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatStopArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatStopArray", FloatStopArrayDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
@@ -291,17 +292,17 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop<float>>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop<float>) over its inline payload.
+// Resolve the effective stops: the supersocket (an array<stop:float>) overrides everything;
+// otherwise fold each per-stop socket (a connected stop:float) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop<float>>">(node.id, "stops");
+    const supersocketEval = context.resolve<"array<stop:float>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: number; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop<float>">(node.id, entry.socket);
+        const connected = context.resolve<"stop:float">(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
@@ -341,42 +342,30 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, socke
     }
     if (socket === "output") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
-        return { kind: "array<stop<float>>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
+        return { kind: "array<stop:float>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
     }
     return null;
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<FloatStopArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["array<stop<float>>"], mode: "and" },
-    stopCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatStopArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("stop_")) {
-        return { types: ["stop<float>"], mode: "or" };
-    }
-    return { types: ["array<stop<float>>"], mode: "or" };
-};
-
+// Supersocket override: connecting the whole `array<stop:float>` clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatStopArray", FloatStopArrayDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "stops") return;
-
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("stop_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "stops") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("stop_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-    if (linkIdsToRemove.length === 0) return;
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 export const FloatStopArrayNodeType: NodeTypes.Type<"floatStopArray", FloatStopArrayDefinition> = {
@@ -391,6 +380,7 @@ export const FloatStopArrayNodeType: NodeTypes.Type<"floatStopArray", FloatStopA
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
-    getSocketType,
 };

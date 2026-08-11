@@ -4,22 +4,25 @@ import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type IsNullishDefinition = {
-    inputs: {
-        input: DataTypes.Any;
-    };
-    outputs: {
-        output: DataTypes.Use<"boolean">;
-    };
-    payload: {
+const def = signature({
+    in: { input: $.ANY },
+    out: { output: "boolean" },
+});
+
+export type IsNullishDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<IsNullishDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"isNullish", IsNullishDefinition> => {
     return {
@@ -65,11 +68,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<IsNullishDefinition>, socket: ke
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<IsNullishDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "in") return SocketTypes.ANY;
-    return SocketTypes.of("boolean");
-};
-
 export const IsNullishNodeType: NodeTypes.Type<"isNullish", IsNullishDefinition> = {
     type: "isNullish",
     displayName: "Is Nullish",
@@ -82,5 +80,6 @@ export const IsNullishNodeType: NodeTypes.Type<"isNullish", IsNullishDefinition>
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

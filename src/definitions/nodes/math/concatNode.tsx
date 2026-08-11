@@ -5,27 +5,27 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ConcatDefinition = {
-    inputs: {
-        a: DataTypes.Use<"string">;
-        b: DataTypes.Use<"string">;
-        separator: DataTypes.Use<"string">;
-    };
-    outputs: {
-        output: DataTypes.Use<"string">;
-        charCount: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        a: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        b: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        separator: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { a: "string", b: "string", separator: "string" },
+    out: { output: "string", charCount: "integer" },
+});
+
+export type ConcatDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        a: DataTypes.TypeOf<"string">;
+        b: DataTypes.TypeOf<"string">;
+        separator: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ConcatDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"concat", ConcatDefinition> => {
     return {
@@ -101,26 +101,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ConcatDefinition>, socket: keyof
     return { kind: "integer", data: `${result.length}` };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ConcatDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    a: { types: ["string"], mode: "or" },
-    b: { types: ["string"], mode: "or" },
-    separator: { types: ["string"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ConcatDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["string"], mode: "and" },
-    charCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ConcatDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ConcatNodeType: NodeTypes.Type<"concat", ConcatDefinition> = {
     type: "concat",
     displayName: "Concatenate",
@@ -133,5 +113,6 @@ export const ConcatNodeType: NodeTypes.Type<"concat", ConcatDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

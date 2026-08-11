@@ -1,5 +1,7 @@
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
+import { DataTypes } from "../../definitions/dataTypes";
+import { SocketTypes } from "../../definitions/socketTypes";
 import type { SubgraphDeps } from "../../util/cycleDetection";
 import type { Flavour } from "../../components/types";
 import type { CustomIconKey } from "../../components/Icon";
@@ -19,6 +21,16 @@ export type SocketId = string;
 export type XY = { x: number; y: number };
 
 export type CacheType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: { [cacheKey: string]: DataTypes.AnyEval | null } } };
+
+/**
+ * Transient, derived, never-persisted cache of solved socket types — the off-payload home for what the
+ * signature engine used to stash in `payload.solved`. Nested `graphId -> nodeId -> {in, out}` like the output
+ * cache: graphId matters because subgraph copies can share nodeIds, and a socket's solved type is a function
+ * of its neighbours in that graph. Side-aware (in/out kept separate so same-id in+out sockets can't collide).
+ */
+export type SocketTypeCacheValue = SocketTypes.Term;
+export type SocketTypeCacheEntry = { in: { [socketId: string]: SocketTypeCacheValue }; out: { [socketId: string]: SocketTypeCacheValue } };
+export type SocketTypeCacheType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: SocketTypeCacheEntry } };
 export type NodesType = { [graphId: GraphId]: { [nodeId: ArcaneGraph.NodeId]: NodeDefinitions.NodeFor<NodeDefinitions.Any> } };
 export type MetaType = { [graphId: GraphId]: SubgraphMeta };
 export type LinksType = { [graphId: GraphId]: { [linkId: ArcaneGraph.LinkId]: ArcaneGraph.Link } };

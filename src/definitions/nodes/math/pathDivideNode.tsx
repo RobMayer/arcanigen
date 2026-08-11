@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
@@ -9,21 +11,25 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PathDivideDefinition = {
-    inputs: {
-        pathA: DataTypes.Use<"path">;
-        pathB: DataTypes.Use<"path">;
-        swap: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+const def = signature({
+    in: { pathA: "path", pathB: "path", swap: "boolean" },
+    out: { output: "path" },
+});
+
+export type PathDivideDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
         swap: boolean;
-    };
-};
+    }
+>;
+
+// interject-only rules (mirror the def's socket types)
+const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
+const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathDivideDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathDivide", PathDivideDefinition> => {
     return {
@@ -93,25 +99,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathDivideDefinition>, socket: k
     return swap ? PaperHelper.divide(pathBData, pathAData) : PaperHelper.divide(pathAData, pathBData);
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PathDivideDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    pathA: { types: ["path"], mode: "or" },
-    pathB: { types: ["path"], mode: "or" },
-    swap: { types: ["boolean"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PathDivideDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathDivideDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PathDivideNodeType: NodeTypes.Type<"pathDivide", PathDivideDefinition> = {
     type: "pathDivide",
     displayName: "Path Divide",
@@ -124,7 +111,8 @@ export const PathDivideNodeType: NodeTypes.Type<"pathDivide", PathDivideDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.pathA, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(PATH_IN, PATH_OUT),
     onInterject: passthroughInterject("pathA", "output"),
 };

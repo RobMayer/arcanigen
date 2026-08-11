@@ -8,36 +8,44 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type RectangleDefinition = {
-    inputs: {
-        width: DataTypes.Use<"length">;
-        height: DataTypes.Use<"length">;
-        cornerRadius: DataTypes.Use<"length">;
-        cornerShape: DataTypes.Use<"enum">;
-        markerShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        width: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        height: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        cornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        cornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        width: "length",
+        height: "length",
+        cornerRadius: "length",
+        cornerShape: "enum",
+        markerShape: "shape",
+        markerAlign: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type RectangleDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        width: DataTypes.TypeOf<"length">;
+        height: DataTypes.TypeOf<"length">;
+        cornerRadius: DataTypes.TypeOf<"length">;
+        cornerShape: DataTypes.TypeOf<"enum">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RectangleDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"rectangle", RectangleDefinition> => {
     return {
@@ -150,8 +158,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RectangleDe
                 </SocketIn>
             </NodeAccordion>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -241,7 +249,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} ${close}`;
     }
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         const diag = Math.sqrt(width * width + height * height);
@@ -258,7 +266,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         const diag = Math.sqrt(width * width + height * height);
         const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
 
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
         if (hasCut) paint.fill = null;
 
         return {
@@ -283,31 +291,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<RectangleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    width: { types: ["length"], mode: "or" },
-    height: { types: ["length"], mode: "or" },
-    cornerRadius: { types: ["length"], mode: "or" },
-    cornerShape: { types: ["enum"], mode: "or" },
-    markerShape: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<RectangleDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const RectangleNodeType: NodeTypes.Type<"rectangle", RectangleDefinition> = {
     type: "rectangle",
     displayName: "Rectangle",
@@ -320,5 +303,6 @@ export const RectangleNodeType: NodeTypes.Type<"rectangle", RectangleDefinition>
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

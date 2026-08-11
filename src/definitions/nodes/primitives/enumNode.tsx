@@ -5,26 +5,29 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type EnumDefinition = {
-    inputs: {
-        value: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"enum">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+const def = signature({
+    in: { value: "enum" },
+    out: { output: "enum" },
+});
+
+export type EnumDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"enum">;
         options: string[];
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<EnumDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"enum", EnumDefinition> => {
     return {
@@ -140,23 +143,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<EnumDefinition>, socket: "output
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<EnumDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["enum"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<EnumDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["enum"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<EnumDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const EnumPrimitiveType: NodeTypes.Type<"enum", EnumDefinition> = {
     type: "enum",
     displayName: "Enum",
@@ -169,5 +155,6 @@ export const EnumPrimitiveType: NodeTypes.Type<"enum", EnumDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

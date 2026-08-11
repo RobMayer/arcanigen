@@ -8,40 +8,47 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type GlyphDefinition = {
-    inputs: {
-        width: DataTypes.Use<"length">;
-        height: DataTypes.Use<"length">;
-        viewX: DataTypes.Use<"float" | "integer">;
-        viewY: DataTypes.Use<"float" | "integer">;
-        viewW: DataTypes.Use<"float" | "integer">;
-        viewH: DataTypes.Use<"float" | "integer">;
-        pathData: DataTypes.Use<"string">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        pathData: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        width: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        height: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        viewX: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        viewY: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        viewW: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        viewH: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        width: "length",
+        height: "length",
+        viewX: $.oneOf("float", "integer"),
+        viewY: $.oneOf("float", "integer"),
+        viewW: $.oneOf("float", "integer"),
+        viewH: $.oneOf("float", "integer"),
+        pathData: "string",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type GlyphDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        pathData: DataTypes.TypeOf<"string">;
+        width: DataTypes.TypeOf<"length">;
+        height: DataTypes.TypeOf<"length">;
+        viewX: DataTypes.TypeOf<"float">;
+        viewY: DataTypes.TypeOf<"float">;
+        viewW: DataTypes.TypeOf<"float">;
+        viewH: DataTypes.TypeOf<"float">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"glyph", GlyphDefinition> => {
     return {
@@ -144,8 +151,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlyphDefini
             <SocketIn node={node} socketId={"viewH"} label={"ViewBox H"}>
                 <DecimalInput value={node.payload.viewH} onCommit={(viewH) => handleUpdate({ viewH })} disabled={node.in.viewH !== null} />
             </SocketIn>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -194,9 +201,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const viewH = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
-    // The old <symbol> did a viewBox→width/height fit (xMidYMid meet) inside a <use> box centered on
+    // The old <symbol> did a viewBox->width/height fit (xMidYMid meet) inside a <use> box centered on
     // the origin. That fit is affine — a uniform scale plus a translate — so we bake it as a matrix
     // here instead, which lets a raw <path> stand in for the symbol (and carry a `path` output). The
     // only thing lost vs. the symbol is clipping to the viewBox rect, which glyphs don't rely on.
@@ -216,7 +223,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
             data: {
                 type: "path",
                 d: pathD,
-                paint: Stylings.evaluate(node, context),
+                paint: StylingPrefab.evaluate(node, context),
                 vectorEffect: "non-scaling-stroke",
                 transform,
                 preview,
@@ -225,32 +232,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     }
 
     return null;
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<GlyphDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    width: { types: ["length"], mode: "or" },
-    height: { types: ["length"], mode: "or" },
-    viewX: { types: ["float", "integer"], mode: "or" },
-    viewY: { types: ["float", "integer"], mode: "or" },
-    viewW: { types: ["float", "integer"], mode: "or" },
-    viewH: { types: ["float", "integer"], mode: "or" },
-    pathData: { types: ["string"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<GlyphDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
 };
 
 export const GlyphNodeType: NodeTypes.Type<"glyph", GlyphDefinition> = {
@@ -265,5 +246,6 @@ export const GlyphNodeType: NodeTypes.Type<"glyph", GlyphDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

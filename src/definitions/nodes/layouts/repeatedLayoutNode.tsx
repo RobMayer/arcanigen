@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Enum } from "../../datatypes/enum";
@@ -7,27 +7,33 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
-import { Transforms } from "../abstract";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { GroupShape } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type RepeatedLayoutDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        count: DataTypes.Use<"integer">;
-    } & Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        sequence: DataTypes.Use<"sequence">;
-    };
-    payload: {
-        label: string;
-        count: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-    } & Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        input: "shape",
+        count: "integer",
+        ...TransformPrefab.SIG_IN,
+    },
+    out: { output: "shape", sequence: "sequence" },
+});
+
+export type RepeatedLayoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        count: DataTypes.TypeOf<"integer">;
+    } & TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RepeatedLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"repeatedLayout", RepeatedLayoutDefinition> => {
     return {
@@ -84,7 +90,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RepeatedLay
             <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -101,11 +107,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, out
     return [];
 };
 
-const contributesTo = (
-    _node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>,
-    inSocket: keyof RepeatedLayoutDefinition["inputs"],
-    _deps: AllDeps,
-): (keyof RepeatedLayoutDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, inSocket: keyof RepeatedLayoutDefinition["inputs"], _deps: AllDeps): (keyof RepeatedLayoutDefinition["outputs"])[] => {
     if (inSocket === "count") {
         return ["output", "sequence"];
     }
@@ -123,7 +125,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
 
     if (socket !== "output") return null;
 
-    const [groupTransforms] = Transforms.evaluate(node, context);
+    const [groupTransforms] = TransformPrefab.evaluate(node, context);
 
     const children = [];
     for (let i = 0; i < count; i++) {
@@ -155,26 +157,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<RepeatedLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-    count: { types: ["integer"], mode: "or" },
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<RepeatedLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    sequence: { types: ["sequence"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const RepeatedLayoutNodeType: NodeTypes.Type<"repeatedLayout", RepeatedLayoutDefinition> = {
     type: "repeatedLayout",
     displayName: "Repeated Layout",
@@ -187,7 +169,8 @@ export const RepeatedLayoutNodeType: NodeTypes.Type<"repeatedLayout", RepeatedLa
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

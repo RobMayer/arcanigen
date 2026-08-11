@@ -5,10 +5,11 @@ import { Icon, ICONS } from "../../components/Icon";
 import { Project } from "../../state/project";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
-import { DataTypes, NodeDefinitions } from "../../definitions/betterTypes";
+import { NodeDefinitions } from "../../definitions/nodeTypes";
+import { DataTypes } from "../../definitions/dataTypes";
 import { Flavour } from "../../components/types";
 import { Shape } from "../../definitions/shapeTypes";
-import { ShapeElement } from "../../definitions/shapeRenderer";
+import { ShapeElement } from "../shapeRenderer";
 import { Color } from "../../definitions/datatypes/color";
 import { Length } from "../../definitions/datatypes/length";
 import { EmptyOr } from "../../util/misc";
@@ -45,7 +46,7 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     );
 };
 
-export const ShapePreview = styled(({ shape, className, color }: { shape: Shape | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Use<"color">> }) => {
+export const ShapePreview = styled(({ shape, className, color }: { shape: Shape | null; className?: string; color?: DataTypes.TypeOf<"color"> }) => {
     const style = useMemo(
         () => ({
             backgroundColor: Color.toHex(color ?? { r: 1, g: 1, b: 1, a: 1 }),
@@ -292,7 +293,7 @@ export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): Re
         case "integer":
         case "float":
             return <PreviewBase>{Number(Number(value.data).toFixed(6))}</PreviewBase>;
-        case "tokens<length>":
+        case "tokens:length":
             return <PreviewBase>{value.data}</PreviewBase>;
         case "color":
             return <PreviewColor value={value.data} />;
@@ -308,16 +309,16 @@ export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): Re
         case "point":
         case "array<point>":
         case "sequence":
-        case "stop<float>":
-        case "array<stop<float>>":
-        case "stop<color>":
-        case "array<stop<color>>":
-        case "stop<angle>":
-        case "array<stop<angle>>":
-        case "stop<integer>":
-        case "array<stop<integer>>":
-        case "stop<length>":
-        case "array<stop<length>>":
+        case "stop:float":
+        case "array<stop:float>":
+        case "stop:color":
+        case "array<stop:color>":
+        case "stop:angle":
+        case "array<stop:angle>":
+        case "stop:integer":
+        case "array<stop:integer>":
+        case "stop:length":
+        case "array<stop:length>":
             return <PreviewBase>{`« ${value.kind} »`}</PreviewBase>;
     }
 };

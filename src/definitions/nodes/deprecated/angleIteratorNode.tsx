@@ -4,7 +4,8 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -14,33 +15,42 @@ import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { Iteration } from "../abstract";
+import { IterationPrefab } from "../../helpers/iterationPrefab";
 import { EmptyOr } from "../../../util/misc";
 import { lerpAngle } from "../../../util/colorSpaces";
 import styled from "styled-components";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 
 const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
 const ANGLE_CONTINUITY_OPTIONS = Enum.options(Enum.Common.angleContinuity);
 
-export type AngleIteratorDefinition = {
-    inputs: {
-        [value: `value_${string}`]: DataTypes.Use<"angle">;
-        [pos: `pos_${string}`]: DataTypes.Use<"float">;
-        angleTraversal: DataTypes.Use<"enum">;
-        continuity: DataTypes.Use<"enum">;
-    } & Iteration.Definition["inputs"];
-    outputs: {
-        sequencedOutput: DataTypes.Use<"angle">;
-        sampledOutput: DataTypes.Use<"angle">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        sequence: "sequence",
+        mode: "enum",
+        reverseSequence: "boolean",
+        startOffset: "integer",
+        endOffset: "integer",
+        samplePosition: $.oneOf("float", "integer"),
+        angleTraversal: "enum",
+        continuity: "enum",
+        "value_*": "angle",
+        "pos_*": "float",
+    },
+    out: { sequencedOutput: "angle", sampledOutput: "angle" },
+});
+
+export type AngleIteratorDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        continuity: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        angleTraversal: DataTypes.TypeOf<"enum">;
+        continuity: DataTypes.TypeOf<"enum">;
         stops: { id: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type> }[];
-    } & Iteration.Definition["payload"];
-};
+    } & IterationPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleIterator", AngleIteratorDefinition> => {
     const s0 = nanoid();
@@ -205,7 +215,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
+                <IterationPrefab.Controls node={node} handleUpdate={handleUpdate} />
             </NodeAccordion>
         </TypicalNode>
     );
@@ -235,7 +245,7 @@ const StopEntry = styled.div`
  * Piecewise-linear interpolation between sorted angle stops.
  * When `cyclical`, each segment takes the shortest/longest/directional arc around the wheel (via `lerpAngle`) and the
  * result is normalized to [0,360). When continuous, each segment is a plain numeric lerp with no wrapping, so the stop
- * values are treated as absolute magnitudes (e.g. 0→720 sweeps two full turns instead of collapsing to no movement).
+ * values are treated as absolute magnitudes (e.g. 0->720 sweeps two full turns instead of collapsing to no movement).
  */
 const sampleAngleStops = (resolved: { value: number; position: number }[], position: number, traversal: number, cyclical: boolean): number => {
     if (resolved.length === 0) return 0;
@@ -267,28 +277,28 @@ const sampleAngleStops = (resolved: { value: number; position: number }[], posit
 const dependsOn = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, outSocket: keyof AngleIteratorDefinition["outputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof AngleIteratorDefinition["inputs"])[];
     if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "angleTraversal", "continuity", ...stopSockets];
+        return [...IterationPrefab.SEQUENCED_DEPS, "angleTraversal", "continuity", ...stopSockets];
     }
     if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "angleTraversal", "continuity", ...stopSockets];
+        return [...IterationPrefab.SAMPLED_DEPS, "angleTraversal", "continuity", ...stopSockets];
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, inSocket: keyof AngleIteratorDefinition["inputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["outputs"])[] => {
-    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
-    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
+    if ((IterationPrefab.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
+    if ((IterationPrefab.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
     return ["sequencedOutput", "sampledOutput"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket: keyof AngleIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     let position: number;
     if (socket === "sequencedOutput") {
-        const result = Iteration.evaluate(node, context);
+        const result = IterationPrefab.evaluate(node, context);
         if (result === null) return null;
         position = result.t * 100;
     } else if (socket === "sampledOutput") {
-        position = Iteration.resolveSamplePosition(node, context);
+        position = IterationPrefab.resolveSamplePosition(node, context);
     } else {
         return null;
     }
@@ -317,34 +327,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket
     return { kind: "angle", data: `${value}` };
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<
-        Pick<AngleIteratorDefinition["inputs"], "sequence" | "angleTraversal" | "continuity" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">
-    >]: SocketTypes.SocketRule;
-} = {
-    ...Iteration.IN_SOCKET_TYPES,
-    angleTraversal: { types: ["enum"], mode: "and" },
-    continuity: { types: ["enum"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<AngleIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["angle"], mode: "and" },
-    sampledOutput: { types: ["angle"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("value_")) {
-        return { types: ["angle"], mode: "and" };
-    }
-    if (socketId.startsWith("pos_")) {
-        return { types: ["float"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const AngleIteratorNodeType: NodeTypes.Type<"angleIterator", AngleIteratorDefinition> = {
     type: "angleIterator",
     displayName: "Angle Iterator",
@@ -358,5 +340,6 @@ export const AngleIteratorNodeType: NodeTypes.Type<"angleIterator", AngleIterato
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

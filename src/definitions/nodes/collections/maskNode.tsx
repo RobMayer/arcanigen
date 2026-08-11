@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
@@ -8,27 +8,28 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { MaskedShape } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type MaskDefinition = {
-    inputs: {
-        content: DataTypes.Use<"shape">;
-        mask: DataTypes.Use<"shape">;
-        showMask: DataTypes.Use<"boolean">;
-        maskMode: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
+const def = signature({
+    in: { content: "shape", mask: "shape", showMask: "boolean", maskMode: "enum" },
+    out: { output: "shape" },
+});
+
+export type MaskDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         showMask: boolean;
-        maskMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    };
-};
+        maskMode: DataTypes.TypeOf<"enum">;
+    }
+>;
 
 const MASK_MODE_OPTIONS = Enum.options(Enum.Common.maskMode);
 
@@ -134,28 +135,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<MaskDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    content: { types: ["shape"], mode: "or" },
-    mask: { types: ["shape"], mode: "or" },
-    showMask: { types: ["boolean"], mode: "or" },
-    maskMode: { types: ["enum"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<MaskDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<MaskDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
-const SHAPE_RULE_IN: SocketTypes.SocketRule = { types: ["shape"], mode: "or" };
-const SHAPE_RULE_OUT: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+const SHAPE_RULE_IN: SocketTypes.Term = SocketTypes.of("shape");
+const SHAPE_RULE_OUT: SocketTypes.Term = SocketTypes.of("shape");
 
 export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     type: "mask",
@@ -169,7 +150,8 @@ export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     canInterject: passthroughCanInterject(SHAPE_RULE_IN, SHAPE_RULE_OUT),
     onInterject: passthroughInterject("content", "output"),
 };

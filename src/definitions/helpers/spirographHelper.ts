@@ -1,4 +1,4 @@
-import { gcd } from "../../../util/misc";
+import { gcd } from "../../util/misc";
 
 /**
  * Shared spirograph (roulette curve) sampler used by both the Spirograph node and its ringed
@@ -10,7 +10,8 @@ import { gcd } from "../../../util/misc";
  *   outside (epitrochoid):   x = (R+r)cosθ − d·cos(kθ),  y = (R+r)sinθ − d·sin(kθ)
  * where k = (R∓r)/r is the frequency of the inner term.
  */
-export namespace Spirograph {
+
+export namespace SpirographHelper {
     export type Options = {
         ringRadius: number; // R — fixed ring
         wheelRadius: number; // r — rolling wheel
@@ -21,7 +22,6 @@ export namespace Spirograph {
         closed: boolean; // sample θ exclusive of the endpoint (curve wraps back on itself)
     };
 
-    /** A sampled point plus its unit normal (left of travel). */
     export type SamplePoint = { x: number; y: number; nx: number; ny: number };
 
     /**
@@ -45,7 +45,6 @@ export namespace Spirograph {
         return { circum: base + d, apothem: Math.abs(base - d) };
     };
 
-    /** Largest distance from the origin the curve reaches — used for the preview bounding box. */
     export const maxRadius = (geo: Geometry): number => figureMetrics(geo).circum;
 
     export type RadiusMode = "major" | "minor" | "mechanical";
@@ -82,7 +81,7 @@ export namespace Spirograph {
             const x = a * Math.cos(theta) + sx * d * Math.cos(k * theta);
             const y = a * Math.sin(theta) - d * Math.sin(k * theta);
 
-            // Analytic tangent (dx/dθ, dy/dθ) → left-hand unit normal (−dy, dx).
+            // Analytic tangent (dx/dθ, dy/dθ) -> left-hand unit normal (−dy, dx).
             const dx = -a * Math.sin(theta) - sx * d * k * Math.sin(k * theta);
             const dy = a * Math.cos(theta) - d * k * Math.cos(k * theta);
             const len = Math.hypot(dx, dy);
@@ -127,7 +126,7 @@ export namespace Spirograph {
 
     const TENSION = 1;
 
-    /** Catmull-Rom → cubic Bézier smoothing of a sampled polyline, with wraparound when closed. */
+    /** Catmull-Rom -> cubic Bézier smoothing of a sampled polyline, with wraparound when closed. */
     export const toPath = (pts: readonly { x: number; y: number }[], closed: boolean): string => {
         if (pts.length < 2) return "";
         const n = pts.length;

@@ -1,5 +1,6 @@
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
-import { DataTypes, NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
+import { DataTypes } from "../../definitions/dataTypes";
 import { Resolver } from "../../util/resolver";
 import type { CacheType, GraphId, InterfacesType, LinksType, NodesType } from "./types";
 
@@ -65,8 +66,8 @@ const evaluateSubgraphForCache = (
         const evaluate = NodeTypes.getEvaluator(node.type);
         if (!evaluate) return null;
 
-        const getInput = <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<DataTypes.Use<K>> | undefined => {
-            return resolveInput(inputNodeId, seqData) as DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
+        const getInput = <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<K> | undefined => {
+            return resolveInput(inputNodeId, seqData) as DataTypes.EvalOf<K> | undefined;
         };
 
         const subContext: Resolver.Context = {
@@ -74,7 +75,7 @@ const evaluateSubgraphForCache = (
             sequenceData: seqData,
             getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
             getInput,
-            resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideSeqData?: Resolver.SequenceData): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+            resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideSeqData?: Resolver.SequenceData): DataTypes.EvalOf<K> | null => {
                 const effectiveSeqData = overrideSeqData ?? seqData;
                 const targetNode = subgraphNodes[targetNodeId];
                 if (!targetNode) return null;
@@ -85,7 +86,7 @@ const evaluateSubgraphForCache = (
                 const link = subgraphLinks[linkId];
                 if (!link) return null;
 
-                return evaluateNodeInSubgraph(link.fromNode, link.fromSocket, effectiveSeqData) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+                return evaluateNodeInSubgraph(link.fromNode, link.fromSocket, effectiveSeqData) as DataTypes.EvalOf<K> | null;
             },
             subgraph: (nestedGraphId: string, nestedOutputNodeId: string, nestedResolveInput: (inputNodeId: string, nestedSeqData: Resolver.SequenceData) => DataTypes.AnyEval | null, innerSeqData: Resolver.SequenceData) => {
                 return evaluateSubgraphForCache(nodes, links, interfaces, nestedGraphId, nestedOutputNodeId, nestedResolveInput, innerSeqData);
@@ -136,7 +137,7 @@ const evaluateSocketCached = (
     if (!evaluate) return null;
 
     // Build context with evaluate-on-miss resolve
-    const resolve = <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideSeqData?: Resolver.SequenceData): DataTypes.EvalOf<DataTypes.Use<K>> | null => {
+    const resolve = <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideSeqData?: Resolver.SequenceData): DataTypes.EvalOf<K> | null => {
         const effectiveSeqData = overrideSeqData ?? sequenceData;
         const targetNode = nodes[graphId]?.[targetNodeId];
         if (!targetNode) return null;
@@ -148,7 +149,7 @@ const evaluateSocketCached = (
         if (!link) return null;
 
         // Recurse — returns cached value or evaluates on miss
-        return evaluateSocketCached(graphCache, nodes, links, interfaces, graphId, link.fromNode, link.fromSocket, effectiveSeqData) as DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        return evaluateSocketCached(graphCache, nodes, links, interfaces, graphId, link.fromNode, link.fromSocket, effectiveSeqData) as DataTypes.EvalOf<K> | null;
     };
 
     const context: Resolver.Context = {

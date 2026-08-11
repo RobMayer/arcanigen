@@ -5,29 +5,30 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { EmptyOr } from "../../../util/misc";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type StopFloatBreakoutDefinition = {
-    inputs: {
-        value: DataTypes.Use<"float">;
-        position: DataTypes.Use<"float">;
-        enabled: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"stop<float>">;
-    };
-    payload: {
+const def = signature({
+    in: { value: "float", position: "float", enabled: "boolean" },
+    out: { output: "stop:float" },
+});
+
+export type StopFloatBreakoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         value: EmptyOr<NumericString.Type>;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StopFloatBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatStop", StopFloatBreakoutDefinition> => {
     return {
@@ -108,26 +109,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>, so
     const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
     const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
-        kind: "stop<float>",
+        kind: "stop:float",
         data: {
             value: NumericString.Emptyable.asNumber(valStr),
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },
     };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<StopFloatBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["float"], mode: "and" },
-    position: { types: ["float"], mode: "and" },
-    enabled: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<StopFloatBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return { types: ["stop<float>"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const FloatStopNodeType: NodeTypes.Type<"floatStop", StopFloatBreakoutDefinition> = {
@@ -142,5 +130,6 @@ export const FloatStopNodeType: NodeTypes.Type<"floatStop", StopFloatBreakoutDef
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

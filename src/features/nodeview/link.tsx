@@ -4,7 +4,7 @@ import { Project } from "../../state/project";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { Icon, ICONS } from "../../components/Icon";
-import { NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { NodeTypes } from "../../definitions/nodeTypes";
 import { NODE_DRAG_MIME, NODE_TYPE_MIME_PREFIX } from "../nodedrawer";
 import { useGraphId } from "../../state/graphId";
 import { useDragPaneInternal } from "../../components/wrappers/DragPane";
@@ -20,6 +20,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const { removeLinks, interjectNode } = Project.useMethods();
     const graphId = useGraphId();
     const mc = Project.useMC();
+    const linkType = Project.useLinkType(graphId, link);
     const [, paneControls] = useDragPaneInternal();
 
     const style = useMemo(() => {
@@ -149,8 +150,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 style={style}
                 ref={ref}
                 tabIndex={-1}
-                data-linktype={link.type}
-                data-typeany={link.type === SocketTypes.toCSS(SocketTypes.ANY) ? "" : undefined}
+                data-linktype={linkType}
                 onKeyDown={handleKeyDown}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -255,9 +255,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     }
 
     &[data-linktype="shape"] > svg > g > path,
-    &[data-linktype="layer"] > svg > g > path,
-    &[data-linktype="shape layer"] > svg > g > path,
-    &[data-linktype="layer shape"] > svg > g > path {
+    &[data-linktype="layer"] > svg > g > path {
         &[data-part="display"] {
             stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
             stroke-width: 6px;
@@ -293,7 +291,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="boolean"],
     &[data-linktype~="point"],
     &[data-linktype~="array<point>"],
-    &[data-linktype~="tokens<length>"] {
+    &[data-linktype~="tokens:length"] {
         --flavour: var(--flavour-accent);
     }
     &[data-linktype~="path"],
@@ -302,16 +300,16 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         --flavour: var(--flavour-emphasis);
     }
     &[data-linktype~="gradient"],
-    &[data-linktype~="stop<float>"],
-    &[data-linktype~="stop<color>"],
-    &[data-linktype~="stop<angle>"],
-    &[data-linktype~="stop<integer>"],
-    &[data-linktype~="stop<length>"],
-    &[data-linktype~="array<stop<float>>"],
-    &[data-linktype~="array<stop<color>>"],
-    &[data-linktype~="array<stop<angle>>"],
-    &[data-linktype~="array<stop<integer>>"],
-    &[data-linktype~="array<stop<length>>"] {
+    &[data-linktype~="stop:float"],
+    &[data-linktype~="stop:color"],
+    &[data-linktype~="stop:angle"],
+    &[data-linktype~="stop:integer"],
+    &[data-linktype~="stop:length"],
+    &[data-linktype~="array<stop:float>"],
+    &[data-linktype~="array<stop:color>"],
+    &[data-linktype~="array<stop:angle>"],
+    &[data-linktype~="array<stop:integer>"],
+    &[data-linktype~="array<stop:length>"] {
         --flavour: var(--flavour-info);
     }
     &[data-linktype~="sequence"] {
@@ -324,9 +322,5 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="layer"],
     &[data-linktype~="array<layer>"] {
         --flavour: var(--flavour-confirm);
-    }
-
-    &[data-typeany] {
-        --flavour: var(--flavour-base);
     }
 `;

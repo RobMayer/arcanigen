@@ -5,32 +5,35 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
-import { extractSingle, applyRounding } from "../math/numericMath";
+import { extractSingle, applyRounding } from "../../helpers/mathHelper";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const ROUNDING_MODE_OPTIONS = Enum.options(Enum.Common.roundingMode);
 
 type IntegerNode = NodeDefinitions.BuiltNodeOf<"integer", IntegerDefinition>;
 
-export type IntegerDefinition = {
-    inputs: {
-        value: DataTypes.Use<"integer">;
-        mode: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"integer">>;
+const def = signature({
+    in: { value: $.oneOf("angle", "float", "integer", "length"), mode: "enum" },
+    out: { output: "integer" },
+});
+
+export type IntegerDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"integer">;
         roundingMode: number;
         connectedKind: DataTypes.Kind | null;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"integer", IntegerDefinition> => {
     return {
@@ -112,24 +115,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "out
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<IntegerDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["angle", "float", "integer", "length"], mode: "or" },
-    mode: { types: ["enum"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<IntegerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 const setPayload = (nodeId: string, updates: Partial<IntegerDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const current = ctx.getNode(graphId, nodeId);
     if (!current) return;
@@ -145,8 +130,8 @@ const onConnect = (node: IntegerNode, linkId: string, direction: "in" | "out", g
     if (!link || link.toSocket !== "value") return;
     const fromNode = ctx.getNode(graphId, link.fromNode);
     if (!fromNode) return;
-    const st = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
-    setPayload(node.id, { connectedKind: st.types[0] ?? null }, graphId, ctx);
+    const st = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
+    setPayload(node.id, { connectedKind: (SocketTypes.project(st)[0] as DataTypes.Kind) ?? null }, graphId, ctx);
 };
 
 const onDisconnect = (
@@ -173,7 +158,8 @@ export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> 
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
     onDisconnect,
 };

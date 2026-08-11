@@ -8,45 +8,52 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { NumericString } from "../../datatypes/numericString";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { Fonts } from "../../fonts";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type TextDefinition = {
-    inputs: {
-        text: DataTypes.Use<"string">;
-        font: DataTypes.Use<"enum">;
-        size: DataTypes.Use<"length">; // font size
-        spacing: DataTypes.Use<"length">; // letter spacing
-        lineHeight: DataTypes.Use<"length">; // vertical advance between wrapped lines
-        letterRotation: DataTypes.Use<"angle">; // per-character rotation
-        anchor: DataTypes.Use<"enum">; // vertical align -> dominant-baseline
-        align: DataTypes.Use<"enum">; // horizontal align -> text-anchor
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        charCount: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        text: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        font: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        size: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spacing: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        lineHeight: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        letterRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        anchor: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        align: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        text: "string",
+        font: "enum",
+        size: "length",
+        spacing: "length",
+        lineHeight: "length",
+        letterRotation: "angle",
+        anchor: "enum",
+        align: "enum",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", charCount: "integer" },
+});
+
+export type TextDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        text: DataTypes.TypeOf<"string">;
+        font: DataTypes.TypeOf<"enum">;
+        size: DataTypes.TypeOf<"length">;
+        spacing: DataTypes.TypeOf<"length">;
+        lineHeight: DataTypes.TypeOf<"length">;
+        letterRotation: DataTypes.TypeOf<"angle">;
+        anchor: DataTypes.TypeOf<"enum">;
+        align: DataTypes.TypeOf<"enum">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const TEXT_ALIGN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const TEXT_ANCHOR_OPTIONS = Enum.options(Enum.Common.verticalAlign);
@@ -172,8 +179,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextDefinit
             <SocketIn node={node} socketId={"letterRotation"} label={"Letter Rotation"}>
                 <AngleInput.SliderInput value={node.payload.letterRotation} onCommit={(letterRotation) => handleUpdate({ letterRotation })} disabled={node.in.letterRotation !== null} />
             </SocketIn>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion label={"Additional Options"} socketsOut={"charCount"} nodeId={node.id}>
                 <SocketOut node={node} socketId={"charCount"}>
                     Character Count
@@ -240,9 +247,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof T
     const textAnchorValue = (Resolver.EnumMappings.linearAlign[align] ?? "start") as "start" | "middle" | "end";
     const dominantBaseline: string = Resolver.EnumMappings.textAnchor[anchor] ?? "central";
 
-    const paint = Stylings.evaluate(node, context);
+    const paint = StylingPrefab.evaluate(node, context);
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     // The text has no geometric path, so approximate its bounds for layout/preview
     // purposes from font metrics: ~0.6em advance per character, one em tall per line.
@@ -274,33 +281,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof T
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<TextDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    text: { types: ["string"], mode: "or" },
-    font: { types: ["enum"], mode: "or" },
-    size: { types: ["length"], mode: "or" },
-    spacing: { types: ["length"], mode: "or" },
-    lineHeight: { types: ["length"], mode: "or" },
-    letterRotation: { types: ["angle"], mode: "or" },
-    anchor: { types: ["enum"], mode: "or" },
-    align: { types: ["enum"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<TextDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    charCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TextDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const TextNodeType: NodeTypes.Type<"text", TextDefinition> = {
     type: "text",
     displayName: "Text",
@@ -313,5 +293,6 @@ export const TextNodeType: NodeTypes.Type<"text", TextDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

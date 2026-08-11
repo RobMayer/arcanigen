@@ -1,35 +1,40 @@
 import { nanoid } from "nanoid";
-import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject, queryUpstreamOutType, commitSocketTypes } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, extractSingle, wrapResult, applyRounding, numericCanInterject } from "./numericMath";
+import { extractSingle, wrapResult, applyRounding } from "../../helpers/mathHelper";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 
 const ROUNDING_MODE_OPTIONS = Enum.options(Enum.Common.roundingMode);
 
-export type RoundDefinition = {
-    inputs: {
-        input: DataTypes.Use<"float">;
-        mode: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"float">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
+// ESCAPE HATCH: round's output kind is the input's kind with `float ↦ integer` remapped — a relational
+// (out = f(in)) map the builder vocabulary can't express, so `getSocketType` below stays hand-rolled.
+// This `def` is TYPE-ONLY (its `.instance` is unused; the node does NOT spread SignatureEngine.hooks) —
+// it exists solely to derive an HONEST Definition: input accepts NUMERIC, output is the result of the
+// remap `{integer, angle, length}`.
+const def = signature({
+    in: { input: $.NUMERIC, mode: "enum" },
+    out: { output: $.oneOf("integer", "angle", "length") },
+});
+
+export type RoundDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: string;
         mode: number;
-        connectedType: SocketTypes.SocketRule;
-        resolvedInTypes: SocketTypes.SocketRule;
-    };
-};
+    }
+>;
 
 type RoundNode = NodeDefinitions.BuiltNodeOf<"round", RoundDefinition>;
 
@@ -41,32 +46,31 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RoundDefinition>>, 
         payload: {
             label: "",
             mode: input.mode ?? Enum.Common.roundingMode.HALF_EXPAND.value,
-            connectedType: SocketTypes.NONE,
-            resolvedInTypes: SocketTypes.ANY,
         },
         type: "round",
     };
 };
 
-const effectiveInputType = (connectedType: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule): SocketTypes.SocketRule => {
-    if (connectedType.types.length > 0) return connectedType;
-    return SocketTypes.intersect(NUMERIC_TYPES, resolvedInTypes);
+const effectiveInputType = (connectedType: SocketTypes.Term, resolvedInTypes: SocketTypes.Term): SocketTypes.Term => {
+    if (SocketTypes.project(connectedType).length > 0) return connectedType;
+    return SocketTypes.intersect(SocketTypes.NUMERIC, resolvedInTypes);
 };
 
-const roundedOutputType = (inputType: SocketTypes.SocketRule): SocketTypes.SocketRule => {
-    return { types: inputType.types.map((t) => (t === "float" ? "integer" : t)), mode: inputType.mode };
+// The escape-hatch remap: project the input kinds, rewrite float ↦ integer, rebuild as a same-mode Term set.
+const roundedOutputType = (inputType: SocketTypes.Term): SocketTypes.Term => {
+    return SocketTypes.set(SocketTypes.projectMode(inputType), ...SocketTypes.project(inputType).map((t) => SocketTypes.atom(t === "float" ? "integer" : t)));
 };
 
-const queryDownstreamTypes = (node: RoundNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
+const queryDownstreamTypes = (node: RoundNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term | null => {
     const linkIds = node.out.output;
     if (linkIds.length === 0) return null;
-    let result: SocketTypes.SocketRule | null = null;
+    let result: SocketTypes.Term | null = null;
     for (const linkId of linkIds) {
         const link = ctx.getLink(graphId, linkId);
         if (!link) continue;
         const neighbor = ctx.getNode(graphId, link.toNode);
         if (!neighbor) continue;
-        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
+        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", graphId, ctx);
         result = result === null ? st : SocketTypes.intersect(result, st);
     }
     return result;
@@ -125,93 +129,49 @@ const evaluate = (node: NodeDefinitions.NodeFor<RoundDefinition>, socket: "outpu
     return null;
 };
 
-const setPayload = (nodeId: string, updates: Partial<RoundDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const current = ctx.getNode(graphId, nodeId);
+const ENUM_IN: SocketTypes.Term = SocketTypes.of("enum");
+const OUTPUT_DEFAULT: SocketTypes.Term = roundedOutputType(SocketTypes.NUMERIC);
+
+// Resolve every socket's concrete type from the live graph: the input adopts its upstream's kind
+// (or, absent one, whatever the downstream consumers allow, clamped to NUMERIC); the output is that
+// with float -> integer remapped. Recomputed on every hook and stashed in the socket-type cache.
+const resolveRound = (node: RoundNode, graphId: string, ctx: NodeTypes.MethodContext): { in: Record<string, SocketTypes.Term>; out: Record<string, SocketTypes.Term> } => {
+    const connectedType = queryUpstreamOutType(node, "input", graphId, ctx);
+    const downstream = queryDownstreamTypes(node, graphId, ctx);
+    const inType = effectiveInputType(connectedType, downstream ?? SocketTypes.ANY);
+    return { in: { input: inType, mode: ENUM_IN }, out: { output: roundedOutputType(inType) } };
+};
+
+const recompute = (node: RoundNode, graphId: string, ctx: NodeTypes.MethodContext): void => {
+    const current = ctx.getNode(graphId, node.id) as RoundNode | undefined;
     if (!current) return;
-    ctx.setNode(graphId, nodeId, {
-        ...current,
-        payload: { ...current.payload, ...updates },
-    });
+    commitSocketTypes(current, graphId, ctx, resolveRound(current, graphId, ctx));
 };
 
-const onConnect = (node: RoundNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-
-    if (direction === "in") {
-        if (link.toSocket === "mode") return;
-        const upstreamType = queryUpstreamOutType(node, "input", graphId, ctx);
-        setPayload(node.id, { connectedType: upstreamType }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else {
-        const currentNode = ctx.getNode(graphId, node.id) as RoundNode | undefined;
-        if (!currentNode) return;
-        const downstreamTypes = queryDownstreamTypes(currentNode, graphId, ctx);
-        if (downstreamTypes !== null) {
-            const newInTypes = SocketTypes.intersect(currentNode.payload.resolvedInTypes, downstreamTypes);
-            if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
-                setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
-                ctx.requestRefresh(graphId, node.id, "input", "in", "constraintAdded");
-            }
-        }
-    }
-};
-
+const onConnect = (node: RoundNode, _linkId: string, _direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => recompute(node, graphId, ctx);
 const onDisconnect = (
     node: RoundNode,
-    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
-    direction: "in" | "out",
+    _link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
+    _direction: "in" | "out",
     graphId: string,
     ctx: NodeTypes.MethodContext,
-): void => {
-    if (direction === "in") {
-        if (link.toSocket === "mode") return;
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
-        setPayload(node.id, { connectedType: SocketTypes.NONE }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else {
-        ctx.requestRefresh(graphId, node.id, "input", "in", "constraintRemoved");
-        const currentNode = ctx.getNode(graphId, node.id) as RoundNode | undefined;
-        if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, graphId, ctx);
-        setPayload(node.id, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, "input", "in", "constraintAdded");
-    }
-};
+): void => recompute(node, graphId, ctx);
+const onRefreshRequest = (node: RoundNode, _socketId: string, _side: "in" | "out", _reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void =>
+    recompute(node, graphId, ctx);
 
-const onRefreshRequest = (node: RoundNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const currentNode = ctx.getNode(graphId, node.id) as RoundNode | undefined;
-    if (!currentNode) return;
-
-    if (side === "in") {
-        if (socketId === "mode") return;
-        const newUpstreamType = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
-        if (!SocketTypes.equals(newUpstreamType, currentNode.payload.connectedType)) {
-            setPayload(node.id, { connectedType: newUpstreamType }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, "output", "out", reason);
-        }
-    } else {
-        const newInTypes = queryDownstreamTypes(currentNode, graphId, ctx) ?? SocketTypes.ANY;
-        if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
-            setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, "input", "in", reason);
-        }
-    }
-};
-
-const ENUM_IN: SocketTypes.SocketRule = { types: ["enum"], mode: "or" };
-
-const getSocketType = (node: NodeDefinitions.NodeFor<RoundDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const inType = effectiveInputType(node.payload.connectedType, node.payload.resolvedInTypes);
+const getSocketType = (node: NodeDefinitions.NodeFor<RoundDefinition>, socketId: string, side: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term => {
+    const stored = ctx.readSocketType(graphId, node.id, socketId, side);
+    if (stored) return stored;
+    // Unsolved (fresh node / post-load, before any hook fired): the def's honest declared types.
     switch (socketId) {
         case "input":
-            return inType;
+            return SocketTypes.NUMERIC;
         case "output":
-            return roundedOutputType(inType);
+            return OUTPUT_DEFAULT;
         case "mode":
             return ENUM_IN;
         default:
-            return NUMERIC_TYPES;
+            return side === "in" ? SocketTypes.ANY : SocketTypes.NONE;
     }
 };
 
@@ -231,6 +191,6 @@ export const RoundType: NodeTypes.Type<"round", RoundDefinition> = {
     onConnect,
     onDisconnect,
     onRefreshRequest,
-    canInterject: numericCanInterject,
+    canInterject: passthroughCanInterject(SocketTypes.NUMERIC, SocketTypes.NUMERIC),
     onInterject: passthroughInterject("input", "output"),
 };

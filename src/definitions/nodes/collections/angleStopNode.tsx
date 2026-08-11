@@ -5,7 +5,8 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -13,23 +14,23 @@ import { Angle } from "../../datatypes/angle";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { EmptyOr } from "../../../util/misc";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type AngleStopBreakoutDefinition = {
-    inputs: {
-        value: DataTypes.Use<"angle">;
-        position: DataTypes.Use<"float">;
-        enabled: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"stop<angle>">;
-    };
-    payload: {
+const def = signature({
+    in: { value: "angle", position: "float", enabled: "boolean" },
+    out: { output: "stop:angle" },
+});
+
+export type AngleStopBreakoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         value: EmptyOr<Angle.Type>;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleStopBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleStop", AngleStopBreakoutDefinition> => {
     return {
@@ -80,14 +81,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleStopBr
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>, outSocket: keyof AngleStopBreakoutDefinition["outputs"], _deps: AllDeps): (keyof AngleStopBreakoutDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>,
+    outSocket: keyof AngleStopBreakoutDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof AngleStopBreakoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ["value", "position", "enabled"];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>, inSocket: keyof AngleStopBreakoutDefinition["inputs"], _deps: AllDeps): (keyof AngleStopBreakoutDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>,
+    inSocket: keyof AngleStopBreakoutDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof AngleStopBreakoutDefinition["outputs"])[] => {
     if (inSocket === "value" || inSocket === "position" || inSocket === "enabled") {
         return ["output"];
     }
@@ -102,26 +111,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>, so
     const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
     const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
-        kind: "stop<angle>",
+        kind: "stop:angle",
         data: {
             value: NumericString.Emptyable.asNumber(valStr),
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },
     };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<AngleStopBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["angle"], mode: "and" },
-    position: { types: ["float"], mode: "and" },
-    enabled: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return { types: ["stop<angle>"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const AngleStopNodeType: NodeTypes.Type<"angleStop", AngleStopBreakoutDefinition> = {
@@ -136,5 +132,6 @@ export const AngleStopNodeType: NodeTypes.Type<"angleStop", AngleStopBreakoutDef
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

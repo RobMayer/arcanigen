@@ -5,7 +5,8 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Enum } from "../../datatypes/enum";
@@ -15,123 +16,123 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-type NumIn = DataTypes.Use<"float" | "integer">;
-type AngIn = DataTypes.Use<"angle">;
-type EnIn = DataTypes.Use<"enum">;
-
-export type ColorJoinDefinition = {
-    inputs: {
-        mode: EnIn;
-        alphaMode: EnIn;
+const def = signature({
+    in: {
+        mode: "enum",
+        alphaMode: "enum",
         // RGB float 0–100
-        rgb_r: NumIn;
-        rgb_g: NumIn;
-        rgb_b: NumIn;
+        rgb_r: $.oneOf("float", "integer"),
+        rgb_g: $.oneOf("float", "integer"),
+        rgb_b: $.oneOf("float", "integer"),
         // RGB byte 0–255
-        rgb255_r: NumIn;
-        rgb255_g: NumIn;
-        rgb255_b: NumIn;
+        rgb255_r: $.oneOf("float", "integer"),
+        rgb255_g: $.oneOf("float", "integer"),
+        rgb255_b: $.oneOf("float", "integer"),
         // CMY
-        cmy_c: NumIn;
-        cmy_m: NumIn;
-        cmy_y: NumIn;
+        cmy_c: $.oneOf("float", "integer"),
+        cmy_m: $.oneOf("float", "integer"),
+        cmy_y: $.oneOf("float", "integer"),
         // CMYK
-        cmyk_c: NumIn;
-        cmyk_m: NumIn;
-        cmyk_y: NumIn;
-        cmyk_k: NumIn;
+        cmyk_c: $.oneOf("float", "integer"),
+        cmyk_m: $.oneOf("float", "integer"),
+        cmyk_y: $.oneOf("float", "integer"),
+        cmyk_k: $.oneOf("float", "integer"),
         // HSV
-        hsv_h: AngIn;
-        hsv_s: NumIn;
-        hsv_v: NumIn;
+        hsv_h: "angle",
+        hsv_s: $.oneOf("float", "integer"),
+        hsv_v: $.oneOf("float", "integer"),
         // HSL
-        hsl_h: AngIn;
-        hsl_s: NumIn;
-        hsl_l: NumIn;
+        hsl_h: "angle",
+        hsl_s: $.oneOf("float", "integer"),
+        hsl_l: $.oneOf("float", "integer"),
         // HWK
-        hwk_h: AngIn;
-        hwk_w: NumIn;
-        hwk_k: NumIn;
+        hwk_h: "angle",
+        hwk_w: $.oneOf("float", "integer"),
+        hwk_k: $.oneOf("float", "integer"),
         // HSI
-        hsi_h: AngIn;
-        hsi_s: NumIn;
-        hsi_i: NumIn;
+        hsi_h: "angle",
+        hsi_s: $.oneOf("float", "integer"),
+        hsi_i: $.oneOf("float", "integer"),
         // HCY
-        hcy_h: AngIn;
-        hcy_c: NumIn;
-        hcy_y: NumIn;
+        hcy_h: "angle",
+        hcy_c: $.oneOf("float", "integer"),
+        hcy_y: $.oneOf("float", "integer"),
         // CIELAB
-        cielab_l: NumIn;
-        cielab_a: NumIn;
-        cielab_b: NumIn;
+        cielab_l: $.oneOf("float", "integer"),
+        cielab_a: $.oneOf("float", "integer"),
+        cielab_b: $.oneOf("float", "integer"),
         // CIELCH
-        cielch_l: NumIn;
-        cielch_c: NumIn;
-        cielch_h: AngIn;
+        cielch_l: $.oneOf("float", "integer"),
+        cielch_c: $.oneOf("float", "integer"),
+        cielch_h: "angle",
         // OKLAB
-        oklab_l: NumIn;
-        oklab_a: NumIn;
-        oklab_b: NumIn;
+        oklab_l: $.oneOf("float", "integer"),
+        oklab_a: $.oneOf("float", "integer"),
+        oklab_b: $.oneOf("float", "integer"),
         // OKLCH
-        oklch_l: NumIn;
-        oklch_c: NumIn;
-        oklch_h: AngIn;
+        oklch_l: $.oneOf("float", "integer"),
+        oklch_c: $.oneOf("float", "integer"),
+        oklch_h: "angle",
         // Alpha
-        alpha_f: NumIn;
-        alpha_b: NumIn;
-    };
-    outputs: {
-        output: DataTypes.Use<"color">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        alphaMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        rgb_r: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        rgb_g: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        rgb_b: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        rgb255_r: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        rgb255_g: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        rgb255_b: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        cmy_c: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cmy_m: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cmy_y: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cmyk_c: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cmyk_m: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cmyk_y: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cmyk_k: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hsv_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        hsv_s: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hsv_v: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hsl_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        hsl_s: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hsl_l: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hwk_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        hwk_w: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hwk_k: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hsi_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        hsi_s: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hsi_i: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hcy_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        hcy_c: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        hcy_y: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cielab_l: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cielab_a: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cielab_b: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cielch_l: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cielch_c: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        cielch_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        oklab_l: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        oklab_a: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        oklab_b: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        oklch_l: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        oklch_c: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        oklch_h: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        alpha_f: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        alpha_b: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-    };
-};
+        alpha_f: $.oneOf("float", "integer"),
+        alpha_b: $.oneOf("float", "integer"),
+    },
+    out: { output: "color" },
+});
+
+export type ColorJoinDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        mode: DataTypes.TypeOf<"enum">;
+        alphaMode: DataTypes.TypeOf<"enum">;
+        rgb_r: DataTypes.TypeOf<"float">;
+        rgb_g: DataTypes.TypeOf<"float">;
+        rgb_b: DataTypes.TypeOf<"float">;
+        rgb255_r: DataTypes.TypeOf<"integer">;
+        rgb255_g: DataTypes.TypeOf<"integer">;
+        rgb255_b: DataTypes.TypeOf<"integer">;
+        cmy_c: DataTypes.TypeOf<"float">;
+        cmy_m: DataTypes.TypeOf<"float">;
+        cmy_y: DataTypes.TypeOf<"float">;
+        cmyk_c: DataTypes.TypeOf<"float">;
+        cmyk_m: DataTypes.TypeOf<"float">;
+        cmyk_y: DataTypes.TypeOf<"float">;
+        cmyk_k: DataTypes.TypeOf<"float">;
+        hsv_h: DataTypes.TypeOf<"angle">;
+        hsv_s: DataTypes.TypeOf<"float">;
+        hsv_v: DataTypes.TypeOf<"float">;
+        hsl_h: DataTypes.TypeOf<"angle">;
+        hsl_s: DataTypes.TypeOf<"float">;
+        hsl_l: DataTypes.TypeOf<"float">;
+        hwk_h: DataTypes.TypeOf<"angle">;
+        hwk_w: DataTypes.TypeOf<"float">;
+        hwk_k: DataTypes.TypeOf<"float">;
+        hsi_h: DataTypes.TypeOf<"angle">;
+        hsi_s: DataTypes.TypeOf<"float">;
+        hsi_i: DataTypes.TypeOf<"float">;
+        hcy_h: DataTypes.TypeOf<"angle">;
+        hcy_c: DataTypes.TypeOf<"float">;
+        hcy_y: DataTypes.TypeOf<"float">;
+        cielab_l: DataTypes.TypeOf<"float">;
+        cielab_a: DataTypes.TypeOf<"float">;
+        cielab_b: DataTypes.TypeOf<"float">;
+        cielch_l: DataTypes.TypeOf<"float">;
+        cielch_c: DataTypes.TypeOf<"float">;
+        cielch_h: DataTypes.TypeOf<"angle">;
+        oklab_l: DataTypes.TypeOf<"float">;
+        oklab_a: DataTypes.TypeOf<"float">;
+        oklab_b: DataTypes.TypeOf<"float">;
+        oklch_l: DataTypes.TypeOf<"float">;
+        oklch_c: DataTypes.TypeOf<"float">;
+        oklch_h: DataTypes.TypeOf<"angle">;
+        alpha_f: DataTypes.TypeOf<"float">;
+        alpha_b: DataTypes.TypeOf<"integer">;
+    }
+>;
 
 type InKey = keyof ColorJoinDefinition["inputs"];
 
@@ -404,12 +405,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorJoinDefinition>, socket: "o
 
     const readNum = (sid: InKey, fallback: string): number => {
         const resolved = context.resolve<"float" | "integer">(node.id, sid)?.data;
-        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<DataTypes.Use<"float">>;
+        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<"float">;
         return NumericString.Emptyable.asNumber(resolved ?? payloadVal) ?? Number(fallback);
     };
     const readAng = (sid: InKey, fallback: string): number => {
         const resolved = context.resolve<"angle">(node.id, sid)?.data;
-        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<DataTypes.Use<"angle">>;
+        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<"angle">;
         return NumericString.Emptyable.asNumber(resolved ?? payloadVal) ?? Number(fallback);
     };
 
@@ -527,36 +528,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorJoinDefinition>, socket: "o
     return { kind: "color", data: { r, g, b, a } };
 };
 
-const NUM_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
-const ANGLE_IN: SocketTypes.SocketRule = { types: ["angle"], mode: "and" };
-const ENUM_IN: SocketTypes.SocketRule = { types: ["enum"], mode: "and" };
-
-const SOCKETTYPES_IN: { [key in InKey]: SocketTypes.SocketRule } = {
-    mode: ENUM_IN,
-    alphaMode: ENUM_IN,
-    rgb_r: NUM_IN, rgb_g: NUM_IN, rgb_b: NUM_IN,
-    rgb255_r: NUM_IN, rgb255_g: NUM_IN, rgb255_b: NUM_IN,
-    cmy_c: NUM_IN, cmy_m: NUM_IN, cmy_y: NUM_IN,
-    cmyk_c: NUM_IN, cmyk_m: NUM_IN, cmyk_y: NUM_IN, cmyk_k: NUM_IN,
-    hsv_h: ANGLE_IN, hsv_s: NUM_IN, hsv_v: NUM_IN,
-    hsl_h: ANGLE_IN, hsl_s: NUM_IN, hsl_l: NUM_IN,
-    hwk_h: ANGLE_IN, hwk_w: NUM_IN, hwk_k: NUM_IN,
-    hsi_h: ANGLE_IN, hsi_s: NUM_IN, hsi_i: NUM_IN,
-    hcy_h: ANGLE_IN, hcy_c: NUM_IN, hcy_y: NUM_IN,
-    cielab_l: NUM_IN, cielab_a: NUM_IN, cielab_b: NUM_IN,
-    cielch_l: NUM_IN, cielch_c: NUM_IN, cielch_h: ANGLE_IN,
-    oklab_l: NUM_IN, oklab_a: NUM_IN, oklab_b: NUM_IN,
-    oklch_l: NUM_IN, oklch_c: NUM_IN, oklch_h: ANGLE_IN,
-    alpha_f: NUM_IN, alpha_b: NUM_IN,
-};
-
-const COLOR_OUT: SocketTypes.SocketRule = { types: ["color"], mode: "and" };
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorJoinDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "in") return SOCKETTYPES_IN[socketId as InKey];
-    return COLOR_OUT;
-};
-
 export const ColorJoinNodeType: NodeTypes.Type<"colorJoin", ColorJoinDefinition> = {
     type: "colorJoin",
     displayName: "Color Join",
@@ -569,5 +540,6 @@ export const ColorJoinNodeType: NodeTypes.Type<"colorJoin", ColorJoinDefinition>
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -9,29 +9,38 @@ import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/s
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LayerDefinition = {
-    inputs: {
-        layers: DataTypes.Use<"array<layer>">;
-        isolate: DataTypes.Use<"boolean">;
-        [layerSocket: `layer_${string}`]: DataTypes.Use<"layer" | "shape">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        layerArray: DataTypes.Use<"array<layer>">;
-        layerCount: DataTypes.Use<"integer">;
-        enabledCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        layers: $.arrayOf("layer"),
+        isolate: "boolean",
+        "layer_*": $.oneOf("layer", "shape"),
+    },
+    out: {
+        output: "shape",
+        layerArray: $.arrayOf("layer"),
+        layerCount: "integer",
+        enabledCount: "integer",
+    },
+});
+
+export type LayerDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         isolate: boolean;
         layers: { socket: string; enabled: boolean; blend: number }[];
-    };
-};
+    }
+>;
 
 const BLEND_MODE_OPTIONS = Enum.options(Enum.Common.blendMode);
 
@@ -205,6 +214,7 @@ const LayerEntry = ({
     handleReorderLayer: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(node.in[entry.socket]);
+    const linkType = Project.useLinkType(useGraphId(), theLink);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -250,8 +260,8 @@ const LayerEntry = ({
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
             <SocketIn node={node} socketId={entry.socket as `layer_${string}`}>
-                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={theLink?.type === "layer"} />
-                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={theLink?.type === "layer"}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={linkType === "layer"} />
+                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={linkType === "layer"}>
                     {BLEND_MODE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -305,27 +315,25 @@ const DragGrip = styled.div`
     }
 `;
 
+// Supersocket override: connecting the whole `array<layer>` clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "layers") return;
-
-    // Collect all link IDs from layer_* sockets
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("layer_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "layers") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("layer_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-
-    if (linkIdsToRemove.length === 0) return;
-
-    // Use high-level removeLinks which fires onDisconnect on endpoints
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 const dependsOn = (node: NodeDefinitions.NodeFor<LayerDefinition>, outSocket: keyof LayerDefinition["outputs"], _deps: AllDeps): (keyof LayerDefinition["inputs"])[] => {
@@ -356,7 +364,7 @@ const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof LayerDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">>; blend: number }[] = [];
+        const layerData: { shape: DataTypes.TypeOf<"shape">; blend: number }[] = [];
 
         const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
         if (supersocketEval) {
@@ -442,7 +450,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
         if (supersocketEval) {
             return { kind: "array<layer>", data: supersocketEval.data };
         }
-        const layerData: { shape: DataTypes.TypeOf<DataTypes.Use<"shape">> | null; enabled: boolean | null; blend: number | null }[] = [];
+        const layerData: { shape: DataTypes.TypeOf<"shape"> | null; enabled: boolean | null; blend: number | null }[] = [];
         for (const entry of node.payload.layers) {
             const resolved = context.resolve<"layer">(node.id, entry.socket) as DataTypes.AnyEval | null;
             if (!resolved) {
@@ -480,49 +488,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<LayerDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    layers: {
-        types: ["array<layer>"],
-        mode: "or",
-    },
-    isolate: {
-        types: ["boolean"],
-        mode: "or",
-    },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<LayerDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    layerArray: { types: ["array<layer>"], mode: "and" },
-    layerCount: {
-        types: ["integer"],
-        mode: "and",
-    },
-    enabledCount: {
-        types: ["integer"],
-        mode: "and",
-    },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LayerDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("layer_")) {
-        return { types: ["layer", "shape"], mode: "or" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
     const fromNode = ctx.getNode(graphId, link.fromNode);
     const toNode = ctx.getNode(graphId, link.toNode);
     if (!fromNode || !toNode) return false;
 
-    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
-    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
-    const layerIn: SocketTypes.SocketRule = { types: ["layer", "shape"], mode: "or" };
-    const layerOut: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
+    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", graphId, ctx);
+    const layerIn: SocketTypes.Term = SocketTypes.or("layer", "shape");
+    const layerOut: SocketTypes.Term = SocketTypes.of("shape");
 
     return SocketTypes.canFlow(sourceOut, layerIn) && SocketTypes.canFlow(layerOut, destIn);
 };
@@ -532,8 +506,8 @@ const onInterject = (node: NodeDefinitions.BuiltNodeOf<"layers", LayerDefinition
     if (!firstLayerSocket) return;
 
     ctx.removeLinks(graphId, link.id);
-    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, firstLayerSocket, link.type);
-    ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket, "shape");
+    ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, firstLayerSocket);
+    ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket);
 };
 
 export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
@@ -548,8 +522,9 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
     canInterject,
     onInterject,
-    getSocketType,
 };

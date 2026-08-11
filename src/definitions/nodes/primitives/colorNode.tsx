@@ -5,22 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { Project } from "../../../state/project";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ColorDefinition = {
-    inputs: {
-        value: DataTypes.Use<"color">;
-    };
-    outputs: {
-        output: DataTypes.Use<"color">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"color">>;
-    };
-};
+const def = signature({
+    in: { value: "color" },
+    out: { output: "color" },
+});
+
+export type ColorDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"color">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"color", ColorDefinition> => {
     return {
@@ -79,23 +82,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorDefinition>, socket: "outpu
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ColorDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["color"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ColorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["color"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ColorPrimitiveType: NodeTypes.Type<"color", ColorDefinition> = {
     type: "color",
     displayName: "Color",
@@ -108,5 +94,6 @@ export const ColorPrimitiveType: NodeTypes.Type<"color", ColorDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

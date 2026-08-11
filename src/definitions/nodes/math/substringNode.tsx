@@ -1,12 +1,14 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
@@ -14,28 +16,35 @@ import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { NumericString } from "../../datatypes/numericString";
 import { EmptyOr } from "../../../util/misc";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type SubstringDefinition = {
-    inputs: {
-        string: DataTypes.Use<"string">;
-        startIndex: DataTypes.Use<"integer" | "float">;
-        mode: DataTypes.Use<"enum">;
-        length: DataTypes.Use<"integer" | "float">;
-        end: DataTypes.Use<"integer" | "float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"string">;
-        charCount: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        string: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        startIndex: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        length: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        end: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-    };
-};
+const def = signature({
+    in: {
+        string: "string",
+        startIndex: $.oneOf("integer", "float"),
+        mode: "enum",
+        length: $.oneOf("integer", "float"),
+        end: $.oneOf("integer", "float"),
+    },
+    out: { output: "string", charCount: "integer" },
+});
+
+export type SubstringDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        string: DataTypes.TypeOf<"string">;
+        startIndex: DataTypes.TypeOf<"integer">;
+        mode: DataTypes.TypeOf<"enum">;
+        length: DataTypes.TypeOf<"integer">;
+        end: DataTypes.TypeOf<"integer">;
+    }
+>;
+
+// interject-only rules (mirror the def's socket types)
+const STRING_IN: SocketTypes.Term = SocketTypes.of("string");
+const STRING_OUT: SocketTypes.Term = SocketTypes.of("string");
 
 const MODE_OPTIONS = Enum.options(Enum.Common.substringMode);
 
@@ -156,28 +165,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SubstringDefinition>, socket: ke
     return { kind: "integer", data: `${result.length}` };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<SubstringDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    string: { types: ["string"], mode: "or" },
-    startIndex: { types: ["integer", "float"], mode: "or" },
-    mode: { types: ["enum"], mode: "or" },
-    length: { types: ["integer", "float"], mode: "or" },
-    end: { types: ["integer", "float"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<SubstringDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["string"], mode: "and" },
-    charCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<SubstringDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const SubstringNodeType: NodeTypes.Type<"substring", SubstringDefinition> = {
     type: "substring",
     displayName: "Substring",
@@ -190,7 +177,8 @@ export const SubstringNodeType: NodeTypes.Type<"substring", SubstringDefinition>
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.string, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(STRING_IN, STRING_OUT),
     onInterject: passthroughInterject("string", "output"),
 };

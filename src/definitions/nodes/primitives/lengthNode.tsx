@@ -5,34 +5,37 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { Project } from "../../../state/project";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { Length } from "../../datatypes/length";
 import { Enum } from "../../datatypes/enum";
-import { extractSingle } from "../math/numericMath";
+import { extractSingle } from "../../helpers/mathHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const UNIT_OPTIONS = Enum.options(Enum.Common.lengthUnit);
 const UNIT_FROM_ENUM: Length.Unit[] = ["px", "pt", "in", "mm", "cm"];
 
 type LengthNode = NodeDefinitions.BuiltNodeOf<"length", LengthDefinition>;
 
-export type LengthDefinition = {
-    inputs: {
-        value: DataTypes.Use<"length">;
-        unit: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"length">>;
+const def = signature({
+    in: { value: $.oneOf("float", "integer", "length"), unit: "enum" },
+    out: { output: "length" },
+});
+
+export type LengthDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"length">;
         castUnit: number;
         connectedKind: DataTypes.Kind | null;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LengthDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"length", LengthDefinition> => {
     return {
@@ -118,24 +121,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthDefinition>, socket: "outp
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<LengthDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["float", "integer", "length"], mode: "or" },
-    unit: { types: ["enum"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<LengthDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LengthDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 const setPayload = (nodeId: string, updates: Partial<LengthDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const current = ctx.getNode(graphId, nodeId);
     if (!current) return;
@@ -151,8 +136,8 @@ const onConnect = (node: LengthNode, linkId: string, direction: "in" | "out", gr
     if (!link || link.toSocket !== "value") return;
     const fromNode = ctx.getNode(graphId, link.fromNode);
     if (!fromNode) return;
-    const st = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
-    setPayload(node.id, { connectedKind: st.types[0] ?? null }, graphId, ctx);
+    const st = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
+    setPayload(node.id, { connectedKind: (SocketTypes.project(st)[0] as DataTypes.Kind) ?? null }, graphId, ctx);
 };
 
 const onDisconnect = (
@@ -179,7 +164,8 @@ export const LengthPrimitiveType: NodeTypes.Type<"length", LengthDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
     onDisconnect,
 };

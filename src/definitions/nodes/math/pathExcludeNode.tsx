@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { ReactNode } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
@@ -8,19 +10,24 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PathExcludeDefinition = {
-    inputs: {
-        pathA: DataTypes.Use<"path">;
-        pathB: DataTypes.Use<"path">;
-    };
-    outputs: {
-        output: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { pathA: "path", pathB: "path" },
+    out: { output: "path" },
+});
+
+export type PathExcludeDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
+
+// interject-only rules (mirror the def's socket types)
+const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
+const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathExcludeDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathExclude", PathExcludeDefinition> => {
     return {
@@ -75,24 +82,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathExcludeDefinition>, socket: 
     return PaperHelper.exclude(pathAData, pathBData);
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PathExcludeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    pathA: { types: ["path"], mode: "or" },
-    pathB: { types: ["path"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PathExcludeDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathExcludeDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PathExcludeNodeType: NodeTypes.Type<"pathExclude", PathExcludeDefinition> = {
     type: "pathExclude",
     displayName: "Path Exclude",
@@ -105,7 +94,8 @@ export const PathExcludeNodeType: NodeTypes.Type<"pathExclude", PathExcludeDefin
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.pathA, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(PATH_IN, PATH_OUT),
     onInterject: passthroughInterject("pathA", "output"),
 };

@@ -6,21 +6,25 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut } from "../../../features/nodeview/slots";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type RandomSeedDefinition = {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    inputs: {};
-    outputs: {
-        output: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        seed: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-    };
-};
+const def = signature({
+    in: {},
+    out: { output: "integer" },
+});
+
+export type RandomSeedDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        seed: DataTypes.TypeOf<"integer">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<RandomSeedDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"randomSeed", RandomSeedDefinition> => {
     return {
@@ -77,15 +81,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RandomSeedDefinition>, socket: "
     return null;
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<RandomSeedDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RandomSeedDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    return { types: [], mode: "and" };
-};
-
 export const RandomSeedNodeType: NodeTypes.Type<"randomSeed", RandomSeedDefinition> = {
     type: "randomSeed",
     displayName: "Random Seed",
@@ -98,5 +93,6 @@ export const RandomSeedNodeType: NodeTypes.Type<"randomSeed", RandomSeedDefiniti
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

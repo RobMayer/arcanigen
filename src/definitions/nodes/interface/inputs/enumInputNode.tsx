@@ -5,28 +5,33 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { NodeAccordion, Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
 import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../../components/buttons/ActionButton";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type EnumInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"enum">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        initialValue: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+const def = signature({
+    in: {},
+    out: { output: "enum" },
+});
+
+export type EnumInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        widget: DataTypes.TypeOf<"enum">;
+        initialValue: DataTypes.TypeOf<"enum">;
         options: string[];
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<EnumInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefinition> => {
     return {
@@ -158,14 +163,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"enumInput", EnumInputDefini
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<EnumInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["enum"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<EnumInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     type: "enumInput",
     displayName: "Enum Input",
@@ -182,5 +179,6 @@ export const EnumInputType: NodeTypes.Type<"enumInput", EnumInputDefinition> = {
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

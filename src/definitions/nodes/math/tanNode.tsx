@@ -1,32 +1,37 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { extractSingle } from "./numericMath";
+import { extractSingle } from "../../helpers/mathHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-const TRIG_IN: SocketTypes.SocketRule = { types: ["angle", "float", "integer"], mode: "or" };
-const FLOAT_OUT: SocketTypes.SocketRule = { types: ["float"], mode: "or" };
+const def = signature({
+    in: { input: $.oneOf("angle", "float", "integer") },
+    out: { output: "float" },
+});
 
-export type TanDefinition = {
-    inputs: {
-        input: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"float">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        input: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+export type TanDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: string;
+        input: DataTypes.TypeOf<"float">;
+    }
+>;
+
+// interject-only rules (mirror the def's socket types)
+const TRIG_IN: SocketTypes.Term = SocketTypes.or("angle", "float", "integer");
+const FLOAT_OUT: SocketTypes.Term = SocketTypes.of("float");
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TanDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"tan", TanDefinition> => {
     return {
@@ -84,17 +89,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<TanDefinition>, socket: "output"
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<TanDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "input":
-            return TRIG_IN;
-        case "output":
-            return FLOAT_OUT;
-        default:
-            return TRIG_IN;
-    }
-};
-
 export const TanType: NodeTypes.Type<"tan", TanDefinition> = {
     type: "tan",
     displayName: "Tan",
@@ -107,7 +101,8 @@ export const TanType: NodeTypes.Type<"tan", TanDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     canInterject: passthroughCanInterject(TRIG_IN, FLOAT_OUT),
     onInterject: passthroughInterject("input", "output"),
 };

@@ -8,9 +8,10 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { BlockInput } from "../../../components/inputs/BlockInput";
@@ -20,43 +21,48 @@ import { CheckBox } from "../../../components/buttons/CheckBox";
 import { PaperHelper } from "../../../util/paperHelper";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { Fonts } from "../../fonts";
+import { $, signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type TextPathDefinition = {
-    inputs: {
-        text: DataTypes.Use<"string">;
-        font: DataTypes.Use<"enum">;
-        path: DataTypes.Use<"path">;
-        size: DataTypes.Use<"length">; // font size
-        spacing: DataTypes.Use<"length">; // font spacing
-        rotation: DataTypes.Use<"angle">;
-        anchor: DataTypes.Use<"enum">;
-        align: DataTypes.Use<"enum">;
-        offsetMode: DataTypes.Use<"enum">;
-        offsetPercent: DataTypes.Use<"float" | "integer">;
-        offsetLength: DataTypes.Use<"length">;
-        offsetOrigin: DataTypes.Use<"enum">;
-        reversePath: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        charCount: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        font: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        text: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        size: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spacing: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        rotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        anchor: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        align: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetPercent: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        offsetLength: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetOrigin: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        reversePath: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"];
-};
+const def = signature({
+    in: {
+        text: "string",
+        font: "enum",
+        path: "path",
+        size: "length",
+        spacing: "length",
+        rotation: "angle",
+        anchor: "enum",
+        align: "enum",
+        offsetMode: "enum",
+        offsetPercent: $.oneOf("float", "integer"),
+        offsetLength: "length",
+        offsetOrigin: "enum",
+        reversePath: "boolean",
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", charCount: "integer" },
+});
+
+export type TextPathDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        font: DataTypes.TypeOf<"enum">;
+        text: DataTypes.TypeOf<"string">;
+        size: DataTypes.TypeOf<"length">;
+        spacing: DataTypes.TypeOf<"length">;
+        rotation: DataTypes.TypeOf<"angle">;
+        anchor: DataTypes.TypeOf<"enum">;
+        align: DataTypes.TypeOf<"enum">;
+        offsetMode: DataTypes.TypeOf<"enum">;
+        offsetPercent: DataTypes.TypeOf<"float">;
+        offsetLength: DataTypes.TypeOf<"length">;
+        offsetOrigin: DataTypes.TypeOf<"enum">;
+        reversePath: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"]
+>;
 
 const TEXT_ALIGN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const TEXT_ANCHOR_OPTIONS = Enum.options(Enum.Common.verticalAlign);
@@ -217,7 +223,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
                     options={OFFSET_ORIGIN_OPTIONS}
                 />
             </SocketIn>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <NodeAccordion label={"Additional Options"} socketsOut={"charCount"} nodeId={node.id}>
                 <SocketOut node={node} socketId={"charCount"}>
                     Character Count
@@ -303,7 +309,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
         startOffset = `calc(clamp(0%, ${originPct} + ${lenNum}px, 100%))`;
     }
 
-    const paint = Stylings.evaluate(node, context);
+    const paint = StylingPrefab.evaluate(node, context);
 
     return {
         kind: "shape",
@@ -324,37 +330,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<TextPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    text: { types: ["string"], mode: "or" },
-    font: { types: ["enum"], mode: "or" },
-    path: { types: ["path"], mode: "or" },
-    size: { types: ["length"], mode: "or" },
-    spacing: { types: ["length"], mode: "or" },
-    rotation: { types: ["angle"], mode: "or" },
-    anchor: { types: ["enum"], mode: "or" },
-    align: { types: ["enum"], mode: "or" },
-    offsetMode: { types: ["enum"], mode: "or" },
-    offsetPercent: { types: ["float", "integer"], mode: "or" },
-    offsetLength: { types: ["length"], mode: "or" },
-    offsetOrigin: { types: ["enum"], mode: "or" },
-    reversePath: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<TextPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    charCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TextPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = {
     type: "textPath",
     displayName: "Text Path",
@@ -367,5 +342,6 @@ export const TextPathNodeType: NodeTypes.Type<"textPath", TextPathDefinition> = 
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

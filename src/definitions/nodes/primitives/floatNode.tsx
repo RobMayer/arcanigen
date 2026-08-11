@@ -5,23 +5,26 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { extractSingle } from "../math/numericMath";
+import { extractSingle } from "../../helpers/mathHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type FloatDefinition = {
-    inputs: {
-        value: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"float">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+const def = signature({
+    in: { value: $.oneOf("angle", "float", "integer", "length") },
+    out: { output: "float" },
+});
+
+export type FloatDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"float">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"float", FloatDefinition> => {
     return {
@@ -82,23 +85,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatDefinition>, socket: "outpu
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<FloatDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["angle", "float", "integer", "length"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<FloatDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["float"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const FloatPrimitiveType: NodeTypes.Type<"float", FloatDefinition> = {
     type: "float",
     displayName: "Float",
@@ -111,5 +97,6 @@ export const FloatPrimitiveType: NodeTypes.Type<"float", FloatDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -1,32 +1,34 @@
 import { nanoid } from "nanoid";
-import { passthroughInterject, queryUpstreamOutType } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
-import { NUMERIC_TYPES, extractSingle, wrapResult, numericCanInterject } from "./numericMath";
+import { extractSingle, wrapResult } from "../../helpers/mathHelper";
+import { SocketTypes } from "../../socketTypes";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PowDefinition = {
-    inputs: {
-        input: DataTypes.Use<"float">;
-        exponent: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"float">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        exponent: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        connectedType: SocketTypes.SocketRule;
-        resolvedInTypes: SocketTypes.SocketRule;
-    };
-};
+const def = signature({
+    args: { N: $.NUMERIC },
+    in: ({ N }) => ({ input: N, exponent: $.oneOf("float", "integer") }),
+    out: ({ N }) => ({ output: N }),
+});
+
+export type PowDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: string;
+        exponent: DataTypes.TypeOf<"float">;
+    }
+>;
 
 type PowNode = NodeDefinitions.BuiltNodeOf<"pow", PowDefinition>;
 
@@ -38,31 +40,9 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PowDefinition>>, id
         payload: {
             label: "",
             exponent: input.exponent ?? "2",
-            connectedType: SocketTypes.NONE,
-            resolvedInTypes: SocketTypes.ANY,
         },
         type: "pow",
     };
-};
-
-const effectiveInputType = (connectedType: SocketTypes.SocketRule, resolvedInTypes: SocketTypes.SocketRule): SocketTypes.SocketRule => {
-    if (connectedType.types.length > 0) return connectedType;
-    return SocketTypes.intersect(NUMERIC_TYPES, resolvedInTypes);
-};
-
-const queryDownstreamTypes = (node: PowNode, graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.SocketRule | null => {
-    const linkIds = node.out.output;
-    if (linkIds.length === 0) return null;
-    let result: SocketTypes.SocketRule | null = null;
-    for (const linkId of linkIds) {
-        const link = ctx.getLink(graphId, linkId);
-        if (!link) continue;
-        const neighbor = ctx.getNode(graphId, link.toNode);
-        if (!neighbor) continue;
-        const st = NodeTypes.getSocketType(neighbor, link.toSocket, "in", ctx);
-        result = result === null ? st : SocketTypes.intersect(result, st);
-    }
-    return result;
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PowDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
@@ -113,96 +93,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PowDefinition>, socket: "output"
     return null;
 };
 
-const setPayload = (nodeId: string, updates: Partial<PowDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const current = ctx.getNode(graphId, nodeId);
-    if (!current) return;
-    ctx.setNode(graphId, nodeId, {
-        ...current,
-        payload: { ...current.payload, ...updates },
-    });
-};
-
-const onConnect = (node: PowNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-
-    if (direction === "in") {
-        if (link.toSocket === "exponent") return;
-        const upstreamType = queryUpstreamOutType(node, "input", graphId, ctx);
-        setPayload(node.id, { connectedType: upstreamType }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else {
-        const currentNode = ctx.getNode(graphId, node.id) as PowNode | undefined;
-        if (!currentNode) return;
-        const downstreamTypes = queryDownstreamTypes(currentNode, graphId, ctx);
-        if (downstreamTypes !== null) {
-            const newInTypes = SocketTypes.intersect(currentNode.payload.resolvedInTypes, downstreamTypes);
-            if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
-                setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
-                ctx.requestRefresh(graphId, node.id, "input", "in", "constraintAdded");
-            }
-        }
-    }
-};
-
-const onDisconnect = (
-    node: PowNode,
-    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
-    direction: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    if (direction === "in") {
-        if (link.toSocket === "exponent") return;
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintRemoved");
-        setPayload(node.id, { connectedType: SocketTypes.NONE }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, "output", "out", "constraintAdded");
-    } else {
-        ctx.requestRefresh(graphId, node.id, "input", "in", "constraintRemoved");
-        const currentNode = ctx.getNode(graphId, node.id) as PowNode | undefined;
-        if (!currentNode) return;
-        const downstream = queryDownstreamTypes(currentNode, graphId, ctx);
-        setPayload(node.id, { resolvedInTypes: downstream ?? SocketTypes.ANY }, graphId, ctx);
-        ctx.requestRefresh(graphId, node.id, "input", "in", "constraintAdded");
-    }
-};
-
-const onRefreshRequest = (node: PowNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const currentNode = ctx.getNode(graphId, node.id) as PowNode | undefined;
-    if (!currentNode) return;
-
-    if (side === "in") {
-        if (socketId === "exponent") return;
-        const newUpstreamType = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
-        if (!SocketTypes.equals(newUpstreamType, currentNode.payload.connectedType)) {
-            setPayload(node.id, { connectedType: newUpstreamType }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, "output", "out", reason);
-        }
-    } else {
-        const newInTypes = queryDownstreamTypes(currentNode, graphId, ctx) ?? SocketTypes.ANY;
-        if (!SocketTypes.equals(newInTypes, currentNode.payload.resolvedInTypes)) {
-            setPayload(node.id, { resolvedInTypes: newInTypes }, graphId, ctx);
-            ctx.requestRefresh(graphId, node.id, "input", "in", reason);
-        }
-    }
-};
-
-const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
-
-const getSocketType = (node: NodeDefinitions.NodeFor<PowDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const inType = effectiveInputType(node.payload.connectedType, node.payload.resolvedInTypes);
-    switch (socketId) {
-        case "input":
-            return inType;
-        case "output":
-            return inType;
-        case "exponent":
-            return DIMENSIONLESS_IN;
-        default:
-            return NUMERIC_TYPES;
-    }
-};
-
 export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     type: "pow",
     displayName: "Pow",
@@ -215,10 +105,8 @@ export const PowType: NodeTypes.Type<"pow", PowDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
-    onConnect,
-    onDisconnect,
-    onRefreshRequest,
-    canInterject: numericCanInterject,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.NUMERIC, SocketTypes.NUMERIC),
     onInterject: passthroughInterject("input", "output"),
 };

@@ -5,8 +5,9 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { AngleInput } from "../../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../../components/inputs/TextInput";
@@ -15,24 +16,28 @@ import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
 import { NumericString } from "../../../datatypes/numericString";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type AngleInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"angle">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        initialValue: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        min: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        max: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        step: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        snap: DataTypes.TypeOf<DataTypes.Use<"angle">>;
+const def = signature({
+    in: {},
+    out: { output: "angle" },
+});
+
+export type AngleInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        initialValue: DataTypes.TypeOf<"angle">;
+        widget: DataTypes.TypeOf<"enum">;
+        min: DataTypes.TypeOf<"angle">;
+        max: DataTypes.TypeOf<"angle">;
+        step: DataTypes.TypeOf<"angle">;
+        snap: DataTypes.TypeOf<"angle">;
         wraps: boolean;
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleInput", AngleInputDefinition> => {
     return {
@@ -151,14 +156,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"angleInput", AngleInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<AngleInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["angle"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> = {
     type: "angleInput",
     displayName: "Angle Input",
@@ -175,5 +172,6 @@ export const AngleInputType: NodeTypes.Type<"angleInput", AngleInputDefinition> 
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

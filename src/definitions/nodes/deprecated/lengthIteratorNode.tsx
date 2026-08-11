@@ -4,7 +4,8 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -13,24 +14,33 @@ import { Length } from "../../datatypes/length";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { Iteration } from "../abstract";
+import { IterationPrefab } from "../../helpers/iterationPrefab";
 import { EmptyOr } from "../../../util/misc";
 import styled from "styled-components";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LengthIteratorDefinition = {
-    inputs: {
-        [value: `value_${string}`]: DataTypes.Use<"length">;
-        [pos: `pos_${string}`]: DataTypes.Use<"float">;
-    } & Iteration.Definition["inputs"];
-    outputs: {
-        sequencedOutput: DataTypes.Use<"length">;
-        sampledOutput: DataTypes.Use<"length">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        sequence: "sequence",
+        mode: "enum",
+        reverseSequence: "boolean",
+        startOffset: "integer",
+        endOffset: "integer",
+        samplePosition: $.oneOf("float", "integer"),
+        "value_*": "length",
+        "pos_*": "float",
+    },
+    out: { sequencedOutput: "length", sampledOutput: "length" },
+});
+
+export type LengthIteratorDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        stops: { id: string; value: DataTypes.TypeOf<DataTypes.Use<"length">>; position: EmptyOr<NumericString.Type> }[];
-    } & Iteration.Definition["payload"];
-};
+        stops: { id: string; value: DataTypes.TypeOf<"length">; position: EmptyOr<NumericString.Type> }[];
+    } & IterationPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LengthIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"lengthIterator", LengthIteratorDefinition> => {
     const s0 = nanoid();
@@ -115,7 +125,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
     );
 
     const handleStopValue = useCallback(
-        (stopId: string, value: DataTypes.TypeOf<DataTypes.Use<"length">>) => {
+        (stopId: string, value: DataTypes.TypeOf<"length">) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.id === stopId ? { ...s, value } : s)),
             });
@@ -170,7 +180,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
                     </ActionButton.Lite>
                 </StopEntry>
             ))}
-            <Iteration.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <IterationPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -198,28 +208,28 @@ const StopEntry = styled.div`
 const dependsOn = (node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, outSocket: keyof LengthIteratorDefinition["outputs"], _deps: AllDeps): (keyof LengthIteratorDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.flatMap((s) => [`value_${s.id}`, `pos_${s.id}`]) as (keyof LengthIteratorDefinition["inputs"])[];
     if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, ...stopSockets];
+        return [...IterationPrefab.SEQUENCED_DEPS, ...stopSockets];
     }
     if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, ...stopSockets];
+        return [...IterationPrefab.SAMPLED_DEPS, ...stopSockets];
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, inSocket: keyof LengthIteratorDefinition["inputs"], _deps: AllDeps): (keyof LengthIteratorDefinition["outputs"])[] => {
-    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
-    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
+    if ((IterationPrefab.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
+    if ((IterationPrefab.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
     return ["sequencedOutput", "sampledOutput"];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, socket: keyof LengthIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     let position: number;
     if (socket === "sequencedOutput") {
-        const result = Iteration.evaluate(node, context);
+        const result = IterationPrefab.evaluate(node, context);
         if (result === null) return null;
         position = result.t * 100;
     } else if (socket === "sampledOutput") {
-        position = Iteration.resolveSamplePosition(node, context);
+        position = IterationPrefab.resolveSamplePosition(node, context);
     } else {
         return null;
     }
@@ -259,32 +269,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, socke
         }
     }
 
-    const value = Iteration.sampleStops(resolved, position);
+    const value = IterationPrefab.sampleStops(resolved, position);
     return { kind: "length", data: `${value}${unit}` };
-};
-
-const SOCKETTYPES_IN: {
-    [key in keyof Required<Pick<LengthIteratorDefinition["inputs"], "sequence" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">>]: SocketTypes.SocketRule;
-} = {
-    ...Iteration.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<LengthIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["length"], mode: "and" },
-    sampledOutput: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("value_")) {
-        return { types: ["length"], mode: "and" };
-    }
-    if (socketId.startsWith("pos_")) {
-        return { types: ["float"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const LengthIteratorNodeType: NodeTypes.Type<"lengthIterator", LengthIteratorDefinition> = {
@@ -300,5 +286,6 @@ export const LengthIteratorNodeType: NodeTypes.Type<"lengthIterator", LengthIter
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

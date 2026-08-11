@@ -5,30 +5,31 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { EmptyOr } from "../../../util/misc";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type IntegerStopBreakoutDefinition = {
-    inputs: {
-        value: DataTypes.Use<"integer">;
-        position: DataTypes.Use<"float">;
-        enabled: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"stop<integer>">;
-    };
-    payload: {
+const def = signature({
+    in: { value: "integer", position: "float", enabled: "boolean" },
+    out: { output: "stop:integer" },
+});
+
+export type IntegerStopBreakoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         value: EmptyOr<NumericString.Type>;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerStopBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"integerStop", IntegerStopBreakoutDefinition> => {
     return {
@@ -79,14 +80,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerStop
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<IntegerStopBreakoutDefinition>, outSocket: keyof IntegerStopBreakoutDefinition["outputs"], _deps: AllDeps): (keyof IntegerStopBreakoutDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<IntegerStopBreakoutDefinition>,
+    outSocket: keyof IntegerStopBreakoutDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof IntegerStopBreakoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ["value", "position", "enabled"];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerStopBreakoutDefinition>, inSocket: keyof IntegerStopBreakoutDefinition["inputs"], _deps: AllDeps): (keyof IntegerStopBreakoutDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<IntegerStopBreakoutDefinition>,
+    inSocket: keyof IntegerStopBreakoutDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof IntegerStopBreakoutDefinition["outputs"])[] => {
     if (inSocket === "value" || inSocket === "position" || inSocket === "enabled") {
         return ["output"];
     }
@@ -102,26 +111,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerStopBreakoutDefinition>, 
     const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
     const value = NumericString.Emptyable.asNumber(valStr);
     return {
-        kind: "stop<integer>",
+        kind: "stop:integer",
         data: {
             value: value === null ? null : Math.round(value),
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },
     };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<IntegerStopBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["integer"], mode: "and" },
-    position: { types: ["float"], mode: "and" },
-    enabled: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<IntegerStopBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return { types: ["stop<integer>"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const IntegerStopNodeType: NodeTypes.Type<"integerStop", IntegerStopBreakoutDefinition> = {
@@ -136,5 +132,6 @@ export const IntegerStopNodeType: NodeTypes.Type<"integerStop", IntegerStopBreak
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

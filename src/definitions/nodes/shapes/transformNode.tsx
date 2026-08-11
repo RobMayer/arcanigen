@@ -4,7 +4,9 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
@@ -16,42 +18,45 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { Shape } from "../../shapeTypes";
 import { SVGPath } from "../../../types";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type TransformDefinition = {
-    inputs: {
-        shape: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-        positionMode: DataTypes.Use<"enum">;
-        positionX: DataTypes.Use<"length">;
-        positionY: DataTypes.Use<"length">;
-        positionRadius: DataTypes.Use<"length">;
-        positionTheta: DataTypes.Use<"angle">;
-        preRotation: DataTypes.Use<"angle">;
-        postRotation: DataTypes.Use<"angle">;
-        skewX: DataTypes.Use<"angle">;
-        skewY: DataTypes.Use<"angle">;
-        scaleX: DataTypes.Use<"float">;
-        scaleY: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        pathOutput: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        positionMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        positionX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        positionY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        positionRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        positionTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        preRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        postRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        skewX: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        skewY: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        scaleX: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        scaleY: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+const def = signature({
+    in: {
+        shape: "shape",
+        path: "path",
+        positionMode: "enum",
+        positionX: "length",
+        positionY: "length",
+        positionRadius: "length",
+        positionTheta: "angle",
+        preRotation: "angle",
+        postRotation: "angle",
+        skewX: "angle",
+        skewY: "angle",
+        scaleX: "float",
+        scaleY: "float",
+    },
+    out: { output: "shape", pathOutput: "path" },
+});
+
+export type TransformDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        positionMode: DataTypes.TypeOf<"enum">;
+        positionX: DataTypes.TypeOf<"length">;
+        positionY: DataTypes.TypeOf<"length">;
+        positionRadius: DataTypes.TypeOf<"length">;
+        positionTheta: DataTypes.TypeOf<"angle">;
+        preRotation: DataTypes.TypeOf<"angle">;
+        postRotation: DataTypes.TypeOf<"angle">;
+        skewX: DataTypes.TypeOf<"angle">;
+        skewY: DataTypes.TypeOf<"angle">;
+        scaleX: DataTypes.TypeOf<"float">;
+        scaleY: DataTypes.TypeOf<"float">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"transform", TransformDefinition> => {
     return {
@@ -227,7 +232,7 @@ const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, co
     }
 
     // Build transform string: postRotation translate preRotation skewX skewY scale
-    // SVG applies right-to-left: scale → skewY → skewX → preRotate → translate → postRotate
+    // SVG applies right-to-left: scale -> skewY -> skewX -> preRotate -> translate -> postRotate
     const parts: string[] = [];
     if (postRotation !== 0) parts.push(`rotate(${postRotation})`);
     if (translateX !== 0 || translateY !== 0) parts.push(`translate(${translateX}, ${translateY})`);
@@ -271,43 +276,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<TransformDefinition>, socket: ke
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<TransformDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    shape: { types: ["shape"], mode: "or" },
-    path: { types: ["path"], mode: "or" },
-    positionMode: { types: ["enum"], mode: "or" },
-    positionX: { types: ["length"], mode: "or" },
-    positionY: { types: ["length"], mode: "or" },
-    positionRadius: { types: ["length"], mode: "or" },
-    positionTheta: { types: ["angle"], mode: "or" },
-    preRotation: { types: ["angle"], mode: "or" },
-    postRotation: { types: ["angle"], mode: "or" },
-    skewX: { types: ["angle"], mode: "or" },
-    skewY: { types: ["angle"], mode: "or" },
-    scaleX: { types: ["float"], mode: "or" },
-    scaleY: { types: ["float"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<TransformDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    pathOutput: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TransformDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "in") return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
-const SHAPE_IN: SocketTypes.SocketRule = { types: ["shape"], mode: "or" };
-const SHAPE_OUT: SocketTypes.SocketRule = { types: ["shape"], mode: "and" };
-const PATH_IN: SocketTypes.SocketRule = { types: ["path"], mode: "or" };
-const PATH_OUT: SocketTypes.SocketRule = { types: ["path"], mode: "and" };
+const SHAPE_IN: SocketTypes.Term = SocketTypes.of("shape");
+const SHAPE_OUT: SocketTypes.Term = SocketTypes.of("shape");
+const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
+const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
 
 const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
     const fromNode = ctx.getNode(graphId, link.fromNode);
     const toNode = ctx.getNode(graphId, link.toNode);
     if (!fromNode || !toNode) return false;
-    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
-    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", ctx);
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
+    const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", graphId, ctx);
     if (SocketTypes.canFlow(sourceOut, SHAPE_IN) && SocketTypes.canFlow(SHAPE_OUT, destIn)) return true;
     if (SocketTypes.canFlow(sourceOut, PATH_IN) && SocketTypes.canFlow(PATH_OUT, destIn)) return true;
     return false;
@@ -316,14 +295,14 @@ const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.Me
 const onInterjectTransform = (node: NodeDefinitions.NodeFor<NodeDefinitions.Generic>, link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): void => {
     const fromNode = ctx.getNode(graphId, link.fromNode);
     if (!fromNode) return;
-    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", ctx);
+    const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
     ctx.removeLinks(graphId, link.id);
     if (SocketTypes.canFlow(sourceOut, PATH_IN)) {
-        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, "path", link.type);
-        ctx.connect(graphId, node.id, link.toNode, "pathOutput", link.toSocket, link.type);
+        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, "path");
+        ctx.connect(graphId, node.id, link.toNode, "pathOutput", link.toSocket);
     } else {
-        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, "shape", link.type);
-        ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket, link.type);
+        ctx.connect(graphId, link.fromNode, node.id, link.fromSocket, "shape");
+        ctx.connect(graphId, node.id, link.toNode, "output", link.toSocket);
     }
 };
 
@@ -339,7 +318,8 @@ export const TransformType: NodeTypes.Type<"transform", TransformDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     canInterject,
     onInterject: onInterjectTransform,
 };

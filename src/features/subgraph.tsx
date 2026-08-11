@@ -8,7 +8,7 @@ import { Project } from "../state/project";
 import { TextInput } from "../components/inputs/TextInput";
 import { Dropdown } from "../components/inputs/Dropdown";
 import { Flavour, FLAVOUR_LABELS } from "../components/types";
-import { NodeTypes } from "../definitions/betterTypes";
+import { NodeTypes } from "../definitions/nodeTypes";
 import { useDragPane } from "../components/wrappers/DragPane";
 import { ResizeHandle } from "../components/containers/ResizeHandle";
 import { parseInterface, interfaceMemberLabel, InterfaceMember, InterfaceAccordion } from "../state/project/types";
@@ -293,11 +293,11 @@ const moveItem = (members: InterfaceMember[], from: MemberPath, to: MemberPath):
         // Both top-level: standard splice adjustment
         if (from < to) adjTo = to - 1;
     } else if (typeof from === "number" && typeof to === "string") {
-        // Top-level → accordion: if extracted before the accordion, accordion index shifted -1
+        // Top-level -> accordion: if extracted before the accordion, accordion index shifted -1
         const [ai, bi] = to.split(":").map(Number) as [number, number];
         adjTo = from < ai ? `${ai - 1}:${bi}` : to;
     } else if (typeof from === "string" && typeof to === "number") {
-        // Accordion → top-level: extraction doesn't change top-level indices (item was inside accordion)
+        // Accordion -> top-level: extraction doesn't change top-level indices (item was inside accordion)
         // No adjustment needed
     } else if (typeof from === "string" && typeof to === "string") {
         // Both inside accordions

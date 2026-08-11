@@ -7,24 +7,25 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type TokenizerLengthDefinition = {
-    inputs: {
-        [tokenSocket: `token_${string}`]: DataTypes.Use<"length">;
-    };
-    outputs: {
-        output: DataTypes.Use<"tokens<length>">;
-        tokenCount: DataTypes.Use<"integer">;
-        nonNullishCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: { "token_*": "length" },
+    out: { output: "tokens:length", tokenCount: "integer", nonNullishCount: "integer" },
+});
+
+export type TokenizerLengthDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        tokens: { socket: string; value: DataTypes.TypeOf<DataTypes.Use<"length">> }[];
-    };
-};
+        tokens: { socket: string; value: DataTypes.TypeOf<"length"> }[];
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TokenizerLengthDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"tokenizerLength", TokenizerLengthDefinition> => {
     const socketId: `token_${string}` = `token_${nanoid()}`;
@@ -50,7 +51,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokenizerLe
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleTokenUpdate = useCallback(
-        (socket: string, update: Partial<{ value: DataTypes.TypeOf<DataTypes.Use<"length">> }>) => {
+        (socket: string, update: Partial<{ value: DataTypes.TypeOf<"length"> }>) => {
             methods.update<NodeDefinitions.PayloadTypeOf<TokenizerLengthDefinition>>({
                 tokens: node.payload.tokens.map((t) => (t.socket === socket ? { ...t, ...update } : t)),
             });
@@ -152,12 +153,12 @@ const TokenEntry = ({
 }: {
     entry: {
         socket: string;
-        value: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        value: DataTypes.TypeOf<"length">;
     };
     node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>;
     index: number;
     handleRemoveToken: (socket: string) => void;
-    handleTokenUpdate: (socket: string, update: Partial<{ value: DataTypes.TypeOf<DataTypes.Use<"length">> }>) => void;
+    handleTokenUpdate: (socket: string, update: Partial<{ value: DataTypes.TypeOf<"length"> }>) => void;
     handleReorderToken: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(node.in[entry.socket]);
@@ -293,20 +294,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, sock
         if (socket === "nonNullishCount") {
             return { kind: "integer", data: `${parts.length}` };
         }
-        return { kind: "tokens<length>", data: parts.join(" ") };
+        return { kind: "tokens:length", data: parts.join(" ") };
     }
 
     return null;
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        if (socketId === "tokenCount" || socketId === "nonNullishCount") {
-            return { types: ["integer"], mode: "and" };
-        }
-        return { types: ["tokens<length>"], mode: "and" };
-    }
-    return { types: ["length"], mode: "or" };
 };
 
 export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", TokenizerLengthDefinition> = {
@@ -321,5 +312,6 @@ export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", Tokenize
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

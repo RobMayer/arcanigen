@@ -5,20 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type StopColorInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"stop<color>">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: {},
+    out: { output: "stop:color" },
+});
+
+export type StopColorInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<StopColorInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"stopColorInput", StopColorInputDefinition> => {
     return {
@@ -65,7 +70,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<StopColorInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"stop<color>">(node.id);
+        const providedInput = context.getInput?.<"stop:color">(node.id);
         if (providedInput) return providedInput;
     }
     return null;
@@ -77,14 +82,6 @@ const onCreate = (node: NodeDefinitions.BuiltNodeOf<"stopColorInput", StopColorI
 
 const onDelete = (node: NodeDefinitions.BuiltNodeOf<"stopColorInput", StopColorInputDefinition>, graphId: string, ctx: NodeTypes.MethodContext): void => {
     removeInterface(ctx, graphId, node.id, "in");
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<StopColorInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["stop<color>"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<StopColorInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
 };
 
 export const StopColorInputType: NodeTypes.Type<"stopColorInput", StopColorInputDefinition> = {
@@ -102,5 +99,6 @@ export const StopColorInputType: NodeTypes.Type<"stopColorInput", StopColorInput
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

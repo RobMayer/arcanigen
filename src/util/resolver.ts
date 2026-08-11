@@ -1,5 +1,6 @@
 import { Shape } from "../definitions/shapeTypes";
-import { DataTypes, NodeDefinitions } from "../definitions/betterTypes";
+import { NodeDefinitions } from "../definitions/nodeTypes";
+import { DataTypes } from "../definitions/dataTypes";
 
 export namespace Resolver {
     export namespace EnumMappings {
@@ -71,7 +72,7 @@ export namespace Resolver {
     export type Context = {
         graphId: string;
         sequenceData: SequenceData;
-        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, sequenceData?: SequenceData) => DataTypes.EvalOf<DataTypes.Use<K>> | null;
+        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, sequenceData?: SequenceData) => DataTypes.EvalOf<K> | null;
         subgraph: (
             graphId: string,
             outputNodeId: string,
@@ -79,7 +80,7 @@ export namespace Resolver {
             innerSeqData: SequenceData,
         ) => DataTypes.AnyEval | null;
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
-        getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<DataTypes.Use<K>> | undefined;
+        getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<K> | undefined;
         /** Look up a node by graphId and nodeId */
         getNode: (graphId: string, nodeId: string) => NodeDefinitions.NodeFor<NodeDefinitions.Any> | undefined;
     };

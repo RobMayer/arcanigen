@@ -6,24 +6,26 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { PaperHelper } from "../../../util/paperHelper";
 import { NumericString } from "../../datatypes/numericString";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PathLengthDefinition = {
-    inputs: {
-        path: DataTypes.Use<"path">;
-        sampleAt: DataTypes.Use<"float" | "integer">;
-    };
-    outputs: {
-        output: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        sampleAt: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+const def = signature({
+    in: { path: "path", sampleAt: $.oneOf("float", "integer") },
+    out: { output: "length" },
+});
+
+export type PathLengthDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        sampleAt: DataTypes.TypeOf<"float">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLengthDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathLength", PathLengthDefinition> => {
     return {
@@ -102,24 +104,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLengthDefinition>, socket: "
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PathLengthDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    path: { types: ["path"], mode: "or" },
-    sampleAt: { types: ["float", "integer"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PathLengthDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathLengthDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PathLengthNodeType: NodeTypes.Type<"pathLength", PathLengthDefinition> = {
     type: "pathLength",
     displayName: "Path Length",
@@ -132,5 +116,6 @@ export const PathLengthNodeType: NodeTypes.Type<"pathLength", PathLengthDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -11,7 +11,9 @@ import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -19,42 +21,46 @@ import { Length } from "../../datatypes/length";
 import { Color } from "../../datatypes/color";
 import { Enum } from "../../datatypes/enum";
 import { FilterPrimitive } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 
-export type GlowEffectDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        artColor: DataTypes.Use<"boolean">;
-        color: DataTypes.Use<"color">;
-        blur: DataTypes.Use<"length">;
-        spread: DataTypes.Use<"length">;
-        strength: DataTypes.Use<"float">;
-        opacity: DataTypes.Use<"float">;
-        offsetMode: DataTypes.Use<"enum">;
-        offsetX: DataTypes.Use<"length">;
-        offsetY: DataTypes.Use<"length">;
-        offsetRadius: DataTypes.Use<"length">;
-        offsetTheta: DataTypes.Use<"angle">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        artColor: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-        color: DataTypes.TypeOf<DataTypes.Use<"color">>;
-        blur: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        strength: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        opacity: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        offsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-    };
-};
+const def = signature({
+    in: {
+        input: "shape",
+        artColor: "boolean",
+        color: "color",
+        blur: "length",
+        spread: "length",
+        strength: "float",
+        opacity: "float",
+        offsetMode: "enum",
+        offsetX: "length",
+        offsetY: "length",
+        offsetRadius: "length",
+        offsetTheta: "angle",
+    },
+    out: { output: "shape" },
+});
+
+export type GlowEffectDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        artColor: DataTypes.TypeOf<"boolean">;
+        color: DataTypes.TypeOf<"color">;
+        blur: DataTypes.TypeOf<"length">;
+        spread: DataTypes.TypeOf<"length">;
+        strength: DataTypes.TypeOf<"float">;
+        opacity: DataTypes.TypeOf<"float">;
+        offsetMode: DataTypes.TypeOf<"enum">;
+        offsetX: DataTypes.TypeOf<"length">;
+        offsetY: DataTypes.TypeOf<"length">;
+        offsetRadius: DataTypes.TypeOf<"length">;
+        offsetTheta: DataTypes.TypeOf<"angle">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GlowEffectDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"glowEffect", GlowEffectDefinition> => {
     return {
@@ -239,30 +245,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof GlowEffectDefinition["inputs"]]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "and" },
-    artColor: { types: ["boolean"], mode: "and" },
-    color: { types: ["color"], mode: "and" },
-    blur: { types: ["length"], mode: "and" },
-    spread: { types: ["length"], mode: "and" },
-    strength: { types: ["float"], mode: "and" },
-    opacity: { types: ["float"], mode: "and" },
-    offsetMode: { types: ["enum"], mode: "and" },
-    offsetX: { types: ["length"], mode: "and" },
-    offsetY: { types: ["length"], mode: "and" },
-    offsetRadius: { types: ["length"], mode: "and" },
-    offsetTheta: { types: ["angle"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof GlowEffectDefinition["outputs"]]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT] ?? { types: ["shape"], mode: "and" };
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN] ?? { types: ["shape"], mode: "and" };
-};
-
 export const GlowEffectNodeType: NodeTypes.Type<"glowEffect", GlowEffectDefinition> = {
     type: "glowEffect",
     displayName: "Glow",
@@ -275,7 +257,8 @@ export const GlowEffectNodeType: NodeTypes.Type<"glowEffect", GlowEffectDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

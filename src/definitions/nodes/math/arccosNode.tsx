@@ -1,32 +1,37 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
-import { extractSingle } from "./numericMath";
 import { useGraphId } from "../../../state/graphId";
+import { extractSingle } from "../../helpers/mathHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-const DIMENSIONLESS_IN: SocketTypes.SocketRule = { types: ["float", "integer"], mode: "or" };
-const ANGLE_OUT: SocketTypes.SocketRule = { types: ["angle"], mode: "or" };
+const def = signature({
+    in: { input: $.oneOf("float", "integer") },
+    out: { output: "angle" },
+});
 
-export type ArccosDefinition = {
-    inputs: {
-        input: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"angle">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        input: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+export type ArccosDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: string;
+        input: DataTypes.TypeOf<"float">;
+    }
+>;
+
+// interject-only rules (mirror the def's socket types)
+const DIMENSIONLESS_IN: SocketTypes.Term = SocketTypes.or("float", "integer");
+const ANGLE_OUT: SocketTypes.Term = SocketTypes.of("angle");
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ArccosDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"arccos", ArccosDefinition> => {
     return {
@@ -42,10 +47,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ArccosDefinition>>,
 };
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArccosDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
-    const graphId = useGraphId();
-
-    const preview = Project.useCachedOutput(graphId, node, "output");
-
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<ArccosDefinition>>) => {
             methods.update(v);
@@ -53,6 +54,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArccosDefin
         [methods],
     );
 
+    const graphId = useGraphId();
+    const preview = Project.useCachedOutput(graphId, node, "output");
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} label={"Output"}>
@@ -87,17 +90,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArccosDefinition>, socket: "outp
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArccosDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    switch (socketId) {
-        case "input":
-            return DIMENSIONLESS_IN;
-        case "output":
-            return ANGLE_OUT;
-        default:
-            return DIMENSIONLESS_IN;
-    }
-};
-
 export const ArccosType: NodeTypes.Type<"arccos", ArccosDefinition> = {
     type: "arccos",
     displayName: "Arccos",
@@ -110,7 +102,8 @@ export const ArccosType: NodeTypes.Type<"arccos", ArccosDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     canInterject: passthroughCanInterject(DIMENSIONLESS_IN, ANGLE_OUT),
     onInterject: passthroughInterject("input", "output"),
 };

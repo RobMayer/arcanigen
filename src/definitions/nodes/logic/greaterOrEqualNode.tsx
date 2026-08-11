@@ -1,31 +1,37 @@
 import { nanoid } from "nanoid";
-import { queryUpstreamOutType } from "../nodeHelpers";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
-import { NUMERIC_TYPES, extractPair } from "../math/numericMath";
-import { BinaryComparisonDefinition, effectiveInputType, setPayload } from "./comparisonUtils";
+import { extractPair } from "../../helpers/mathHelper";
+import { SignatureEngine } from "../../helpers/signatureEngine";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 
-export type GreaterOrEqualDefinition = BinaryComparisonDefinition;
+const def = signature({
+    args: { T: $.combine.NUMERIC_ADDABLE },
+    in: ({ T }) => ({ a: T, b: T }),
+    out: { output: "boolean" },
+});
 
-type GreaterOrEqualNode = NodeDefinitions.BuiltNodeOf<"greaterOrEqual", GreaterOrEqualDefinition>;
+export type GreaterOrEqualDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: string;
+    }
+>;
 
-const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GreaterOrEqualDefinition>>, id: string = nanoid()): GreaterOrEqualNode => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GreaterOrEqualDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"greaterOrEqual", GreaterOrEqualDefinition> => {
     return {
         id,
         in: { a: null, b: null },
         out: { output: [] },
-        payload: {
-            label: "",
-            connectedTypeA: SocketTypes.NONE,
-            connectedTypeB: SocketTypes.NONE,
-        },
+        payload: { label: "" },
         type: "greaterOrEqual",
     };
 };
@@ -70,75 +76,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GreaterOrEqualDefinition>, socke
     return { kind: "boolean", data: a >= b };
 };
 
-// --- Lifecycle hooks ---
-
-const onConnect = (node: GreaterOrEqualNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction === "out") return;
-    const link = ctx.getLink(graphId, linkId);
-    if (!link) return;
-
-    const socket = link.toSocket as "a" | "b";
-    const upstreamType = queryUpstreamOutType(node, socket, graphId, ctx);
-    const payloadKey = socket === "a" ? "connectedTypeA" : "connectedTypeB";
-
-    setPayload(node.id, { [payloadKey]: upstreamType }, graphId, ctx);
-
-    const otherSocket = socket === "a" ? "b" : "a";
-    ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
-};
-
-const onDisconnect = (
-    node: GreaterOrEqualNode,
-    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
-    direction: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    if (direction === "out") return;
-
-    const socket = link.toSocket as "a" | "b";
-    const otherSocket = socket === "a" ? "b" : "a";
-    const payloadKey = socket === "a" ? "connectedTypeA" : "connectedTypeB";
-
-    ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintRemoved");
-    setPayload(node.id, { [payloadKey]: SocketTypes.NONE }, graphId, ctx);
-    ctx.requestRefresh(graphId, node.id, otherSocket, "in", "constraintAdded");
-};
-
-const onRefreshRequest = (node: GreaterOrEqualNode, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (side === "out") return;
-
-    const currentNode = ctx.getNode(graphId, node.id) as GreaterOrEqualNode | undefined;
-    if (!currentNode) return;
-
-    const newUpstreamType = queryUpstreamOutType(currentNode, socketId, graphId, ctx);
-    const payloadKey = socketId === "a" ? "connectedTypeA" : "connectedTypeB";
-    const oldType = socketId === "a" ? currentNode.payload.connectedTypeA : currentNode.payload.connectedTypeB;
-
-    if (!SocketTypes.equals(newUpstreamType, oldType)) {
-        setPayload(node.id, { [payloadKey]: newUpstreamType }, graphId, ctx);
-
-        const otherSocket = socketId === "a" ? "b" : "a";
-        ctx.requestRefresh(graphId, node.id, otherSocket, "in", reason);
-    }
-};
-
-// --- getSocketType ---
-
-const getSocketType = (node: NodeDefinitions.NodeFor<GreaterOrEqualDefinition>, socketId: string, _side: "in" | "out", _ctx: NodeTypes.MethodContext): SocketTypes.SocketRule => {
-    const { connectedTypeA, connectedTypeB } = node.payload;
-    switch (socketId) {
-        case "a":
-            return effectiveInputType(connectedTypeA, connectedTypeB);
-        case "b":
-            return effectiveInputType(connectedTypeB, connectedTypeA);
-        case "output":
-            return SocketTypes.of("boolean");
-        default:
-            return NUMERIC_TYPES;
-    }
-};
-
 export const GreaterOrEqualNodeType: NodeTypes.Type<"greaterOrEqual", GreaterOrEqualDefinition> = {
     type: "greaterOrEqual",
     displayName: "Greater or Equal",
@@ -151,8 +88,6 @@ export const GreaterOrEqualNodeType: NodeTypes.Type<"greaterOrEqual", GreaterOrE
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    onConnect,
-    onDisconnect,
-    onRefreshRequest,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -5,22 +5,24 @@ import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type FromCrossingsDefinition = {
-    inputs: {
-        path: DataTypes.Use<"path">;
-    };
-    outputs: {
-        output: DataTypes.Use<"array<point>">;
-        pointCount: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { path: "path" },
+    out: { output: $.arrayOf("point"), pointCount: "integer" },
+});
+
+export type FromCrossingsDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<FromCrossingsDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"fromCrossings", FromCrossingsDefinition> => {
     return {
@@ -86,24 +88,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<FromCrossingsDefinition>, socket
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<FromCrossingsDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    path: { types: ["path"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<FromCrossingsDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["array<point>"], mode: "and" },
-    pointCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<FromCrossingsDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const FromCrossingsNodeType: NodeTypes.Type<"fromCrossings", FromCrossingsDefinition> = {
     type: "fromCrossings",
     displayName: "From Crossings",
@@ -116,5 +100,6 @@ export const FromCrossingsNodeType: NodeTypes.Type<"fromCrossings", FromCrossing
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

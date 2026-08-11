@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { NodeTypes } from "../../definitions/betterTypes";
+import { NodeTypes } from "../../definitions/nodeTypes";
 
 export namespace ArcaneGraph {
     // aliases just for clarity of purpose when used
@@ -26,7 +26,6 @@ export namespace ArcaneGraph {
 
     export type Link = {
         id: LinkId;
-        type: string;
         fromNode: NodeId;
         toNode: NodeId;
         fromSocket: SocketId;
@@ -531,16 +530,8 @@ export namespace ArcaneGraph {
     export const reconnectMany = <N>(graph: GraphOf<N>, data: BulkAdd<Omit<Link, "id">>): [graph: GraphOf<N>, newIds: LinkId[], removed: RemovedOf<N>] => {
         return doConnect(graph, data, true);
     };
-    export const connect = <N>(
-        graph: GraphOf<N>,
-        fromNode: NodeId,
-        toNode: NodeId,
-        fromSocket: SocketId,
-        toSocket: SocketId,
-        type: string,
-        id: LinkId = generateId(),
-    ): [graph: GraphOf<N>, newId: LinkId | null] => {
-        const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
+    export const connect = <N>(graph: GraphOf<N>, fromNode: NodeId, toNode: NodeId, fromSocket: SocketId, toSocket: SocketId, id: LinkId = generateId()): [graph: GraphOf<N>, newId: LinkId | null] => {
+        const [newGraph, newIds] = connectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket } });
         return [newGraph, newIds.length > 0 ? newIds[0] : null];
     };
     export const reconnect = <N>(
@@ -549,10 +540,9 @@ export namespace ArcaneGraph {
         toNode: NodeId,
         fromSocket: SocketId,
         toSocket: SocketId,
-        type: string,
         id: LinkId = generateId(),
     ): [graph: GraphOf<N>, newId: LinkId | null, removed: RemovedOf<N>] => {
-        const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket, type } });
+        const [newGraph, newIds, removed] = reconnectMany(graph, { [id]: { fromNode, toNode, fromSocket, toSocket } });
         return [newGraph, newIds.length > 0 ? newIds[0] : null, removed];
     };
     export const disconnectBetween = <N>(
@@ -563,7 +553,7 @@ export namespace ArcaneGraph {
         nodeBSocket: SocketId | null = null,
     ): [graph: GraphOf<N>, removed: RemovedOf<N>] => {
         const linkIds: LinkId[] = [];
-        // A → B
+        // A -> B
         if (nodeA in graph.nodes) {
             const a = graph.nodes[nodeA];
             const sources = nodeASocket !== null ? (nodeASocket in a.out ? [nodeASocket] : []) : Object.keys(a.out);
@@ -576,7 +566,7 @@ export namespace ArcaneGraph {
                 }
             }
         }
-        // B → A
+        // B -> A
         if (nodeB in graph.nodes) {
             const b = graph.nodes[nodeB];
             const sources = nodeBSocket !== null ? (nodeBSocket in b.out ? [nodeBSocket] : []) : Object.keys(b.out);

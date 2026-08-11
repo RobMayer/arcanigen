@@ -5,79 +5,84 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { componentsFromRGB } from "../../../util/colorSpaces";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ColorSplitDefinition = {
-    inputs: {
-        input: DataTypes.Use<"color">;
-    };
-    outputs: {
+const def = signature({
+    in: { input: "color" },
+    out: {
         // RGB (0–100 float)
-        rgb_r: DataTypes.Use<"float">;
-        rgb_g: DataTypes.Use<"float">;
-        rgb_b: DataTypes.Use<"float">;
+        rgb_r: "float",
+        rgb_g: "float",
+        rgb_b: "float",
         // RGB byte (0–255 integer)
-        rgb255_r: DataTypes.Use<"integer">;
-        rgb255_g: DataTypes.Use<"integer">;
-        rgb255_b: DataTypes.Use<"integer">;
+        rgb255_r: "integer",
+        rgb255_g: "integer",
+        rgb255_b: "integer",
         // CMY
-        cmy_c: DataTypes.Use<"float">;
-        cmy_m: DataTypes.Use<"float">;
-        cmy_y: DataTypes.Use<"float">;
+        cmy_c: "float",
+        cmy_m: "float",
+        cmy_y: "float",
         // CMYK
-        cmyk_c: DataTypes.Use<"float">;
-        cmyk_m: DataTypes.Use<"float">;
-        cmyk_y: DataTypes.Use<"float">;
-        cmyk_k: DataTypes.Use<"float">;
+        cmyk_c: "float",
+        cmyk_m: "float",
+        cmyk_y: "float",
+        cmyk_k: "float",
         // HSV
-        hsv_h: DataTypes.Use<"angle">;
-        hsv_s: DataTypes.Use<"float">;
-        hsv_v: DataTypes.Use<"float">;
+        hsv_h: "angle",
+        hsv_s: "float",
+        hsv_v: "float",
         // HSL
-        hsl_h: DataTypes.Use<"angle">;
-        hsl_s: DataTypes.Use<"float">;
-        hsl_l: DataTypes.Use<"float">;
+        hsl_h: "angle",
+        hsl_s: "float",
+        hsl_l: "float",
         // HWK
-        hwk_h: DataTypes.Use<"angle">;
-        hwk_w: DataTypes.Use<"float">;
-        hwk_k: DataTypes.Use<"float">;
+        hwk_h: "angle",
+        hwk_w: "float",
+        hwk_k: "float",
         // HSI
-        hsi_h: DataTypes.Use<"angle">;
-        hsi_s: DataTypes.Use<"float">;
-        hsi_i: DataTypes.Use<"float">;
+        hsi_h: "angle",
+        hsi_s: "float",
+        hsi_i: "float",
         // HCY
-        hcy_h: DataTypes.Use<"angle">;
-        hcy_c: DataTypes.Use<"float">;
-        hcy_y: DataTypes.Use<"float">;
+        hcy_h: "angle",
+        hcy_c: "float",
+        hcy_y: "float",
         // CIELAB
-        cielab_l: DataTypes.Use<"float">;
-        cielab_a: DataTypes.Use<"float">;
-        cielab_b: DataTypes.Use<"float">;
+        cielab_l: "float",
+        cielab_a: "float",
+        cielab_b: "float",
         // OKLAB
-        oklab_l: DataTypes.Use<"float">;
-        oklab_a: DataTypes.Use<"float">;
-        oklab_b: DataTypes.Use<"float">;
+        oklab_l: "float",
+        oklab_a: "float",
+        oklab_b: "float",
         // OKLCH
-        oklch_l: DataTypes.Use<"float">;
-        oklch_c: DataTypes.Use<"float">;
-        oklch_h: DataTypes.Use<"angle">;
+        oklch_l: "float",
+        oklch_c: "float",
+        oklch_h: "angle",
         // CIELCH
-        cielch_l: DataTypes.Use<"float">;
-        cielch_c: DataTypes.Use<"float">;
-        cielch_h: DataTypes.Use<"angle">;
+        cielch_l: "float",
+        cielch_c: "float",
+        cielch_h: "angle",
         // Alpha
-        alpha_f: DataTypes.Use<"float">;
-        alpha_b: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"color">>;
-    };
-};
+        alpha_f: "float",
+        alpha_b: "integer",
+    },
+});
+
+export type ColorSplitDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"color">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorSplitDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorSplit", ColorSplitDefinition> => {
     return {
@@ -449,7 +454,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
             const v = socket === "cielab_l" ? l : socket === "cielab_a" ? av : bv;
             return { kind: "float", data: `${v}` };
         }
-        // OKLAB — L is 0–1, a/b are ±~0.4 → scale by 100
+        // OKLAB — L is 0–1, a/b are ±~0.4 -> scale by 100
         case "oklab_l":
         case "oklab_a":
         case "oklab_b": {
@@ -457,7 +462,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
             const v = socket === "oklab_l" ? l : socket === "oklab_a" ? av : bv;
             return { kind: "float", data: `${v * 100}` };
         }
-        // OKLCH — L 0–1, C 0–~0.4 → scale by 100; H is angle
+        // OKLCH — L 0–1, C 0–~0.4 -> scale by 100; H is angle
         case "oklch_l":
         case "oklch_c":
         case "oklch_h": {
@@ -481,64 +486,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
     }
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ColorSplitDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["color"], mode: "and" },
-};
-
-const FLOAT_OUT: SocketTypes.SocketRule = { types: ["float"], mode: "and" };
-const INTEGER_OUT: SocketTypes.SocketRule = { types: ["integer"], mode: "and" };
-const ANGLE_OUT: SocketTypes.SocketRule = { types: ["angle"], mode: "and" };
-
-const SOCKETTYPES_OUT: { [key in OutKey]: SocketTypes.SocketRule } = {
-    rgb_r: FLOAT_OUT,
-    rgb_g: FLOAT_OUT,
-    rgb_b: FLOAT_OUT,
-    rgb255_r: INTEGER_OUT,
-    rgb255_g: INTEGER_OUT,
-    rgb255_b: INTEGER_OUT,
-    cmy_c: FLOAT_OUT,
-    cmy_m: FLOAT_OUT,
-    cmy_y: FLOAT_OUT,
-    cmyk_c: FLOAT_OUT,
-    cmyk_m: FLOAT_OUT,
-    cmyk_y: FLOAT_OUT,
-    cmyk_k: FLOAT_OUT,
-    hsv_h: ANGLE_OUT,
-    hsv_s: FLOAT_OUT,
-    hsv_v: FLOAT_OUT,
-    hsl_h: ANGLE_OUT,
-    hsl_s: FLOAT_OUT,
-    hsl_l: FLOAT_OUT,
-    hwk_h: ANGLE_OUT,
-    hwk_w: FLOAT_OUT,
-    hwk_k: FLOAT_OUT,
-    hsi_h: ANGLE_OUT,
-    hsi_s: FLOAT_OUT,
-    hsi_i: FLOAT_OUT,
-    hcy_h: ANGLE_OUT,
-    hcy_c: FLOAT_OUT,
-    hcy_y: FLOAT_OUT,
-    cielab_l: FLOAT_OUT,
-    cielab_a: FLOAT_OUT,
-    cielab_b: FLOAT_OUT,
-    oklab_l: FLOAT_OUT,
-    oklab_a: FLOAT_OUT,
-    oklab_b: FLOAT_OUT,
-    oklch_l: FLOAT_OUT,
-    oklch_c: FLOAT_OUT,
-    oklch_h: ANGLE_OUT,
-    cielch_l: FLOAT_OUT,
-    cielch_c: FLOAT_OUT,
-    cielch_h: ANGLE_OUT,
-    alpha_f: FLOAT_OUT,
-    alpha_b: INTEGER_OUT,
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "in") return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-    return SOCKETTYPES_OUT[socketId as OutKey];
-};
-
 export const ColorSplitNodeType: NodeTypes.Type<"colorSplit", ColorSplitDefinition> = {
     type: "colorSplit",
     displayName: "Color Split",
@@ -551,5 +498,6 @@ export const ColorSplitNodeType: NodeTypes.Type<"colorSplit", ColorSplitDefiniti
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

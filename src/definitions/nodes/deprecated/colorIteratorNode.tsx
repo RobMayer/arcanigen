@@ -6,7 +6,8 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { NumericString } from "../../datatypes/numericString";
 import { EmptyOr } from "../../../util/misc";
 import { Project } from "../../../state/project";
@@ -16,8 +17,10 @@ import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { interpolateColor } from "../../../util/colorSpaces";
-import { Iteration } from "../abstract";
+import { IterationPrefab } from "../../helpers/iterationPrefab";
 import styled from "styled-components";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const COLOR_SPACE_OPTIONS = Enum.options(Enum.Common.colorSpace);
 const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
@@ -32,24 +35,31 @@ const HUE_SPACES: Set<number> = new Set([
     Enum.Common.colorSpace.OKLCH.value,
 ]);
 
-export type ColorIteratorDefinition = {
-    inputs: {
-        colorSpace: DataTypes.Use<"enum">;
-        angleTraversal: DataTypes.Use<"enum">;
-        [color: `color_${string}`]: DataTypes.Use<"color">;
-        [pos: `pos_${string}`]: DataTypes.Use<"float">;
-    } & Iteration.Definition["inputs"];
-    outputs: {
-        sequencedOutput: DataTypes.Use<"color">;
-        sampledOutput: DataTypes.Use<"color">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        sequence: "sequence",
+        mode: "enum",
+        reverseSequence: "boolean",
+        startOffset: "integer",
+        endOffset: "integer",
+        samplePosition: $.oneOf("float", "integer"),
+        colorSpace: "enum",
+        angleTraversal: "enum",
+        "color_*": "color",
+        "pos_*": "float",
+    },
+    out: { sequencedOutput: "color", sampledOutput: "color" },
+});
+
+export type ColorIteratorDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        colorSpace: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        colorSpace: DataTypes.TypeOf<"enum">;
+        angleTraversal: DataTypes.TypeOf<"enum">;
         stops: { id: string; color: Color.Type; position: EmptyOr<NumericString.Type> }[];
-    } & Iteration.Definition["payload"];
-};
+    } & IterationPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorIterator", ColorIteratorDefinition> => {
     const s0 = nanoid();
@@ -215,7 +225,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
+                <IterationPrefab.Controls node={node} handleUpdate={handleUpdate} />
             </NodeAccordion>
         </TypicalNode>
     );
@@ -244,17 +254,17 @@ const StopEntry = styled.div`
 const dependsOn = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, outSocket: keyof ColorIteratorDefinition["outputs"], _deps: AllDeps): (keyof ColorIteratorDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.flatMap((s) => [`color_${s.id}`, `pos_${s.id}`]) as (keyof ColorIteratorDefinition["inputs"])[];
     if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "colorSpace", "angleTraversal", ...stopSockets];
+        return [...IterationPrefab.SEQUENCED_DEPS, "colorSpace", "angleTraversal", ...stopSockets];
     }
     if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "colorSpace", "angleTraversal", ...stopSockets];
+        return [...IterationPrefab.SAMPLED_DEPS, "colorSpace", "angleTraversal", ...stopSockets];
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, inSocket: keyof ColorIteratorDefinition["inputs"], _deps: AllDeps): (keyof ColorIteratorDefinition["outputs"])[] => {
-    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
-    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
+    if ((IterationPrefab.SEQUENCED_DEPS as string[]).includes(inSocket)) return ["sequencedOutput"];
+    if ((IterationPrefab.SAMPLED_DEPS as string[]).includes(inSocket)) return ["sampledOutput"];
     return ["sequencedOutput", "sampledOutput"];
 };
 
@@ -293,11 +303,11 @@ const sampleGradient = (resolved: { color: NonNullable<Color.Type>; position: nu
 const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket: keyof ColorIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     let position: number;
     if (socket === "sequencedOutput") {
-        const result = Iteration.evaluate(node, context);
+        const result = IterationPrefab.evaluate(node, context);
         if (result === null) return null;
         position = result.t * 100;
     } else if (socket === "sampledOutput") {
-        position = Iteration.resolveSamplePosition(node, context);
+        position = IterationPrefab.resolveSamplePosition(node, context);
     } else {
         return null;
     }
@@ -327,34 +337,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket
     return sampleGradient(resolved, position, colorSpaceValue, angleTraversalValue);
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<
-        Pick<ColorIteratorDefinition["inputs"], "sequence" | "colorSpace" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition">
-    >]: SocketTypes.SocketRule;
-} = {
-    ...Iteration.IN_SOCKET_TYPES,
-    colorSpace: { types: ["enum"], mode: "and" },
-    angleTraversal: { types: ["enum"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ColorIteratorDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["color"], mode: "and" },
-    sampledOutput: { types: ["color"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("color_")) {
-        return { types: ["color"], mode: "and" };
-    }
-    if (socketId.startsWith("pos_")) {
-        return { types: ["float"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const ColorIteratorNodeType: NodeTypes.Type<"colorIterator", ColorIteratorDefinition> = {
     type: "colorIterator",
     displayName: "Color Iterator",
@@ -368,5 +350,6 @@ export const ColorIteratorNodeType: NodeTypes.Type<"colorIterator", ColorIterato
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

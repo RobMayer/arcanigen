@@ -5,22 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Project } from "../../../state/project";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type BooleanDefinition = {
-    inputs: {
-        value: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"boolean">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    };
-};
+const def = signature({
+    in: { value: "boolean" },
+    out: { output: "boolean" },
+});
+
+export type BooleanDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"boolean">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BooleanDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"boolean", BooleanDefinition> => {
     return {
@@ -81,23 +84,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<BooleanDefinition>, socket: "out
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<BooleanDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["boolean"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<BooleanDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const BooleanPrimitiveType: NodeTypes.Type<"boolean", BooleanDefinition> = {
     type: "boolean",
     displayName: "Boolean",
@@ -110,5 +96,6 @@ export const BooleanPrimitiveType: NodeTypes.Type<"boolean", BooleanDefinition> 
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

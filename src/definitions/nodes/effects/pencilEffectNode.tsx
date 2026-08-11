@@ -1,30 +1,33 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { FilterPrimitive } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PencilEffectDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        seed: DataTypes.Use<"integer">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        seed: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-    };
-};
+const def = signature({
+    in: { input: "shape", seed: "integer" },
+    out: { output: "shape" },
+});
+
+export type PencilEffectDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        seed: DataTypes.TypeOf<"integer">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PencilEffectDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pencilEffect", PencilEffectDefinition> => {
     return {
@@ -99,20 +102,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PencilEffectDefinition>, socket:
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof PencilEffectDefinition["inputs"]]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "and" },
-    seed: { types: ["integer"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof PencilEffectDefinition["outputs"]]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PencilEffectDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT] ?? { types: ["shape"], mode: "and" };
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN] ?? { types: ["shape"], mode: "and" };
-};
-
 export const PencilEffectNodeType: NodeTypes.Type<"pencilEffect", PencilEffectDefinition> = {
     type: "pencilEffect",
     displayName: "Pencil",
@@ -125,7 +114,8 @@ export const PencilEffectNodeType: NodeTypes.Type<"pencilEffect", PencilEffectDe
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

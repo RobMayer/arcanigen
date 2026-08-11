@@ -8,53 +8,59 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
 
 import { delerp, lerp } from "../../../util/misc";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type SpiralDefinition = {
-    inputs: {
-        spanMode: DataTypes.Use<"enum">;
-        innerRadius: DataTypes.Use<"length">;
-        outerRadius: DataTypes.Use<"length">;
-        radius: DataTypes.Use<"length">;
-        spread: DataTypes.Use<"length">;
-        arcMode: DataTypes.Use<"enum">;
-        thetaStart: DataTypes.Use<"angle">;
-        sweep: DataTypes.Use<"angle">;
-        thetaFrom: DataTypes.Use<"angle">;
-        thetaTo: DataTypes.Use<"angle">;
-        markerStartShape: DataTypes.Use<"shape">;
-        markerEndShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        spanMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        innerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        outerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaFrom: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaTo: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        spanMode: "enum",
+        innerRadius: "length",
+        outerRadius: "length",
+        radius: "length",
+        spread: "length",
+        arcMode: "enum",
+        thetaStart: "angle",
+        sweep: "angle",
+        thetaFrom: "angle",
+        thetaTo: "angle",
+        markerStartShape: "shape",
+        markerEndShape: "shape",
+        markerAlign: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type SpiralDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        spanMode: DataTypes.TypeOf<"enum">;
+        innerRadius: DataTypes.TypeOf<"length">;
+        outerRadius: DataTypes.TypeOf<"length">;
+        radius: DataTypes.TypeOf<"length">;
+        spread: DataTypes.TypeOf<"length">;
+        arcMode: DataTypes.TypeOf<"enum">;
+        thetaStart: DataTypes.TypeOf<"angle">;
+        sweep: DataTypes.TypeOf<"angle">;
+        thetaFrom: DataTypes.TypeOf<"angle">;
+        thetaTo: DataTypes.TypeOf<"angle">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"spiral", SpiralDefinition> => {
     return {
@@ -214,8 +220,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                 </SocketIn>
             </NodeAccordion>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -241,7 +247,7 @@ const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = [
     "positionTheta",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, outSocket: keyof SpiralDefinition["outputs"], _deps: AllDeps): (keyof SpiralDefinition["inputs"])[] => {
     if (outSocket === "path") {
@@ -339,7 +345,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
         d += ` ${bezierCommand(points, i)}`;
     }
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         const maxR = Math.max(Math.abs(rI), Math.abs(rO));
@@ -350,7 +356,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     }
 
     if (socket === "output") {
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
 
         const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
         const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
@@ -382,38 +388,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<SpiralDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    spanMode: { types: ["enum"], mode: "or" },
-    innerRadius: { types: ["length"], mode: "or" },
-    outerRadius: { types: ["length"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    spread: { types: ["length"], mode: "or" },
-    arcMode: { types: ["enum"], mode: "or" },
-    thetaStart: { types: ["angle"], mode: "or" },
-    sweep: { types: ["angle"], mode: "or" },
-    thetaFrom: { types: ["angle"], mode: "or" },
-    thetaTo: { types: ["angle"], mode: "or" },
-    markerStartShape: { types: ["shape"], mode: "or" },
-    markerEndShape: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<SpiralDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     type: "spiral",
     displayName: "Spiral",
@@ -426,5 +400,6 @@ export const SpiralNodeType: NodeTypes.Type<"spiral", SpiralDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

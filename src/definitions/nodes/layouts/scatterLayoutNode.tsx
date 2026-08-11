@@ -1,28 +1,30 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { GroupShape } from "../../shapeTypes";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ScatterLayoutDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        points: DataTypes.Use<"array<point>">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        sequence: DataTypes.Use<"sequence">;
-    };
-    payload: {
+const def = signature({
+    in: { input: "shape", points: $.arrayOf("point") },
+    out: { output: "shape", sequence: "sequence" },
+});
+
+export type ScatterLayoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ScatterLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"scatterLayout", ScatterLayoutDefinition> => {
     return {
@@ -123,25 +125,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ScatterLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-    points: { types: ["array<point>"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ScatterLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    sequence: { types: ["sequence"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ScatterLayoutNodeType: NodeTypes.Type<"scatterLayout", ScatterLayoutDefinition> = {
     type: "scatterLayout",
     displayName: "Scatter Layout",
@@ -154,7 +137,8 @@ export const ScatterLayoutNodeType: NodeTypes.Type<"scatterLayout", ScatterLayou
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

@@ -6,7 +6,8 @@ import styled from "styled-components";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -21,6 +22,8 @@ import { AngleInput } from "../../../components/inputs/AngleInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { EmptyOr } from "../../../util/misc";
 import { GradientPaint, GradientStop } from "../../shapeTypes";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const SPREAD_OPTIONS = Enum.options(Enum.Common.gradientSpread);
 const FRAMING_OPTIONS = Enum.options(Enum.Common.framing);
@@ -28,48 +31,49 @@ const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
 
 type StopEntryData = { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean };
 
-export type RadialGradientDefinition = {
-    inputs: {
-        stops: DataTypes.Use<"array<stop<color>>">;
-        framing: DataTypes.Use<"enum">;
-        spread: DataTypes.Use<"enum">;
-        centerMode: DataTypes.Use<"enum">;
-        centerX: DataTypes.Use<"length">;
-        centerY: DataTypes.Use<"length">;
-        centerRadius: DataTypes.Use<"length">;
-        centerTheta: DataTypes.Use<"angle">;
-        endRadius: DataTypes.Use<"length">;
-        startOffsetMode: DataTypes.Use<"enum">;
-        startOffsetX: DataTypes.Use<"length">;
-        startOffsetY: DataTypes.Use<"length">;
-        startOffsetRadius: DataTypes.Use<"length">;
-        startOffsetTheta: DataTypes.Use<"angle">;
-        startRadius: DataTypes.Use<"length">;
-        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<color>">;
-    };
-    outputs: {
-        output: DataTypes.Use<"gradient">;
-        stopCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        stops: $.arrayOf("stop:color"),
+        framing: "enum",
+        spread: "enum",
+        centerMode: "enum",
+        centerX: "length",
+        centerY: "length",
+        centerRadius: "length",
+        centerTheta: "angle",
+        endRadius: "length",
+        startOffsetMode: "enum",
+        startOffsetX: "length",
+        startOffsetY: "length",
+        startOffsetRadius: "length",
+        startOffsetTheta: "angle",
+        startRadius: "length",
+        "stop_*": "stop:color",
+    },
+    out: { output: "gradient", stopCount: "integer" },
+});
+
+export type RadialGradientDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        framing: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        centerMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        centerX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        centerY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        centerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        centerTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        endRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startOffsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        startOffsetX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startOffsetY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startOffsetRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startOffsetTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        startRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        framing: DataTypes.TypeOf<"enum">;
+        spread: DataTypes.TypeOf<"enum">;
+        centerMode: DataTypes.TypeOf<"enum">;
+        centerX: DataTypes.TypeOf<"length">;
+        centerY: DataTypes.TypeOf<"length">;
+        centerRadius: DataTypes.TypeOf<"length">;
+        centerTheta: DataTypes.TypeOf<"angle">;
+        endRadius: DataTypes.TypeOf<"length">;
+        startOffsetMode: DataTypes.TypeOf<"enum">;
+        startOffsetX: DataTypes.TypeOf<"length">;
+        startOffsetY: DataTypes.TypeOf<"length">;
+        startOffsetRadius: DataTypes.TypeOf<"length">;
+        startOffsetTheta: DataTypes.TypeOf<"angle">;
+        startRadius: DataTypes.TypeOf<"length">;
         stops: StopEntryData[];
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialGradientDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"radialGradient", RadialGradientDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
@@ -478,17 +482,17 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop<color>>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop<color>) over its inline payload.
+// Resolve the effective stops: the supersocket (an array<stop:color>) overrides everything;
+// otherwise fold each per-stop socket (a connected stop:color) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop<color>>">(node.id, "stops");
+    const supersocketEval = context.resolve<"array<stop:color>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop<color>">(node.id, entry.socket);
+        const connected = context.resolve<"stop:color">(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,
@@ -610,57 +614,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socke
     return { kind: "gradient", data: gradient };
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<Omit<RadialGradientDefinition["inputs"], `stop_${string}`>>]: SocketTypes.SocketRule;
-} = {
-    stops: { types: ["array<stop<color>>"], mode: "or" },
-    framing: { types: ["enum"], mode: "and" },
-    spread: { types: ["enum"], mode: "and" },
-    centerMode: { types: ["enum"], mode: "and" },
-    centerX: { types: ["length"], mode: "and" },
-    centerY: { types: ["length"], mode: "and" },
-    centerRadius: { types: ["length"], mode: "and" },
-    centerTheta: { types: ["angle"], mode: "and" },
-    endRadius: { types: ["length"], mode: "and" },
-    startOffsetMode: { types: ["enum"], mode: "and" },
-    startOffsetX: { types: ["length"], mode: "and" },
-    startOffsetY: { types: ["length"], mode: "and" },
-    startOffsetRadius: { types: ["length"], mode: "and" },
-    startOffsetTheta: { types: ["angle"], mode: "and" },
-    startRadius: { types: ["length"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<RadialGradientDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["gradient"], mode: "and" },
-    stopCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("stop_")) {
-        return { types: ["stop<color>"], mode: "or" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
+// Supersocket override: connecting the whole `array<stop:color>` clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"radialGradient", RadialGradientDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "stops") return;
-
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("stop_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "stops") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("stop_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-    if (linkIdsToRemove.length === 0) return;
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 export const RadialGradientNodeType: NodeTypes.Type<"radialGradient", RadialGradientDefinition> = {
@@ -675,6 +647,7 @@ export const RadialGradientNodeType: NodeTypes.Type<"radialGradient", RadialGrad
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
-    getSocketType,
 };

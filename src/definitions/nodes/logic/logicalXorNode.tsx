@@ -5,23 +5,26 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LogicalXorDefinition = {
-    inputs: {
-        [input: `input_${string}`]: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"boolean">;
-    };
-    payload: {
+const def = signature({
+    in: { "input_*": "boolean" },
+    out: { output: "boolean" },
+});
+
+export type LogicalXorDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         inputs: string[];
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LogicalXorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"logicalXor", LogicalXorDefinition> => {
     const s0: `input_${string}` = `input_${nanoid()}`;
@@ -82,7 +85,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LogicalXorD
             </ActionButton>
             {node.payload.inputs.map((socket, idx) => (
                 <SocketIn key={socket} node={node} socketId={socket as `input_${string}`}>
-                    <span>Input {idx + 1}</span>
+                    Input {idx + 1}
                     <ActionButton.Lite onClick={() => handleRemoveInput(socket)} flavour={"danger"}>
                         <Icon shape={ICONS.Close} />
                     </ActionButton.Lite>
@@ -117,10 +120,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LogicalXorDefinition>, socket: k
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalXorDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SocketTypes.of("boolean");
-};
-
 export const LogicalXorNodeType: NodeTypes.Type<"logicalXor", LogicalXorDefinition> = {
     type: "logicalXor",
     displayName: "Xor",
@@ -133,5 +132,6 @@ export const LogicalXorNodeType: NodeTypes.Type<"logicalXor", LogicalXorDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

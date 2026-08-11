@@ -1,5 +1,5 @@
 import { ArcaneGraph } from "./structs/arcaneGraph";
-import { NodeTypes } from "../definitions/betterTypes";
+import { NodeTypes } from "../definitions/nodeTypes";
 import { InterfaceMember, flattenSockets } from "../state/project/types";
 
 type SocketRef = `${string}:${string}`; // "nodeId:socketId"
@@ -156,13 +156,7 @@ export type SubgraphDeps = {
  * Input interface nodes are SOURCE nodes (no inputs, only outputs), so we detect them
  * when we reach their output socket.
  */
-function traceUpstreamToInputInterfaces<N>(
-    graph: ArcaneGraph.GraphOf<N>,
-    startNodeId: string,
-    startSocketId: string,
-    deps: AllDeps,
-    inputNodes: Set<string>,
-): Set<string> {
+function traceUpstreamToInputInterfaces<N>(graph: ArcaneGraph.GraphOf<N>, startNodeId: string, startSocketId: string, deps: AllDeps, inputNodes: Set<string>): Set<string> {
     const visited = new Set<string>(); // "nodeId:socketId:direction"
     const result = new Set<string>(); // input interface node IDs found
 
@@ -212,7 +206,7 @@ function traceUpstreamToInputInterfaces<N>(
 /**
  * Computes dependency relationships between interface nodes in a subgraph.
  * For each output interface node, finds which input interface nodes it depends on.
- * Returns a bidirectional map (out→in[] and in→out[]).
+ * Returns a bidirectional map (out->in[] and in->out[]).
  *
  * @param graph - The subgraph to analyze
  * @param interfaces - Array of interface entries like "in:nodeId" or "out:nodeId"

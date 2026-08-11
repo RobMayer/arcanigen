@@ -8,45 +8,52 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ArcDefinition = {
-    inputs: {
-        radius: DataTypes.Use<"length">;
-        arcMode: DataTypes.Use<"enum">;
-        thetaStart: DataTypes.Use<"angle">;
-        sweep: DataTypes.Use<"angle">;
-        thetaFrom: DataTypes.Use<"angle">;
-        thetaTo: DataTypes.Use<"angle">;
-        pieSlice: DataTypes.Use<"boolean">;
-        markerStartShape: DataTypes.Use<"shape">;
-        markerEndShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaFrom: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaTo: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        pieSlice: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        radius: "length",
+        arcMode: "enum",
+        thetaStart: "angle",
+        sweep: "angle",
+        thetaFrom: "angle",
+        thetaTo: "angle",
+        pieSlice: "boolean",
+        markerStartShape: "shape",
+        markerEndShape: "shape",
+        markerAlign: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type ArcDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        radius: DataTypes.TypeOf<"length">;
+        arcMode: DataTypes.TypeOf<"enum">;
+        thetaStart: DataTypes.TypeOf<"angle">;
+        sweep: DataTypes.TypeOf<"angle">;
+        thetaFrom: DataTypes.TypeOf<"angle">;
+        thetaTo: DataTypes.TypeOf<"angle">;
+        pieSlice: DataTypes.TypeOf<"boolean">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ArcDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"arc", ArcDefinition> => {
     return {
@@ -183,8 +190,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArcDefiniti
                 </SocketIn>
             </NodeAccordion>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -286,7 +293,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
         }
     }
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
@@ -296,7 +303,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     }
 
     if (socket === "output") {
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
 
         if (!pieSlice) {
             paint.fill = null;
@@ -332,35 +339,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ArcDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    radius: { types: ["length"], mode: "or" },
-    arcMode: { types: ["enum"], mode: "or" },
-    thetaStart: { types: ["angle"], mode: "or" },
-    sweep: { types: ["angle"], mode: "or" },
-    thetaFrom: { types: ["angle"], mode: "or" },
-    thetaTo: { types: ["angle"], mode: "or" },
-    pieSlice: { types: ["boolean"], mode: "or" },
-    markerStartShape: { types: ["shape"], mode: "or" },
-    markerEndShape: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ArcDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArcDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     type: "arc",
     displayName: "Arc",
@@ -373,5 +351,6 @@ export const ArcNodeType: NodeTypes.Type<"arc", ArcDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

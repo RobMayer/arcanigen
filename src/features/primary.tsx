@@ -10,7 +10,7 @@ import { GraphNode } from "./nodeview/node";
 import { GraphIdContext } from "../state/graphId";
 import { GraphLink } from "./nodeview/link";
 import { NODE_DRAG_MIME } from "./nodedrawer";
-import { NodeTypes } from "../definitions/betterTypes";
+import { NodeTypes } from "../definitions/nodeTypes";
 
 export const GraphView = ({ graphId, paneControls }: { graphId: string; paneControls?: DragPaneControls }) => {
     return (

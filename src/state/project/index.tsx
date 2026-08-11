@@ -1,10 +1,12 @@
 import { createContext, ReactNode, useMemo, useContext, useCallback, useSyncExternalStore, SetStateAction } from "react";
-import { DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
+import { DataTypes } from "../../definitions/dataTypes";
+import { SocketTypes } from "../../definitions/socketTypes";
 import { computeSubgraphDeps, computeForbiddenSockets } from "../../util/cycleDetection";
 import { FastContextMember, useFastContextMember } from "../../util/hooks/useFastContext";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { useGraphId } from "../graphId";
-import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, SubgraphMeta, InterfaceMember } from "./types";
+import type { GraphId, XY, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, SubgraphMeta, InterfaceMember, SocketTypeCacheType } from "./types";
 import { makeSubgraphMeta } from "./types";
 import { nanoid } from "nanoid";
 import { buildInitialCache, invalidateDownstream, rebuildDownstream } from "./cache";
@@ -12,7 +14,7 @@ import { buildInitialDeps, INITIAL_STATE } from "./storage";
 import { MethodContextImpl } from "./methodContext";
 
 export namespace Project {
-    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.SocketRule; forbidden: Set<string> };
+    export type PendingConnection = { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Term; forbidden: Set<string> };
 
     type TheType = {
         nodes: NodesType;
@@ -25,6 +27,7 @@ export namespace Project {
         cache: CacheType;
         deps: DepsType;
         meta: MetaType;
+        socketTypes: SocketTypeCacheType;
     };
 
     type UiStateType = { [key: string]: unknown };
@@ -48,13 +51,14 @@ export namespace Project {
         const cache = useFastContextMember<TheType["cache"]>(INITIAL_STATE.cache);
         const deps = useFastContextMember<TheType["deps"]>(INITIAL_STATE.deps);
         const meta = useFastContextMember<TheType["meta"]>(INITIAL_STATE.meta);
+        const socketTypes = useFastContextMember<TheType["socketTypes"]>(INITIAL_STATE.socketTypes);
 
         const pendingConnection = useFastContextMember<PendingConnection | null>(null);
         const uiState = useFastContextMember<UiStateType>({});
 
-        const mc = useMemo(() => new MethodContextImpl({ nodes, nodeList, links, linkList, positions, users, interfaces, cache, deps, meta }), []);
+        const mc = useMemo(() => new MethodContextImpl({ nodes, nodeList, links, linkList, positions, users, interfaces, cache, deps, meta, socketTypes }), []);
 
-        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, meta, pendingConnection, uiState, mc }), [mc]);
+        const value = useMemo(() => ({ cache, deps, nodes, nodeList, links, linkList, positions, users, interfaces, meta, socketTypes, pendingConnection, uiState, mc }), [mc]);
 
         return <CTX value={value}>{children}</CTX>;
     };
@@ -115,13 +119,49 @@ export namespace Project {
         return [useSyncExternalStore(ctx.nodes.subscribe, selector), nodeMethods] as const;
     };
 
+    /**
+     * Reactive socket type for rendering. Subscribes to the transient socket-type cache so the socket
+     * re-renders when its solved type changes; `getSocketType` returns the stored rule (or the signature
+     * default / a hand-rolled node's own answer). The subscription selects the *stored* rule — a stable
+     * reference only replaced on recompute — so unchanged sockets don't re-render on every cache write.
+     */
+    export const useSocketType = (graphId: GraphId, node: NodeDefinitions.NodeFor<NodeDefinitions.Any> | undefined, socketId: string, side: "in" | "out"): SocketTypes.Term => {
+        const ctx = useContext(CTX)!;
+        const nodeId = node?.id;
+        const selector = useCallback(() => (nodeId ? ctx.socketTypes.get()[graphId]?.[nodeId]?.[side]?.[socketId] : undefined), [ctx, graphId, nodeId, side, socketId]);
+        const stored = useSyncExternalStore(ctx.socketTypes.subscribe, selector);
+        return useMemo(() => (node ? NodeTypes.getSocketType(node, socketId, side, graphId, ctx.mc) : SocketTypes.NONE), [node, socketId, side, graphId, ctx.mc, stored]);
+    };
+
+    /**
+     * The single kind a wire is carrying, computed on demand from its two endpoints' solved socket
+     * types (never stored). Subscribes to the socketTypes store for the change signal, but reads the
+     * endpoint nodes non-reactively via mc.getNode, so endpoint payload edits (e.g. dragging a radius)
+     * don't re-render the wire. Returning the kind string straight from getSnapshot lets
+     * useSyncExternalStore bail on Object.is-equal, so an unrelated re-solve elsewhere only re-renders
+     * this wire when its own carried kind actually changes.
+     */
+    export const useLinkType = (graphId: GraphId, link: ArcaneGraph.Link | null): string => {
+        const ctx = useContext(CTX)!;
+        const getSnapshot = useCallback(() => {
+            if (!link) return "";
+            const from = ctx.mc.getNode(graphId, link.fromNode);
+            const to = ctx.mc.getNode(graphId, link.toNode);
+            if (!from || !to) return "";
+            const outType = NodeTypes.getSocketType(from, link.fromSocket, "out", graphId, ctx.mc);
+            const inType = NodeTypes.getSocketType(to, link.toSocket, "in", graphId, ctx.mc);
+            return SocketTypes.representativeKind(outType, inType);
+        }, [ctx, graphId, link]);
+        return useSyncExternalStore(ctx.socketTypes.subscribe, getSnapshot);
+    };
+
     export const usePendingConnection = () => {
         const ctx = useContext(CTX)!;
 
         const value = useSyncExternalStore(ctx.pendingConnection.subscribe, ctx.pendingConnection.get);
 
         const set = useCallback(
-            (payload: { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.SocketRule } | null) => {
+            (payload: { scope: GraphId; node: string; socket: string; side: "in" | "out"; type: SocketTypes.Term } | null) => {
                 if (payload === null) {
                     ctx.pendingConnection.ref.current = null;
                     ctx.pendingConnection.notify();
@@ -145,8 +185,7 @@ export namespace Project {
 
         return useMemo(
             () => ({
-                connect: (fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string) =>
-                    ctx.mc.run(() => ctx.mc.connect(graphId, fromNode, toNode, fromSocket, toSocket, type)),
+                connect: (fromNode: string, toNode: string, fromSocket: string, toSocket: string) => ctx.mc.run(() => ctx.mc.connect(graphId, fromNode, toNode, fromSocket, toSocket)),
                 removeNode: (nodeId: string) => ctx.mc.run(() => ctx.mc.removeNode(graphId, nodeId)),
                 removeLinks: (...linkIds: string[]) => ctx.mc.run(() => ctx.mc.removeLinks(graphId, ...linkIds)),
                 updateNodePayload: <P extends NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>(id: ArcaneGraph.NodeId, data: Partial<P>) =>
@@ -526,6 +565,7 @@ export namespace Project {
                 ctx.cache.ref.current = cache;
                 ctx.deps.ref.current = deps;
                 ctx.meta.ref.current = meta;
+                ctx.socketTypes.ref.current = {}; // transient/derived — engine repopulates lazily on first solve
                 ctx.uiState.ref.current = data.uiState ?? {};
 
                 ctx.nodes.notify();
@@ -538,6 +578,7 @@ export namespace Project {
                 ctx.cache.notify();
                 ctx.deps.notify();
                 ctx.meta.notify();
+                ctx.socketTypes.notify();
                 ctx.uiState.notify();
             };
 
@@ -697,7 +738,25 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 7;
+        export const CURRENT = 8;
+
+        // Derived socket-type state no longer lives on the payload — it's regenerated into the transient
+        // SocketTypeCache — and a link's carried type is computed live from its endpoints, not stored.
+        // These fields (all once typed SocketTypes.SocketRule) are dead in any pre-v8 save. None collides
+        // with a live payload field on any current node type, so a blanket delete is safe. See migrationNotes.md.
+        const STALE_TYPE_FIELDS = [
+            "connectedType",
+            "connectedTypeA",
+            "connectedTypeB",
+            "connectedTypeInput",
+            "connectedTypeMin",
+            "connectedTypeMax",
+            "connectedTypeValue",
+            "connectedTypeTarget",
+            "connectedTypeTolerance",
+            "resolvedInTypes",
+            "resolvedOutTypes",
+        ];
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -799,7 +858,7 @@ export namespace Project {
                 input.version = 6;
             }
             if (input.version === 6) {
-                // Glyph's string path-data input was renamed "path" → "pathData" to free the "path"
+                // Glyph's string path-data input was renamed "path" -> "pathData" to free the "path"
                 // socket id for the node's new geometry (path) output.
                 for (const graphId in input.nodes) {
                     for (const nodeId in input.nodes[graphId]) {
@@ -822,6 +881,30 @@ export namespace Project {
                     }
                 }
                 input.version = 7;
+            }
+            if (input.version === 7) {
+                // Strip dead persisted socket-type state (see STALE_TYPE_FIELDS) from every node payload,
+                // including patch's per-pair type state nested in payload.pairs[].
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const payload = input.nodes[graphId][nodeId].payload;
+                        if (!payload) continue;
+                        for (const field of STALE_TYPE_FIELDS) delete payload[field];
+                        if (Array.isArray(payload.pairs)) {
+                            for (const pair of payload.pairs) {
+                                delete pair.connectedType;
+                                delete pair.resolvedInTypes;
+                            }
+                        }
+                    }
+                }
+                // Link type is now computed live from its endpoints' solved types, never stored.
+                for (const graphId in input.links) {
+                    for (const linkId in input.links[graphId]) {
+                        delete input.links[graphId][linkId].type;
+                    }
+                }
+                input.version = 8;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

@@ -5,23 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { BlockInput } from "../../../components/inputs/BlockInput";
 import { Project } from "../../../state/project";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ParagraphDefinition = {
-    inputs: {
-        value: DataTypes.Use<"string">;
-    };
-    outputs: {
-        output: DataTypes.Use<"string">;
-        charCount: DataTypes.Use<"integer">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { value: "string" },
+    out: { output: "string", charCount: "integer" },
+});
+
+export type ParagraphDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ParagraphDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"paragraph", ParagraphDefinition> => {
     return {
@@ -81,24 +83,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ParagraphDefinition>, socket: ke
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ParagraphDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["string"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ParagraphDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["string"], mode: "and" },
-    charCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ParagraphDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ParagraphPrimitiveType: NodeTypes.Type<"paragraph", ParagraphDefinition> = {
     type: "paragraph",
     displayName: "Paragraph",
@@ -111,5 +95,6 @@ export const ParagraphPrimitiveType: NodeTypes.Type<"paragraph", ParagraphDefini
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

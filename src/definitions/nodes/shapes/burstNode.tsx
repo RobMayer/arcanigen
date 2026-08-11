@@ -9,59 +9,65 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type BurstDefinition = {
-    inputs: {
-        spurCount: DataTypes.Use<"integer">;
-        radius: DataTypes.Use<"length">;
-        spread: DataTypes.Use<"length">;
-        innerRadius: DataTypes.Use<"length">;
-        outerRadius: DataTypes.Use<"length">;
-        spanMode: DataTypes.Use<"enum">;
-        spreadAlign: DataTypes.Use<"enum">;
-        arcMode: DataTypes.Use<"enum">;
-        thetaStart: DataTypes.Use<"angle">;
-        sweep: DataTypes.Use<"angle">;
-        thetaFrom: DataTypes.Use<"angle">;
-        thetaTo: DataTypes.Use<"angle">;
-        thetaInclusive: DataTypes.Use<"boolean">;
-        thetaCurve: DataTypes.Use<"distribution">;
-        markerStart: DataTypes.Use<"shape">;
-        markerEnd: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        spurCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        spanMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        spreadAlign: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        spread: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        innerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        outerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        arcMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        thetaStart: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        sweep: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaFrom: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaTo: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        thetaInclusive: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        spurCount: "integer",
+        radius: "length",
+        spread: "length",
+        innerRadius: "length",
+        outerRadius: "length",
+        spanMode: "enum",
+        spreadAlign: "enum",
+        arcMode: "enum",
+        thetaStart: "angle",
+        sweep: "angle",
+        thetaFrom: "angle",
+        thetaTo: "angle",
+        thetaInclusive: "boolean",
+        thetaCurve: "distribution",
+        markerStart: "shape",
+        markerEnd: "shape",
+        markerAlign: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type BurstDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        spurCount: DataTypes.TypeOf<"integer">;
+        spanMode: DataTypes.TypeOf<"enum">;
+        spreadAlign: DataTypes.TypeOf<"enum">;
+        radius: DataTypes.TypeOf<"length">;
+        spread: DataTypes.TypeOf<"length">;
+        innerRadius: DataTypes.TypeOf<"length">;
+        outerRadius: DataTypes.TypeOf<"length">;
+        arcMode: DataTypes.TypeOf<"enum">;
+        thetaStart: DataTypes.TypeOf<"angle">;
+        sweep: DataTypes.TypeOf<"angle">;
+        thetaFrom: DataTypes.TypeOf<"angle">;
+        thetaTo: DataTypes.TypeOf<"angle">;
+        thetaInclusive: DataTypes.TypeOf<"boolean">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"burst", BurstDefinition> => {
     return {
@@ -249,8 +255,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                     </CheckBox>
                 </SocketIn>
             </NodeAccordion>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -280,7 +286,7 @@ const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
     "positionTheta",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
     if (outSocket === "path") {
@@ -362,7 +368,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });
     }
 
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         const d = lineCoords.map((l) => `M ${l.x1},${l.y1} L ${l.x2},${l.y2}`).join(" ");
@@ -377,7 +383,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         const markerEndShape = context.resolve<"shape">(node.id, "markerEnd")?.data;
         const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
         const markers =
             markerStartShape || markerEndShape
                 ? {
@@ -412,42 +418,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<BurstDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    spurCount: { types: ["integer"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    spread: { types: ["length"], mode: "or" },
-    innerRadius: { types: ["length"], mode: "or" },
-    outerRadius: { types: ["length"], mode: "or" },
-    spanMode: { types: ["enum"], mode: "or" },
-    spreadAlign: { types: ["enum"], mode: "or" },
-    arcMode: { types: ["enum"], mode: "or" },
-    thetaStart: { types: ["angle"], mode: "or" },
-    sweep: { types: ["angle"], mode: "or" },
-    thetaFrom: { types: ["angle"], mode: "or" },
-    thetaTo: { types: ["angle"], mode: "or" },
-    thetaInclusive: { types: ["boolean"], mode: "or" },
-    thetaCurve: { types: ["distribution"], mode: "or" },
-    markerStart: { types: ["shape"], mode: "or" },
-    markerEnd: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<BurstDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<BurstDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
     type: "burst",
     displayName: "Burst",
@@ -460,5 +430,6 @@ export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

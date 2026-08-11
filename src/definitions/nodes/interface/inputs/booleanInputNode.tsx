@@ -5,27 +5,32 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
 import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type BooleanInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"boolean">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        text: DataTypes.TypeOf<DataTypes.Use<"string">>;
+const def = signature({
+    in: {},
+    out: { output: "boolean" },
+});
+
+export type BooleanInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        widget: DataTypes.TypeOf<"enum">;
+        text: DataTypes.TypeOf<"string">;
         initialValue: boolean;
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BooleanInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"booleanInput", BooleanInputDefinition> => {
     return {
@@ -116,14 +121,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"booleanInput", BooleanInput
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<BooleanInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<BooleanInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const BooleanInputType: NodeTypes.Type<"booleanInput", BooleanInputDefinition> = {
     type: "booleanInput",
     displayName: "Boolean Input",
@@ -140,5 +137,6 @@ export const BooleanInputType: NodeTypes.Type<"booleanInput", BooleanInputDefini
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

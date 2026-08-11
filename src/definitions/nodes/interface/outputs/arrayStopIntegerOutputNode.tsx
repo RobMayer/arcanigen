@@ -4,20 +4,25 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketIn } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { Project } from "../../../../state/project";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type ArrayStopIntegerOutputDefinition = {
-    inputs: {
-        input: DataTypes.Use<"array<stop<integer>>">;
-    };
-    outputs: never;
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { input: $.arrayOf("stop:integer") },
+    out: {},
+});
+
+export type ArrayStopIntegerOutputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (
     _input: Partial<NodeDefinitions.PayloadTypeOf<ArrayStopIntegerOutputDefinition>>,
@@ -85,14 +90,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"arrayStopIntegerOutput", Ar
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ArrayStopIntegerOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["array<stop<integer>>"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ArrayStopIntegerOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const ArrayStopIntegerOutputType: NodeTypes.Type<"arrayStopIntegerOutput", ArrayStopIntegerOutputDefinition> = {
     type: "arrayStopIntegerOutput",
     displayName: "Integer Stop Array Output",
@@ -108,5 +105,6 @@ export const ArrayStopIntegerOutputType: NodeTypes.Type<"arrayStopIntegerOutput"
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

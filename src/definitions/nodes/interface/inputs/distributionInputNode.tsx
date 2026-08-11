@@ -5,20 +5,25 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type DistributionInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"distribution">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: {},
+    out: { output: "distribution" },
+});
+
+export type DistributionInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<DistributionInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"distributionInput", DistributionInputDefinition> => {
     return {
@@ -79,14 +84,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"distributionInput", Distrib
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<DistributionInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["distribution"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const DistributionInputType: NodeTypes.Type<"distributionInput", DistributionInputDefinition> = {
     type: "distributionInput",
     displayName: "Distribution Input",
@@ -102,5 +99,6 @@ export const DistributionInputType: NodeTypes.Type<"distributionInput", Distribu
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

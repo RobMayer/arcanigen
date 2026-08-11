@@ -5,30 +5,31 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { EmptyOr } from "../../../util/misc";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LengthStopBreakoutDefinition = {
-    inputs: {
-        value: DataTypes.Use<"length">;
-        position: DataTypes.Use<"float">;
-        enabled: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"stop<length>">;
-    };
-    payload: {
+const def = signature({
+    in: { value: "length", position: "float", enabled: "boolean" },
+    out: { output: "stop:length" },
+});
+
+export type LengthStopBreakoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        value: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        value: DataTypes.TypeOf<"length">;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
-    };
-};
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LengthStopBreakoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"lengthStop", LengthStopBreakoutDefinition> => {
     return {
@@ -79,14 +80,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthStopB
     );
 };
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>, outSocket: keyof LengthStopBreakoutDefinition["outputs"], _deps: AllDeps): (keyof LengthStopBreakoutDefinition["inputs"])[] => {
+const dependsOn = (
+    _node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>,
+    outSocket: keyof LengthStopBreakoutDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof LengthStopBreakoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
         return ["value", "position", "enabled"];
     }
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>, inSocket: keyof LengthStopBreakoutDefinition["inputs"], _deps: AllDeps): (keyof LengthStopBreakoutDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>,
+    inSocket: keyof LengthStopBreakoutDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof LengthStopBreakoutDefinition["outputs"])[] => {
     if (inSocket === "value" || inSocket === "position" || inSocket === "enabled") {
         return ["output"];
     }
@@ -101,26 +110,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>, s
     const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
     const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
-        kind: "stop<length>",
+        kind: "stop:length",
         data: {
             value: valStr === "" ? null : valStr,
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },
     };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<LengthStopBreakoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["length"], mode: "and" },
-    position: { types: ["float"], mode: "and" },
-    enabled: { types: ["boolean"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return { types: ["stop<length>"], mode: "and" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
 };
 
 export const LengthStopNodeType: NodeTypes.Type<"lengthStop", LengthStopBreakoutDefinition> = {
@@ -135,5 +131,6 @@ export const LengthStopNodeType: NodeTypes.Type<"lengthStop", LengthStopBreakout
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

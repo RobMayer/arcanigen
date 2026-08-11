@@ -8,7 +8,7 @@ import { Flavour } from "../../components/types";
 import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { useGraphId } from "../../state/graphId";
-import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
 import { ContextPopup } from "../../components/popups/ContextPopup";
 import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 

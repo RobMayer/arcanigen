@@ -9,30 +9,29 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Point } from "../pointHelper";
+import { PointHelper } from "../../helpers/pointHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PointDefinition = {
-    inputs: {
-        mode: DataTypes.Use<"enum">;
-        x: DataTypes.Use<"length">;
-        y: DataTypes.Use<"length">;
-        radius: DataTypes.Use<"length">;
-        theta: DataTypes.Use<"angle">;
-    };
-    outputs: {
-        output: DataTypes.Use<"point">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        mode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        x: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        y: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        theta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-    };
-};
+const def = signature({
+    in: { mode: "enum", x: "length", y: "length", radius: "length", theta: "angle" },
+    out: { output: "point" },
+});
+
+export type PointDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        mode: DataTypes.TypeOf<"enum">;
+        x: DataTypes.TypeOf<"length">;
+        y: DataTypes.TypeOf<"length">;
+        radius: DataTypes.TypeOf<"length">;
+        theta: DataTypes.TypeOf<"angle">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PointDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"point", PointDefinition> => {
     return {
@@ -125,28 +124,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PointDefinition>, socket: "outpu
     const radius = context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius;
     const theta = context.resolve<"angle">(node.id, "theta")?.data ?? node.payload.theta;
 
-    return { kind: "point", data: Point.resolve(mode, x, y, radius, theta) };
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<PointDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    mode: { types: ["enum"], mode: "or" },
-    x: { types: ["length"], mode: "or" },
-    y: { types: ["length"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    theta: { types: ["angle"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PointDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["point"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PointDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
+    return { kind: "point", data: PointHelper.resolve(mode, x, y, radius, theta) };
 };
 
 export const PointPrimitiveType: NodeTypes.Type<"point", PointDefinition> = {
@@ -161,5 +139,6 @@ export const PointPrimitiveType: NodeTypes.Type<"point", PointDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

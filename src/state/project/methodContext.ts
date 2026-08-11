@@ -1,10 +1,11 @@
 import { nanoid } from "nanoid";
 import { FastContextMember } from "../../util/hooks/useFastContext";
-import { NodeDefinitions, NodeTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
+import { SocketTypes } from "../../definitions/socketTypes";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
 import { rebuildDownstream, invalidateDownstream } from "./cache";
-import type { GraphId, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, XY, InterfaceMember } from "./types";
+import type { GraphId, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, XY, InterfaceMember, SocketTypeCacheType, SocketTypeCacheEntry } from "./types";
 
 export type StateRefs = {
     nodes: FastContextMember<NodesType>;
@@ -17,9 +18,10 @@ export type StateRefs = {
     cache: FastContextMember<CacheType>;
     deps: FastContextMember<DepsType>;
     meta: FastContextMember<MetaType>;
+    socketTypes: FastContextMember<SocketTypeCacheType>;
 };
 
-type DirtyKey = "nodes" | "nodeList" | "links" | "linkList" | "positions" | "users" | "interfaces" | "cache" | "deps" | "meta";
+type DirtyKey = "nodes" | "nodeList" | "links" | "linkList" | "positions" | "users" | "interfaces" | "cache" | "deps" | "meta" | "socketTypes";
 
 export class MethodContextImpl implements NodeTypes.MethodContext {
     private dirty = new Set<DirtyKey>();
@@ -128,11 +130,41 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("users");
     }
 
+    // ─── Socket-type cache (transient, derived, never persisted) ─────────
+    // The off-payload home for the signature engine's solved socket types (Terms), keyed graphId->nodeId->{in,out}.
+    // Rebuilt lazily on solve, reset on load, never serialized (see SocketTypeCacheType).
+
+    readSocketType(graphId: string, nodeId: string, socketId: string, side: "in" | "out"): SocketTypes.Term | undefined {
+        return this.refs.socketTypes.ref.current[graphId]?.[nodeId]?.[side]?.[socketId];
+    }
+
+    getSocketTypes(graphId: string, nodeId: string): SocketTypeCacheEntry | undefined {
+        return this.refs.socketTypes.ref.current[graphId]?.[nodeId];
+    }
+
+    setSocketTypes(graphId: string, nodeId: string, entry: SocketTypeCacheEntry): void {
+        const cur = this.refs.socketTypes.ref.current;
+        this.refs.socketTypes.ref.current = {
+            ...cur,
+            [graphId]: { ...cur[graphId], [nodeId]: entry },
+        };
+        this.dirty.add("socketTypes");
+    }
+
+    clearSocketTypes(graphId: string, nodeId: string): void {
+        const cur = this.refs.socketTypes.ref.current;
+        if (!cur[graphId] || !(nodeId in cur[graphId])) return;
+        const graphCache = { ...cur[graphId] };
+        delete graphCache[nodeId];
+        this.refs.socketTypes.ref.current = { ...cur, [graphId]: graphCache };
+        this.dirty.add("socketTypes");
+    }
+
     // ─── High-level operations ───────────────────────────────────────────
 
-    connect(graphId: string, fromNode: string, toNode: string, fromSocket: string, toSocket: string, type: string): void {
+    connect(graphId: string, fromNode: string, toNode: string, fromSocket: string, toSocket: string): void {
         const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
-        const [{ nodes, links }, newLink, removed] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket, type);
+        const [{ nodes, links }, newLink, removed] = ArcaneGraph.reconnect(oldGraph, fromNode, toNode, fromSocket, toSocket);
 
         if (!newLink) return;
 
@@ -177,7 +209,14 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         const affectedNodes = new Set(removed.links.map((l) => l.toNode));
         for (const nodeId of affectedNodes) {
             if (this.refs.nodes.ref.current[graphId]?.[nodeId]) {
-                this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, nodeId);
+                this.refs.cache.ref.current = rebuildDownstream(
+                    this.refs.cache.ref.current,
+                    this.refs.nodes.ref.current,
+                    this.refs.links.ref.current,
+                    this.refs.interfaces.ref.current,
+                    graphId,
+                    nodeId,
+                );
             }
         }
         this.dirty.add("cache");
@@ -222,17 +261,34 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             this.fireOnDisconnect(removedFromDelete.links, graphId, nodeId);
         }
 
+        // Drop the removed node's transient solved socket types
+        this.clearSocketTypes(graphId, nodeId);
+
         this.refs.cache.ref.current = invalidateDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, graphId, nodeId);
         for (const downstreamId of downstream) {
             if (this.refs.nodes.ref.current[graphId]?.[downstreamId]) {
-                this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, downstreamId);
+                this.refs.cache.ref.current = rebuildDownstream(
+                    this.refs.cache.ref.current,
+                    this.refs.nodes.ref.current,
+                    this.refs.links.ref.current,
+                    this.refs.interfaces.ref.current,
+                    graphId,
+                    downstreamId,
+                );
             }
         }
 
         // Rebuild cache for Custom nodes in parent graphs
         const usersOfGraph = this.refs.users.ref.current[graphId] ?? [];
         for (const { node: customNodeId, scope } of usersOfGraph) {
-            this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, scope, customNodeId);
+            this.refs.cache.ref.current = rebuildDownstream(
+                this.refs.cache.ref.current,
+                this.refs.nodes.ref.current,
+                this.refs.links.ref.current,
+                this.refs.interfaces.ref.current,
+                scope,
+                customNodeId,
+            );
         }
         this.dirty.add("cache");
 
@@ -255,7 +311,12 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
 
         const nodeType = NodeTypes.get(updated.type);
         if (nodeType.onPayloadChange) {
-            const onPayloadChange = nodeType.onPayloadChange as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, prev: Record<string, unknown>, graphId: string, ctx: NodeTypes.MethodContext) => void;
+            const onPayloadChange = nodeType.onPayloadChange as (
+                node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                prev: Record<string, unknown>,
+                graphId: string,
+                ctx: NodeTypes.MethodContext,
+            ) => void;
             onPayloadChange(updated, prev, graphId, this);
         }
 
@@ -266,7 +327,14 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         const usersOfGraph = this.refs.users.ref.current[graphId] ?? [];
         if (usersOfGraph.length > 0) {
             for (const { node: customNodeId, scope } of usersOfGraph) {
-                this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, scope, customNodeId);
+                this.refs.cache.ref.current = rebuildDownstream(
+                    this.refs.cache.ref.current,
+                    this.refs.nodes.ref.current,
+                    this.refs.links.ref.current,
+                    this.refs.interfaces.ref.current,
+                    scope,
+                    customNodeId,
+                );
             }
         }
     }
@@ -401,7 +469,13 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         if (!node) return;
         const nodeType = NodeTypes.get(node.type);
         if (nodeType.onConnect) {
-            const onConnect = nodeType.onConnect as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext) => void;
+            const onConnect = nodeType.onConnect as (
+                node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                linkId: string,
+                direction: "in" | "out",
+                graphId: string,
+                ctx: NodeTypes.MethodContext,
+            ) => void;
             onConnect(node, linkId, direction, graphId, this);
         }
     }
@@ -413,7 +487,13 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
                 if (fromNode) {
                     const fromType = NodeTypes.get(fromNode.type);
                     if (fromType.onDisconnect) {
-                        const onDisconnect = fromType.onDisconnect as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext) => void;
+                        const onDisconnect = fromType.onDisconnect as (
+                            node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                            link: ArcaneGraph.Link,
+                            direction: "in" | "out",
+                            graphId: string,
+                            ctx: NodeTypes.MethodContext,
+                        ) => void;
                         onDisconnect(fromNode, link, "out", graphId, this);
                     }
                 }
@@ -423,7 +503,13 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
                 if (toNode) {
                     const toType = NodeTypes.get(toNode.type);
                     if (toType.onDisconnect) {
-                        const onDisconnect = toType.onDisconnect as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, link: ArcaneGraph.Link, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext) => void;
+                        const onDisconnect = toType.onDisconnect as (
+                            node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                            link: ArcaneGraph.Link,
+                            direction: "in" | "out",
+                            graphId: string,
+                            ctx: NodeTypes.MethodContext,
+                        ) => void;
                         onDisconnect(toNode, link, "in", graphId, this);
                     }
                 }
@@ -445,7 +531,14 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
             if (!neighbor) return;
             const neighborType = NodeTypes.get(neighbor.type);
             if (neighborType.onRefreshRequest) {
-                const onRefresh = neighborType.onRefreshRequest as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                const onRefresh = neighborType.onRefreshRequest as (
+                    node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                    socketId: string,
+                    side: "in" | "out",
+                    reason: NodeTypes.RefreshReason,
+                    graphId: string,
+                    ctx: NodeTypes.MethodContext,
+                ) => void;
                 onRefresh(neighbor, link.fromSocket, "out", reason, graphId, this);
             }
         } else {
@@ -459,7 +552,14 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
                 if (!neighbor) continue;
                 const neighborType = NodeTypes.get(neighbor.type);
                 if (neighborType.onRefreshRequest) {
-                    const onRefresh = neighborType.onRefreshRequest as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, socketId: string, side: "in" | "out", reason: NodeTypes.RefreshReason, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                    const onRefresh = neighborType.onRefreshRequest as (
+                        node: NodeDefinitions.NodeFor<NodeDefinitions.Any>,
+                        socketId: string,
+                        side: "in" | "out",
+                        reason: NodeTypes.RefreshReason,
+                        graphId: string,
+                        ctx: NodeTypes.MethodContext,
+                    ) => void;
                     onRefresh(neighbor, link.toSocket, "in", reason, graphId, this);
                 }
             }

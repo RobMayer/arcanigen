@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
@@ -10,42 +10,46 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, getDerivedRadius, getTrueRadius, lerp } from "../../../util/misc";
-import { Transforms } from "../abstract";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { GroupShape } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PolygonLayoutDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        count: DataTypes.Use<"integer">;
-        radius: DataTypes.Use<"length">;
-        scribeMode: DataTypes.Use<"enum">;
-        memberAlign: DataTypes.Use<"boolean">;
-        memberRotation: DataTypes.Use<"angle">;
-        pointDistro: DataTypes.Use<"distribution">;
-    } & Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        sequence: DataTypes.Use<"sequence">;
-        eCircumradius: DataTypes.Use<"length">;
-        eApothem: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: string;
-        count: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        scribeMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+const def = signature({
+    in: {
+        input: "shape",
+        count: "integer",
+        radius: "length",
+        scribeMode: "enum",
+        memberAlign: "boolean",
+        memberRotation: "angle",
+        pointDistro: "distribution",
+        ...TransformPrefab.SIG_IN,
+    },
+    out: { output: "shape", sequence: "sequence", eCircumradius: "length", eApothem: "length" },
+});
+
+export type PolygonLayoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        count: DataTypes.TypeOf<"integer">;
+        radius: DataTypes.TypeOf<"length">;
+        scribeMode: DataTypes.TypeOf<"enum">;
         memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-    } & Transforms.Definition["payload"];
-};
+        memberRotation: DataTypes.TypeOf<"angle">;
+    } & TransformPrefab.Definition["payload"]
+>;
 
 const SCRIBE_MODE_OPTIONS = Enum.options(Enum.Common.scribeMode);
 
@@ -143,7 +147,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonLayo
                     <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
                 </SocketIn>
             </NodeAccordion>
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eCircumradius|eApothem"}>
                 <SocketOut node={node} socketId={"eCircumradius"} label={"Circumradius"}>
                     <ValuePreview value={previewCircumradius} />
@@ -236,7 +240,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
         const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
         const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
-        const [groupTransforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+        const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
         const children = [];
         for (let i = 0; i < count; i++) {
@@ -279,33 +283,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PolygonLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-    count: { types: ["integer"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    scribeMode: { types: ["enum"], mode: "or" },
-    memberAlign: { types: ["boolean"], mode: "or" },
-    memberRotation: { types: ["angle"], mode: "or" },
-    pointDistro: { types: ["distribution"], mode: "or" },
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PolygonLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    sequence: { types: ["sequence"], mode: "and" },
-    eCircumradius: { types: ["length"], mode: "and" },
-    eApothem: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PolygonLayoutNodeType: NodeTypes.Type<"polygonLayout", PolygonLayoutDefinition> = {
     type: "polygonLayout",
     displayName: "Polygon Layout",
@@ -318,7 +295,8 @@ export const PolygonLayoutNodeType: NodeTypes.Type<"polygonLayout", PolygonLayou
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

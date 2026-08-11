@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import { Enum } from "../../datatypes/enum";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { Project } from "../../../state/project";
@@ -11,23 +12,23 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { NumericString } from "../../datatypes/numericString";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type DistributionNodeDefinition = {
-    inputs: {
-        func: DataTypes.Use<"enum">;
-        easing: DataTypes.Use<"enum">;
-        intensity: DataTypes.Use<"float" | "integer">;
-    };
-    outputs: {
-        output: DataTypes.Use<"distribution">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        func: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        easing: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        intensity: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+const def = signature({
+    in: { func: "enum", easing: "enum", intensity: $.oneOf("float", "integer") },
+    out: { output: "distribution" },
+});
+
+export type DistributionNodeDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        func: DataTypes.TypeOf<"enum">;
+        easing: DataTypes.TypeOf<"enum">;
+        intensity: DataTypes.TypeOf<"float">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<DistributionNodeDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"distribution", DistributionNodeDefinition> => {
     return {
@@ -140,25 +141,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, soc
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<DistributionNodeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    func: { types: ["enum"], mode: "or" },
-    easing: { types: ["enum"], mode: "or" },
-    intensity: { types: ["float", "integer"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<DistributionNodeDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["distribution"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNodeDefinition> = {
     type: "distribution",
     displayName: "Distribution",
@@ -171,5 +153,6 @@ export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNo
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

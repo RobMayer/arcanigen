@@ -7,7 +7,8 @@ import styled from "styled-components";
 import { DragMove } from "../../components/wrappers/DragMove";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { LengthInput } from "../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../nodeTypes";
+import { DataTypes } from "../dataTypes";
 import { Project } from "../../state/project";
 import { Session } from "../../state/session";
 import { useGraphId } from "../../state/graphId";
@@ -15,26 +16,25 @@ import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 import { ColorHexInput } from "../../components/inputs/ColorHexInput";
 import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
+import { signature, SignatureBuilder } from "../helpers/signatureBuilder";
+import { SignatureEngine } from "../helpers/signatureEngine";
 
-export type ResultDefinition = {
-    outputs: never;
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        w: DataTypes.Use<"length">;
-        h: DataTypes.Use<"length">;
-        x: DataTypes.Use<"length">;
-        y: DataTypes.Use<"length">;
-        color: DataTypes.Use<"color">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        w: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        h: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        x: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        y: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        color: DataTypes.TypeOf<DataTypes.Use<"color">>;
-    };
-};
+const def = signature({
+    in: { input: "shape", w: "length", h: "length", x: "length", y: "length", color: "color" },
+    out: {},
+});
+
+export type ResultDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        w: DataTypes.TypeOf<"length">;
+        h: DataTypes.TypeOf<"length">;
+        x: DataTypes.TypeOf<"length">;
+        y: DataTypes.TypeOf<"length">;
+        color: DataTypes.TypeOf<"color">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ResultDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"result", ResultDefinition> => {
     return {
@@ -221,19 +221,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ResultDefinition>, socket: strin
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ResultDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-    w: { types: ["length"], mode: "or" },
-    h: { types: ["length"], mode: "or" },
-    x: { types: ["length"], mode: "or" },
-    y: { types: ["length"], mode: "or" },
-    color: { types: ["color"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ResultDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     type: "result",
     displayName: "Result",
@@ -246,7 +233,8 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };
 
 // ─── Styled Components ──────────────────────────────────────────────────────

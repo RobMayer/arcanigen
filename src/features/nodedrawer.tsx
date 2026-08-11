@@ -6,7 +6,7 @@ import { Flavour } from "../components/types";
 import { Dispatch, DragEvent, MouseEvent, SetStateAction, useCallback, useMemo, useState } from "react";
 import { Project } from "../state/project";
 import { DragPaneControls } from "../components/wrappers/DragPane";
-import { NodeDefinitions, NodeTypes } from "../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../definitions/nodeTypes";
 import { TextInput } from "../components/inputs/TextInput";
 import { CheckBox } from "../components/buttons/CheckBox";
 import { UsersType } from "../state/project/types";

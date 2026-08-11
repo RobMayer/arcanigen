@@ -9,49 +9,55 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, gcd, getDerivedRadius, getTrueRadius, lerp, range } from "../../../util/misc";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PolygramDefinition = {
-    inputs: {
-        pointCount: DataTypes.Use<"integer">;
-        skipCount: DataTypes.Use<"integer">;
-        radius: DataTypes.Use<"length">;
-        rScribe: DataTypes.Use<"enum">;
-        pointDistro: DataTypes.Use<"distribution">;
-        cornerRadius: DataTypes.Use<"length">;
-        cornerShape: DataTypes.Use<"enum">;
-        markerShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-        removeCrossings: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-        eCircumradius: DataTypes.Use<"length">;
-        eApothem: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        pointCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        skipCount: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        rScribe: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        cornerRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        cornerShape: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-        removeCrossings: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        pointCount: "integer",
+        skipCount: "integer",
+        radius: "length",
+        rScribe: "enum",
+        pointDistro: "distribution",
+        cornerRadius: "length",
+        cornerShape: "enum",
+        markerShape: "shape",
+        markerAlign: "boolean",
+        removeCrossings: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
+    },
+    out: { output: "shape", path: "path", eCircumradius: "length", eApothem: "length" },
+});
+
+export type PolygramDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        pointCount: DataTypes.TypeOf<"integer">;
+        skipCount: DataTypes.TypeOf<"integer">;
+        rScribe: DataTypes.TypeOf<"enum">;
+        radius: DataTypes.TypeOf<"length">;
+        cornerRadius: DataTypes.TypeOf<"length">;
+        cornerShape: DataTypes.TypeOf<"enum">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+        removeCrossings: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygramDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"polygram", PolygramDefinition> => {
     return {
@@ -223,8 +229,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygramDef
                     </CheckBox>
                 </SocketIn>
             </NodeAccordion>
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"eCircumradius|eApothem"}>
                 <SocketOut node={node} socketId={"eCircumradius"} label={"Circumradius"}>
                     <ValuePreview value={previewCircumradius} />
@@ -437,7 +443,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         if (removeCrossings) {
             d = PaperHelper.healD(d) ?? d;
         }
-        const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+        const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {
             return {
@@ -446,7 +452,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             };
         }
 
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
         if (hasCut) paint.fill = null;
 
         return {
@@ -491,37 +497,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PolygramDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    pointCount: { types: ["integer"], mode: "or" },
-    skipCount: { types: ["integer"], mode: "or" },
-    radius: { types: ["length"], mode: "or" },
-    rScribe: { types: ["enum"], mode: "or" },
-    pointDistro: { types: ["distribution"], mode: "or" },
-    cornerRadius: { types: ["length"], mode: "or" },
-    cornerShape: { types: ["enum"], mode: "or" },
-    markerShape: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    removeCrossings: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PolygramDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-    eCircumradius: { types: ["length"], mode: "and" },
-    eApothem: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PolygramNodeType: NodeTypes.Type<"polygram", PolygramDefinition> = {
     type: "polygram",
     displayName: "Polygram",
@@ -534,5 +509,6 @@ export const PolygramNodeType: NodeTypes.Type<"polygram", PolygramDefinition> = 
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -5,7 +5,8 @@ import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
@@ -16,24 +17,24 @@ import { AngleInput } from "../../../components/inputs/AngleInput";
 import { LoopButton } from "../../../components/buttons/LoopButton";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { EmptyOr } from "../../../util/misc";
-import { Point } from "../pointHelper";
+import { PointHelper } from "../../helpers/pointHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 type PointEntryData = { socket: string; mode: number; x: EmptyOr<Length.Type>; y: EmptyOr<Length.Type>; radius: EmptyOr<Length.Type>; theta: EmptyOr<Angle.Type> };
 
-export type PointArrayDefinition = {
-    inputs: {
-        points: DataTypes.Use<"array<point>">;
-        [pointSocket: `point_${string}`]: DataTypes.Use<"point">;
-    };
-    outputs: {
-        output: DataTypes.Use<"array<point>">;
-        pointCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: { points: $.arrayOf("point"), "point_*": "point" },
+    out: { output: $.arrayOf("point"), pointCount: "integer" },
+});
+
+export type PointArrayDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         points: PointEntryData[];
-    };
-};
+    }
+>;
 
 const newEntry = (socket: `point_${string}`, mode: number, x: EmptyOr<Length.Type>, y: EmptyOr<Length.Type>): PointEntryData => ({ socket, mode, x, y, radius: "100px", theta: "0" });
 
@@ -64,7 +65,7 @@ const MODE_OPTIONS = [
     { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
 ];
 
-const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<PointArrayDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PointArrayDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
@@ -317,7 +318,7 @@ const resolvePoints = (node: NodeDefinitions.NodeFor<PointArrayDefinition>, cont
         if (connected) {
             resolved.push({ x: connected.data.x, y: connected.data.y });
         } else {
-            resolved.push(Point.resolve(entry.mode, entry.x, entry.y, entry.radius, entry.theta));
+            resolved.push(PointHelper.resolve(entry.mode, entry.x, entry.y, entry.radius, entry.theta));
         }
     }
     return resolved;
@@ -346,37 +347,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<PointArrayDefinition>, socket: k
     return null;
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<PointArrayDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["array<point>"], mode: "and" },
-    pointCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PointArrayDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("point_")) {
-        return { types: ["point"], mode: "or" };
-    }
-    return { types: ["array<point>"], mode: "or" };
-};
-
+// Supersocket override: connecting the whole `array<point>` clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"pointArray", PointArrayDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "points") return;
-
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("point_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "points") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("point_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-    if (linkIdsToRemove.length === 0) return;
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 export const PointArrayNodeType: NodeTypes.Type<"pointArray", PointArrayDefinition> = {
@@ -391,6 +380,7 @@ export const PointArrayNodeType: NodeTypes.Type<"pointArray", PointArrayDefiniti
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
-    getSocketType,
 };

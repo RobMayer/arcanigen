@@ -6,26 +6,28 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AngleInput } from "../../../components/inputs/AngleInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { useGraphId } from "../../../state/graphId";
-import { extractSingle } from "../math/numericMath";
+import { extractSingle } from "../../helpers/mathHelper";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type AngleDefinition = {
-    inputs: {
-        value: DataTypes.Use<"angle">;
-        wraps: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"angle">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        wraps: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    };
-};
+const def = signature({
+    in: { value: $.oneOf("angle", "float", "integer"), wraps: "boolean" },
+    out: { output: "angle" },
+});
+
+export type AngleDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"angle">;
+        wraps: DataTypes.TypeOf<"boolean">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angle", AngleDefinition> => {
     return {
@@ -96,24 +98,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "outpu
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<AngleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["angle", "float", "integer"], mode: "or" },
-    wraps: { types: ["boolean"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<AngleDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["angle"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<AngleDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     type: "angle",
     displayName: "Angle",
@@ -126,5 +110,6 @@ export const AnglePrimitiveType: NodeTypes.Type<"angle", AngleDefinition> = {
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

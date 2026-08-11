@@ -5,8 +5,9 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { LengthInput } from "../../../../components/inputs/LengthInput";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
@@ -14,23 +15,27 @@ import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
 import { Length } from "../../../datatypes/length";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type LengthInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"length">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        initialValue: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        min: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        max: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        step: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        snap: DataTypes.TypeOf<DataTypes.Use<"length">>;
+const def = signature({
+    in: {},
+    out: { output: "length" },
+});
+
+export type LengthInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        initialValue: DataTypes.TypeOf<"length">;
+        widget: DataTypes.TypeOf<"enum">;
+        min: DataTypes.TypeOf<"length">;
+        max: DataTypes.TypeOf<"length">;
+        step: DataTypes.TypeOf<"length">;
+        snap: DataTypes.TypeOf<"length">;
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LengthInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"lengthInput", LengthInputDefinition> => {
     return {
@@ -139,14 +144,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"lengthInput", LengthInputDe
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<LengthInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["length"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LengthInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinition> = {
     type: "lengthInput",
     displayName: "Length Input",
@@ -163,5 +160,6 @@ export const LengthInputType: NodeTypes.Type<"lengthInput", LengthInputDefinitio
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

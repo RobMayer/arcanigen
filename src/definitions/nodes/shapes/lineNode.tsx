@@ -8,51 +8,57 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { NumericString } from "../../datatypes/numericString";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LineDefinition = {
-    inputs: {
-        startMode: DataTypes.Use<"enum">;
-        startX: DataTypes.Use<"length">;
-        startY: DataTypes.Use<"length">;
-        startRadius: DataTypes.Use<"length">;
-        startTheta: DataTypes.Use<"angle">;
-        endMode: DataTypes.Use<"enum">;
-        endX: DataTypes.Use<"length">;
-        endY: DataTypes.Use<"length">;
-        endRadius: DataTypes.Use<"length">;
-        endTheta: DataTypes.Use<"angle">;
-        markerStartShape: DataTypes.Use<"shape">;
-        markerEndShape: DataTypes.Use<"shape">;
-        markerAlign: DataTypes.Use<"boolean">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        startMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        startX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        startTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        endMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        endX: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        endY: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        endRadius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        endTheta: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        startMode: "enum",
+        startX: "length",
+        startY: "length",
+        startRadius: "length",
+        startTheta: "angle",
+        endMode: "enum",
+        endX: "length",
+        endY: "length",
+        endRadius: "length",
+        endTheta: "angle",
+        markerStartShape: "shape",
+        markerEndShape: "shape",
+        markerAlign: "boolean",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type LineDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        startMode: DataTypes.TypeOf<"enum">;
+        startX: DataTypes.TypeOf<"length">;
+        startY: DataTypes.TypeOf<"length">;
+        startRadius: DataTypes.TypeOf<"length">;
+        startTheta: DataTypes.TypeOf<"angle">;
+        endMode: DataTypes.TypeOf<"enum">;
+        endX: DataTypes.TypeOf<"length">;
+        endY: DataTypes.TypeOf<"length">;
+        endRadius: DataTypes.TypeOf<"length">;
+        endTheta: DataTypes.TypeOf<"angle">;
+        markerAlign: DataTypes.TypeOf<"boolean">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"line", LineDefinition> => {
     return {
@@ -210,8 +216,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinit
                 </SocketIn>
             </NodeAccordion>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -285,7 +291,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     }
 
     const d = `M ${sx},${sy} L ${ex},${ey}`;
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         const minX = Math.min(sx, ex);
@@ -299,7 +305,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     }
 
     if (socket === "output") {
-        const paint = Stylings.evaluate(node, context);
+        const paint = StylingPrefab.evaluate(node, context);
         paint.fill = null;
 
         const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
@@ -335,38 +341,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<LineDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    startMode: { types: ["enum"], mode: "or" },
-    startX: { types: ["length"], mode: "or" },
-    startY: { types: ["length"], mode: "or" },
-    startRadius: { types: ["length"], mode: "or" },
-    startTheta: { types: ["angle"], mode: "or" },
-    endMode: { types: ["enum"], mode: "or" },
-    endX: { types: ["length"], mode: "or" },
-    endY: { types: ["length"], mode: "or" },
-    endRadius: { types: ["length"], mode: "or" },
-    endTheta: { types: ["angle"], mode: "or" },
-    markerStartShape: { types: ["shape"], mode: "or" },
-    markerEndShape: { types: ["shape"], mode: "or" },
-    markerAlign: { types: ["boolean"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<LineDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LineDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const LineNodeType: NodeTypes.Type<"line", LineDefinition> = {
     type: "line",
     displayName: "Line",
@@ -379,5 +353,6 @@ export const LineNodeType: NodeTypes.Type<"line", LineDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -5,23 +5,26 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LogicalOrDefinition = {
-    inputs: {
-        [input: `input_${string}`]: DataTypes.Use<"boolean">;
-    };
-    outputs: {
-        output: DataTypes.Use<"boolean">;
-    };
-    payload: {
+const def = signature({
+    in: { "input_*": "boolean" },
+    out: { output: "boolean" },
+});
+
+export type LogicalOrDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         inputs: string[];
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LogicalOrDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"logicalOr", LogicalOrDefinition> => {
     const s0: `input_${string}` = `input_${nanoid()}`;
@@ -117,10 +120,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LogicalOrDefinition>, socket: ke
     return null;
 };
 
-const getSocketType = (_node: NodeDefinitions.NodeFor<LogicalOrDefinition>, _socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SocketTypes.of("boolean");
-};
-
 export const LogicalOrNodeType: NodeTypes.Type<"logicalOr", LogicalOrDefinition> = {
     type: "logicalOr",
     displayName: "Or",
@@ -133,5 +132,6 @@ export const LogicalOrNodeType: NodeTypes.Type<"logicalOr", LogicalOrDefinition>
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

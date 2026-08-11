@@ -3,9 +3,10 @@ import { Project } from "../../state/project";
 import styled from "styled-components";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { useStable } from "../../util/hooks/useStable";
-import { NodeDefinitions, NodeTypes, SocketTypes } from "../../definitions/betterTypes";
+import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
+import { SocketTypes } from "../../definitions/socketTypes";
 import { useDragPaneInternal } from "../../components/wrappers/DragPane";
-// useGraphId removed — Socket now receives node directly
+import { useGraphId } from "../../state/graphId";
 
 type GraphConnectionControls = {
     start: (nodeId: string, socketId: string, side: "in" | "out") => void;
@@ -25,21 +26,21 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
         return {
             start: (nodeId: string, socketId: string, side: "in" | "out") => {
                 const node = mc.getNode(graphId, nodeId);
-                const socketType = node ? NodeTypes.getSocketType(node, socketId, side, mc) : SocketTypes.NONE;
+                const socketType = node ? NodeTypes.getSocketType(node, socketId, side, graphId, mc) : SocketTypes.NONE;
                 const p = { node: nodeId, socket: socketId, side, type: socketType, scope: graphId };
                 pending = setPendingConnection(p);
             },
             finish: (nodeId: string, socketId: string, side: "in" | "out") => {
                 if (pending !== null && pending.side !== side) {
                     const node = mc.getNode(graphId, nodeId);
-                    const socketType = node ? NodeTypes.getSocketType(node, socketId, side, mc) : SocketTypes.NONE;
+                    const socketType = node ? NodeTypes.getSocketType(node, socketId, side, graphId, mc) : SocketTypes.NONE;
                     // normalize: out -> in
                     const [fromNode, toNode, fromSocket, toSocket, outType, inType] =
                         pending.side === "out"
                             ? [pending.node, nodeId, pending.socket, socketId, pending.type, socketType]
                             : [nodeId, pending.node, socketId, pending.socket, socketType, pending.type];
                     if (SocketTypes.canFlow(outType, inType)) {
-                        graphMethods.connect(fromNode, toNode, fromSocket, toSocket, SocketTypes.representativeKind(outType, inType));
+                        graphMethods.connect(fromNode, toNode, fromSocket, toSocket);
                     }
                 }
             },
@@ -86,16 +87,16 @@ export const Socket = styled(
         const socketRef = useRef<HTMLDivElement>(null);
 
         const [pendingConnection] = Project.usePendingConnection();
-        const mc = Project.useMC();
+        const graphId = useGraphId();
 
-        const rule = useMemo(() => NodeTypes.getSocketType(node, socketId, side, mc), [node, socketId, side, mc]);
+        const rule = Project.useSocketType(graphId, node, socketId, side);
         const [type, title] = useMemo(() => {
             const tp = SocketTypes.toCSS(rule);
             const anyCSS = SocketTypes.toCSS(SocketTypes.ANY);
 
-            // `mode` is only meaningful on an output (canFlow reads the OUT rule's mode);
-            // an input always accepts any of its types, so it always reads as "|".
-            const sep = side === "out" && rule.mode === "and" ? " & " : " | ";
+            // conjunctive display ("&") is only meaningful on an output; an input always accepts any of
+            // its kinds, so it always reads as "|".
+            const sep = side === "out" && SocketTypes.projectMode(rule) === "and" ? " & " : " | ";
             let ti = tp.split(" ").join(sep);
             if (tp === "") {
                 ti = "« unknown »";
@@ -172,7 +173,7 @@ export const Socket = styled(
                 style={style}
                 data-socketside={side}
                 data-sockettype={type}
-                data-socketmod={title === "« any »" ? "any" : undefined}
+                data-socketmod={title === "« any »" ? "any" : title === "« unknown »" ? "unknown" : undefined}
                 data-state={state}
                 title={title}
             />
@@ -205,8 +206,12 @@ export const Socket = styled(
     &[data-sockettype*="array<"] {
         corner-shape: bevel;
     }
-    &[data-sockettype*="tokens<"] {
-        corner-shape: square;
+    /* Future: Bus<T> -> corner-shape: square; LoopFor<T> -> shape TBD. */
+
+    /* "any"/"unknown" sockets stay circular even though their accept-set includes array kinds. */
+    &[data-socketmod="any"],
+    &[data-socketmod="unknown"] {
+        corner-shape: round;
     }
 
     --tl: var(--flavour-base);
@@ -222,21 +227,21 @@ export const Socket = styled(
     &[data-sockettype~="boolean"],
     &[data-sockettype~="point"],
     &[data-sockettype~="array<point>"],
-    &[data-sockettype~="tokens<length>"] {
+    &[data-sockettype~="tokens:length"] {
         --tl: var(--flavour-accent);
         --br: var(--flavour-accent);
     }
     &[data-sockettype~="gradient"],
-    &[data-sockettype~="stop<float>"],
-    &[data-sockettype~="stop<color>"],
-    &[data-sockettype~="stop<angle>"],
-    &[data-sockettype~="stop<integer>"],
-    &[data-sockettype~="stop<length>"],
-    &[data-sockettype~="array<stop<float>>"],
-    &[data-sockettype~="array<stop<color>>"],
-    &[data-sockettype~="array<stop<angle>>"],
-    &[data-sockettype~="array<stop<integer>>"],
-    &[data-sockettype~="array<stop<length>>"] {
+    &[data-sockettype~="stop:float"],
+    &[data-sockettype~="stop:color"],
+    &[data-sockettype~="stop:angle"],
+    &[data-sockettype~="stop:integer"],
+    &[data-sockettype~="stop:length"],
+    &[data-sockettype~="array<stop:float>"],
+    &[data-sockettype~="array<stop:color>"],
+    &[data-sockettype~="array<stop:angle>"],
+    &[data-sockettype~="array<stop:integer>"],
+    &[data-sockettype~="array<stop:length>"] {
         --tl: var(--flavour-info);
         --br: var(--flavour-info);
     }
@@ -420,20 +425,20 @@ const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeI
             &[data-sockettype~="enum"],
             &[data-sockettype~="angle"],
             &[data-sockettype~="boolean"],
-            &[data-sockettype~="tokens<length>"] {
+            &[data-sockettype~="tokens:length"] {
                 --flavour: var(--flavour-accent);
             }
             &[data-sockettype~="gradient"],
-            &[data-sockettype~="stop<float>"],
-            &[data-sockettype~="stop<color>"],
-            &[data-sockettype~="stop<angle>"],
-            &[data-sockettype~="stop<integer>"],
-            &[data-sockettype~="stop<length>"],
-            &[data-sockettype~="array<stop<float>>"],
-            &[data-sockettype~="array<stop<color>>"],
-            &[data-sockettype~="array<stop<angle>>"],
-            &[data-sockettype~="array<stop<integer>>"],
-            &[data-sockettype~="array<stop<length>>"] {
+            &[data-sockettype~="stop:float"],
+            &[data-sockettype~="stop:color"],
+            &[data-sockettype~="stop:angle"],
+            &[data-sockettype~="stop:integer"],
+            &[data-sockettype~="stop:length"],
+            &[data-sockettype~="array<stop:float>"],
+            &[data-sockettype~="array<stop:color>"],
+            &[data-sockettype~="array<stop:angle>"],
+            &[data-sockettype~="array<stop:integer>"],
+            &[data-sockettype~="array<stop:length>"] {
                 --flavour: var(--flavour-info);
             }
 

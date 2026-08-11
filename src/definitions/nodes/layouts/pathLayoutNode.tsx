@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
@@ -9,7 +9,9 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
@@ -20,49 +22,52 @@ import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { OffsetPathShape } from "../../shapeTypes";
 import { distroInterpolator } from "../../../util/misc";
 import { GroupShape } from "../../shapeTypes";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type PathLayoutDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-        count: DataTypes.Use<"integer">;
-        spacingMode: DataTypes.Use<"enum">;
-        spacing: DataTypes.Use<"length">;
-        overflowMode: DataTypes.Use<"enum">;
-        offsetMode: DataTypes.Use<"enum">;
-        offsetPercent: DataTypes.Use<"float" | "integer">;
-        offsetLength: DataTypes.Use<"length">;
-        offsetOrigin: DataTypes.Use<"enum">;
-        padStart: DataTypes.Use<"length">;
-        padEnd: DataTypes.Use<"length">;
-        pointDistro: DataTypes.Use<"distribution">;
-        skipFirst: DataTypes.Use<"boolean">;
-        skipLast: DataTypes.Use<"boolean">;
-        memberAlign: DataTypes.Use<"boolean">;
-        memberRotation: DataTypes.Use<"angle">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        sequence: DataTypes.Use<"sequence">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        input: "shape",
+        path: "path",
+        count: "integer",
+        spacingMode: "enum",
+        spacing: "length",
+        overflowMode: "enum",
+        offsetMode: "enum",
+        offsetPercent: $.oneOf("float", "integer"),
+        offsetLength: "length",
+        offsetOrigin: "enum",
+        padStart: "length",
+        padEnd: "length",
+        pointDistro: "distribution",
+        skipFirst: "boolean",
+        skipLast: "boolean",
+        memberAlign: "boolean",
+        memberRotation: "angle",
+    },
+    out: { output: "shape", sequence: "sequence" },
+});
+
+export type PathLayoutDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        count: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        spacingMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        spacing: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        overflowMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetPercent: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        offsetLength: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetOrigin: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        padStart: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        padEnd: DataTypes.TypeOf<DataTypes.Use<"length">>;
+        count: DataTypes.TypeOf<"integer">;
+        spacingMode: DataTypes.TypeOf<"enum">;
+        spacing: DataTypes.TypeOf<"length">;
+        overflowMode: DataTypes.TypeOf<"enum">;
+        offsetMode: DataTypes.TypeOf<"enum">;
+        offsetPercent: DataTypes.TypeOf<"float">;
+        offsetLength: DataTypes.TypeOf<"length">;
+        offsetOrigin: DataTypes.TypeOf<"enum">;
+        padStart: DataTypes.TypeOf<"length">;
+        padEnd: DataTypes.TypeOf<"length">;
         skipFirst: boolean;
         skipLast: boolean;
         memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-    };
-};
+        memberRotation: DataTypes.TypeOf<"angle">;
+    }
+>;
 
 const SPACING_MODE_OPTIONS = Enum.options(Enum.Common.spacingMode);
 const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
@@ -386,40 +391,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
     return { kind: "shape", data: group };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<PathLayoutDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "or" },
-    path: { types: ["path"], mode: "or" },
-    count: { types: ["integer"], mode: "or" },
-    spacingMode: { types: ["enum"], mode: "or" },
-    spacing: { types: ["length"], mode: "or" },
-    overflowMode: { types: ["enum"], mode: "or" },
-    offsetMode: { types: ["enum"], mode: "or" },
-    offsetPercent: { types: ["float", "integer"], mode: "or" },
-    offsetLength: { types: ["length"], mode: "or" },
-    offsetOrigin: { types: ["enum"], mode: "or" },
-    padStart: { types: ["length"], mode: "or" },
-    padEnd: { types: ["length"], mode: "or" },
-    pointDistro: { types: ["distribution"], mode: "or" },
-    skipFirst: { types: ["boolean"], mode: "or" },
-    skipLast: { types: ["boolean"], mode: "or" },
-    memberAlign: { types: ["boolean"], mode: "or" },
-    memberRotation: { types: ["angle"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<PathLayoutDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    sequence: { types: ["sequence"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const PathLayoutNodeType: NodeTypes.Type<"pathLayout", PathLayoutDefinition> = {
     type: "pathLayout",
     displayName: "Path Layout",
@@ -432,7 +403,8 @@ export const PathLayoutNodeType: NodeTypes.Type<"pathLayout", PathLayoutDefiniti
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

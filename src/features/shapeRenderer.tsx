@@ -1,10 +1,28 @@
 import { createElement, CSSProperties, ReactNode, useId, useMemo } from "react";
-import { Shape, Paint, Stroke, GradientPaint, Fill, Markers, MarkerDef, PathShape, LineShape, RectShape, TextShape, GroupShape, OffsetPathShape, SymbolShape, MaskedShape, ClippedShape, FilteredShape } from "./shapeTypes";
+import {
+    Shape,
+    Paint,
+    Stroke,
+    GradientPaint,
+    Fill,
+    Markers,
+    MarkerDef,
+    PathShape,
+    LineShape,
+    RectShape,
+    TextShape,
+    GroupShape,
+    OffsetPathShape,
+    SymbolShape,
+    MaskedShape,
+    ClippedShape,
+    FilteredShape,
+} from "../definitions/shapeTypes";
 // SymbolShape no longer carries paint/vectorEffect — content Shape handles its own rendering.
 
 const isGradient = (v: Fill | undefined): v is GradientPaint => typeof v === "object" && v !== null;
 
-// ─── Paint → SVG attributes ─────────────────────────────────────────────────
+// ─── Paint -> SVG attributes ─────────────────────────────────────────────────
 
 const strokeAttrs = (s: Stroke): Record<string, string | undefined> => {
     const attrs: Record<string, string | undefined> = {
@@ -42,7 +60,7 @@ const paintAttrs = (paint: Paint): Record<string, string | undefined> => {
 // generated id and reference it via url(#id) on the host element's fill/stroke.
 
 // Fit (objectBoundingBox): map an angle to the gradient vector's endpoints on the
-// unit box. 0° = left→right; increasing angle rotates clockwise in screen space.
+// unit box. 0° = left->right; increasing angle rotates clockwise in screen space.
 const gradientVector = (angleDeg: number): { x1: number; y1: number; x2: number; y2: number } => {
     const rad = (angleDeg * Math.PI) / 180;
     const dx = Math.cos(rad) / 2;

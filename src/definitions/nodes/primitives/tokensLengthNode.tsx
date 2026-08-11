@@ -5,23 +5,26 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { Length } from "../../datatypes/length";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type TokensLengthDefinition = {
-    inputs: {
-        value: DataTypes.Use<"tokens<length>">;
-    };
-    outputs: {
-        output: DataTypes.Use<"tokens<length>">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        value: DataTypes.TypeOf<DataTypes.Use<"tokens<length>">>;
-    };
-};
+const def = signature({
+    in: { value: "tokens:length" },
+    out: { output: "tokens:length" },
+});
+
+export type TokensLengthDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        value: DataTypes.TypeOf<"tokens:length">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TokensLengthDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"tokensLength", TokensLengthDefinition> => {
     return {
@@ -73,28 +76,11 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TokensLengthDefinition>, i
 const evaluate = (node: NodeDefinitions.NodeFor<TokensLengthDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
         return {
-            kind: "tokens<length>",
-            data: context.resolve<"tokens<length>">(node.id, "value")?.data ?? node.payload.value,
+            kind: "tokens:length",
+            data: context.resolve<"tokens:length">(node.id, "value")?.data ?? node.payload.value,
         };
     }
     return null;
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<TokensLengthDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    value: { types: ["tokens<length>"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<TokensLengthDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["tokens<length>"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
 };
 
 export const TokensLengthPrimitiveType: NodeTypes.Type<"tokensLength", TokensLengthDefinition> = {
@@ -109,5 +95,6 @@ export const TokensLengthPrimitiveType: NodeTypes.Type<"tokensLength", TokensLen
     dependsOn,
     contributesTo,
     create,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -4,23 +4,28 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { Project } from "../../../../state/project";
 import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type TokensLengthOutputDefinition = {
-    inputs: {
-        input: DataTypes.Use<"tokens<length>">;
-    };
-    outputs: never;
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    };
-};
+const def = signature({
+    in: { input: "tokens:length" },
+    out: {},
+});
+
+export type TokensLengthOutputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        widget: DataTypes.TypeOf<"enum">;
+    }
+>;
 
 const create = (
     _input: Partial<NodeDefinitions.PayloadTypeOf<TokensLengthOutputDefinition>>,
@@ -98,14 +103,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"tokensLengthOutput", Tokens
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<TokensLengthOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["tokens<length>"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<TokensLengthOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const TokensLengthOutputType: NodeTypes.Type<"tokensLengthOutput", TokensLengthOutputDefinition> = {
     type: "tokensLengthOutput",
     displayName: "Tokens Output",
@@ -121,5 +118,6 @@ export const TokensLengthOutputType: NodeTypes.Type<"tokensLengthOutput", Tokens
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

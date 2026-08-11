@@ -7,25 +7,26 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type LayerComposeDefinition = {
-    inputs: {
-        shape: DataTypes.Use<"shape">;
-        enabled: DataTypes.Use<"boolean">;
-        blend: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"layer">;
-    };
-    payload: {
+const def = signature({
+    in: { shape: "shape", enabled: "boolean", blend: "enum" },
+    out: { output: "layer" },
+});
+
+export type LayerComposeDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
         enabled: boolean;
-        blend: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    };
-};
+        blend: DataTypes.TypeOf<"enum">;
+    }
+>;
 
 const BLEND_MODE_OPTIONS = Enum.options(Enum.Common.blendMode);
 
@@ -112,25 +113,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket:
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<LayerComposeDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    shape: { types: ["shape"], mode: "or" },
-    enabled: { types: ["boolean"], mode: "or" },
-    blend: { types: ["enum"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<LayerComposeDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["layer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDefinition> = {
     type: "layerCompose",
     displayName: "Compose Layer",
@@ -143,5 +125,6 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -4,22 +4,24 @@ import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type SequenceIndexDefinition = {
-    inputs: {
-        sequence: DataTypes.Use<"sequence">;
-    };
-    outputs: {
-        index: DataTypes.Use<"integer">;
-        count: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: { sequence: "sequence" },
+    out: { index: "integer", count: "integer" },
+});
+
+export type SequenceIndexDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SequenceIndexDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"sequenceIndex", SequenceIndexDefinition> => {
     return {
@@ -87,24 +89,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, socket
     return null;
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<SequenceIndexDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    sequence: { types: ["sequence"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<SequenceIndexDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    index: { types: ["integer"], mode: "and" },
-    count: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const SequenceIndexNodeType: NodeTypes.Type<"sequenceIndex", SequenceIndexDefinition> = {
     type: "sequenceIndex",
     displayName: "Sequence Index",
@@ -117,5 +101,6 @@ export const SequenceIndexNodeType: NodeTypes.Type<"sequenceIndex", SequenceInde
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

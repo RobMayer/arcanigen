@@ -1031,7 +1031,7 @@ function wrapNumber(value: number, min: number, max: number): number {
 // Strict pattern for syntactic completeness (rejects "3." during typing)
 const NUMBER_REGEX = /^[+-]?\d+(\.\d+)?$/;
 
-// Truncate floating point errors (e.g., 0.30000000000000004 → 0.3)
+// Truncate floating point errors (e.g., 0.30000000000000004 -> 0.3)
 function cleanFloat(num: number): number {
     return Number(num.toFixed(10));
 }

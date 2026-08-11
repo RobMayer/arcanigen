@@ -4,23 +4,28 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketIn } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
 import { Project } from "../../../../state/project";
 import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-export type FloatOutputDefinition = {
-    inputs: {
-        input: DataTypes.Use<"float">;
-    };
-    outputs: never;
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    };
-};
+const def = signature({
+    in: { input: "float" },
+    out: {},
+});
+
+export type FloatOutputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        widget: DataTypes.TypeOf<"enum">;
+    }
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatOutputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDefinition> => {
     return {
@@ -89,14 +94,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"floatOutput", FloatOutputDe
     removeInterface(ctx, graphId, node.id, "out");
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<FloatOutputDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    input: { types: ["float"], mode: "or" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<FloatOutputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
 export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinition> = {
     type: "floatOutput",
     displayName: "Float Output",
@@ -112,5 +109,6 @@ export const FloatOutputType: NodeTypes.Type<"floatOutput", FloatOutputDefinitio
     create,
     onCreate,
     onDelete,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

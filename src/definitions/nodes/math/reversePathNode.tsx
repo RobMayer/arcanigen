@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { ReactNode } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
@@ -8,18 +10,24 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NodeIcon, ICONS } from "../../../components/Icon";
 import { PaperHelper } from "../../../util/paperHelper";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type ReversePathDefinition = {
-    inputs: {
-        path: DataTypes.Use<"path">;
-    };
-    outputs: {
-        output: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-    };
-};
+const def = signature({
+    in: { path: "path" },
+    out: { output: "path" },
+});
+
+export type ReversePathDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+    }
+>;
+
+// interject-only rules (mirror the def's socket types)
+const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
+const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ReversePathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"reversePath", ReversePathDefinition> => {
     return {
@@ -74,23 +82,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ReversePathDefinition>, socket: 
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<ReversePathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    path: { types: ["path"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ReversePathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ReversePathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const ReversePathNodeType: NodeTypes.Type<"reversePath", ReversePathDefinition> = {
     type: "reversePath",
     displayName: "Reverse Path",
@@ -103,7 +94,8 @@ export const ReversePathNodeType: NodeTypes.Type<"reversePath", ReversePathDefin
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.path, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(PATH_IN, PATH_OUT),
     onInterject: passthroughInterject("path", "output"),
 };

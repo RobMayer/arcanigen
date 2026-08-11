@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
@@ -9,40 +9,46 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type AlongPathDefinition = {
-    inputs: {
-        shape: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-        memberAlign: DataTypes.Use<"boolean">;
-        memberRotation: DataTypes.Use<"angle">;
-        overflowMode: DataTypes.Use<"enum">;
-        offsetMode: DataTypes.Use<"enum">;
-        offsetPercent: DataTypes.Use<"float" | "integer">;
-        offsetLength: DataTypes.Use<"length">;
-        offsetOrigin: DataTypes.Use<"enum">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        memberAlign: DataTypes.TypeOf<DataTypes.Use<"boolean">>;
-        memberRotation: DataTypes.TypeOf<DataTypes.Use<"angle">>;
-        overflowMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetMode: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        offsetPercent: DataTypes.TypeOf<DataTypes.Use<"float">>;
-        offsetLength: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        offsetOrigin: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-    };
-};
+const def = signature({
+    in: {
+        shape: "shape",
+        path: "path",
+        memberAlign: "boolean",
+        memberRotation: "angle",
+        overflowMode: "enum",
+        offsetMode: "enum",
+        offsetPercent: $.oneOf("float", "integer"),
+        offsetLength: "length",
+        offsetOrigin: "enum",
+    },
+    out: { output: "shape" },
+});
+
+export type AlongPathDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        memberAlign: DataTypes.TypeOf<"boolean">;
+        memberRotation: DataTypes.TypeOf<"angle">;
+        overflowMode: DataTypes.TypeOf<"enum">;
+        offsetMode: DataTypes.TypeOf<"enum">;
+        offsetPercent: DataTypes.TypeOf<"float">;
+        offsetLength: DataTypes.TypeOf<"length">;
+        offsetOrigin: DataTypes.TypeOf<"enum">;
+    }
+>;
 
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
 const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
@@ -209,31 +215,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof Required<AlongPathDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    shape: { types: ["shape"], mode: "or" },
-    path: { types: ["path"], mode: "or" },
-    memberAlign: { types: ["boolean"], mode: "or" },
-    memberRotation: { types: ["angle"], mode: "or" },
-    overflowMode: { types: ["enum"], mode: "or" },
-    offsetMode: { types: ["enum"], mode: "or" },
-    offsetPercent: { types: ["float", "integer"], mode: "or" },
-    offsetLength: { types: ["length"], mode: "or" },
-    offsetOrigin: { types: ["enum"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<AlongPathDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-};
-
 export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition> = {
     type: "alongPath",
     displayName: "Along Path",
@@ -246,7 +227,8 @@ export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition>
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject({ types: ["shape"], mode: "or" }, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("shape", "output"),
 };

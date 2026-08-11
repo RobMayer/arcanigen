@@ -8,25 +8,32 @@ import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { Stylings, Transforms } from "../abstract";
+import { StylingPrefab } from "../../helpers/stylingPrefab";
+import { TransformPrefab } from "../../helpers/transformPrefab";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type CircleDefinition = {
-    inputs: {
-        radius: DataTypes.Use<"length">;
-    } & Stylings.Definition["inputs"] &
-        Transforms.Definition["inputs"];
-    outputs: {
-        output: DataTypes.Use<"shape">;
-        path: DataTypes.Use<"path">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        radius: DataTypes.TypeOf<DataTypes.Use<"length">>;
-    } & Stylings.Definition["payload"] &
-        Transforms.Definition["payload"];
-};
+const def = signature({
+    in: {
+        radius: "length",
+        ...TransformPrefab.SIG_IN,
+        ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+    },
+    out: { output: "shape", path: "path" },
+});
+
+export type CircleDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        radius: DataTypes.TypeOf<"length">;
+    } & StylingPrefab.Definition["payload"] &
+        TransformPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"circle", CircleDefinition> => {
     return {
@@ -98,8 +105,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
 
-            <Stylings.Controls node={node} handleUpdate={handleUpdate} fill accordion />
-            <Transforms.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
+            <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
@@ -128,7 +135,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     }
 
     const d = `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1} z`;
-    const [transforms, { translateX, translateY }] = Transforms.evaluate(node, context);
+    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
@@ -143,7 +150,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
             data: {
                 type: "path",
                 d,
-                paint: Stylings.evaluate(node, context),
+                paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
                 preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
             },
@@ -151,26 +158,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     }
 
     return null;
-};
-
-const SOCKETTYPES_IN: { [key in keyof Required<CircleDefinition["inputs"]>]: SocketTypes.SocketRule } = {
-    radius: { types: ["length"], mode: "or" },
-    ...Stylings.IN_SOCKET_TYPES,
-    ...Transforms.IN_SOCKET_TYPES,
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<CircleDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-    path: { types: ["path"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<CircleDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    switch (side) {
-        case "in":
-            return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-        case "out":
-            return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
 };
 
 export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
@@ -185,5 +172,6 @@ export const CircleNodeType: NodeTypes.Type<"circle", CircleDefinition> = {
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

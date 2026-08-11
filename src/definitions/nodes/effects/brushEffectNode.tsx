@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../nodeHelpers";
+import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
@@ -8,30 +8,31 @@ import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { SliderInput } from "../../../components/inputs/SliderInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { FilterPrimitive } from "../../shapeTypes";
+import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
-export type BrushEffectDefinition = {
-    inputs: {
-        input: DataTypes.Use<"shape">;
-        brushTip: DataTypes.Use<"length">;
-        seed: DataTypes.Use<"integer">;
-        shake: DataTypes.Use<"float">;
-    };
-    outputs: {
-        output: DataTypes.Use<"shape">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        brushTip: DataTypes.TypeOf<DataTypes.Use<"length">>;
-        seed: DataTypes.TypeOf<DataTypes.Use<"integer">>;
-        shake: DataTypes.TypeOf<DataTypes.Use<"float">>;
-    };
-};
+const def = signature({
+    in: { input: "shape", brushTip: "length", seed: "integer", shake: "float" },
+    out: { output: "shape" },
+});
+
+export type BrushEffectDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        brushTip: DataTypes.TypeOf<"length">;
+        seed: DataTypes.TypeOf<"integer">;
+        shake: DataTypes.TypeOf<"float">;
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BrushEffectDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"brushEffect", BrushEffectDefinition> => {
     return {
@@ -109,21 +110,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<BrushEffectDefinition>, socket: 
         { tag: "feTurbulence", attrs: { type: "fractalNoise", baseFrequency: 0.02, numOctaves: 1, seed: seed + 900, result: "fractal2" } },
         { tag: "feTurbulence", attrs: { type: "fractalNoise", baseFrequency: 0.04, numOctaves: 1, seed: seed + 15007, result: "fractal3" } },
 
-        // Layer 1: displace → dilate → blur → erode → reduce alpha
+        // Layer 1: displace -> dilate -> blur -> erode -> reduce alpha
         { tag: "feDisplacementMap", attrs: { in: "SourceGraphic", in2: "fractal1", scale: shakeScale, xChannelSelector: "G", yChannelSelector: "R" } },
         { tag: "feMorphology", attrs: { radius: tipRadius, operator: "dilate" } },
         { tag: "feGaussianBlur", attrs: { stdDeviation: 0.5 } },
         { tag: "feMorphology", attrs: { radius: tipRadius, operator: "erode" } },
         { tag: "feColorMatrix", attrs: { result: "out_1", type: "matrix", values: "1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.5 0" } },
 
-        // Layer 2: displace → dilate → blur → erode → reduce alpha
+        // Layer 2: displace -> dilate -> blur -> erode -> reduce alpha
         { tag: "feDisplacementMap", attrs: { in: "SourceGraphic", in2: "fractal2", scale: shakeScale, xChannelSelector: "B", yChannelSelector: "G" } },
         { tag: "feMorphology", attrs: { radius: tipRadius, operator: "dilate" } },
         { tag: "feGaussianBlur", attrs: { stdDeviation: 0.5 } },
         { tag: "feMorphology", attrs: { radius: tipRadius, operator: "erode" } },
         { tag: "feColorMatrix", attrs: { result: "out_2", type: "matrix", values: "1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.5 0" } },
 
-        // Layer 3: displace → dilate → blur → erode → reduce alpha
+        // Layer 3: displace -> dilate -> blur -> erode -> reduce alpha
         { tag: "feDisplacementMap", attrs: { in: "SourceGraphic", in2: "fractal3", scale: shakeScale, xChannelSelector: "G", yChannelSelector: "R" } },
         { tag: "feMorphology", attrs: { radius: tipRadius, operator: "dilate" } },
         { tag: "feGaussianBlur", attrs: { stdDeviation: 0.5 } },
@@ -148,22 +149,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<BrushEffectDefinition>, socket: 
     };
 };
 
-const SOCKETTYPES_IN: { [key in keyof BrushEffectDefinition["inputs"]]: SocketTypes.SocketRule } = {
-    input: { types: ["shape"], mode: "and" },
-    brushTip: { types: ["length"], mode: "and" },
-    seed: { types: ["integer"], mode: "and" },
-    shake: { types: ["float"], mode: "and" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof BrushEffectDefinition["outputs"]]: SocketTypes.SocketRule } = {
-    output: { types: ["shape"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<BrushEffectDefinition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT] ?? { types: ["shape"], mode: "and" };
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN] ?? { types: ["shape"], mode: "and" };
-};
-
 export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefinition> = {
     type: "brushEffect",
     displayName: "Brush Stroke",
@@ -176,7 +161,8 @@ export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefin
     contributesTo,
     evaluate,
     Controls,
-    getSocketType,
-    canInterject: passthroughCanInterject(SOCKETTYPES_IN.input, SOCKETTYPES_OUT.output),
+    signature: def.instance,
+    ...SignatureEngine.hooks,
+    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
     onInterject: passthroughInterject("input", "output"),
 };

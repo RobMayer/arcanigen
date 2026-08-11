@@ -5,7 +5,8 @@ import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../betterTypes";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
+import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
@@ -16,14 +17,15 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { interpolateColor } from "../../../util/colorSpaces";
 import { ActionButton } from "../../../components/buttons/ActionButton";
-import { Iteration } from "../abstract";
+import { IterationPrefab } from "../../helpers/iterationPrefab";
 import { EmptyOr } from "../../../util/misc";
 import styled from "styled-components";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const COLOR_SPACE_OPTIONS = Enum.options(Enum.Common.colorSpace);
 const ANGLE_TRAVERSAL_OPTIONS = Enum.options(Enum.Common.angleTraversal);
 
-// Color spaces that have a hue component
 const HUE_SPACES: Set<number> = new Set([
     Enum.Common.colorSpace.HSV.value,
     Enum.Common.colorSpace.HSL.value,
@@ -33,25 +35,31 @@ const HUE_SPACES: Set<number> = new Set([
     Enum.Common.colorSpace.OKLCH.value,
 ]);
 
-export type ColorIterator2Definition = {
-    inputs: {
-        stops: DataTypes.Use<"array<stop<color>>">;
-        colorSpace: DataTypes.Use<"enum">;
-        angleTraversal: DataTypes.Use<"enum">;
-        [stopSocket: `stop_${string}`]: DataTypes.Use<"stop<color>">;
-    } & Iteration.Definition["inputs"];
-    outputs: {
-        sequencedOutput: DataTypes.Use<"color">;
-        sampledOutput: DataTypes.Use<"color">;
-        stopCount: DataTypes.Use<"integer">;
-    };
-    payload: {
+const def = signature({
+    in: {
+        sequence: "sequence",
+        mode: "enum",
+        reverseSequence: "boolean",
+        startOffset: "integer",
+        endOffset: "integer",
+        samplePosition: $.oneOf("float", "integer"),
+        colorSpace: "enum",
+        angleTraversal: "enum",
+        stops: $.arrayOf("stop:color"),
+        "stop_*": "stop:color",
+    },
+    out: { sequencedOutput: "color", sampledOutput: "color", stopCount: "integer" },
+});
+
+export type ColorIterator2Definition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
         label: string;
-        colorSpace: DataTypes.TypeOf<DataTypes.Use<"enum">>;
-        angleTraversal: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+        colorSpace: DataTypes.TypeOf<"enum">;
+        angleTraversal: DataTypes.TypeOf<"enum">;
         stops: { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
-    } & Iteration.Definition["payload"];
-};
+    } & IterationPrefab.Definition["payload"]
+>;
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ColorIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"colorIterator2", ColorIterator2Definition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
@@ -215,7 +223,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorIterat
                         ))}
                     </Dropdown>
                 </SocketIn>
-                <Iteration.Controls node={node} handleUpdate={handleUpdate} />
+                <IterationPrefab.Controls node={node} handleUpdate={handleUpdate} />
             </NodeAccordion>
             <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampledOutput" socketsIn={"samplePosition"}>
                 <SocketOut node={node} socketId={"sampledOutput"}>
@@ -375,17 +383,17 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop<color>>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop<color>) over its inline payload.
+// Resolve the effective stops: the supersocket (an array<stop:color>) overrides everything;
+// otherwise fold each per-stop socket (a connected stop:color) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop<color>>">(node.id, "stops");
+    const supersocketEval = context.resolve<"array<stop:color>">(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop<color>">(node.id, entry.socket);
+        const connected = context.resolve<"stop:color">(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,
@@ -406,10 +414,10 @@ const resolveStops = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, c
 const dependsOn = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, outSocket: keyof ColorIterator2Definition["outputs"], _deps: AllDeps): (keyof ColorIterator2Definition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
     if (outSocket === "sequencedOutput") {
-        return [...Iteration.SEQUENCED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
+        return [...IterationPrefab.SEQUENCED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
     }
     if (outSocket === "sampledOutput") {
-        return [...Iteration.SAMPLED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
+        return [...IterationPrefab.SAMPLED_DEPS, "colorSpace", "angleTraversal", "stops", ...stopSockets];
     }
     if (outSocket === "stopCount") {
         return ["stops", ...stopSockets];
@@ -421,10 +429,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>,
     if (inSocket === "stops") {
         return ["sequencedOutput", "sampledOutput", "stopCount"];
     }
-    if ((Iteration.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
+    if ((IterationPrefab.SEQUENCED_DEPS as string[]).includes(inSocket as string)) {
         return ["sequencedOutput"];
     }
-    if ((Iteration.SAMPLED_DEPS as string[]).includes(inSocket as string)) {
+    if ((IterationPrefab.SAMPLED_DEPS as string[]).includes(inSocket as string)) {
         return ["sampledOutput"];
     }
     if (typeof inSocket === "string" && inSocket.startsWith("stop_")) {
@@ -440,11 +448,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socke
 
     let position: number;
     if (socket === "sequencedOutput") {
-        const result = Iteration.evaluate(node, context);
+        const result = IterationPrefab.evaluate(node, context);
         if (result === null) return null;
         position = result.t * 100;
     } else if (socket === "sampledOutput") {
-        position = Iteration.resolveSamplePosition(node, context);
+        position = IterationPrefab.resolveSamplePosition(node, context);
     } else {
         return null;
     }
@@ -456,53 +464,29 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socke
     if (active.length === 0) return null;
     active.sort((a, b) => a.position - b.position);
 
-    const value = Iteration.sampleStopsWith(active, position, (a, b, t) => interpolateColor(a, b, t, colorSpaceValue, angleTraversalValue) as NonNullable<Color.Type>);
+    const value = IterationPrefab.sampleStopsWith(active, position, (a, b, t) => interpolateColor(a, b, t, colorSpaceValue, angleTraversalValue) as NonNullable<Color.Type>);
     return { kind: "color", data: value };
 };
 
-const SOCKETTYPES_IN: {
-    [key in keyof Required<
-        Pick<ColorIterator2Definition["inputs"], "sequence" | "colorSpace" | "angleTraversal" | "mode" | "reverseSequence" | "startOffset" | "endOffset" | "samplePosition" | "stops">
-    >]: SocketTypes.SocketRule;
-} = {
-    ...Iteration.IN_SOCKET_TYPES,
-    colorSpace: { types: ["enum"], mode: "and" },
-    angleTraversal: { types: ["enum"], mode: "and" },
-    stops: { types: ["array<stop<color>>"], mode: "or" },
-};
-
-const SOCKETTYPES_OUT: { [key in keyof Required<ColorIterator2Definition["outputs"]>]: SocketTypes.SocketRule } = {
-    sequencedOutput: { types: ["color"], mode: "and" },
-    sampledOutput: { types: ["color"], mode: "and" },
-    stopCount: { types: ["integer"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socketId: string, side: "in" | "out"): SocketTypes.SocketRule => {
-    if (side === "out") {
-        return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-    }
-    if (socketId.startsWith("stop_")) {
-        return { types: ["stop<color>"], mode: "or" };
-    }
-    return SOCKETTYPES_IN[socketId as keyof typeof SOCKETTYPES_IN];
-};
-
+// Supersocket override: connecting the whole array clears the now-hidden element family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
 const onConnect = (node: NodeDefinitions.BuiltNodeOf<"colorIterator2", ColorIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "stops") return;
-
-    const currentNode = ctx.getNode(graphId, node.id);
-    if (!currentNode) return;
-    const linkIdsToRemove: string[] = [];
-    for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
-        if (socketKey.startsWith("stop_") && socketLinkId !== null) {
-            linkIdsToRemove.push(socketLinkId);
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "stops") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("stop_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
         }
     }
-    if (linkIdsToRemove.length === 0) return;
-    ctx.removeLinks(graphId, ...linkIdsToRemove);
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 export const ColorIterator2NodeType: NodeTypes.Type<"colorIterator2", ColorIterator2Definition> = {
@@ -517,6 +501,7 @@ export const ColorIterator2NodeType: NodeTypes.Type<"colorIterator2", ColorItera
     contributesTo,
     evaluate,
     Controls,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
     onConnect,
-    getSocketType,
 };

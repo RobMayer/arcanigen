@@ -5,8 +5,9 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
 import { Slot, SocketOut } from "../../../../features/nodeview/slots";
-import { AllDeps, DataTypes, NodeDefinitions, NodeTypes, SocketTypes } from "../../../betterTypes";
-import { addInterface, removeInterface, handleInputSocketedChange } from "../../../interfaceHelpers";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { ColorHexInput } from "../../../../components/inputs/ColorHexInput";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
@@ -14,24 +15,25 @@ import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
 import { Color } from "../../../datatypes/color";
+import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
-// Like Color Input, but its socket accepts a color OR a gradient from outside the subgraph — so a custom
-// node can expose a single "paint" input and let the caller decide which to supply. The inner default
-// value (used when nothing is wired in) is a plain colour.
-export type PaintInputDefinition = {
-    inputs: never;
-    outputs: {
-        output: DataTypes.Use<"color">;
-    };
-    payload: {
-        label: DataTypes.TypeOf<DataTypes.Use<"string">>;
-        initialValue: DataTypes.TypeOf<DataTypes.Use<"color">>;
-        widget: DataTypes.TypeOf<DataTypes.Use<"enum">>;
+const def = signature({
+    in: {},
+    out: { output: $.COLOR_OR_GRADIENT },
+});
+
+export type PaintInputDefinition = SignatureBuilder.DefinitionFrom<
+    typeof def,
+    {
+        label: DataTypes.TypeOf<"string">;
+        initialValue: DataTypes.TypeOf<"color">;
+        widget: DataTypes.TypeOf<"enum">;
         alpha: boolean;
         required: boolean;
         socketed: boolean;
-    };
-};
+    }
+>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PaintInputDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"paintInput", PaintInputDefinition> => {
     return {
@@ -132,15 +134,6 @@ const onDelete = (node: NodeDefinitions.BuiltNodeOf<"paintInput", PaintInputDefi
     removeInterface(ctx, graphId, node.id, "in");
 };
 
-const SOCKETTYPES_OUT: { [key in keyof Required<PaintInputDefinition["outputs"]>]: SocketTypes.SocketRule } = {
-    // Inlined rather than SocketTypes.COLOR_OR_GRADIENT to avoid module init-order issues (matches other node files).
-    output: { types: ["color", "gradient"], mode: "and" },
-};
-
-const getSocketType = (_node: NodeDefinitions.NodeFor<PaintInputDefinition>, socketId: string, _side: "in" | "out"): SocketTypes.SocketRule => {
-    return SOCKETTYPES_OUT[socketId as keyof typeof SOCKETTYPES_OUT];
-};
-
 export const PaintInputType: NodeTypes.Type<"paintInput", PaintInputDefinition> = {
     type: "paintInput",
     displayName: "Paint Input",
@@ -157,5 +150,6 @@ export const PaintInputType: NodeTypes.Type<"paintInput", PaintInputDefinition> 
     onCreate,
     onDelete,
     onPayloadChange: handleInputSocketedChange,
-    getSocketType,
+    signature: def.instance,
+    ...SignatureEngine.hooks,
 };

@@ -1205,7 +1205,7 @@ export namespace AbstractSlider {
                     const maxDisplay = getMaxDisplayRadius();
                     const { grabOffsetX, grabOffsetY } = dragStateRef.current;
 
-                    // Compute intended position (pointer minus grab offset) → polar values
+                    // Compute intended position (pointer minus grab offset) -> polar values
                     const values = valuesFromPoint(e.clientX - grabOffsetX, e.clientY - grabOffsetY, maxDisplay);
 
                     dragStateRef.current.latestR = values.r;

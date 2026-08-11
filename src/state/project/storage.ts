@@ -1,6 +1,6 @@
-import { NodeTypes } from "../../definitions/betterTypes";
+import { NodeTypes } from "../../definitions/nodeTypes";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
-import type { NodesType, LinksType, InterfacesType, DepsType, UsersType } from "./types";
+import type { NodesType, LinksType, InterfacesType, DepsType, UsersType, SocketTypeCacheType } from "./types";
 import { makeSubgraphMeta } from "./types";
 import { buildInitialCache } from "./cache";
 
@@ -49,16 +49,14 @@ const STARTING_STATE = {
                 toNode: "LAYERS",
                 fromSocket: "output",
                 toSocket: "layer_LAYER0",
-                type: "shape",
                 id: "CIRCLE_TO_LAYERS",
             },
-            LAYERS_TO_RESULT: { fromNode: "LAYERS", toNode: "RESULT", fromSocket: "output", toSocket: "input", type: "shape", id: "LAYERS_TO_RESULT" },
+            LAYERS_TO_RESULT: { fromNode: "LAYERS", toNode: "RESULT", fromSocket: "output", toSocket: "input", id: "LAYERS_TO_RESULT" },
             POLYGON_TO_LAYERS: {
                 fromNode: "POLYGON",
                 toNode: "LAYERS",
                 fromSocket: "output",
                 toSocket: "layer_LAYER1",
-                type: "shape",
                 id: "POLYGON_TO_LAYERS",
             },
         },
@@ -148,4 +146,4 @@ const meta = Object.fromEntries(Object.entries(STARTING_STATE).map(([graphId, g]
 const cache = buildInitialCache(nodes, links, interfaces);
 const deps = buildInitialDeps(nodes, links, interfaces, users);
 
-export const INITIAL_STATE = { nodes, nodeList, links, linkList, positions, users, interfaces, meta, cache, deps };
+export const INITIAL_STATE = { nodes, nodeList, links, linkList, positions, users, interfaces, meta, cache, deps, socketTypes: {} as SocketTypeCacheType };
