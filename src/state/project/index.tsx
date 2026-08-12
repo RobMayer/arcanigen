@@ -150,24 +150,41 @@ export namespace Project {
             if (!from || !to) return "";
             const outType = NodeTypes.getSocketType(from, link.fromSocket, "out", graphId, ctx.mc);
             const inType = NodeTypes.getSocketType(to, link.toSocket, "in", graphId, ctx.mc);
-            return SocketTypes.representativeKind(outType, inType);
+            return SocketTypes.linkRepresentation(outType, inType);
         }, [ctx, graphId, link]);
         return useSyncExternalStore(ctx.socketTypes.subscribe, getSnapshot);
     };
 
-    /** The carried type's outermost constructor ("loopFor"/"array"/"") -- for a wire's structural css. */
-    export const useLinkCtor = (graphId: GraphId, link: ArcaneGraph.Link | null): string => {
+    /**
+     * The `Term` the UPSTREAM output socket is sending into `node`'s input `inSocket` -- the type-analogue of
+     * `useCachedInput` (which gives the value). Reads the producer's socket type DIRECTLY (never the reading
+     * node's own socket, and no blend), so a node asking "what am I receiving?" gets an honest source of
+     * truth. Null when the input is unconnected. Inspect it with `SocketTypes.project`/`subsumes`.
+     */
+    export const useInboundType = <D extends NodeDefinitions.Generic>(
+        graphId: GraphId,
+        { id: nodeId }: NodeDefinitions.NodeFor<D>,
+        inSocket: string,
+    ): SocketTypes.Term | null => {
         const ctx = useContext(CTX)!;
-        const getSnapshot = useCallback(() => {
-            if (!link) return "";
+        const lookup = useCallback((): SocketTypes.Term | null => {
+            const node = ctx.nodes.ref.current[graphId]?.[nodeId];
+            const linkId = node?.in[inSocket];
+            if (!linkId) return null;
+            const link = ctx.links.ref.current[graphId]?.[linkId];
+            if (!link) return null;
             const from = ctx.mc.getNode(graphId, link.fromNode);
-            const to = ctx.mc.getNode(graphId, link.toNode);
-            if (!from || !to) return "";
-            const outType = NodeTypes.getSocketType(from, link.fromSocket, "out", graphId, ctx.mc);
-            const inType = NodeTypes.getSocketType(to, link.toSocket, "in", graphId, ctx.mc);
-            return SocketTypes.linkCtor(outType, inType);
-        }, [ctx, graphId, link]);
-        return useSyncExternalStore(ctx.socketTypes.subscribe, getSnapshot);
+            if (!from) return null;
+            return NodeTypes.getSocketType(from, link.fromSocket, "out", graphId, ctx.mc);
+        }, [ctx, graphId, nodeId, inSocket]);
+        // getSocketType can hand back a FRESH Term ref on its fallback path (hand-rolled getSocketTypes build
+        // one per call), so subscribing on the Term itself would tear/loop. Subscribe on a stable serialized
+        // KEY (never parsed back), and reconstruct a ref-stable Term from the real lookup, keyed by it.
+        const key = useSyncExternalStore(ctx.socketTypes.subscribe, () => {
+            const t = lookup();
+            return t ? SocketTypes.serialize(t) : "";
+        });
+        return useMemo(() => (key === "" ? null : lookup()), [key, lookup]);
     };
 
     export const usePendingConnection = () => {

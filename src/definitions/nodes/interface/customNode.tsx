@@ -1432,8 +1432,10 @@ const LayerGroupEntry = ({
     handleLayerUpdate: (socket: string, update: Partial<{ enabled: boolean; blend: number }>) => void;
     handleReorderLayer: (socketId: string, toIndex: number) => void;
 }) => {
-    const theLink = Project.useLink(host.in[entry.socket]);
-    const linkType = Project.useLinkType(useGraphId(), theLink);
+    // A connected layer carries its own enabled/blend, so freeze the row's controls. Ask the upstream
+    // socket directly (structurally) rather than the blended link's representative kind.
+    const inbound = Project.useInboundType(useGraphId(), host, entry.socket);
+    const overridden = inbound !== null && SocketTypes.project(inbound).includes("layer");
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -1479,8 +1481,8 @@ const LayerGroupEntry = ({
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
             <SocketIn node={host} socketId={entry.socket}>
-                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={linkType === "layer"} />
-                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={linkType === "layer"}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={overridden} />
+                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={overridden}>
                     {BLEND_MODE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -1672,13 +1674,13 @@ const PathOpGroupEntry = ({
     handlePathOpUpdate: (socket: string, update: Partial<{ enabled: boolean; op: number }>) => void;
     handleReorderPathOp: (socketId: string, toIndex: number) => void;
 }) => {
-    const theLink = Project.useLink(host.in[entry.socket]);
-    const linkType = Project.useLinkType(useGraphId(), theLink);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
-    // A connected pathOp carries its own op/enabled, so freeze the row's controls.
-    const overridden = linkType === "pathOp";
+    // A connected pathOp carries its own op/enabled, so freeze the row's controls. Ask the upstream socket
+    // directly (structurally) rather than the blended link's representative kind.
+    const inbound = Project.useInboundType(useGraphId(), host, entry.socket);
+    const overridden = inbound !== null && SocketTypes.project(inbound).includes("pathOp");
 
     const handleDragStart = useCallback(
         (e: DragEvent) => {

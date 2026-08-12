@@ -213,8 +213,10 @@ const LayerEntry = ({
     ) => void;
     handleReorderLayer: (socketId: string, toIndex: number) => void;
 }) => {
-    const theLink = Project.useLink(node.in[entry.socket]);
-    const linkType = Project.useLinkType(useGraphId(), theLink);
+    // A connected layer carries its own enabled/blend, so freeze the row's controls. Ask the upstream
+    // socket directly (structurally) rather than the blended link's representative kind.
+    const inbound = Project.useInboundType(useGraphId(), node, entry.socket);
+    const overridden = inbound !== null && SocketTypes.project(inbound).includes("layer");
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -260,8 +262,8 @@ const LayerEntry = ({
     return (
         <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
             <SocketIn node={node} socketId={entry.socket as `layer_${string}`}>
-                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={linkType === "layer"} />
-                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={linkType === "layer"}>
+                <CheckBox checked={entry.enabled} onToggle={(enabled) => handleLayerUpdate(entry.socket, { enabled })} disabled={overridden} />
+                <Dropdown value={`${entry.blend}`} onValue={(v) => handleLayerUpdate(entry.socket, { blend: Number(v) })} disabled={overridden}>
                     {BLEND_MODE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}

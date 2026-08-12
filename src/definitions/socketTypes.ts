@@ -6,7 +6,7 @@ import { DataTypes } from "./dataTypes";
  *     subsumption (`canFlow`), unification, and coercion lattices. Kind-agnostic: kinds are opaque strings
  *     and this is the ONLY place that ever parses one (splits on '<'/'>').
  *   - the concrete SOCKET SURFACE: the kind-aware constructors (`of`/`and`/`or`/presets), the `ANY`/`NONE`
- *     bounds, and the one-way edge projections (`toCSS`/`representativeKind`) used by wire rendering.
+ *     bounds, and the one-way edge projections (`toCSS`/`linkRepresentation`) used by wire rendering.
  *
  * `Term` is the socket-type currency end to end: getSocketType returns one, the type cache stores one,
  * `canFlow` is subsumption over two.
@@ -463,48 +463,12 @@ export namespace SocketTypes {
         return { attr, title };
     };
 
-    /** Representative concrete Kind for the link's wire color (cosmetic -- one-way projection). A `loopFor`
-     *  pipeline wire reads as the element it carries (unwrap to the inner leaf) so no per-element link rules
-     *  are needed; every other term keeps its direct projection (arrays already have element-matched rules). */
-    const repr = (t: Term): string | null => {
-        switch (t.t) {
-            case "atom": {
-                const c = asCtor(t);
-                return c.t === "ctor" ? repr(c) : t.kind;
-            }
-            case "ctor":
-                // a loopFor pipeline reads as its element (unwrap, even when the ctor is wrapped in a
-                // materialized set below); arrays keep their compound projection (they have matching rules).
-                return t.name === "loopFor" ? repr(t.args[0]) : (project(t)[0] ?? null);
-            case "set":
-            case "union": {
-                for (const m of t.members) {
-                    const r = repr(m);
-                    if (r !== null) return r;
-                }
-                return null;
-            }
-            default:
-                return null; // var / any -- no concrete color
-        }
-    };
-    export const representativeKind = (out: Term, inp: Term): string => repr(out) ?? repr(inp) ?? "float";
-
-    /** The outermost constructor of the carried (representative) type -- "loopFor" / "array" / "" -- for a
-     *  wire's STRUCTURAL css treatment (a loopFor pipeline reads distinctly from a plain data wire), the way
-     *  a socket's shape keys off its outer ctor. Prefers the producer (out), falls back to the consumer (in). */
-    const ctorOf = (t: Term): string | null => {
-        const c = t.t === "atom" ? asCtor(t) : t;
-        if (c.t === "ctor") return c.name;
-        if (c.t === "set" || c.t === "union") {
-            for (const m of c.members) {
-                const r = ctorOf(m);
-                if (r) return r;
-            }
-        }
-        return null;
-    };
-    export const linkCtor = (out: Term, inp: Term): string => ctorOf(out) ?? ctorOf(inp) ?? "";
+    /** The wire's `data-linktype` -- the SAME spaced serialization sockets use (`toCSS`), so wires and sockets
+     *  style off ONE attr grammar (`~="color"` colors a leaf at any depth, `*=" loopFor<"` keys the outer
+     *  ctor's structural treatment). Prefers the producer (out); falls back to the consumer (in) when the
+     *  producer is contentless (an ungrounded var / wildcard / empty set carries no concrete type yet). */
+    const contentless = (t: Term): boolean => t.t === "any" || t.t === "var" || (t.t === "set" && t.members.length === 0);
+    export const linkRepresentation = (out: Term, inp: Term): string => toCSS(contentless(out) ? inp : out);
 
     /** Intersection of two rules' concrete kinds (mode from the first operand). `any` is the universe. */
     export const intersect = (a: Term, b: Term): Term => {

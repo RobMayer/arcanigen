@@ -21,7 +21,6 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const graphId = useGraphId();
     const mc = Project.useMC();
     const linkType = Project.useLinkType(graphId, link);
-    const linkCtor = Project.useLinkCtor(graphId, link);
     const [, paneControls] = useDragPaneInternal();
 
     const style = useMemo(() => {
@@ -152,7 +151,6 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 ref={ref}
                 tabIndex={-1}
                 data-linktype={linkType}
-                data-linkctor={linkCtor}
                 onKeyDown={handleKeyDown}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -162,9 +160,9 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
                         <path data-part={"target"} d="" />
+                        <path data-part={"select"} d="" />
                         <path data-part={"display"} d="" />
                         <path data-part={"effect"} d="" />
-                        <path data-part={"select"} d="" />
                     </g>
                 </svg>
                 <div data-part={"markerFrom"} ref={fromMarkerRef} />
@@ -237,7 +235,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
             &[data-part="display"] {
                 stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
-                stroke-width: 1.5px;
+                stroke-width: 2px;
             }
             &[data-part="effect"] {
                 stroke: none;
@@ -250,16 +248,26 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 cursor: pointer;
             }
             &[data-part="select"] {
-                stroke: transparent;
-                stroke-width: 2.5px;
+                stroke: #000;
+                stroke-width: 4px;
             }
         }
     }
 
-    &[data-linktype="shape"] > svg > g > path,
-    &[data-linktype="layer"] > svg > g > path {
+    /* Container shapes the wire, mirroring sockets (atomics still set the COLOR via --flavour): a singleton
+       is the default thin wire; array<...> is a thicker wire; loopFor<...> marches. The OUTER ctor is keyed
+       via the spaced serialization (the leading-space *= match), the same grammar socket shapes use.
+       shape/layer are atomics -> plain thin colored wires now (no longer special-cased). */
+    &[data-linktype*=" array<"] > svg > g > path[data-part="display"] {
+        stroke-width: 4px;
+    }
+    &[data-linktype*=" array<"] > svg > g > path[data-part="select"] {
+        stroke-width: 6px;
+    }
+
+    /* loopFor pipeline: marching ants -- BLACK ants on the colored wire (the treatment shape used to have). */
+    &[data-linktype*=" loopFor<"] > svg > g > path {
         &[data-part="display"] {
-            stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
             stroke-width: 6px;
         }
         &[data-part="effect"] {
@@ -272,34 +280,13 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             stroke-width: 4px;
         }
         &[data-part="select"] {
-            stroke-width: 7px;
-        }
-    }
-
-    /* loopFor pipeline: a marching-ant "pipe" INVERTED from shape's (shape = black ants on a colored wire;
-       loopFor = colored ants on a black pipe). Color still comes from the element via --flavour. */
-    &[data-linkctor="loopFor"] > svg > g > path {
-        &[data-part="display"] {
-            stroke: oklch(from var(--flavour) calc(l * 0.875) c h);
-            stroke-width: 6px;
-        }
-        &[data-part="effect"] {
-            --animMarch: 12px;
-            animation: ${keyframesMarch} 0.2s linear infinite reverse;
-            stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
-            stroke-linecap: round;
-            stroke-dasharray: 4px 8px;
-            stroke-dashoffset: 0px;
-            stroke-width: 4px;
-        }
-        &[data-part="select"] {
-            stroke-width: 7px;
+            stroke-width: 8px;
         }
     }
 
     &[data-state~="dropping"] > svg > g > path[data-part="select"],
     &:focus-within > svg > g > path[data-part="select"] {
-        stroke: #fff6;
+        stroke: #fff;
     }
 
     --flavour: var(--flavour-base);
@@ -313,13 +300,11 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="angle"],
     &[data-linktype~="boolean"],
     &[data-linktype~="point"],
-    &[data-linktype~="array<point>"],
     &[data-linktype~="tokens:length"] {
         --flavour: var(--flavour-accent);
     }
     &[data-linktype~="path"],
-    &[data-linktype~="pathOp"],
-    &[data-linktype~="array<pathOp>"] {
+    &[data-linktype~="pathOp"] {
         --flavour: var(--flavour-emphasis);
     }
     &[data-linktype~="gradient"],
@@ -327,12 +312,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="stop:color"],
     &[data-linktype~="stop:angle"],
     &[data-linktype~="stop:integer"],
-    &[data-linktype~="stop:length"],
-    &[data-linktype~="array<stop:float>"],
-    &[data-linktype~="array<stop:color>"],
-    &[data-linktype~="array<stop:angle>"],
-    &[data-linktype~="array<stop:integer>"],
-    &[data-linktype~="array<stop:length>"] {
+    &[data-linktype~="stop:length"] {
         --flavour: var(--flavour-info);
     }
     &[data-linktype~="sequence"] {
@@ -342,8 +322,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         --flavour: var(--flavour-help);
     }
     &[data-linktype~="shape"],
-    &[data-linktype~="layer"],
-    &[data-linktype~="array<layer>"] {
+    &[data-linktype~="layer"] {
         --flavour: var(--flavour-confirm);
     }
 `;

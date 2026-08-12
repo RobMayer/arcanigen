@@ -206,13 +206,13 @@ const PathEntry = ({
     ) => void;
     handleReorderPath: (socketId: string, toIndex: number) => void;
 }) => {
-    const theLink = Project.useLink(node.in[entry.socket]);
-    const linkType = Project.useLinkType(useGraphId(), theLink);
     const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
-    // A connected pathOp carries its own op/enabled, so freeze the row's controls (mirrors Layers).
-    const overridden = linkType === "pathOp";
+    // A connected pathOp carries its own op/enabled, so freeze the row's controls (mirrors Layers). Ask the
+    // upstream socket directly (structurally) rather than the blended link's representative kind.
+    const inbound = Project.useInboundType(useGraphId(), node, entry.socket);
+    const overridden = inbound !== null && SocketTypes.project(inbound).includes("pathOp");
 
     const handleDragStart = useCallback(
         (e: DragEvent) => {

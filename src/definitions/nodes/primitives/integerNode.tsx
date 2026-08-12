@@ -7,6 +7,7 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
+import { SocketTypes } from "../../socketTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
@@ -59,9 +60,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefi
         [methods],
     );
 
-    // Cast badge: derived LIVE from the value wire's carried kind (no persisted state).
-    const connectedKind = Project.useLinkType(useGraphId(), Project.useLink(node.in.value));
-    const isCasting = connectedKind !== "" && connectedKind !== "integer";
+    // Cast badge: derived LIVE from what the upstream socket is sending into `value` (no persisted state).
+    const inbound = Project.useInboundType(useGraphId(), node, "value");
+    const inboundKind = inbound ? (SocketTypes.project(inbound)[0] ?? "") : "";
+    const isCasting = inboundKind !== "" && inboundKind !== "integer";
 
     return (
         <TypicalNode node={node} methods={methods}>
