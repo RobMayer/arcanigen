@@ -7,9 +7,9 @@ import { TypicalNode } from "../../../features/nodeview/node";
 import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
-import { SocketTypes } from "../../socketTypes";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
+import { useGraphId } from "../../../state/graphId";
 import { Enum } from "../../datatypes/enum";
 import { extractSingle, applyRounding } from "../../helpers/mathHelper";
 import { Dropdown } from "../../../components/inputs/Dropdown";
@@ -17,8 +17,6 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const ROUNDING_MODE_OPTIONS = Enum.options(Enum.Common.roundingMode);
-
-type IntegerNode = NodeDefinitions.BuiltNodeOf<"integer", IntegerDefinition>;
 
 const def = signature({
     in: { value: $.oneOf("angle", "float", "integer", "length"), mode: "enum" },
@@ -31,7 +29,6 @@ export type IntegerDefinition = SignatureBuilder.DefinitionFrom<
         label: DataTypes.TypeOf<"string">;
         value: DataTypes.TypeOf<"integer">;
         roundingMode: number;
-        connectedKind: DataTypes.Kind | null;
     }
 >;
 
@@ -49,7 +46,6 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerDefinition>>
             label: "",
             value: "0",
             roundingMode: input.roundingMode ?? Enum.Common.roundingMode.HALF_EXPAND.value,
-            connectedKind: null,
         },
         type: "integer",
     };
@@ -63,7 +59,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerDefi
         [methods],
     );
 
-    const isCasting = node.payload.connectedKind !== null && node.payload.connectedKind !== "integer";
+    // Cast badge: derived LIVE from the value wire's carried kind (no persisted state).
+    const connectedKind = Project.useLinkType(useGraphId(), Project.useLink(node.in.value));
+    const isCasting = connectedKind !== "" && connectedKind !== "integer";
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -115,37 +113,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<IntegerDefinition>, socket: "out
     return null;
 };
 
-const setPayload = (nodeId: string, updates: Partial<IntegerDefinition["payload"]>, graphId: string, ctx: NodeTypes.MethodContext): void => {
-    const current = ctx.getNode(graphId, nodeId);
-    if (!current) return;
-    ctx.setNode(graphId, nodeId, {
-        ...current,
-        payload: { ...current.payload, ...updates },
-    });
-};
-
-const onConnect = (node: IntegerNode, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
-    if (direction !== "in") return;
-    const link = ctx.getLink(graphId, linkId);
-    if (!link || link.toSocket !== "value") return;
-    const fromNode = ctx.getNode(graphId, link.fromNode);
-    if (!fromNode) return;
-    const st = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
-    setPayload(node.id, { connectedKind: (SocketTypes.project(st)[0] as DataTypes.Kind) ?? null }, graphId, ctx);
-};
-
-const onDisconnect = (
-    node: IntegerNode,
-    link: { fromNode: string; fromSocket: string; toNode: string; toSocket: string },
-    direction: "in" | "out",
-    graphId: string,
-    ctx: NodeTypes.MethodContext,
-): void => {
-    if (direction !== "in") return;
-    if (link.toSocket !== "value") return;
-    setPayload(node.id, { connectedKind: null }, graphId, ctx);
-};
-
 export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> = {
     type: "integer",
     displayName: "Integer",
@@ -160,6 +127,4 @@ export const IntegerPrimitiveType: NodeTypes.Type<"integer", IntegerDefinition> 
     create,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    onConnect,
-    onDisconnect,
 };

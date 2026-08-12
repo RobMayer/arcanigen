@@ -742,8 +742,9 @@ export namespace Project {
 
         // Derived socket-type state no longer lives on the payload — it's regenerated into the transient
         // SocketTypeCache — and a link's carried type is computed live from its endpoints, not stored.
-        // These fields (all once typed SocketTypes.SocketRule) are dead in any pre-v8 save. None collides
-        // with a live payload field on any current node type, so a blanket delete is safe. See migrationNotes.md.
+        // These fields are dead in any pre-v8 save (`connectedKind` — the integer/length cast-badge kind,
+        // missed by the original v8 sweep and folded in here since v8 is unreleased). None collides with a
+        // live payload field on any current node type, so a blanket delete is safe. See migrationNotes.md.
         const STALE_TYPE_FIELDS = [
             "connectedType",
             "connectedTypeA",
@@ -756,6 +757,7 @@ export namespace Project {
             "connectedTypeTolerance",
             "resolvedInTypes",
             "resolvedOutTypes",
+            "connectedKind",
         ];
 
         export const normalize = (input: any): Project.SavedProject => {

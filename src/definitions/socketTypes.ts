@@ -153,7 +153,7 @@ export namespace SocketTypes {
 
     /**
      * Project a Term to the concrete Kind strings it represents — the single one-way edge projection for
-     * wire CSS / representative link color / a primitive's `connectedKind` badge. Variables and wildcards
+     * wire CSS / representative link color / a primitive's cast badge. Variables and wildcards
      * have no finite kind set and project to `[]`. It is one-way — nothing reconstructs a Term from these.
      */
     export const project = (term: Term, subst?: Subst): string[] => {
