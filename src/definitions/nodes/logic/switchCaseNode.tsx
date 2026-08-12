@@ -148,7 +148,7 @@ const contributesTo = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, inSo
 
 const evaluate = (node: NodeDefinitions.NodeFor<SwitchCaseDefinition>, socket: keyof SwitchCaseDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "result") {
-        const switchVal = context.resolve<"enum">(node.id, "switch");
+        const switchVal = context.resolve<DataTypes.Enum>(node.id, "switch");
         if (switchVal === null) {
             return context.resolve(node.id, "default");
         }

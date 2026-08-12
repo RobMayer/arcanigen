@@ -53,40 +53,44 @@ export namespace SignatureBuilder {
     };
 
     // --- type-level derivation: signature -> compile-time Definition -----------------------------
-    // A socket's compile-time type is its Kind: a concrete atomic/array kind maps to its literal `K`;
-    // a var / wildcard / not-yet-first-class ctor maps to the open `DataTypes.Kind`.
+    // A socket's compile-time type is its CONSTRUCTOR Kind: a concrete atomic maps to `DataTypes.Atomic<K>`,
+    // a concrete `$.arrayOf` to `DataTypes.ArrayOf<...>`, a `oneOf` to the union of its members. A var /
+    // wildcard / coercion-var / not-yet-first-class ctor (loopFor/bus) maps to the open `DataTypes.AnyKind`
+    // (parity — the solver's Terms carry the real precision at edit time). Shape proven in the migration spike.
 
-    type KindOf<K> = K extends DataTypes.Kind ? K : DataTypes.Kind;
-    type KindUnion<KS> = KS extends readonly (infer K)[] ? (K extends DataTypes.Kind ? K : never) : never;
-    type EvalMembers<M, A> = M extends readonly unknown[] ? EvalExpr<M[number], A> : DataTypes.Kind;
+    // Keeps `ArrayOf`'s `X extends AnyKind` bound satisfied even when the inner resolves to a bare AnyKind.
+    type ArrayOfK<X> = X extends DataTypes.AnyKind ? DataTypes.ArrayOf<X> : DataTypes.AnyKind;
+
+    type EvalMembers<M, A> = M extends readonly unknown[] ? EvalExpr<M[number], A> : DataTypes.AnyKind;
 
     type EvalArg<C> = C extends { $x: "any" }
-        ? DataTypes.Kind
+        ? DataTypes.AnyKind
         : C extends { $x: "each"; of: infer I }
           ? EvalArg<I>
           : C extends { $x: "oneOf"; members: infer M }
             ? EvalMembers<M, {}>
-            : C extends { $x: "combine"; members: infer KS }
-              ? KindUnion<KS>
-              : C extends string
-                ? KindOf<C>
-                : DataTypes.Kind;
+            : C extends { $x: "combine" }
+              ? DataTypes.AnyKind // coercion var — open (the lattice-bounded var resolves at solve time)
+              : C extends DataTypes.AtomicKind
+                ? DataTypes.Atomic<C>
+                : DataTypes.AnyKind;
 
-    export type EvalExpr<X, A> = X extends string
-        ? KindOf<X>
+    // Distributive over `X` (naked param) so a `oneOf`'s `M[number]` union maps member-wise and rejoins.
+    export type EvalExpr<X, A> = X extends DataTypes.AtomicKind
+        ? DataTypes.Atomic<X> // bare atomic string -> its constructor
         : X extends { $x: "any" }
-          ? DataTypes.Kind
+          ? DataTypes.AnyKind
           : X extends { $x: "arg"; name: infer N }
             ? N extends keyof A
                 ? EvalArg<A[N]>
-                : DataTypes.Kind
+                : DataTypes.AnyKind
             : X extends { $x: "oneOf"; members: infer M }
               ? EvalMembers<M, A>
-              : X extends { $x: "ctor"; ctor: "array"; of: infer O }
-                ? O extends string
-                    ? KindOf<`array<${O}>`> // concrete array<K> — a first-class Kind
-                    : DataTypes.Kind // var-parameterized array<T> — stays open
-                : DataTypes.Kind; // loopFor / bus — not yet first-class kinds
+              : X extends { $x: "ctor"; ctor: infer C; of: infer O }
+                ? C extends "array"
+                    ? ArrayOfK<EvalExpr<O, A>> // array<inner> — recurse (covers concrete AND var inner)
+                    : DataTypes.AnyKind // loopFor / bus — land with array-ops (spot #3)
+                : DataTypes.AnyKind;
 
     // A `"prefix_*"` socket key becomes `` `prefix_${string}` `` index signature; others stay literal.
     type SocketKey<K> = K extends `${infer P}_*` ? `${P}_${string}` : K;

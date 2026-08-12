@@ -27,7 +27,7 @@ export type MaskDefinition = SignatureBuilder.DefinitionFrom<
     {
         label: string;
         showMask: boolean;
-        maskMode: DataTypes.TypeOf<"enum">;
+        maskMode: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 
@@ -101,20 +101,20 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<MaskDefinition>, _inSocket
 
 const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof MaskDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const contentShape = context.resolve<"shape">(node.id, "content")?.data ?? null;
-        const maskShape = context.resolve<"shape">(node.id, "mask")?.data ?? null;
+        const contentShape = context.resolve<DataTypes.Shape>(node.id, "content")?.data ?? null;
+        const maskShape = context.resolve<DataTypes.Shape>(node.id, "mask")?.data ?? null;
 
         if (contentShape === null || maskShape === null) {
             return null;
         }
 
-        const showMask = context.resolve<"boolean">(node.id, "showMask")?.data ?? node.payload.showMask;
+        const showMask = context.resolve<DataTypes.Boolean>(node.id, "showMask")?.data ?? node.payload.showMask;
 
         if (showMask) {
             return { kind: "shape", data: maskShape };
         }
 
-        const maskModeEnum = context.resolve<"enum">(node.id, "maskMode")?.data ?? node.payload.maskMode;
+        const maskModeEnum = context.resolve<DataTypes.Enum>(node.id, "maskMode")?.data ?? node.payload.maskMode;
 
         const mode = Enum.keyOf(Enum.Common.maskMode, maskModeEnum) === "LUMINANCE" ? "luminance" : "alpha";
 
@@ -135,8 +135,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
     return null;
 };
 
-const SHAPE_RULE_IN: SocketTypes.Term = SocketTypes.of("shape");
-const SHAPE_RULE_OUT: SocketTypes.Term = SocketTypes.of("shape");
+const SHAPE_RULE_IN: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
+const SHAPE_RULE_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
 
 export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     type: "mask",

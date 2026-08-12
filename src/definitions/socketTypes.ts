@@ -393,14 +393,19 @@ export namespace SocketTypes {
      *  `toRepresentation` renders it as the token "any". */
     export const ANY: Term = any();
 
-    /** Single-kind rule (Kind-typed sugar over `atom`). */
-    export const of = (kind: DataTypes.Kind): Term => atom(kind);
+    /** Build a Term from a kind TOKEN. Recurses structurally over constructor tokens (`arrayOf(LAYER)` ->
+     *  `ctor("array", atom("layer"))`) so a Token becomes a Term with no stringify-then-parse at the bridge.
+     *  (`loopFor` tokens fall through to a flat atom until loopFor is a first-class Term ctor -- array-ops.) */
+    export const of = (token: DataTypes.Token<DataTypes.AnyKind>): Term => (token.ctor === "array" && token.inner ? ctor("array", of(token.inner)) : atom(token.tag));
+
+    // Canonical member order by tag (set equality is order-independent; this is just for stability).
+    const byTag = (a: DataTypes.Token<DataTypes.AnyKind>, b: DataTypes.Token<DataTypes.AnyKind>): number => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0);
 
     /** Conjunctive rule -- "all of these". */
-    export const and = (...kinds: DataTypes.Kind[]): Term => set("and", ...[...kinds].sort().map((k) => atom(k)));
+    export const and = (...tokens: DataTypes.Token<DataTypes.AnyKind>[]): Term => set("and", ...[...tokens].sort(byTag).map(of));
 
     /** Disjunctive rule -- "one of these". */
-    export const or = (...kinds: DataTypes.Kind[]): Term => set("or", ...[...kinds].sort().map((k) => atom(k)));
+    export const or = (...tokens: DataTypes.Token<DataTypes.AnyKind>[]): Term => set("or", ...[...tokens].sort(byTag).map(of));
 
     // --- Display representation (Term -> { attr, title }) ----------------------------------------
 
@@ -471,7 +476,7 @@ export namespace SocketTypes {
             ...project(a)
                 .filter((k) => kb.has(k))
                 .sort()
-                .map((k) => atom(k as DataTypes.Kind)),
+                .map((k) => atom(k)),
         );
     };
 

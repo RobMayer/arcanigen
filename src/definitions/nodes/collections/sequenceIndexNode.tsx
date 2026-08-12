@@ -71,7 +71,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, 
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, socket: keyof SequenceIndexDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const sequenceEval = context.resolve<"sequence">(node.id, "sequence");
+    const sequenceEval = context.resolve<DataTypes.Sequence>(node.id, "sequence");
     if (!sequenceEval) return null;
 
     const { senderId, count } = sequenceEval.data;

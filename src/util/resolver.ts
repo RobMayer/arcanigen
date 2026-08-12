@@ -87,7 +87,7 @@ export namespace Resolver {
     export type Context = {
         graphId: string;
         cursorData: CursorData;
-        resolve: <K extends DataTypes.Kind>(nodeId: string, inSocket: string, cursorData?: CursorData) => DataTypes.EvalOf<K> | null;
+        resolve: <K extends DataTypes.Kind = DataTypes.ConcreteKind>(nodeId: string, inSocket: string, cursorData?: CursorData) => DataTypes.EvalOf<K> | null;
         subgraph: (
             graphId: string,
             outputNodeId: string,
@@ -95,7 +95,7 @@ export namespace Resolver {
             innerCursorData: CursorData,
         ) => DataTypes.AnyEval | null;
         /** For Input nodes: retrieves the value provided by the parent Custom node. Undefined when editing a subgraph directly. */
-        getInput?: <K extends DataTypes.Kind>(inputNodeId: string) => DataTypes.EvalOf<K> | undefined;
+        getInput?: <K extends DataTypes.Kind = DataTypes.ConcreteKind>(inputNodeId: string) => DataTypes.EvalOf<K> | undefined;
         /** Look up a node by graphId and nodeId */
         getNode: (graphId: string, nodeId: string) => NodeDefinitions.NodeFor<NodeDefinitions.Any> | undefined;
     };

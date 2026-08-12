@@ -21,8 +21,8 @@ const def = signature({
 export type RandomSeedDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        seed: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        seed: DataTypes.TypeOf<DataTypes.Integer>;
     }
 >;
 

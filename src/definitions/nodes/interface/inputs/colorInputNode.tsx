@@ -26,9 +26,9 @@ const def = signature({
 export type ColorInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"color">;
-        widget: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.Color>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
         alpha: boolean;
         required: boolean;
         socketed: boolean;
@@ -113,7 +113,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ColorInputDefinition>, _in
 
 const evaluate = (node: NodeDefinitions.NodeFor<ColorInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"color">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Color>(node.id);
         return {
             kind: "color",
             data: providedInput?.data ?? node.payload.initialValue,

@@ -55,8 +55,8 @@ export type ColorIterator2Definition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        colorSpace: DataTypes.TypeOf<"enum">;
-        angleTraversal: DataTypes.TypeOf<"enum">;
+        colorSpace: DataTypes.TypeOf<DataTypes.Enum>;
+        angleTraversal: DataTypes.TypeOf<DataTypes.Enum>;
         stops: { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
     } & IterationPrefab.Definition["payload"]
 >;
@@ -386,14 +386,14 @@ const DragGrip = styled.div`
 // Resolve the effective stops: the supersocket (an array<stop:color>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop:color) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop:color>">(node.id, "stops");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopColor>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop:color">(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.StopColor>(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,
@@ -457,8 +457,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIterator2Definition>, socke
         return null;
     }
 
-    const colorSpaceValue = Enum.resolve(context.resolve<"enum">(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
-    const angleTraversalValue = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? 0;
+    const colorSpaceValue = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
+    const angleTraversalValue = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? 0;
 
     const active = resolveStops(node, context).filter((s): s is { value: NonNullable<Color.Type>; position: number; enabled: boolean } => s.enabled && s.value !== null);
     if (active.length === 0) return null;

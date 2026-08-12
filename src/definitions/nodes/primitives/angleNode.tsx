@@ -23,9 +23,9 @@ const def = signature({
 export type AngleDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"angle">;
-        wraps: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.Angle>;
+        wraps: DataTypes.TypeOf<DataTypes.Boolean>;
     }
 >;
 

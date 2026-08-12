@@ -20,7 +20,7 @@ const def = signature({
 export type ArrayStopIntegerOutputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 

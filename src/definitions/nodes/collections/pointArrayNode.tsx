@@ -307,14 +307,14 @@ const DragGrip = styled.div`
 // Resolve the effective points: the supersocket (an array<point>) overrides everything; otherwise
 // fold each per-point socket (a connected point) over its inline authoring fields.
 const resolvePoints = (node: NodeDefinitions.NodeFor<PointArrayDefinition>, context: Resolver.Context): { x: number; y: number }[] => {
-    const supersocketEval = context.resolve<"array<point>">(node.id, "points");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Point>>(node.id, "points");
     if (supersocketEval) {
         return supersocketEval.data.map((p) => ({ x: p.x, y: p.y }));
     }
 
     const resolved: { x: number; y: number }[] = [];
     for (const entry of node.payload.points) {
-        const connected = context.resolve<"point">(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.Point>(node.id, entry.socket);
         if (connected) {
             resolved.push({ x: connected.data.x, y: connected.data.y });
         } else {

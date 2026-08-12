@@ -47,8 +47,8 @@ export type AngleIterator2Definition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        angleTraversal: DataTypes.TypeOf<"enum">;
-        continuity: DataTypes.TypeOf<"enum">;
+        angleTraversal: DataTypes.TypeOf<DataTypes.Enum>;
+        continuity: DataTypes.TypeOf<DataTypes.Enum>;
         stops: { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
     } & IterationPrefab.Definition["payload"]
 >;
@@ -373,14 +373,14 @@ const DragGrip = styled.div`
 // Resolve the effective stops: the supersocket (an array<stop:angle>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop:angle) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop:angle>">(node.id, "stops");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopAngle>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: number; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop:angle">(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.StopAngle>(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
@@ -444,8 +444,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socke
         return null;
     }
 
-    const traversal = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value;
-    const continuity = Enum.resolve(context.resolve<"enum">(node.id, "continuity")?.data, Enum.Common.angleContinuity) ?? node.payload.continuity ?? Enum.Common.angleContinuity.CONTINUOUS.value;
+    const traversal = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value;
+    const continuity = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "continuity")?.data, Enum.Common.angleContinuity) ?? node.payload.continuity ?? Enum.Common.angleContinuity.CONTINUOUS.value;
     const cyclical = continuity === Enum.Common.angleContinuity.CYCLICAL.value;
 
     const active = resolveStops(node, context).filter((s) => s.enabled);

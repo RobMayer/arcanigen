@@ -20,8 +20,8 @@ const def = signature({
 export type ColorDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"color">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.Color>;
     }
 >;
 
@@ -76,7 +76,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorDefinition>, socket: "outpu
     if (socket === "output") {
         return {
             kind: "color",
-            data: context.resolve<"color">(node.id, "value")?.data ?? node.payload.value,
+            data: context.resolve<DataTypes.Color>(node.id, "value")?.data ?? node.payload.value,
         };
     }
     return null;

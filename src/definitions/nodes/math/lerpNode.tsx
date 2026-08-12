@@ -26,7 +26,7 @@ export type LerpDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        t: DataTypes.TypeOf<"float">;
+        t: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 

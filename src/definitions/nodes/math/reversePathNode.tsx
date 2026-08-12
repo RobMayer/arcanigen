@@ -21,13 +21,13 @@ const def = signature({
 export type ReversePathDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
-const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
+const PATH_IN: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+const PATH_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ReversePathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"reversePath", ReversePathDefinition> => {
     return {
@@ -69,7 +69,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ReversePathDefinition>, in
 const evaluate = (node: NodeDefinitions.NodeFor<ReversePathDefinition>, socket: keyof ReversePathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
     const reversed = PaperHelper.reverseD(pathData.d);

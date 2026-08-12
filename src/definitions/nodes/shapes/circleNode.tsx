@@ -29,8 +29,8 @@ const def = signature({
 export type CircleDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        radius: DataTypes.TypeOf<"length">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -129,7 +129,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<CircleDefinition>, inSocke
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof CircleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px"));
     if (!radius) {
         return null;
     }

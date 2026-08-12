@@ -23,7 +23,7 @@ export type TokenizerLengthDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        tokens: { socket: string; value: DataTypes.TypeOf<"length"> }[];
+        tokens: { socket: string; value: DataTypes.TypeOf<DataTypes.Length> }[];
     }
 >;
 
@@ -51,7 +51,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokenizerLe
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleTokenUpdate = useCallback(
-        (socket: string, update: Partial<{ value: DataTypes.TypeOf<"length"> }>) => {
+        (socket: string, update: Partial<{ value: DataTypes.TypeOf<DataTypes.Length> }>) => {
             methods.update<NodeDefinitions.PayloadTypeOf<TokenizerLengthDefinition>>({
                 tokens: node.payload.tokens.map((t) => (t.socket === socket ? { ...t, ...update } : t)),
             });
@@ -153,12 +153,12 @@ const TokenEntry = ({
 }: {
     entry: {
         socket: string;
-        value: DataTypes.TypeOf<"length">;
+        value: DataTypes.TypeOf<DataTypes.Length>;
     };
     node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>;
     index: number;
     handleRemoveToken: (socket: string) => void;
-    handleTokenUpdate: (socket: string, update: Partial<{ value: DataTypes.TypeOf<"length"> }>) => void;
+    handleTokenUpdate: (socket: string, update: Partial<{ value: DataTypes.TypeOf<DataTypes.Length> }>) => void;
     handleReorderToken: (socketId: string, toIndex: number) => void;
 }) => {
     const theLink = Project.useLink(node.in[entry.socket]);
@@ -287,7 +287,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, sock
         for (const row of node.payload.tokens) {
             // Wired socket overrides the inline value; a null/empty result is skipped.
             const linkId = node.in[row.socket];
-            const val = linkId != null ? (context.resolve<"length">(node.id, row.socket)?.data ?? null) : row.value;
+            const val = linkId != null ? (context.resolve<DataTypes.Length>(node.id, row.socket)?.data ?? null) : row.value;
             if (val) parts.push(val);
         }
 

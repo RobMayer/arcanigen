@@ -42,15 +42,15 @@ const def = signature({
 export type ArcDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        radius: DataTypes.TypeOf<"length">;
-        arcMode: DataTypes.TypeOf<"enum">;
-        thetaStart: DataTypes.TypeOf<"angle">;
-        sweep: DataTypes.TypeOf<"angle">;
-        thetaFrom: DataTypes.TypeOf<"angle">;
-        thetaTo: DataTypes.TypeOf<"angle">;
-        pieSlice: DataTypes.TypeOf<"boolean">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        arcMode: DataTypes.TypeOf<DataTypes.Enum>;
+        thetaStart: DataTypes.TypeOf<DataTypes.Angle>;
+        sweep: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
+        pieSlice: DataTypes.TypeOf<DataTypes.Boolean>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -234,25 +234,25 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ArcDefinition>, inSocket: 
 const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 
 const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof ArcDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px"));
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px"));
     if (!radius) {
         return null;
     }
 
-    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
-    const pieSlice = context.resolve<"boolean">(node.id, "pieSlice")?.data ?? node.payload.pieSlice ?? false;
+    const arcMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
+    const pieSlice = context.resolve<DataTypes.Boolean>(node.id, "pieSlice")?.data ?? node.payload.pieSlice ?? false;
 
     let effectiveStart: number;
     let effectiveSweep: number;
 
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
-        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        const from = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
         effectiveSweep = to - from;
     } else {
-        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
     effectiveSweep = Math.max(-360, Math.min(360, effectiveSweep));
@@ -309,9 +309,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
             paint.fill = null;
         }
 
-        const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
-        const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStartShape")?.data;
+        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEndShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
         const useStartMarker = !pieSlice && !!markerStartShape;
         const useEndMarker = !pieSlice && !!markerEndShape;
 

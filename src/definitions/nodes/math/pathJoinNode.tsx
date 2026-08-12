@@ -21,13 +21,13 @@ const def = signature({
 export type PathJoinDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
-const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
+const PATH_IN: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+const PATH_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathJoinDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathJoin", PathJoinDefinition> => {
     return {
@@ -74,8 +74,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathJoinDefinition>, socket: key
     if (socket !== "output") return null;
 
     // Join keeps both paths intact, so a single connected path is a valid result on its own.
-    const pathAData = context.resolve<"path">(node.id, "pathA")?.data ?? null;
-    const pathBData = context.resolve<"path">(node.id, "pathB")?.data ?? null;
+    const pathAData = context.resolve<DataTypes.Path>(node.id, "pathA")?.data ?? null;
+    const pathBData = context.resolve<DataTypes.Path>(node.id, "pathB")?.data ?? null;
 
     return PaperHelper.join([pathAData, pathBData]);
 };

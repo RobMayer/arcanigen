@@ -25,9 +25,9 @@ const def = signature({
 export type EnumInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        widget: DataTypes.TypeOf<"enum">;
-        initialValue: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
+        initialValue: DataTypes.TypeOf<DataTypes.Enum>;
         options: string[];
         socketed: boolean;
     }
@@ -146,7 +146,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<EnumInputDefinition>, _inS
 
 const evaluate = (node: NodeDefinitions.NodeFor<EnumInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"enum">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Enum>(node.id);
         return {
             kind: "enum",
             data: providedInput?.data ?? node.payload.initialValue,

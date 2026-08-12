@@ -21,13 +21,13 @@ const def = signature({
 export type PathUnifyDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
-const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
+const PATH_IN: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+const PATH_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathUnifyDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathUnify", PathUnifyDefinition> => {
     return {
@@ -73,10 +73,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathUnifyDefinition>, inSo
 const evaluate = (node: NodeDefinitions.NodeFor<PathUnifyDefinition>, socket: keyof PathUnifyDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathAData = context.resolve<"path">(node.id, "pathA")?.data;
+    const pathAData = context.resolve<DataTypes.Path>(node.id, "pathA")?.data;
     if (!pathAData) return null;
 
-    const pathBData = context.resolve<"path">(node.id, "pathB")?.data;
+    const pathBData = context.resolve<DataTypes.Path>(node.id, "pathB")?.data;
     if (!pathBData) return null;
 
     return PaperHelper.unify(pathAData, pathBData);

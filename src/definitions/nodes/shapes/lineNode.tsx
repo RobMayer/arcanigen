@@ -44,18 +44,18 @@ const def = signature({
 export type LineDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        startMode: DataTypes.TypeOf<"enum">;
-        startX: DataTypes.TypeOf<"length">;
-        startY: DataTypes.TypeOf<"length">;
-        startRadius: DataTypes.TypeOf<"length">;
-        startTheta: DataTypes.TypeOf<"angle">;
-        endMode: DataTypes.TypeOf<"enum">;
-        endX: DataTypes.TypeOf<"length">;
-        endY: DataTypes.TypeOf<"length">;
-        endRadius: DataTypes.TypeOf<"length">;
-        endTheta: DataTypes.TypeOf<"angle">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        startMode: DataTypes.TypeOf<DataTypes.Enum>;
+        startX: DataTypes.TypeOf<DataTypes.Length>;
+        startY: DataTypes.TypeOf<DataTypes.Length>;
+        startRadius: DataTypes.TypeOf<DataTypes.Length>;
+        startTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        endMode: DataTypes.TypeOf<DataTypes.Enum>;
+        endX: DataTypes.TypeOf<DataTypes.Length>;
+        endY: DataTypes.TypeOf<DataTypes.Length>;
+        endRadius: DataTypes.TypeOf<DataTypes.Length>;
+        endTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -271,17 +271,17 @@ const resolvePoint = (mode: number, x: number, y: number, radius: number, theta:
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof LineDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const startMode = Enum.resolve(context.resolve<"enum">(node.id, "startMode")?.data, Enum.Common.positionMode) ?? node.payload.startMode;
-    const startX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
-    const startY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
-    const startRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
-    const startTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
+    const startMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "startMode")?.data, Enum.Common.positionMode) ?? node.payload.startMode;
+    const startX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
+    const startY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
+    const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
+    const startTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
 
-    const endMode = Enum.resolve(context.resolve<"enum">(node.id, "endMode")?.data, Enum.Common.positionMode) ?? node.payload.endMode;
-    const endX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
-    const endY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
-    const endRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
-    const endTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
+    const endMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "endMode")?.data, Enum.Common.positionMode) ?? node.payload.endMode;
+    const endX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
+    const endY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
+    const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
+    const endTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
 
     const [sx, sy] = resolvePoint(startMode, startX, startY, startRadius, startTheta);
     const [ex, ey] = resolvePoint(endMode, endX, endY, endRadius, endTheta);
@@ -308,9 +308,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
         const paint = StylingPrefab.evaluate(node, context);
         paint.fill = null;
 
-        const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
-        const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStartShape")?.data;
+        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEndShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const markers =
             markerStartShape || markerEndShape

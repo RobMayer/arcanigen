@@ -23,10 +23,10 @@ const def = signature({
 export type DistributionNodeDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        func: DataTypes.TypeOf<"enum">;
-        easing: DataTypes.TypeOf<"enum">;
-        intensity: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        func: DataTypes.TypeOf<DataTypes.Enum>;
+        easing: DataTypes.TypeOf<DataTypes.Enum>;
+        intensity: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -130,9 +130,9 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<DistributionNodeDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const func = Enum.resolve(context.resolve<"enum">(node.id, "func")?.data, Enum.Common.distroFunctions) ?? node.payload.func;
-        const easing = Enum.resolve(context.resolve<"enum">(node.id, "easing")?.data, Enum.Common.distroEasing) ?? node.payload.easing;
-        const intensity = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "intensity")?.data ?? node.payload.intensity) ?? 100;
+        const func = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "func")?.data, Enum.Common.distroFunctions) ?? node.payload.func;
+        const easing = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "easing")?.data, Enum.Common.distroEasing) ?? node.payload.easing;
+        const intensity = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "intensity")?.data ?? node.payload.intensity) ?? 100;
         return {
             kind: "distribution",
             data: { func, easing, intensity: `${intensity / 100}` },

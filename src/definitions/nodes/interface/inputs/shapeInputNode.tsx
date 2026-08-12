@@ -21,7 +21,7 @@ const def = signature({
 export type ShapeInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
         socketed: boolean;
     }
 >;
@@ -68,7 +68,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ShapeInputDefinition>, _in
 
 const evaluate = (node: NodeDefinitions.NodeFor<ShapeInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"shape">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Shape>(node.id);
         if (providedInput) return providedInput;
     }
     return null;

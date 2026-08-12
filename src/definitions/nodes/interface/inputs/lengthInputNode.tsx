@@ -26,13 +26,13 @@ const def = signature({
 export type LengthInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"length">;
-        widget: DataTypes.TypeOf<"enum">;
-        min: DataTypes.TypeOf<"length">;
-        max: DataTypes.TypeOf<"length">;
-        step: DataTypes.TypeOf<"length">;
-        snap: DataTypes.TypeOf<"length">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.Length>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
+        min: DataTypes.TypeOf<DataTypes.Length>;
+        max: DataTypes.TypeOf<DataTypes.Length>;
+        step: DataTypes.TypeOf<DataTypes.Length>;
+        snap: DataTypes.TypeOf<DataTypes.Length>;
         socketed: boolean;
     }
 >;
@@ -119,7 +119,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LengthInputDefinition>, _i
 
 const evaluate = (node: NodeDefinitions.NodeFor<LengthInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"length">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Length>(node.id);
         let data = providedInput?.data ?? node.payload.initialValue;
         let v = Length.Emptyable.asNumber(data);
         if (v !== null) {

@@ -26,13 +26,13 @@ const def = signature({
 export type IntegerInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"integer">;
-        widget: DataTypes.TypeOf<"enum">;
-        min: DataTypes.TypeOf<"integer">;
-        max: DataTypes.TypeOf<"integer">;
-        step: DataTypes.TypeOf<"integer">;
-        snap: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.Integer>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
+        min: DataTypes.TypeOf<DataTypes.Integer>;
+        max: DataTypes.TypeOf<DataTypes.Integer>;
+        step: DataTypes.TypeOf<DataTypes.Integer>;
+        snap: DataTypes.TypeOf<DataTypes.Integer>;
         socketed: boolean;
     }
 >;
@@ -119,7 +119,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerInputDefinition>, _
 
 const evaluate = (node: NodeDefinitions.NodeFor<IntegerInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"integer">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Integer>(node.id);
         let data = providedInput?.data ?? node.payload.initialValue;
         let v = NumericString.Emptyable.asNumber(data);
         if (v !== null) {

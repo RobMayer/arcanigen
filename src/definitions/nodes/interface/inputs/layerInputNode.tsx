@@ -21,7 +21,7 @@ const def = signature({
 export type LayerInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -66,7 +66,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LayerInputDefinition>, _in
 
 const evaluate = (node: NodeDefinitions.NodeFor<LayerInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"layer">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Layer>(node.id);
         if (providedInput) return providedInput;
     }
     return null;

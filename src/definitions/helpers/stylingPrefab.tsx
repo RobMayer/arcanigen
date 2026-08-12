@@ -36,30 +36,30 @@ export namespace StylingPrefab {
     export type Definition = {
         inputs: {
             // stroke
-            strokeWidth: "length";
-            strokeColor: "color";
-            strokeCap: "enum";
-            strokeJoin?: "enum";
-            strokeDash: "tokens:length";
-            strokeDashOffset: "length";
+            strokeWidth: DataTypes.Length;
+            strokeColor: DataTypes.Color;
+            strokeCap: DataTypes.Enum;
+            strokeJoin?: DataTypes.Enum;
+            strokeDash: DataTypes.TokensLength;
+            strokeDashOffset: DataTypes.Length;
             // fill
-            fillColor?: "color";
-            paintOrder: "enum";
-            opacity: "float" | "integer";
+            fillColor?: DataTypes.Color;
+            paintOrder: DataTypes.Enum;
+            opacity: DataTypes.Float | DataTypes.Integer;
         };
         outputs: NodeDefinitions.Generic["outputs"];
         payload: {
             // stroke
-            strokeWidth: DataTypes.TypeOf<"length">;
-            strokeColor: DataTypes.TypeOf<"color">;
-            strokeCap: DataTypes.TypeOf<"enum">;
-            strokeDash: DataTypes.TypeOf<"tokens:length">;
-            strokeDashOffset: DataTypes.TypeOf<"length">;
-            strokeJoin?: DataTypes.TypeOf<"enum">;
+            strokeWidth: DataTypes.TypeOf<DataTypes.Length>;
+            strokeColor: DataTypes.TypeOf<DataTypes.Color>;
+            strokeCap: DataTypes.TypeOf<DataTypes.Enum>;
+            strokeDash: DataTypes.TypeOf<DataTypes.TokensLength>;
+            strokeDashOffset: DataTypes.TypeOf<DataTypes.Length>;
+            strokeJoin?: DataTypes.TypeOf<DataTypes.Enum>;
             // fill
-            fillColor?: DataTypes.TypeOf<"color">;
-            paintOrder: DataTypes.TypeOf<"enum">;
-            opacity: DataTypes.TypeOf<"float">;
+            fillColor?: DataTypes.TypeOf<DataTypes.Color>;
+            paintOrder: DataTypes.TypeOf<DataTypes.Enum>;
+            opacity: DataTypes.TypeOf<DataTypes.Float>;
         };
     };
 
@@ -138,7 +138,7 @@ export namespace StylingPrefab {
     };
 
     const resolvePaintValue = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context, socket: "fillColor" | "strokeColor", fallback: Color.Type | undefined): Fill => {
-        const ev = context.resolve<"color" | "gradient">(node.id, socket);
+        const ev = context.resolve<DataTypes.Color | DataTypes.Gradient>(node.id, socket);
         if (ev?.kind === "gradient") return ev.data;
         const color = (ev?.kind === "color" ? ev.data : undefined) ?? fallback ?? null;
         return color === null ? null : Color.toHex(color);
@@ -146,18 +146,18 @@ export namespace StylingPrefab {
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): Paint => {
         const strokeColor = resolvePaintValue(node, context, "strokeColor", node.payload.strokeColor);
-        const strokeWidth = context.resolve<"length">(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
-        const strokeCap = Enum.resolve(context.resolve<"enum">(node.id, "strokeCap")?.data, Enum.Common.strokeCap) ?? node.payload.strokeCap;
-        const strokeJoin = Enum.resolve(context.resolve<"enum">(node.id, "strokeJoin")?.data, Enum.Common.strokeJoin) ?? node.payload.strokeJoin ?? 0;
-        const strokeDash = context.resolve<"tokens:length">(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
-        const strokeDashOffset = context.resolve<"length">(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
+        const strokeWidth = context.resolve<DataTypes.Length>(node.id, "strokeWidth")?.data ?? node.payload.strokeWidth;
+        const strokeCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "strokeCap")?.data, Enum.Common.strokeCap) ?? node.payload.strokeCap;
+        const strokeJoin = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "strokeJoin")?.data, Enum.Common.strokeJoin) ?? node.payload.strokeJoin ?? 0;
+        const strokeDash = context.resolve<DataTypes.TokensLength>(node.id, "strokeDash")?.data ?? node.payload.strokeDash;
+        const strokeDashOffset = context.resolve<DataTypes.Length>(node.id, "strokeDashOffset")?.data ?? node.payload.strokeDashOffset;
 
         const fill = resolvePaintValue(node, context, "fillColor", node.payload.fillColor);
 
         const cap = Resolver.EnumMappings.strokeCap[strokeCap] ?? "butt";
         const join = Resolver.EnumMappings.strokeJoin[strokeJoin] ?? "butt";
         const paintOrder =
-            Resolver.EnumMappings.paintOrder[Enum.resolve(context.resolve<"enum">(node.id, "paintOrder")?.data, Enum.Common.paintOrder) ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
+            Resolver.EnumMappings.paintOrder[Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "paintOrder")?.data, Enum.Common.paintOrder) ?? node.payload.paintOrder ?? 0] ?? "fill stroke markers";
 
         // Convert stroke dash to pixel values
         const dashArray = strokeDash
@@ -168,7 +168,7 @@ export namespace StylingPrefab {
                   .join(" ")
             : undefined;
 
-        const opacityRaw = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "opacity")?.data ?? node.payload.opacity) ?? 100;
+        const opacityRaw = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "opacity")?.data ?? node.payload.opacity) ?? 100;
         const opacity = Math.max(0, Math.min(100, opacityRaw)) / 100;
 
         const paint: Paint = {

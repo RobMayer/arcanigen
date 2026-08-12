@@ -25,7 +25,7 @@ export type LengthStopBreakoutDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        value: DataTypes.TypeOf<"length">;
+        value: DataTypes.TypeOf<DataTypes.Length>;
         position: EmptyOr<NumericString.Type>;
         enabled: boolean;
     }
@@ -106,9 +106,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthStopBreakoutDefinition>, s
     if (socket !== "output") {
         return null;
     }
-    const valStr = context.resolve<"length">(node.id, "value")?.data ?? node.payload.value;
-    const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
-    const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
+    const valStr = context.resolve<DataTypes.Length>(node.id, "value")?.data ?? node.payload.value;
+    const posStr = context.resolve<DataTypes.Float>(node.id, "position")?.data ?? node.payload.position;
+    const enabled = context.resolve<DataTypes.Boolean>(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
         kind: "stop:length",
         data: {

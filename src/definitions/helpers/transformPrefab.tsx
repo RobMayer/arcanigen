@@ -24,21 +24,21 @@ export namespace TransformPrefab {
 
     export type Definition = {
         inputs: {
-            positionMode: "enum";
-            positionX: "length";
-            positionY: "length";
-            positionRadius: "length";
-            positionTheta: "angle";
-            rotation: "angle";
+            positionMode: DataTypes.Enum;
+            positionX: DataTypes.Length;
+            positionY: DataTypes.Length;
+            positionRadius: DataTypes.Length;
+            positionTheta: DataTypes.Angle;
+            rotation: DataTypes.Angle;
         };
         outputs: NodeDefinitions.Generic["outputs"];
         payload: {
-            positionMode: DataTypes.TypeOf<"enum">;
-            positionX: DataTypes.TypeOf<"length">;
-            positionY: DataTypes.TypeOf<"length">;
-            positionRadius: DataTypes.TypeOf<"length">;
-            positionTheta: DataTypes.TypeOf<"angle">;
-            rotation: DataTypes.TypeOf<"angle">;
+            positionMode: DataTypes.TypeOf<DataTypes.Enum>;
+            positionX: DataTypes.TypeOf<DataTypes.Length>;
+            positionY: DataTypes.TypeOf<DataTypes.Length>;
+            positionRadius: DataTypes.TypeOf<DataTypes.Length>;
+            positionTheta: DataTypes.TypeOf<DataTypes.Angle>;
+            rotation: DataTypes.TypeOf<DataTypes.Angle>;
         };
     };
 
@@ -92,12 +92,12 @@ export namespace TransformPrefab {
     };
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context) => {
-        const positionMode = Enum.resolve(context.resolve<"enum">(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
-        const positionX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
-        const positionY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
-        const positionRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
-        const positionTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
-        const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
+        const positionMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
+        const positionX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
+        const positionY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
+        const positionRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
+        const positionTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+        const rotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
 
         let translateX: number;
         let translateY: number;

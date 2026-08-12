@@ -26,9 +26,9 @@ const def = signature({
 export type PaintInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"color">;
-        widget: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.Color>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
         alpha: boolean;
         required: boolean;
         socketed: boolean;

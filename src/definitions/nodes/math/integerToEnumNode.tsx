@@ -62,7 +62,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<IntegerToEnumDefinition>, 
 
 const evaluate = (node: NodeDefinitions.NodeFor<IntegerToEnumDefinition>, socket: keyof IntegerToEnumDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const input = context.resolve<"integer">(node.id, "input");
+        const input = context.resolve<DataTypes.Integer>(node.id, "input");
         if (input === null) return null;
         const { value } = extractSingle(input.kind, input.data);
         return { kind: "enum", data: Math.trunc(value) };

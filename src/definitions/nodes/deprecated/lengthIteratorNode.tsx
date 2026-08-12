@@ -38,7 +38,7 @@ export type LengthIteratorDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        stops: { id: string; value: DataTypes.TypeOf<"length">; position: EmptyOr<NumericString.Type> }[];
+        stops: { id: string; value: DataTypes.TypeOf<DataTypes.Length>; position: EmptyOr<NumericString.Type> }[];
     } & IterationPrefab.Definition["payload"]
 >;
 
@@ -125,7 +125,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
     );
 
     const handleStopValue = useCallback(
-        (stopId: string, value: DataTypes.TypeOf<"length">) => {
+        (stopId: string, value: DataTypes.TypeOf<DataTypes.Length>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.id === stopId ? { ...s, value } : s)),
             });
@@ -240,8 +240,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<LengthIteratorDefinition>, socke
     // Resolve all stops — parse lengths and convert to the first stop's unit
     const rawStops: { lengthStr: string; position: number }[] = [];
     for (const stop of stops) {
-        const valStr = context.resolve<"length">(node.id, `value_${stop.id}`)?.data ?? stop.value;
-        const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
+        const valStr = context.resolve<DataTypes.Length>(node.id, `value_${stop.id}`)?.data ?? stop.value;
+        const posStr = context.resolve<DataTypes.Float>(node.id, `pos_${stop.id}`)?.data ?? stop.position;
         const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
         rawStops.push({ lengthStr: valStr, position: pos });
     }

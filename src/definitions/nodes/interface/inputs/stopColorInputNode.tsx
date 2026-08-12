@@ -21,7 +21,7 @@ const def = signature({
 export type StopColorInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -70,7 +70,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<StopColorInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"stop:color">(node.id);
+        const providedInput = context.getInput?.<DataTypes.StopColor>(node.id);
         if (providedInput) return providedInput;
     }
     return null;

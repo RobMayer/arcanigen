@@ -24,7 +24,7 @@ export type LayerComposeDefinition = SignatureBuilder.DefinitionFrom<
     {
         label: string;
         enabled: boolean;
-        blend: DataTypes.TypeOf<"enum">;
+        blend: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 
@@ -94,15 +94,15 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LayerComposeDefinition>, _
 
 const evaluate = (node: NodeDefinitions.NodeFor<LayerComposeDefinition>, socket: keyof LayerComposeDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const shapeEval = context.resolve<"shape">(node.id, "shape");
+        const shapeEval = context.resolve<DataTypes.Shape>(node.id, "shape");
         const shape = shapeEval?.data ?? null;
 
         if (shape === null) {
             return null;
         }
 
-        const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
-        const blend = Enum.resolve(context.resolve<"enum">(node.id, "blend")?.data, Enum.Common.blendMode) ?? node.payload.blend;
+        const enabled = context.resolve<DataTypes.Boolean>(node.id, "enabled")?.data ?? node.payload.enabled;
+        const blend = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "blend")?.data, Enum.Common.blendMode) ?? node.payload.blend;
 
         return {
             kind: "layer",

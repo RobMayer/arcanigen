@@ -27,13 +27,13 @@ const def = signature({
 export type AngleInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"angle">;
-        widget: DataTypes.TypeOf<"enum">;
-        min: DataTypes.TypeOf<"angle">;
-        max: DataTypes.TypeOf<"angle">;
-        step: DataTypes.TypeOf<"angle">;
-        snap: DataTypes.TypeOf<"angle">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.Angle>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
+        min: DataTypes.TypeOf<DataTypes.Angle>;
+        max: DataTypes.TypeOf<DataTypes.Angle>;
+        step: DataTypes.TypeOf<DataTypes.Angle>;
+        snap: DataTypes.TypeOf<DataTypes.Angle>;
         wraps: boolean;
         socketed: boolean;
     }
@@ -127,7 +127,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AngleInputDefinition>, _in
 
 const evaluate = (node: NodeDefinitions.NodeFor<AngleInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"angle">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Angle>(node.id);
         let data = providedInput?.data ?? node.payload.initialValue;
         let v = NumericString.Emptyable.asNumber(data);
         if (v !== null) {

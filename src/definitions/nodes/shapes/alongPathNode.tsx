@@ -39,14 +39,14 @@ const def = signature({
 export type AlongPathDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        memberAlign: DataTypes.TypeOf<"boolean">;
-        memberRotation: DataTypes.TypeOf<"angle">;
-        overflowMode: DataTypes.TypeOf<"enum">;
-        offsetMode: DataTypes.TypeOf<"enum">;
-        offsetPercent: DataTypes.TypeOf<"float">;
-        offsetLength: DataTypes.TypeOf<"length">;
-        offsetOrigin: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        memberAlign: DataTypes.TypeOf<DataTypes.Boolean>;
+        memberRotation: DataTypes.TypeOf<DataTypes.Angle>;
+        overflowMode: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetMode: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetPercent: DataTypes.TypeOf<DataTypes.Float>;
+        offsetLength: DataTypes.TypeOf<DataTypes.Length>;
+        offsetOrigin: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 
@@ -174,26 +174,26 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AlongPathDefinition>, _inS
 const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: keyof AlongPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
-    const shapeData = context.resolve<"shape">(node.id, "shape")?.data;
+    const shapeData = context.resolve<DataTypes.Shape>(node.id, "shape")?.data;
     if (!shapeData) return null;
 
-    const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign ?? true;
-    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
-    const overflowMode = Enum.resolve(context.resolve<"enum">(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
+    const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign ?? true;
+    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const overflowMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
 
-    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
+    const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
+    const offsetOrigin = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
     const originPct = [0, 50, 100][offsetOrigin] ?? 0;
 
     let distance: { percent: number; px: number };
     if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
-        const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
+        const pct = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         distance = { percent: originPct + pct, px: 0 };
     } else {
-        const len = context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
+        const len = context.resolve<DataTypes.Length>(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
         const lenNum = Length.Emptyable.asNumber(len) ?? 0;
         distance = { percent: originPct, px: lenNum };
     }
@@ -229,6 +229,6 @@ export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition>
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("shape", "output"),
 };

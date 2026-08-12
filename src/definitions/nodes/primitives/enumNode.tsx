@@ -23,8 +23,8 @@ const def = signature({
 export type EnumDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.Enum>;
         options: string[];
     }
 >;
@@ -137,7 +137,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<EnumDefinition>, socket: "output
     if (socket === "output") {
         return {
             kind: "enum",
-            data: context.resolve<"enum">(node.id, "value")?.data ?? node.payload.value,
+            data: context.resolve<DataTypes.Enum>(node.id, "value")?.data ?? node.payload.value,
         };
     }
     return null;

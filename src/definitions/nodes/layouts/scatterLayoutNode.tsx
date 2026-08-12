@@ -82,7 +82,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, 
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket: keyof ScatterLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const points = context.resolve<"array<point>">(node.id, "points")?.data ?? null;
+    const points = context.resolve<DataTypes.ArrayOf<DataTypes.Point>>(node.id, "points")?.data ?? null;
 
     if (socket === "sequence") {
         return { kind: "sequence", data: { senderId: node.id, count: points?.length ?? 0 } };
@@ -99,7 +99,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
 
     for (let i = 0; i < points.length; i++) {
         // Sequence-resolve the member so upstream iterators can vary it per index.
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
         const { x, y } = points[i];
@@ -139,6 +139,6 @@ export const ScatterLayoutNodeType: NodeTypes.Type<"scatterLayout", ScatterLayou
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

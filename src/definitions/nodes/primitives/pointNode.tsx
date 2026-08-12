@@ -24,12 +24,12 @@ const def = signature({
 export type PointDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        mode: DataTypes.TypeOf<"enum">;
-        x: DataTypes.TypeOf<"length">;
-        y: DataTypes.TypeOf<"length">;
-        radius: DataTypes.TypeOf<"length">;
-        theta: DataTypes.TypeOf<"angle">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        mode: DataTypes.TypeOf<DataTypes.Enum>;
+        x: DataTypes.TypeOf<DataTypes.Length>;
+        y: DataTypes.TypeOf<DataTypes.Length>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        theta: DataTypes.TypeOf<DataTypes.Angle>;
     }
 >;
 
@@ -118,11 +118,11 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PointDefinition>, inSocket
 const evaluate = (node: NodeDefinitions.NodeFor<PointDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const mode = Enum.resolve(context.resolve<"enum">(node.id, "mode")?.data, Enum.Common.positionMode) ?? node.payload.mode ?? 0;
-    const x = context.resolve<"length">(node.id, "x")?.data ?? node.payload.x;
-    const y = context.resolve<"length">(node.id, "y")?.data ?? node.payload.y;
-    const radius = context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius;
-    const theta = context.resolve<"angle">(node.id, "theta")?.data ?? node.payload.theta;
+    const mode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "mode")?.data, Enum.Common.positionMode) ?? node.payload.mode ?? 0;
+    const x = context.resolve<DataTypes.Length>(node.id, "x")?.data ?? node.payload.x;
+    const y = context.resolve<DataTypes.Length>(node.id, "y")?.data ?? node.payload.y;
+    const radius = context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius;
+    const theta = context.resolve<DataTypes.Angle>(node.id, "theta")?.data ?? node.payload.theta;
 
     return { kind: "point", data: PointHelper.resolve(mode, x, y, radius, theta) };
 };

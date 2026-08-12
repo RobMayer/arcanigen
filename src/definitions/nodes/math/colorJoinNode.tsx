@@ -86,51 +86,51 @@ const def = signature({
 export type ColorJoinDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        mode: DataTypes.TypeOf<"enum">;
-        alphaMode: DataTypes.TypeOf<"enum">;
-        rgb_r: DataTypes.TypeOf<"float">;
-        rgb_g: DataTypes.TypeOf<"float">;
-        rgb_b: DataTypes.TypeOf<"float">;
-        rgb255_r: DataTypes.TypeOf<"integer">;
-        rgb255_g: DataTypes.TypeOf<"integer">;
-        rgb255_b: DataTypes.TypeOf<"integer">;
-        cmy_c: DataTypes.TypeOf<"float">;
-        cmy_m: DataTypes.TypeOf<"float">;
-        cmy_y: DataTypes.TypeOf<"float">;
-        cmyk_c: DataTypes.TypeOf<"float">;
-        cmyk_m: DataTypes.TypeOf<"float">;
-        cmyk_y: DataTypes.TypeOf<"float">;
-        cmyk_k: DataTypes.TypeOf<"float">;
-        hsv_h: DataTypes.TypeOf<"angle">;
-        hsv_s: DataTypes.TypeOf<"float">;
-        hsv_v: DataTypes.TypeOf<"float">;
-        hsl_h: DataTypes.TypeOf<"angle">;
-        hsl_s: DataTypes.TypeOf<"float">;
-        hsl_l: DataTypes.TypeOf<"float">;
-        hwk_h: DataTypes.TypeOf<"angle">;
-        hwk_w: DataTypes.TypeOf<"float">;
-        hwk_k: DataTypes.TypeOf<"float">;
-        hsi_h: DataTypes.TypeOf<"angle">;
-        hsi_s: DataTypes.TypeOf<"float">;
-        hsi_i: DataTypes.TypeOf<"float">;
-        hcy_h: DataTypes.TypeOf<"angle">;
-        hcy_c: DataTypes.TypeOf<"float">;
-        hcy_y: DataTypes.TypeOf<"float">;
-        cielab_l: DataTypes.TypeOf<"float">;
-        cielab_a: DataTypes.TypeOf<"float">;
-        cielab_b: DataTypes.TypeOf<"float">;
-        cielch_l: DataTypes.TypeOf<"float">;
-        cielch_c: DataTypes.TypeOf<"float">;
-        cielch_h: DataTypes.TypeOf<"angle">;
-        oklab_l: DataTypes.TypeOf<"float">;
-        oklab_a: DataTypes.TypeOf<"float">;
-        oklab_b: DataTypes.TypeOf<"float">;
-        oklch_l: DataTypes.TypeOf<"float">;
-        oklch_c: DataTypes.TypeOf<"float">;
-        oklch_h: DataTypes.TypeOf<"angle">;
-        alpha_f: DataTypes.TypeOf<"float">;
-        alpha_b: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        mode: DataTypes.TypeOf<DataTypes.Enum>;
+        alphaMode: DataTypes.TypeOf<DataTypes.Enum>;
+        rgb_r: DataTypes.TypeOf<DataTypes.Float>;
+        rgb_g: DataTypes.TypeOf<DataTypes.Float>;
+        rgb_b: DataTypes.TypeOf<DataTypes.Float>;
+        rgb255_r: DataTypes.TypeOf<DataTypes.Integer>;
+        rgb255_g: DataTypes.TypeOf<DataTypes.Integer>;
+        rgb255_b: DataTypes.TypeOf<DataTypes.Integer>;
+        cmy_c: DataTypes.TypeOf<DataTypes.Float>;
+        cmy_m: DataTypes.TypeOf<DataTypes.Float>;
+        cmy_y: DataTypes.TypeOf<DataTypes.Float>;
+        cmyk_c: DataTypes.TypeOf<DataTypes.Float>;
+        cmyk_m: DataTypes.TypeOf<DataTypes.Float>;
+        cmyk_y: DataTypes.TypeOf<DataTypes.Float>;
+        cmyk_k: DataTypes.TypeOf<DataTypes.Float>;
+        hsv_h: DataTypes.TypeOf<DataTypes.Angle>;
+        hsv_s: DataTypes.TypeOf<DataTypes.Float>;
+        hsv_v: DataTypes.TypeOf<DataTypes.Float>;
+        hsl_h: DataTypes.TypeOf<DataTypes.Angle>;
+        hsl_s: DataTypes.TypeOf<DataTypes.Float>;
+        hsl_l: DataTypes.TypeOf<DataTypes.Float>;
+        hwk_h: DataTypes.TypeOf<DataTypes.Angle>;
+        hwk_w: DataTypes.TypeOf<DataTypes.Float>;
+        hwk_k: DataTypes.TypeOf<DataTypes.Float>;
+        hsi_h: DataTypes.TypeOf<DataTypes.Angle>;
+        hsi_s: DataTypes.TypeOf<DataTypes.Float>;
+        hsi_i: DataTypes.TypeOf<DataTypes.Float>;
+        hcy_h: DataTypes.TypeOf<DataTypes.Angle>;
+        hcy_c: DataTypes.TypeOf<DataTypes.Float>;
+        hcy_y: DataTypes.TypeOf<DataTypes.Float>;
+        cielab_l: DataTypes.TypeOf<DataTypes.Float>;
+        cielab_a: DataTypes.TypeOf<DataTypes.Float>;
+        cielab_b: DataTypes.TypeOf<DataTypes.Float>;
+        cielch_l: DataTypes.TypeOf<DataTypes.Float>;
+        cielch_c: DataTypes.TypeOf<DataTypes.Float>;
+        cielch_h: DataTypes.TypeOf<DataTypes.Angle>;
+        oklab_l: DataTypes.TypeOf<DataTypes.Float>;
+        oklab_a: DataTypes.TypeOf<DataTypes.Float>;
+        oklab_b: DataTypes.TypeOf<DataTypes.Float>;
+        oklch_l: DataTypes.TypeOf<DataTypes.Float>;
+        oklch_c: DataTypes.TypeOf<DataTypes.Float>;
+        oklch_h: DataTypes.TypeOf<DataTypes.Angle>;
+        alpha_f: DataTypes.TypeOf<DataTypes.Float>;
+        alpha_b: DataTypes.TypeOf<DataTypes.Integer>;
     }
 >;
 
@@ -404,19 +404,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorJoinDefinition>, socket: "o
     if (socket !== "output") return null;
 
     const readNum = (sid: InKey, fallback: string): number => {
-        const resolved = context.resolve<"float" | "integer">(node.id, sid)?.data;
-        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<"float">;
+        const resolved = context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, sid)?.data;
+        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<DataTypes.Float>;
         return NumericString.Emptyable.asNumber(resolved ?? payloadVal) ?? Number(fallback);
     };
     const readAng = (sid: InKey, fallback: string): number => {
-        const resolved = context.resolve<"angle">(node.id, sid)?.data;
-        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<"angle">;
+        const resolved = context.resolve<DataTypes.Angle>(node.id, sid)?.data;
+        const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<DataTypes.Angle>;
         return NumericString.Emptyable.asNumber(resolved ?? payloadVal) ?? Number(fallback);
     };
 
-    const modeRaw = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
+    const modeRaw = context.resolve<DataTypes.Enum>(node.id, "mode")?.data ?? node.payload.mode;
     const mode = Number(modeRaw);
-    const alphaModeRaw = context.resolve<"enum">(node.id, "alphaMode")?.data ?? node.payload.alphaMode;
+    const alphaModeRaw = context.resolve<DataTypes.Enum>(node.id, "alphaMode")?.data ?? node.payload.alphaMode;
     const alphaMode = Number(alphaModeRaw);
 
     let r: number, g: number, b: number;

@@ -21,7 +21,7 @@ const def = signature({
 export type PathInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
         socketed: boolean;
     }
 >;
@@ -68,7 +68,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathInputDefinition>, _inS
 
 const evaluate = (node: NodeDefinitions.NodeFor<PathInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"path">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Path>(node.id);
         if (providedInput) return providedInput;
     }
     return null;

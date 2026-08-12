@@ -20,7 +20,7 @@ const def = signature({
 export type FromCrossingsDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -73,7 +73,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FromCrossingsDefinition>, 
 // The path's self-crossings, in world space. A single input path is intentional — combine multiple
 // paths upstream with Path Join so crossings between them surface as self-crossings here.
 const resolvePoints = (node: NodeDefinitions.NodeFor<FromCrossingsDefinition>, context: Resolver.Context): { x: number; y: number }[] => {
-    const pathData = context.resolve<"path">(node.id, "path")?.data ?? null;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data ?? null;
     if (!pathData) return [];
     return PaperHelper.crossings(pathData) ?? [];
 };

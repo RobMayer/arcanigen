@@ -55,8 +55,8 @@ export type ColorIteratorDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        colorSpace: DataTypes.TypeOf<"enum">;
-        angleTraversal: DataTypes.TypeOf<"enum">;
+        colorSpace: DataTypes.TypeOf<DataTypes.Enum>;
+        angleTraversal: DataTypes.TypeOf<DataTypes.Enum>;
         stops: { id: string; color: Color.Type; position: EmptyOr<NumericString.Type> }[];
     } & IterationPrefab.Definition["payload"]
 >;
@@ -316,15 +316,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorIteratorDefinition>, socket
     if (stops.length === 0) return null;
 
     // Resolve color space and hue traversal
-    const colorSpaceValue = Enum.resolve(context.resolve<"enum">(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
-    const angleTraversalValue = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? 0;
+    const colorSpaceValue = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "colorSpace")?.data, Enum.Common.colorSpace) ?? node.payload.colorSpace ?? 0;
+    const angleTraversalValue = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? 0;
 
     // Resolve all stops: color + position
     const resolved: { color: NonNullable<Color.Type>; position: number }[] = [];
     for (const stop of stops) {
-        const color = context.resolve<"color">(node.id, `color_${stop.id}`)?.data ?? stop.color;
+        const color = context.resolve<DataTypes.Color>(node.id, `color_${stop.id}`)?.data ?? stop.color;
         if (color === null) continue;
-        const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
+        const posStr = context.resolve<DataTypes.Float>(node.id, `pos_${stop.id}`)?.data ?? stop.position;
         const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
         resolved.push({ color, position: pos });
     }

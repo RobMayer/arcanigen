@@ -47,18 +47,18 @@ const def = signature({
 export type GlowEffectDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        artColor: DataTypes.TypeOf<"boolean">;
-        color: DataTypes.TypeOf<"color">;
-        blur: DataTypes.TypeOf<"length">;
-        spread: DataTypes.TypeOf<"length">;
-        strength: DataTypes.TypeOf<"float">;
-        opacity: DataTypes.TypeOf<"float">;
-        offsetMode: DataTypes.TypeOf<"enum">;
-        offsetX: DataTypes.TypeOf<"length">;
-        offsetY: DataTypes.TypeOf<"length">;
-        offsetRadius: DataTypes.TypeOf<"length">;
-        offsetTheta: DataTypes.TypeOf<"angle">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        artColor: DataTypes.TypeOf<DataTypes.Boolean>;
+        color: DataTypes.TypeOf<DataTypes.Color>;
+        blur: DataTypes.TypeOf<DataTypes.Length>;
+        spread: DataTypes.TypeOf<DataTypes.Length>;
+        strength: DataTypes.TypeOf<DataTypes.Float>;
+        opacity: DataTypes.TypeOf<DataTypes.Float>;
+        offsetMode: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetX: DataTypes.TypeOf<DataTypes.Length>;
+        offsetY: DataTypes.TypeOf<DataTypes.Length>;
+        offsetRadius: DataTypes.TypeOf<DataTypes.Length>;
+        offsetTheta: DataTypes.TypeOf<DataTypes.Angle>;
     }
 >;
 
@@ -174,28 +174,28 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<GlowEffectDefinition>, _in
 const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const inputShape = context.resolve<"shape">(node.id, "input")?.data;
+    const inputShape = context.resolve<DataTypes.Shape>(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const artColor: boolean = context.resolve<"boolean">(node.id, "artColor")?.data ?? node.payload.artColor;
-    const color: Color.Type = context.resolve<"color">(node.id, "color")?.data ?? node.payload.color;
-    const blurPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "blur")?.data ?? node.payload.blur) ?? 0);
-    const spreadPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread) ?? 0);
-    const strength = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "strength")?.data ?? node.payload.strength) ?? 1);
-    const opacity = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "opacity")?.data ?? node.payload.opacity) ?? 1));
+    const artColor: boolean = context.resolve<DataTypes.Boolean>(node.id, "artColor")?.data ?? node.payload.artColor;
+    const color: Color.Type = context.resolve<DataTypes.Color>(node.id, "color")?.data ?? node.payload.color;
+    const blurPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "blur")?.data ?? node.payload.blur) ?? 0);
+    const spreadPx = Math.max(0, Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread) ?? 0);
+    const strength = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "strength")?.data ?? node.payload.strength) ?? 1);
+    const opacity = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "opacity")?.data ?? node.payload.opacity) ?? 1));
 
-    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.positionMode) ?? node.payload.offsetMode;
+    const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetMode")?.data, Enum.Common.positionMode) ?? node.payload.offsetMode;
     let dx: number;
     let dy: number;
     if (offsetMode === Enum.Common.positionMode.POLAR.value) {
-        const radius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetRadius")?.data ?? node.payload.offsetRadius) ?? 0;
-        const theta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "offsetTheta")?.data ?? node.payload.offsetTheta) ?? 0;
+        const radius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetRadius")?.data ?? node.payload.offsetRadius) ?? 0;
+        const theta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "offsetTheta")?.data ?? node.payload.offsetTheta) ?? 0;
         const thetaRad = ((theta - 90) * Math.PI) / 180;
         dx = radius * Math.cos(thetaRad);
         dy = radius * Math.sin(thetaRad);
     } else {
-        dx = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetX")?.data ?? node.payload.offsetX) ?? 0;
-        dy = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetY")?.data ?? node.payload.offsetY) ?? 0;
+        dx = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetX")?.data ?? node.payload.offsetX) ?? 0;
+        dy = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetY")?.data ?? node.payload.offsetY) ?? 0;
     }
 
     const filter: FilterPrimitive[] = [];
@@ -259,6 +259,6 @@ export const GlowEffectNodeType: NodeTypes.Type<"glowEffect", GlowEffectDefiniti
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

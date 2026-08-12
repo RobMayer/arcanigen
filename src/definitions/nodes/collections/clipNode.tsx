@@ -85,14 +85,14 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ClipDefinition>, _inSocket
 
 const evaluate = (node: NodeDefinitions.NodeFor<ClipDefinition>, socket: keyof ClipDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const contentShape = context.resolve<"shape">(node.id, "content")?.data ?? null;
-        const clipPath = context.resolve<"path">(node.id, "clip")?.data ?? null;
+        const contentShape = context.resolve<DataTypes.Shape>(node.id, "content")?.data ?? null;
+        const clipPath = context.resolve<DataTypes.Path>(node.id, "clip")?.data ?? null;
 
         if (contentShape === null || clipPath === null) {
             return null;
         }
 
-        const showClip = context.resolve<"boolean">(node.id, "showClip")?.data ?? node.payload.showClip;
+        const showClip = context.resolve<DataTypes.Boolean>(node.id, "showClip")?.data ?? node.payload.showClip;
 
         if (showClip) {
             const preview: PathShape = {
@@ -133,6 +133,6 @@ export const ClipNodeType: NodeTypes.Type<"clip", ClipDefinition> = {
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("content", "output"),
 };

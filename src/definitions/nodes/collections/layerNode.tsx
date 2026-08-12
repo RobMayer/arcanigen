@@ -364,9 +364,9 @@ const contributesTo = (node: NodeDefinitions.NodeFor<LayerDefinition>, inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof LayerDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const layerData: { shape: DataTypes.TypeOf<"shape">; blend: number }[] = [];
+        const layerData: { shape: DataTypes.TypeOf<DataTypes.Shape>; blend: number }[] = [];
 
-        const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
+        const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Layer>>(node.id, "layers");
         if (supersocketEval) {
             for (const entry of supersocketEval.data) {
                 if (entry.shape === null) continue;
@@ -380,7 +380,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
         } else {
             // Build from individual sockets
             for (const entry of node.payload.layers) {
-                const resolved = context.resolve<"layer">(node.id, entry.socket) as DataTypes.AnyEval | null;
+                const resolved = context.resolve<DataTypes.Layer | DataTypes.Shape>(node.id, entry.socket);
                 if (!resolved) continue;
 
                 if (resolved.kind === "layer") {
@@ -404,7 +404,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
 
         if (layerData.length === 0) return null;
 
-        const doBlendInternal = context.resolve<"boolean">(node.id, "isolate")?.data ?? node.payload.isolate ?? false;
+        const doBlendInternal = context.resolve<DataTypes.Boolean>(node.id, "isolate")?.data ?? node.payload.isolate ?? false;
 
         // Wrap each layer: non-normal blend gets a GroupShape wrapper
         const children = layerData.map((layer) => {
@@ -446,13 +446,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     }
 
     if (socket === "layerArray") {
-        const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
+        const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Layer>>(node.id, "layers");
         if (supersocketEval) {
             return { kind: "array<layer>", data: supersocketEval.data };
         }
-        const layerData: { shape: DataTypes.TypeOf<"shape"> | null; enabled: boolean | null; blend: number | null }[] = [];
+        const layerData: { shape: DataTypes.TypeOf<DataTypes.Shape> | null; enabled: boolean | null; blend: number | null }[] = [];
         for (const entry of node.payload.layers) {
-            const resolved = context.resolve<"layer">(node.id, entry.socket) as DataTypes.AnyEval | null;
+            const resolved = context.resolve<DataTypes.Layer | DataTypes.Shape>(node.id, entry.socket);
             if (!resolved) {
                 layerData.push({ shape: null, enabled: entry.enabled, blend: entry.blend });
                 continue;
@@ -468,7 +468,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     }
 
     if (socket === "layerCount") {
-        const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
+        const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Layer>>(node.id, "layers");
         const count = supersocketEval ? supersocketEval.data.length : node.payload.layers.length;
         return {
             kind: "integer",
@@ -477,7 +477,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LayerDefinition>, socket: keyof 
     }
 
     if (socket === "enabledCount") {
-        const supersocketEval = context.resolve<"array<layer>">(node.id, "layers");
+        const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Layer>>(node.id, "layers");
         const count = supersocketEval ? supersocketEval.data.filter((entry) => entry.enabled ?? true).length : node.payload.layers.filter((l) => l.enabled).length;
         return {
             kind: "integer",
@@ -495,8 +495,8 @@ const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.Me
 
     const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
     const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", graphId, ctx);
-    const layerIn: SocketTypes.Term = SocketTypes.or("layer", "shape");
-    const layerOut: SocketTypes.Term = SocketTypes.of("shape");
+    const layerIn: SocketTypes.Term = SocketTypes.or(DataTypes.LAYER, DataTypes.SHAPE);
+    const layerOut: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
 
     return SocketTypes.canFlow(sourceOut, layerIn) && SocketTypes.canFlow(layerOut, destIn);
 };

@@ -52,20 +52,20 @@ export type PathLayoutDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        count: DataTypes.TypeOf<"integer">;
-        spacingMode: DataTypes.TypeOf<"enum">;
-        spacing: DataTypes.TypeOf<"length">;
-        overflowMode: DataTypes.TypeOf<"enum">;
-        offsetMode: DataTypes.TypeOf<"enum">;
-        offsetPercent: DataTypes.TypeOf<"float">;
-        offsetLength: DataTypes.TypeOf<"length">;
-        offsetOrigin: DataTypes.TypeOf<"enum">;
-        padStart: DataTypes.TypeOf<"length">;
-        padEnd: DataTypes.TypeOf<"length">;
+        count: DataTypes.TypeOf<DataTypes.Integer>;
+        spacingMode: DataTypes.TypeOf<DataTypes.Enum>;
+        spacing: DataTypes.TypeOf<DataTypes.Length>;
+        overflowMode: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetMode: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetPercent: DataTypes.TypeOf<DataTypes.Float>;
+        offsetLength: DataTypes.TypeOf<DataTypes.Length>;
+        offsetOrigin: DataTypes.TypeOf<DataTypes.Enum>;
+        padStart: DataTypes.TypeOf<DataTypes.Length>;
+        padEnd: DataTypes.TypeOf<DataTypes.Length>;
         skipFirst: boolean;
         skipLast: boolean;
         memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<"angle">;
+        memberRotation: DataTypes.TypeOf<DataTypes.Angle>;
     }
 >;
 
@@ -280,7 +280,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathLayoutDefinition>, inS
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: keyof PathLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
+    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
 
@@ -290,43 +290,43 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
 
     if (socket !== "output") return null;
 
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
     // Resolve common parameters
-    const spacingModeEnum = Enum.resolve(context.resolve<"enum">(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode;
-    const overflowModeEnum = Enum.resolve(context.resolve<"enum">(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
-    const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
-    const skipFirst = context.resolve<"boolean">(node.id, "skipFirst")?.data ?? node.payload.skipFirst;
-    const skipLast = context.resolve<"boolean">(node.id, "skipLast")?.data ?? node.payload.skipLast;
+    const spacingModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode;
+    const overflowModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
+    const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
+    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const skipFirst = context.resolve<DataTypes.Boolean>(node.id, "skipFirst")?.data ?? node.payload.skipFirst;
+    const skipLast = context.resolve<DataTypes.Boolean>(node.id, "skipLast")?.data ?? node.payload.skipLast;
 
-    const padStartNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "padStart")?.data ?? node.payload.padStart) ?? 0;
-    const padEndNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "padEnd")?.data ?? node.payload.padEnd) ?? 0;
+    const padStartNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "padStart")?.data ?? node.payload.padStart) ?? 0;
+    const padEndNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "padEnd")?.data ?? node.payload.padEnd) ?? 0;
 
     // Offset
-    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
+    const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
+    const offsetOrigin = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
     const originPct = [0, 50, 100][offsetOrigin] ?? 0;
 
     let offset: { percent: number; px: number };
     if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
-        const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
+        const pct = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         offset = { percent: originPct + pct, px: 0 };
     } else {
-        const lenNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength) ?? 0;
+        const lenNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetLength")?.data ?? node.payload.offsetLength) ?? 0;
         offset = { percent: originPct, px: lenNum };
     }
 
     // Distribution (only for Even mode)
-    const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+    const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
         NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
     );
 
-    const spacingNum = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
+    const spacingNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
 
     const overflow: "clamp" | "wrap" = overflowModeEnum === Enum.Common.overflowMode.WRAP.value ? "wrap" : "clamp";
     const rotate = { auto: memberAlign, degrees: memberRotation };
@@ -336,7 +336,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         if (skipFirst && i === 0) continue;
         if (skipLast && i === count - 1) continue;
 
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
         // Compute spacing for this index
@@ -405,6 +405,6 @@ export const PathLayoutNodeType: NodeTypes.Type<"pathLayout", PathLayoutDefiniti
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

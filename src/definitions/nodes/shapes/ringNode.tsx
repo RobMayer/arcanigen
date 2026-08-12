@@ -35,13 +35,13 @@ const def = signature({
 export type RingDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        radius: DataTypes.TypeOf<"length">;
-        spread: DataTypes.TypeOf<"length">;
-        innerRadius: DataTypes.TypeOf<"length">;
-        outerRadius: DataTypes.TypeOf<"length">;
-        spanMode: DataTypes.TypeOf<"enum">;
-        spreadAlign: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        spread: DataTypes.TypeOf<DataTypes.Length>;
+        innerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        outerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        spanMode: DataTypes.TypeOf<DataTypes.Enum>;
+        spreadAlign: DataTypes.TypeOf<DataTypes.Enum>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -221,12 +221,12 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RingDefinition>, inSocket:
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof RingDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
-    const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-    const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
-    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-    const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
-    const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
+    const spanMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
+    const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+    const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+    const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
+    const spreadAlign = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
 
     if (spanMode === 0 && (!innerRadius || !outerRadius)) {
         return null;

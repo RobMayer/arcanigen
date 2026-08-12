@@ -30,8 +30,8 @@ const def = signature({
 export type RepeatedLayoutDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        count: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        count: DataTypes.TypeOf<DataTypes.Integer>;
     } & TransformPrefab.Definition["payload"]
 >;
 
@@ -115,7 +115,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>,
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socket: keyof RepeatedLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
+    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
 
@@ -129,7 +129,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
 
     const children = [];
     for (let i = 0; i < count; i++) {
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
         children.push(shape);
     }
@@ -171,6 +171,6 @@ export const RepeatedLayoutNodeType: NodeTypes.Type<"repeatedLayout", RepeatedLa
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

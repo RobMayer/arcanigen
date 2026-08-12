@@ -51,21 +51,21 @@ const def = signature({
 export type SpiroringDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        spiroMode: DataTypes.TypeOf<"enum">;
-        paramMode: DataTypes.TypeOf<"enum">;
-        ringTeeth: DataTypes.TypeOf<"integer">;
-        wheelTeeth: DataTypes.TypeOf<"integer">;
-        penOffset: DataTypes.TypeOf<"float">;
-        radius: DataTypes.TypeOf<"length">;
-        radiusMode: DataTypes.TypeOf<"enum">;
-        ringRadius: DataTypes.TypeOf<"length">;
-        wheelRadius: DataTypes.TypeOf<"length">;
-        penRadius: DataTypes.TypeOf<"length">;
-        turns: DataTypes.TypeOf<"float">;
-        spread: DataTypes.TypeOf<"length">;
-        spreadAlign: DataTypes.TypeOf<"enum">;
-        removeCrossings: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        spiroMode: DataTypes.TypeOf<DataTypes.Enum>;
+        paramMode: DataTypes.TypeOf<DataTypes.Enum>;
+        ringTeeth: DataTypes.TypeOf<DataTypes.Integer>;
+        wheelTeeth: DataTypes.TypeOf<DataTypes.Integer>;
+        penOffset: DataTypes.TypeOf<DataTypes.Float>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        radiusMode: DataTypes.TypeOf<DataTypes.Enum>;
+        ringRadius: DataTypes.TypeOf<DataTypes.Length>;
+        wheelRadius: DataTypes.TypeOf<DataTypes.Length>;
+        penRadius: DataTypes.TypeOf<DataTypes.Length>;
+        turns: DataTypes.TypeOf<DataTypes.Float>;
+        spread: DataTypes.TypeOf<DataTypes.Length>;
+        spreadAlign: DataTypes.TypeOf<DataTypes.Enum>;
+        removeCrossings: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -342,10 +342,10 @@ const SAMPLES_PER_TURN = 120;
 const MAX_SAMPLES = 4000;
 
 const evaluate = (node: NodeDefinitions.NodeFor<SpiroringDefinition>, socket: keyof SpiroringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spiroMode = Enum.resolve(context.resolve<"enum">(node.id, "spiroMode")?.data, Enum.Common.spiroMode) ?? node.payload.spiroMode ?? 0;
-    const paramMode = Enum.resolve(context.resolve<"enum">(node.id, "paramMode")?.data, Enum.Common.spiroParam) ?? node.payload.paramMode ?? 0;
-    const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
-    const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
+    const spiroMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spiroMode")?.data, Enum.Common.spiroMode) ?? node.payload.spiroMode ?? 0;
+    const paramMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "paramMode")?.data, Enum.Common.spiroParam) ?? node.payload.paramMode ?? 0;
+    const spreadAlign = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
+    const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
 
     const inside = spiroMode === Enum.Common.spiroMode.INSIDE.value;
 
@@ -356,17 +356,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiroringDefinition>, socket: ke
     let closed: boolean;
 
     if (paramMode === Enum.Common.spiroParam.RADII.value) {
-        R = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "ringRadius")?.data ?? node.payload.ringRadius, "0px")) ?? 0;
-        r = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "wheelRadius")?.data ?? node.payload.wheelRadius, "0px")) ?? 0;
-        d = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "penRadius")?.data ?? node.payload.penRadius, "0px")) ?? 0;
-        turns = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "turns")?.data ?? node.payload.turns) ?? 0);
+        R = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "ringRadius")?.data ?? node.payload.ringRadius, "0px")) ?? 0;
+        r = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "wheelRadius")?.data ?? node.payload.wheelRadius, "0px")) ?? 0;
+        d = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "penRadius")?.data ?? node.payload.penRadius, "0px")) ?? 0;
+        turns = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "turns")?.data ?? node.payload.turns) ?? 0);
         closed = false;
     } else {
-        const ringTeeth = Math.max(1, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "ringTeeth")?.data ?? node.payload.ringTeeth) ?? 1));
-        const wheelTeeth = Math.max(1, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "wheelTeeth")?.data ?? node.payload.wheelTeeth) ?? 1));
-        const penOffset = Math.min(1, Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "penOffset")?.data ?? node.payload.penOffset) ?? 0));
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-        const radiusMode = Enum.resolve(context.resolve<"enum">(node.id, "radiusMode")?.data, Enum.Common.spiroRadiusMode) ?? node.payload.radiusMode ?? 0;
+        const ringTeeth = Math.max(1, Math.round(NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "ringTeeth")?.data ?? node.payload.ringTeeth) ?? 1));
+        const wheelTeeth = Math.max(1, Math.round(NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "wheelTeeth")?.data ?? node.payload.wheelTeeth) ?? 1));
+        const penOffset = Math.min(1, Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "penOffset")?.data ?? node.payload.penOffset) ?? 0));
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+        const radiusMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "radiusMode")?.data, Enum.Common.spiroRadiusMode) ?? node.payload.radiusMode ?? 0;
 
         const ratio = wheelTeeth / ringTeeth;
         const mode = radiusMode === Enum.Common.spiroRadiusMode.MAJOR.value ? "major" : radiusMode === Enum.Common.spiroRadiusMode.MINOR.value ? "minor" : "mechanical";
@@ -434,7 +434,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiroringDefinition>, socket: ke
         dPath = SpirographHelper.toPath([...outerPts, ...[...innerPts].reverse()], true);
     }
 
-    const removeCrossings = context.resolve<"boolean">(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings ?? false;
+    const removeCrossings = context.resolve<DataTypes.Boolean>(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings ?? false;
     if (removeCrossings) {
         dPath = PaperHelper.healD(dPath) ?? dPath;
     }

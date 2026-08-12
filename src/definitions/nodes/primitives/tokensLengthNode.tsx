@@ -21,8 +21,8 @@ const def = signature({
 export type TokensLengthDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"tokens:length">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.TokensLength>;
     }
 >;
 
@@ -77,7 +77,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TokensLengthDefinition>, socket:
     if (socket === "output") {
         return {
             kind: "tokens:length",
-            data: context.resolve<"tokens:length">(node.id, "value")?.data ?? node.payload.value,
+            data: context.resolve<DataTypes.TokensLength>(node.id, "value")?.data ?? node.payload.value,
         };
     }
     return null;

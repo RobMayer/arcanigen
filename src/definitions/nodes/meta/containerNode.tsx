@@ -27,7 +27,7 @@ const def = signature({
 export type ContainerDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
         width: number;
         height: number;
         flavour: Exclude<Flavour, "accent" | "inherit">;

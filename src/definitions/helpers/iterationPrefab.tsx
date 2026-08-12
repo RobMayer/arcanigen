@@ -15,16 +15,16 @@ const MODE_OPTIONS = Enum.options(Enum.Common.sequencerMode);
 export namespace IterationPrefab {
     export type Definition = {
         inputs: {
-            sequence: "sequence";
-            mode: "enum";
-            reverseSequence: "boolean";
-            startOffset: "integer";
-            endOffset: "integer";
-            samplePosition: "float" | "integer";
+            sequence: DataTypes.Sequence;
+            mode: DataTypes.Enum;
+            reverseSequence: DataTypes.Boolean;
+            startOffset: DataTypes.Integer;
+            endOffset: DataTypes.Integer;
+            samplePosition: DataTypes.Float | DataTypes.Integer;
         };
         outputs: NodeDefinitions.Generic["outputs"];
         payload: {
-            mode: DataTypes.TypeOf<"enum">;
+            mode: DataTypes.TypeOf<DataTypes.Enum>;
             reverseSequence: boolean;
             startOffset: EmptyOr<NumericString.Type>;
             endOffset: EmptyOr<NumericString.Type>;
@@ -36,18 +36,18 @@ export namespace IterationPrefab {
     export const SAMPLED_DEPS: (keyof Definition["inputs"])[] = ["samplePosition"];
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): { t: number } | null => {
-        const sequenceEval = context.resolve<"sequence">(node.id, "sequence");
+        const sequenceEval = context.resolve<DataTypes.Sequence>(node.id, "sequence");
         if (!sequenceEval) return null;
 
         const { senderId, count } = sequenceEval.data;
         if (count <= 0) return null;
 
-        const reverseSequence = context.resolve<"boolean">(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
-        const startOffsetStr = context.resolve<"integer">(node.id, "startOffset")?.data ?? node.payload.startOffset;
-        const endOffsetStr = context.resolve<"integer">(node.id, "endOffset")?.data ?? node.payload.endOffset;
+        const reverseSequence = context.resolve<DataTypes.Boolean>(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
+        const startOffsetStr = context.resolve<DataTypes.Integer>(node.id, "startOffset")?.data ?? node.payload.startOffset;
+        const endOffsetStr = context.resolve<DataTypes.Integer>(node.id, "endOffset")?.data ?? node.payload.endOffset;
         const startOffset = startOffsetStr === "" ? 0 : parseInt(startOffsetStr, 10) || 0;
         const endOffset = endOffsetStr === "" ? 0 : parseInt(endOffsetStr, 10) || 0;
-        const modeEnum = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
+        const modeEnum = context.resolve<DataTypes.Enum>(node.id, "mode")?.data ?? node.payload.mode;
         const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
 
         let iter = context.cursorData[senderId] ?? 0;
@@ -88,7 +88,7 @@ export namespace IterationPrefab {
     };
 
     export const resolveSamplePosition = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context): number => {
-        const raw = context.resolve<"float" | "integer">(node.id, "samplePosition")?.data ?? node.payload.samplePosition;
+        const raw = context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "samplePosition")?.data ?? node.payload.samplePosition;
         const val = NumericString.Emptyable.asNumber(raw) ?? 0;
         return Math.max(0, Math.min(100, val));
     };

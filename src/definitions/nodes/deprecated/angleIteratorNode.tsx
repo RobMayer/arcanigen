@@ -46,8 +46,8 @@ export type AngleIteratorDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        angleTraversal: DataTypes.TypeOf<"enum">;
-        continuity: DataTypes.TypeOf<"enum">;
+        angleTraversal: DataTypes.TypeOf<DataTypes.Enum>;
+        continuity: DataTypes.TypeOf<DataTypes.Enum>;
         stops: { id: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type> }[];
     } & IterationPrefab.Definition["payload"]
 >;
@@ -306,15 +306,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket
     const stops = node.payload.stops;
     if (stops.length === 0) return null;
 
-    const traversal = Enum.resolve(context.resolve<"enum">(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value;
-    const continuity = Enum.resolve(context.resolve<"enum">(node.id, "continuity")?.data, Enum.Common.angleContinuity) ?? node.payload.continuity ?? Enum.Common.angleContinuity.CYCLICAL.value;
+    const traversal = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "angleTraversal")?.data, Enum.Common.angleTraversal) ?? node.payload.angleTraversal ?? Enum.Common.angleTraversal.CLOCKWISE.value;
+    const continuity = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "continuity")?.data, Enum.Common.angleContinuity) ?? node.payload.continuity ?? Enum.Common.angleContinuity.CYCLICAL.value;
     const cyclical = continuity === Enum.Common.angleContinuity.CYCLICAL.value;
 
     // Resolve all stops
     const resolved: { value: number; position: number }[] = [];
     for (const stop of stops) {
-        const valStr = context.resolve<"angle">(node.id, `value_${stop.id}`)?.data ?? stop.value;
-        const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
+        const valStr = context.resolve<DataTypes.Angle>(node.id, `value_${stop.id}`)?.data ?? stop.value;
+        const posStr = context.resolve<DataTypes.Float>(node.id, `pos_${stop.id}`)?.data ?? stop.position;
         const value = NumericString.Emptyable.asNumber(valStr) ?? 0;
         const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
         resolved.push({ value, position: pos });

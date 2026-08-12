@@ -26,8 +26,8 @@ const def = signature({
 export type IntegerDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.Integer>;
         roundingMode: number;
     }
 >;

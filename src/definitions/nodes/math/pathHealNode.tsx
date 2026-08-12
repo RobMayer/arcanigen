@@ -21,13 +21,13 @@ const def = signature({
 export type PathHealNodeDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
-const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
+const PATH_IN: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+const PATH_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathHealNodeDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathHeal", PathHealNodeDefinition> => {
     return {
@@ -69,7 +69,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathHealNodeDefinition>, i
 const evaluate = (node: NodeDefinitions.NodeFor<PathHealNodeDefinition>, socket: keyof PathHealNodeDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
     return PaperHelper.heal(pathData);

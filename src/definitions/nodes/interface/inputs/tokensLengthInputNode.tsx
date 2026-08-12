@@ -22,8 +22,8 @@ const def = signature({
 export type TokensLengthInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"tokens:length">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.TokensLength>;
         socketed: boolean;
     }
 >;
@@ -83,7 +83,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<TokensLengthInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"tokens:length">(node.id);
+        const providedInput = context.getInput?.<DataTypes.TokensLength>(node.id);
         return {
             kind: "tokens:length",
             data: providedInput?.data ?? node.payload.initialValue,

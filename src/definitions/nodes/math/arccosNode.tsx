@@ -25,13 +25,13 @@ export type ArccosDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        input: DataTypes.TypeOf<"float">;
+        input: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const DIMENSIONLESS_IN: SocketTypes.Term = SocketTypes.or("float", "integer");
-const ANGLE_OUT: SocketTypes.Term = SocketTypes.of("angle");
+const DIMENSIONLESS_IN: SocketTypes.Term = SocketTypes.or(DataTypes.FLOAT, DataTypes.INTEGER);
+const ANGLE_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.ANGLE);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ArccosDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"arccos", ArccosDefinition> => {
     return {

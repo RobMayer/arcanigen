@@ -24,7 +24,7 @@ export type PathOpComposeDefinition = SignatureBuilder.DefinitionFrom<
     {
         label: string;
         enabled: boolean;
-        op: DataTypes.TypeOf<"enum">;
+        op: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 
@@ -96,9 +96,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathOpComposeDefinition>, socket
     if (socket === "output") {
         // Unlike Compose Layer (which drops a null shape), we emit the pathOp even with a null path —
         // a null path is a meaningful operand in Path Combine's fold (the passthrough case).
-        const path = context.resolve<"path">(node.id, "path")?.data ?? null;
-        const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
-        const op = Enum.resolve(context.resolve<"enum">(node.id, "op")?.data, Enum.Common.pathOp) ?? node.payload.op;
+        const path = context.resolve<DataTypes.Path>(node.id, "path")?.data ?? null;
+        const enabled = context.resolve<DataTypes.Boolean>(node.id, "enabled")?.data ?? node.payload.enabled;
+        const op = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "op")?.data, Enum.Common.pathOp) ?? node.payload.op;
 
         return {
             kind: "pathOp",

@@ -57,20 +57,20 @@ export type RadialGradientDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        framing: DataTypes.TypeOf<"enum">;
-        spread: DataTypes.TypeOf<"enum">;
-        centerMode: DataTypes.TypeOf<"enum">;
-        centerX: DataTypes.TypeOf<"length">;
-        centerY: DataTypes.TypeOf<"length">;
-        centerRadius: DataTypes.TypeOf<"length">;
-        centerTheta: DataTypes.TypeOf<"angle">;
-        endRadius: DataTypes.TypeOf<"length">;
-        startOffsetMode: DataTypes.TypeOf<"enum">;
-        startOffsetX: DataTypes.TypeOf<"length">;
-        startOffsetY: DataTypes.TypeOf<"length">;
-        startOffsetRadius: DataTypes.TypeOf<"length">;
-        startOffsetTheta: DataTypes.TypeOf<"angle">;
-        startRadius: DataTypes.TypeOf<"length">;
+        framing: DataTypes.TypeOf<DataTypes.Enum>;
+        spread: DataTypes.TypeOf<DataTypes.Enum>;
+        centerMode: DataTypes.TypeOf<DataTypes.Enum>;
+        centerX: DataTypes.TypeOf<DataTypes.Length>;
+        centerY: DataTypes.TypeOf<DataTypes.Length>;
+        centerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        centerTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        endRadius: DataTypes.TypeOf<DataTypes.Length>;
+        startOffsetMode: DataTypes.TypeOf<DataTypes.Enum>;
+        startOffsetX: DataTypes.TypeOf<DataTypes.Length>;
+        startOffsetY: DataTypes.TypeOf<DataTypes.Length>;
+        startOffsetRadius: DataTypes.TypeOf<DataTypes.Length>;
+        startOffsetTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        startRadius: DataTypes.TypeOf<DataTypes.Length>;
         stops: StopEntryData[];
     }
 >;
@@ -485,14 +485,14 @@ const DragGrip = styled.div`
 // Resolve the effective stops: the supersocket (an array<stop:color>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop:color) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop:color>">(node.id, "stops");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopColor>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop:color">(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.StopColor>(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,
@@ -576,10 +576,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socke
     const stops = toGradientStops(resolveStops(node, context));
     if (stops.length === 0) return null;
 
-    const spreadIdx = Enum.resolve(context.resolve<"enum">(node.id, "spread")?.data, Enum.Common.gradientSpread) ?? node.payload.spread ?? 0;
+    const spreadIdx = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spread")?.data, Enum.Common.gradientSpread) ?? node.payload.spread ?? 0;
     const spread = Resolver.EnumMappings.gradientSpread[spreadIdx] ?? "pad";
 
-    const framing = Enum.resolve(context.resolve<"enum">(node.id, "framing")?.data, Enum.Common.framing) ?? node.payload.framing ?? 0;
+    const framing = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "framing")?.data, Enum.Common.framing) ?? node.payload.framing ?? 0;
 
     const gradient: GradientPaint = {
         variant: "radial",
@@ -590,21 +590,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socke
     };
 
     if (gradient.units === "userSpaceOnUse") {
-        const centerMode = Enum.resolve(context.resolve<"enum">(node.id, "centerMode")?.data, Enum.Common.positionMode) ?? node.payload.centerMode;
-        const centerX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "centerX")?.data ?? node.payload.centerX) ?? 0;
-        const centerY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "centerY")?.data ?? node.payload.centerY) ?? 0;
-        const centerRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "centerRadius")?.data ?? node.payload.centerRadius) ?? 0;
-        const centerTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "centerTheta")?.data ?? node.payload.centerTheta) ?? 0;
+        const centerMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "centerMode")?.data, Enum.Common.positionMode) ?? node.payload.centerMode;
+        const centerX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "centerX")?.data ?? node.payload.centerX) ?? 0;
+        const centerY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "centerY")?.data ?? node.payload.centerY) ?? 0;
+        const centerRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "centerRadius")?.data ?? node.payload.centerRadius) ?? 0;
+        const centerTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "centerTheta")?.data ?? node.payload.centerTheta) ?? 0;
 
-        const endRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
+        const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
 
-        const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "startOffsetMode")?.data, Enum.Common.positionMode) ?? node.payload.startOffsetMode;
-        const offsetX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startOffsetX")?.data ?? node.payload.startOffsetX) ?? 0;
-        const offsetY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startOffsetY")?.data ?? node.payload.startOffsetY) ?? 0;
-        const offsetRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startOffsetRadius")?.data ?? node.payload.startOffsetRadius) ?? 0;
-        const offsetTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "startOffsetTheta")?.data ?? node.payload.startOffsetTheta) ?? 0;
+        const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "startOffsetMode")?.data, Enum.Common.positionMode) ?? node.payload.startOffsetMode;
+        const offsetX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startOffsetX")?.data ?? node.payload.startOffsetX) ?? 0;
+        const offsetY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startOffsetY")?.data ?? node.payload.startOffsetY) ?? 0;
+        const offsetRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startOffsetRadius")?.data ?? node.payload.startOffsetRadius) ?? 0;
+        const offsetTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startOffsetTheta")?.data ?? node.payload.startOffsetTheta) ?? 0;
 
-        const startRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
+        const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
 
         const [cx, cy] = resolvePoint(centerMode, centerX, centerY, centerRadius, centerTheta);
         const [dx, dy] = resolvePoint(offsetMode, offsetX, offsetY, offsetRadius, offsetTheta);

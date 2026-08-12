@@ -148,7 +148,7 @@ const OVERRIDE_KEYS: {
 const getOverrideFlags = (node: NodeDefinitions.NodeFor<RestyleDefinition>, context: Resolver.Context): OverrideFlags => {
     const flags: Record<string, boolean> = {};
     for (const { flag, payloadFlag, overrideSocket } of OVERRIDE_KEYS) {
-        const boolValue = context.resolve<"boolean">(node.id, overrideSocket)?.data;
+        const boolValue = context.resolve<DataTypes.Boolean>(node.id, overrideSocket)?.data;
         flags[flag] = boolValue ?? (node.payload[payloadFlag] as boolean);
     }
     return flags as unknown as OverrideFlags;
@@ -357,7 +357,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RestyleDefinition>, _inSoc
 const evaluate = (node: NodeDefinitions.NodeFor<RestyleDefinition>, socket: keyof RestyleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const inputShape = context.resolve<"shape">(node.id, "shape")?.data;
+    const inputShape = context.resolve<DataTypes.Shape>(node.id, "shape")?.data;
     if (!inputShape) return null;
 
     const overrides = getOverrideFlags(node, context);
@@ -371,8 +371,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<RestyleDefinition>, socket: keyo
     return { kind: "shape", data: restyled };
 };
 
-const SHAPE_RULE_IN: SocketTypes.Term = SocketTypes.of("shape");
-const SHAPE_RULE_OUT: SocketTypes.Term = SocketTypes.of("shape");
+const SHAPE_RULE_IN: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
+const SHAPE_RULE_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
 
 export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     type: "restyle",

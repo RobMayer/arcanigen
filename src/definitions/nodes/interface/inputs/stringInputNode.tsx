@@ -24,10 +24,10 @@ const def = signature({
 export type StringInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.String>;
         socketed: boolean;
-        widget: DataTypes.TypeOf<"enum">;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 
@@ -98,7 +98,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<StringInputDefinition>, _i
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<StringInputDefinition>, socket: keyof StringInputDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const providedInput = context.getInput?.<"string">(node.id);
+    const providedInput = context.getInput?.<DataTypes.String>(node.id);
     const str = providedInput?.data ?? node.payload.initialValue;
     if (socket === "output") return { kind: "string", data: str };
     if (socket === "charCount") return { kind: "integer", data: `${str.length}` };

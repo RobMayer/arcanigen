@@ -21,7 +21,7 @@ const def = signature({
 export type ArrayStopLengthInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -73,7 +73,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<ArrayStopLengthInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"array<stop:length>">(node.id);
+        const providedInput = context.getInput?.<DataTypes.ArrayOf<DataTypes.StopLength>>(node.id);
         if (providedInput) return providedInput;
     }
     return null;

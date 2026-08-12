@@ -21,7 +21,7 @@ const def = signature({
 export type DistributionInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -70,7 +70,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<DistributionInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"distribution">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Distribution>(node.id);
         if (providedInput) return providedInput;
     }
     return null;

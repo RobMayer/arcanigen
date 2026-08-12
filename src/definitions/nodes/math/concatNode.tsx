@@ -20,10 +20,10 @@ const def = signature({
 export type ConcatDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        a: DataTypes.TypeOf<"string">;
-        b: DataTypes.TypeOf<"string">;
-        separator: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        a: DataTypes.TypeOf<DataTypes.String>;
+        b: DataTypes.TypeOf<DataTypes.String>;
+        separator: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -92,9 +92,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ConcatDefinition>, _inSock
 const evaluate = (node: NodeDefinitions.NodeFor<ConcatDefinition>, socket: keyof ConcatDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output" && socket !== "charCount") return null;
 
-    const a = context.resolve<"string">(node.id, "a")?.data ?? node.payload.a ?? "";
-    const b = context.resolve<"string">(node.id, "b")?.data ?? node.payload.b ?? "";
-    const separator = context.resolve<"string">(node.id, "separator")?.data ?? node.payload.separator ?? "";
+    const a = context.resolve<DataTypes.String>(node.id, "a")?.data ?? node.payload.a ?? "";
+    const b = context.resolve<DataTypes.String>(node.id, "b")?.data ?? node.payload.b ?? "";
+    const separator = context.resolve<DataTypes.String>(node.id, "separator")?.data ?? node.payload.separator ?? "";
 
     const result = a + separator + b;
     if (socket === "output") return { kind: "string", data: result };

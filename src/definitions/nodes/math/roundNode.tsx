@@ -122,14 +122,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<RoundDefinition>, socket: "outpu
         const val = context.resolve(node.id, "input");
         if (!val) return null;
         const { value, unit } = extractSingle(val.kind, val.data);
-        const mode = Enum.resolve(context.resolve<"enum">(node.id, "mode")?.data, Enum.Common.roundingMode) ?? node.payload.mode;
+        const mode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "mode")?.data, Enum.Common.roundingMode) ?? node.payload.mode;
         const outputKind = val.kind === "float" ? "integer" : val.kind;
         return wrapResult(applyRounding(value, mode), outputKind, unit);
     }
     return null;
 };
 
-const ENUM_IN: SocketTypes.Term = SocketTypes.of("enum");
+const ENUM_IN: SocketTypes.Term = SocketTypes.of(DataTypes.ENUM);
 const OUTPUT_DEFAULT: SocketTypes.Term = roundedOutputType(SocketTypes.NUMERIC);
 
 // Resolve every socket's concrete type from the live graph: the input adopts its upstream's kind

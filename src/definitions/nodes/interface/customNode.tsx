@@ -233,11 +233,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             const layerEntries = (node.payload as Record<string, unknown>)[layersKey] as { socket: string; enabled: boolean; blend: number }[];
 
             // Check supersocket first — if connected, use its data directly
-            const supersocketEval = context.resolve<"array<layer>">(node.id, inputNodeId, outerCursorData);
+            const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Layer>>(node.id, inputNodeId, outerCursorData);
             if (supersocketEval) return supersocketEval;
 
             // Build from individual layer sockets
-            const layerData: { shape: DataTypes.TypeOf<"shape"> | null; enabled: boolean | null; blend: number | null }[] = [];
+            const layerData: { shape: DataTypes.TypeOf<DataTypes.Shape> | null; enabled: boolean | null; blend: number | null }[] = [];
             for (const entry of layerEntries) {
                 const resolved = context.resolve(node.id, entry.socket, outerCursorData);
                 if (!resolved) {
@@ -268,11 +268,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             const pathOpEntries = (node.payload as Record<string, unknown>)[pathOpsKey] as { socket: string; enabled: boolean; op: number }[];
 
             // Check supersocket first — if connected, use its data directly
-            const supersocketEval = context.resolve<"array<pathOp>">(node.id, inputNodeId, outerCursorData);
+            const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.PathOp>>(node.id, inputNodeId, outerCursorData);
             if (supersocketEval) return supersocketEval;
 
             // Build from individual pathOp sockets
-            const pathOpData: { path: DataTypes.TypeOf<"path"> | null; enabled: boolean | null; op: number | null }[] = [];
+            const pathOpData: { path: DataTypes.TypeOf<DataTypes.Path> | null; enabled: boolean | null; op: number | null }[] = [];
             for (const entry of pathOpEntries) {
                 const resolved = context.resolve(node.id, entry.socket, outerCursorData);
                 if (!resolved) {
@@ -318,7 +318,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
 
     // Remap sequence token senderIds on output
     if (raw?.kind === "sequence") {
-        const { senderId, count } = raw.data;
+        const { senderId, count } = raw.data as DataTypes.TypeOf<DataTypes.Sequence>;
         return { kind: "sequence", data: { senderId: `${node.id}/${senderId}`, count } };
     }
     return raw;
@@ -419,61 +419,61 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
 };
 
 const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
-    floatInput: SocketTypes.of("float"),
-    floatOutput: SocketTypes.of("float"),
-    integerInput: SocketTypes.of("integer"),
-    integerOutput: SocketTypes.of("integer"),
-    angleInput: SocketTypes.of("angle"),
-    angleOutput: SocketTypes.of("angle"),
-    lengthInput: SocketTypes.of("length"),
-    lengthOutput: SocketTypes.of("length"),
-    colorInput: SocketTypes.of("color"),
-    paintInput: SocketTypes.and("color", "gradient"),
-    colorOutput: SocketTypes.of("color"),
-    booleanInput: SocketTypes.of("boolean"),
-    booleanOutput: SocketTypes.of("boolean"),
-    enumInput: SocketTypes.of("enum"),
-    enumOutput: SocketTypes.of("enum"),
-    stringInput: SocketTypes.of("string"),
-    stringOutput: SocketTypes.of("string"),
-    tokensLengthInput: SocketTypes.of("tokens:length"),
-    tokensLengthOutput: SocketTypes.of("tokens:length"),
-    shapeInput: SocketTypes.of("shape"),
-    shapeOutput: SocketTypes.of("shape"),
-    arrayLayerInput: SocketTypes.of("array<layer>"),
-    arrayLayerOutput: SocketTypes.of("array<layer>"),
-    arrayPathOpInput: SocketTypes.of("array<pathOp>"),
-    arrayPathOpOutput: SocketTypes.of("array<pathOp>"),
-    layerInput: SocketTypes.of("layer"),
-    layerOutput: SocketTypes.of("layer"),
-    pathOpInput: SocketTypes.of("pathOp"),
-    pathOpOutput: SocketTypes.of("pathOp"),
-    stopColorInput: SocketTypes.of("stop:color"),
-    stopColorOutput: SocketTypes.of("stop:color"),
-    arrayStopColorInput: SocketTypes.of("array<stop:color>"),
-    arrayStopColorOutput: SocketTypes.of("array<stop:color>"),
-    stopFloatInput: SocketTypes.of("stop:float"),
-    stopFloatOutput: SocketTypes.of("stop:float"),
-    arrayStopFloatInput: SocketTypes.of("array<stop:float>"),
-    arrayStopFloatOutput: SocketTypes.of("array<stop:float>"),
-    stopAngleInput: SocketTypes.of("stop:angle"),
-    stopAngleOutput: SocketTypes.of("stop:angle"),
-    arrayStopAngleInput: SocketTypes.of("array<stop:angle>"),
-    arrayStopAngleOutput: SocketTypes.of("array<stop:angle>"),
-    stopIntegerInput: SocketTypes.of("stop:integer"),
-    stopIntegerOutput: SocketTypes.of("stop:integer"),
-    arrayStopIntegerInput: SocketTypes.of("array<stop:integer>"),
-    arrayStopIntegerOutput: SocketTypes.of("array<stop:integer>"),
-    stopLengthInput: SocketTypes.of("stop:length"),
-    stopLengthOutput: SocketTypes.of("stop:length"),
-    arrayStopLengthInput: SocketTypes.of("array<stop:length>"),
-    arrayStopLengthOutput: SocketTypes.of("array<stop:length>"),
-    distributionInput: SocketTypes.of("distribution"),
-    distributionOutput: SocketTypes.of("distribution"),
-    sequenceInput: SocketTypes.of("sequence"),
-    sequenceOutput: SocketTypes.of("sequence"),
-    pathInput: SocketTypes.of("path"),
-    pathOutput: SocketTypes.of("path"),
+    floatInput: SocketTypes.of(DataTypes.FLOAT),
+    floatOutput: SocketTypes.of(DataTypes.FLOAT),
+    integerInput: SocketTypes.of(DataTypes.INTEGER),
+    integerOutput: SocketTypes.of(DataTypes.INTEGER),
+    angleInput: SocketTypes.of(DataTypes.ANGLE),
+    angleOutput: SocketTypes.of(DataTypes.ANGLE),
+    lengthInput: SocketTypes.of(DataTypes.LENGTH),
+    lengthOutput: SocketTypes.of(DataTypes.LENGTH),
+    colorInput: SocketTypes.of(DataTypes.COLOR),
+    paintInput: SocketTypes.and(DataTypes.COLOR, DataTypes.GRADIENT),
+    colorOutput: SocketTypes.of(DataTypes.COLOR),
+    booleanInput: SocketTypes.of(DataTypes.BOOLEAN),
+    booleanOutput: SocketTypes.of(DataTypes.BOOLEAN),
+    enumInput: SocketTypes.of(DataTypes.ENUM),
+    enumOutput: SocketTypes.of(DataTypes.ENUM),
+    stringInput: SocketTypes.of(DataTypes.STRING),
+    stringOutput: SocketTypes.of(DataTypes.STRING),
+    tokensLengthInput: SocketTypes.of(DataTypes.TOKENS_LENGTH),
+    tokensLengthOutput: SocketTypes.of(DataTypes.TOKENS_LENGTH),
+    shapeInput: SocketTypes.of(DataTypes.SHAPE),
+    shapeOutput: SocketTypes.of(DataTypes.SHAPE),
+    arrayLayerInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.LAYER)),
+    arrayLayerOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.LAYER)),
+    arrayPathOpInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.PATHOP)),
+    arrayPathOpOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.PATHOP)),
+    layerInput: SocketTypes.of(DataTypes.LAYER),
+    layerOutput: SocketTypes.of(DataTypes.LAYER),
+    pathOpInput: SocketTypes.of(DataTypes.PATHOP),
+    pathOpOutput: SocketTypes.of(DataTypes.PATHOP),
+    stopColorInput: SocketTypes.of(DataTypes.STOP_COLOR),
+    stopColorOutput: SocketTypes.of(DataTypes.STOP_COLOR),
+    arrayStopColorInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_COLOR)),
+    arrayStopColorOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_COLOR)),
+    stopFloatInput: SocketTypes.of(DataTypes.STOP_FLOAT),
+    stopFloatOutput: SocketTypes.of(DataTypes.STOP_FLOAT),
+    arrayStopFloatInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_FLOAT)),
+    arrayStopFloatOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_FLOAT)),
+    stopAngleInput: SocketTypes.of(DataTypes.STOP_ANGLE),
+    stopAngleOutput: SocketTypes.of(DataTypes.STOP_ANGLE),
+    arrayStopAngleInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_ANGLE)),
+    arrayStopAngleOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_ANGLE)),
+    stopIntegerInput: SocketTypes.of(DataTypes.STOP_INTEGER),
+    stopIntegerOutput: SocketTypes.of(DataTypes.STOP_INTEGER),
+    arrayStopIntegerInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_INTEGER)),
+    arrayStopIntegerOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_INTEGER)),
+    stopLengthInput: SocketTypes.of(DataTypes.STOP_LENGTH),
+    stopLengthOutput: SocketTypes.of(DataTypes.STOP_LENGTH),
+    arrayStopLengthInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_LENGTH)),
+    arrayStopLengthOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_LENGTH)),
+    distributionInput: SocketTypes.of(DataTypes.DISTRIBUTION),
+    distributionOutput: SocketTypes.of(DataTypes.DISTRIBUTION),
+    sequenceInput: SocketTypes.of(DataTypes.SEQUENCE),
+    sequenceOutput: SocketTypes.of(DataTypes.SEQUENCE),
+    pathInput: SocketTypes.of(DataTypes.PATH),
+    pathOutput: SocketTypes.of(DataTypes.PATH),
 };
 
 const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", _graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term => {
@@ -652,7 +652,7 @@ const InputSocketOrSlot = ({
 };
 
 const OutputSlotFloat = ({ host, source }: OutputWidgetProps<FloatOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "float" ? Number(NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(10)) : "« none »";
 
     switch (source.payload.widget) {
@@ -724,7 +724,7 @@ const InputSlotFloat = ({ host, source, handleValue }: InputWidgetProps<FloatInp
 };
 
 const OutputSlotInteger = ({ host, source }: OutputWidgetProps<IntegerOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "integer" ? (NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(0) ?? "« none »") : "« none »";
 
     switch (source.payload.widget) {
@@ -795,7 +795,7 @@ const InputSlotInteger = ({ host, source, handleValue }: InputWidgetProps<Intege
 };
 
 const OutputSlotAngle = ({ host, source }: OutputWidgetProps<AngleOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "angle" ? `${Number(NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(2))}°` : "« none »";
 
     switch (source.payload.widget) {
@@ -863,7 +863,7 @@ const InputSlotAngle = ({ host, source, handleValue }: InputWidgetProps<AngleInp
 };
 
 const OutputSlotLength = ({ host, source }: OutputWidgetProps<LengthOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "length" ? resolved.data : "« none »";
 
     switch (source.payload.widget) {
@@ -910,7 +910,7 @@ const InputSlotLength = ({ host, source, handleValue }: InputWidgetProps<LengthI
 };
 
 const OutputSlotShape = ({ host, source }: OutputWidgetProps<ShapeOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const svgObject = resolved?.kind === "shape" ? resolved.data : null;
 
     switch (source.payload.widget) {
@@ -944,7 +944,7 @@ const InputSlotShape = ({ host, source }: { host: NodeDefinitions.NodeFor<Custom
 };
 
 const OutputSlotColor = ({ host, source }: OutputWidgetProps<ColorOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "color" ? Color.toHex(resolved.data) : "« none »";
 
     switch (source.payload.widget) {
@@ -997,7 +997,7 @@ const InputSlotColor = ({ host, source, handleValue }: InputWidgetProps<ColorInp
 };
 
 const OutputSlotBoolean = ({ host, source }: OutputWidgetProps<BooleanOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "boolean" ? (resolved.data ? "True" : "False") : "« none »";
 
     switch (source.payload.widget) {
@@ -1054,7 +1054,7 @@ const InputSlotBoolean = ({ host, source, handleValue }: InputWidgetProps<Boolea
 };
 
 const OutputSlotEnum = ({ host, source }: OutputWidgetProps<EnumOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "enum" ? `${resolved.data}` : "« none »";
 
     switch (source.payload.widget) {
@@ -1139,7 +1139,7 @@ const InputSlotEnum = ({ host, source, handleValue }: InputWidgetProps<EnumInput
 };
 
 const OutputSlotTokensLength = ({ host, source }: OutputWidgetProps<TokensLengthOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "tokens:length" ? resolved.data : "« none »";
 
     switch (source.payload.widget) {
@@ -1174,7 +1174,7 @@ const InputSlotTokensLength = ({ host, source, handleValue }: InputWidgetProps<T
 };
 
 const OutputSlotString = ({ host, source }: OutputWidgetProps<StringOutputDefinition>) => {
-    const resolved = Project.useCachedOutput(useGraphId(), host, source.id);
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
     const output = resolved?.kind === "string" ? resolved.data : "« none »";
 
     switch (source.payload.widget) {

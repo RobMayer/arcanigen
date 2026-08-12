@@ -24,8 +24,8 @@ const def = signature({
 export type PencilEffectDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        seed: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        seed: DataTypes.TypeOf<DataTypes.Integer>;
     }
 >;
 
@@ -77,10 +77,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PencilEffectDefinition>, _
 const evaluate = (node: NodeDefinitions.NodeFor<PencilEffectDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const inputShape = context.resolve<"shape">(node.id, "input")?.data;
+    const inputShape = context.resolve<DataTypes.Shape>(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
+    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
 
     const filter: FilterPrimitive[] = [
         { tag: "feTurbulence", attrs: { type: "fractalNoise", baseFrequency: 1, numOctaves: 8, stitchTiles: "stitch", result: "f1", seed } },
@@ -116,6 +116,6 @@ export const PencilEffectNodeType: NodeTypes.Type<"pencilEffect", PencilEffectDe
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

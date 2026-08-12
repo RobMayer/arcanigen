@@ -27,12 +27,12 @@ const def = signature({
 export type ResultDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        w: DataTypes.TypeOf<"length">;
-        h: DataTypes.TypeOf<"length">;
-        x: DataTypes.TypeOf<"length">;
-        y: DataTypes.TypeOf<"length">;
-        color: DataTypes.TypeOf<"color">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        w: DataTypes.TypeOf<DataTypes.Length>;
+        h: DataTypes.TypeOf<DataTypes.Length>;
+        x: DataTypes.TypeOf<DataTypes.Length>;
+        y: DataTypes.TypeOf<DataTypes.Length>;
+        color: DataTypes.TypeOf<DataTypes.Color>;
     }
 >;
 

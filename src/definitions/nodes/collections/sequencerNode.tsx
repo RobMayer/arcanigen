@@ -36,7 +36,7 @@ export type SequencerDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        mode: DataTypes.TypeOf<"enum">;
+        mode: DataTypes.TypeOf<DataTypes.Enum>;
         reverseSequence: boolean;
         reverseSteps: boolean;
         offset: EmptyOr<NumericString.Type>;
@@ -185,7 +185,7 @@ const contributesTo = (node: NodeDefinitions.NodeFor<SequencerDefinition>, inSoc
 const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: keyof SequencerDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const sequenceEval = context.resolve<"sequence">(node.id, "sequence");
+    const sequenceEval = context.resolve<DataTypes.Sequence>(node.id, "sequence");
     if (!sequenceEval) return null;
 
     const { senderId, count } = sequenceEval.data;
@@ -196,11 +196,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
 
     const iter = context.cursorData[senderId] ?? 0;
 
-    const reverseSequence = context.resolve<"boolean">(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
-    const reverseSteps = context.resolve<"boolean">(node.id, "reverseSteps")?.data ?? node.payload.reverseSteps;
-    const offsetStr = context.resolve<"integer">(node.id, "offset")?.data ?? node.payload.offset;
+    const reverseSequence = context.resolve<DataTypes.Boolean>(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
+    const reverseSteps = context.resolve<DataTypes.Boolean>(node.id, "reverseSteps")?.data ?? node.payload.reverseSteps;
+    const offsetStr = context.resolve<DataTypes.Integer>(node.id, "offset")?.data ?? node.payload.offset;
     const offset = offsetStr === "" ? 0 : parseInt(offsetStr, 10) || 0;
-    const modeEnum = context.resolve<"enum">(node.id, "mode")?.data ?? node.payload.mode;
+    const modeEnum = context.resolve<DataTypes.Enum>(node.id, "mode")?.data ?? node.payload.mode;
     const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
 
     // Pipeline step 1: Reverse Sequence

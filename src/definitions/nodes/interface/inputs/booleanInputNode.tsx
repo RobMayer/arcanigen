@@ -24,9 +24,9 @@ const def = signature({
 export type BooleanInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        widget: DataTypes.TypeOf<"enum">;
-        text: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
+        text: DataTypes.TypeOf<DataTypes.String>;
         initialValue: boolean;
         socketed: boolean;
     }
@@ -104,7 +104,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BooleanInputDefinition>, _
 
 const evaluate = (node: NodeDefinitions.NodeFor<BooleanInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"boolean">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Boolean>(node.id);
         return {
             kind: "boolean",
             data: providedInput?.data ?? node.payload.initialValue,

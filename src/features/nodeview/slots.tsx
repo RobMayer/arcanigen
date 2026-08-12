@@ -46,7 +46,7 @@ export const SocketIn = <D extends NodeDefinitions.Generic, K extends keyof D["i
     );
 };
 
-export const ShapePreview = styled(({ shape, className, color }: { shape: Shape | null; className?: string; color?: DataTypes.TypeOf<"color"> }) => {
+export const ShapePreview = styled(({ shape, className, color }: { shape: Shape | null; className?: string; color?: DataTypes.TypeOf<DataTypes.Color> }) => {
     const style = useMemo(
         () => ({
             backgroundColor: Color.toHex(color ?? { r: 1, g: 1, b: 1, a: 1 }),
@@ -277,10 +277,12 @@ const LabelSmall = styled(({ children, className, label, align }: { children: Re
 `;
 
 // todo: more meaningful returns for certain data-types - ReactNode instead of string - colors that output a swatch, for example - for later
-export const ValuePreview = ({ value }: { value: DataTypes.AnyEval | null }): ReactNode => {
-    if (value === null) {
+export const ValuePreview = ({ value: rawValue }: { value: DataTypes.AnyEval | null }): ReactNode => {
+    if (rawValue === null) {
         return <PreviewBase>{"« none »"}</PreviewBase>;
     }
+    // Barrier cast: the previewed value is honestly-tagged at runtime; narrow it to the concrete union.
+    const value = rawValue as DataTypes.EvalOf<DataTypes.ConcreteKind>;
     switch (value.kind) {
         case "string":
             return <PreviewBase>{value.data}</PreviewBase>;

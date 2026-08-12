@@ -39,7 +39,7 @@ export type LengthIterator2Definition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        stops: { socket: string; value: DataTypes.TypeOf<"length">; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
+        stops: { socket: string; value: DataTypes.TypeOf<DataTypes.Length>; position: EmptyOr<NumericString.Type>; enabled: boolean }[];
     } & IterationPrefab.Definition["payload"]
 >;
 
@@ -124,7 +124,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthItera
     );
 
     const handleStopUpdate = useCallback(
-        (socket: string, update: Partial<{ value: DataTypes.TypeOf<"length">; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
+        (socket: string, update: Partial<{ value: DataTypes.TypeOf<DataTypes.Length>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => {
             handleUpdate({
                 stops: node.payload.stops.map((s) => (s.socket === socket ? { ...s, ...update } : s)),
             });
@@ -215,10 +215,10 @@ const StopEntry = ({
     handleRemoveStop,
     handleReorderStop,
 }: {
-    entry: { socket: string; value: DataTypes.TypeOf<"length">; position: EmptyOr<NumericString.Type>; enabled: boolean };
+    entry: { socket: string; value: DataTypes.TypeOf<DataTypes.Length>; position: EmptyOr<NumericString.Type>; enabled: boolean };
     node: NodeDefinitions.NodeFor<LengthIterator2Definition>;
     index: number;
-    handleStopUpdate: (socket: string, update: Partial<{ value: DataTypes.TypeOf<"length">; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
+    handleStopUpdate: (socket: string, update: Partial<{ value: DataTypes.TypeOf<DataTypes.Length>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
     handleRemoveStop: (socket: string) => void;
     handleReorderStop: (socket: string, toIndex: number) => void;
 }) => {
@@ -330,14 +330,14 @@ const DragGrip = styled.div`
 `;
 
 const resolveStops = (node: NodeDefinitions.NodeFor<LengthIterator2Definition>, context: Resolver.Context): { value: string; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop:length>">(node.id, "stops");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopLength>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? "", position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: string; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop:length">(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.StopLength>(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,

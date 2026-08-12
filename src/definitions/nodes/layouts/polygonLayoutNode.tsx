@@ -42,12 +42,12 @@ const def = signature({
 export type PolygonLayoutDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        count: DataTypes.TypeOf<"integer">;
-        radius: DataTypes.TypeOf<"length">;
-        scribeMode: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        count: DataTypes.TypeOf<DataTypes.Integer>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        scribeMode: DataTypes.TypeOf<DataTypes.Enum>;
         memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<"angle">;
+        memberRotation: DataTypes.TypeOf<DataTypes.Angle>;
     } & TransformPrefab.Definition["payload"]
 >;
 
@@ -203,7 +203,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, 
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket: keyof PolygonLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
+    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
 
@@ -211,11 +211,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
         return { kind: "sequence", data: { senderId: node.id, count } };
     }
 
-    const radiusStr = context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius;
+    const radiusStr = context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius;
     const radius = Length.Emptyable.asNumber(Length.Emptyable.max(radiusStr, "0px"));
     if (radius === null) return null;
 
-    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "scribeMode")?.data ?? node.payload.scribeMode ?? Enum.Common.scribeMode.INSCRIBE.value);
+    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "scribeMode")?.data ?? node.payload.scribeMode ?? Enum.Common.scribeMode.INSCRIBE.value);
     const trueRadius = getTrueRadius(radius, scribeMode, count);
 
     if (socket === "eCircumradius") {
@@ -230,21 +230,21 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
     }
 
     if (socket === "output") {
-        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
             Enum.keyOf(Enum.Common.distroEasing, distro.easing),
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-        const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+        const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
+        const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
         const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
         const children = [];
         for (let i = 0; i < count; i++) {
-            const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+            const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
             if (shape === null) continue;
 
             // Vertex angle with distribution applied, starting at top (-90°)
@@ -297,6 +297,6 @@ export const PolygonLayoutNodeType: NodeTypes.Type<"polygonLayout", PolygonLayou
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

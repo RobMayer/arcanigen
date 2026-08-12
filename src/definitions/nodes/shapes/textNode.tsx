@@ -42,15 +42,15 @@ const def = signature({
 export type TextDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        text: DataTypes.TypeOf<"string">;
-        font: DataTypes.TypeOf<"enum">;
-        size: DataTypes.TypeOf<"length">;
-        spacing: DataTypes.TypeOf<"length">;
-        lineHeight: DataTypes.TypeOf<"length">;
-        letterRotation: DataTypes.TypeOf<"angle">;
-        anchor: DataTypes.TypeOf<"enum">;
-        align: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        text: DataTypes.TypeOf<DataTypes.String>;
+        font: DataTypes.TypeOf<DataTypes.Enum>;
+        size: DataTypes.TypeOf<DataTypes.Length>;
+        spacing: DataTypes.TypeOf<DataTypes.Length>;
+        lineHeight: DataTypes.TypeOf<DataTypes.Length>;
+        letterRotation: DataTypes.TypeOf<DataTypes.Angle>;
+        anchor: DataTypes.TypeOf<DataTypes.Enum>;
+        align: DataTypes.TypeOf<DataTypes.Enum>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -227,22 +227,22 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TextDefinition>, inSocket:
 const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof TextDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output" && socket !== "charCount") return null;
 
-    const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
+    const text = context.resolve<DataTypes.String>(node.id, "text")?.data ?? node.payload.text;
 
     if (socket === "charCount") return { kind: "integer", data: `${(text ?? "").length}` };
 
     if (!text) return null;
 
-    const fontVal = Enum.resolve(context.resolve<"enum">(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
+    const fontVal = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
     const fontFamily = Fonts.familyOf(fontVal);
 
-    const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16);
-    const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
+    const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "size")?.data ?? node.payload.size) ?? 16);
+    const spacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
     // Empty line height falls back to a font-relative default.
-    const lineHeight = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "lineHeight")?.data ?? node.payload.lineHeight) ?? size * 1.2;
-    const letterRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "letterRotation")?.data ?? node.payload.letterRotation) ?? 0;
-    const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
-    const anchor = Enum.resolve(context.resolve<"enum">(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
+    const lineHeight = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "lineHeight")?.data ?? node.payload.lineHeight) ?? size * 1.2;
+    const letterRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "letterRotation")?.data ?? node.payload.letterRotation) ?? 0;
+    const align = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
+    const anchor = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
 
     const textAnchorValue = (Resolver.EnumMappings.linearAlign[align] ?? "start") as "start" | "middle" | "end";
     const dominantBaseline: string = Resolver.EnumMappings.textAnchor[anchor] ?? "central";

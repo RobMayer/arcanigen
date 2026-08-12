@@ -9,6 +9,7 @@
         "preview": "vite preview",
         "clean": "rm -rf ./dist",
         "lint": "eslint .",
+        "typecheck": "tsc --noEmit",
         "lint:fix": "eslint . --fix"
     },
     "keywords": [],

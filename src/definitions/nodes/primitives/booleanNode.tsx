@@ -20,8 +20,8 @@ const def = signature({
 export type BooleanDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.Boolean>;
     }
 >;
 
@@ -78,7 +78,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BooleanDefinition>, socket: "out
     if (socket === "output") {
         return {
             kind: "boolean",
-            data: context.resolve<"boolean">(node.id, "value")?.data ?? node.payload.value,
+            data: context.resolve<DataTypes.Boolean>(node.id, "value")?.data ?? node.payload.value,
         };
     }
     return null;

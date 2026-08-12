@@ -66,7 +66,7 @@ const evaluateSubgraphForCache = (
         const evaluate = NodeTypes.getEvaluator(node.type);
         if (!evaluate) return null;
 
-        const getInput = <K extends DataTypes.Kind>(inputNodeId: string): DataTypes.EvalOf<K> | undefined => {
+        const getInput = <K extends DataTypes.Kind = DataTypes.ConcreteKind>(inputNodeId: string): DataTypes.EvalOf<K> | undefined => {
             return resolveInput(inputNodeId, cursorData) as DataTypes.EvalOf<K> | undefined;
         };
 
@@ -75,7 +75,7 @@ const evaluateSubgraphForCache = (
             cursorData,
             getNode: (gId: string, nId: string) => nodes[gId]?.[nId],
             getInput,
-            resolve: <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideCursorData?: Resolver.CursorData): DataTypes.EvalOf<K> | null => {
+            resolve: <K extends DataTypes.Kind = DataTypes.ConcreteKind>(targetNodeId: string, inSocket: string, overrideCursorData?: Resolver.CursorData): DataTypes.EvalOf<K> | null => {
                 const effectiveCursorData = overrideCursorData ?? cursorData;
                 const targetNode = subgraphNodes[targetNodeId];
                 if (!targetNode) return null;
@@ -137,7 +137,7 @@ const evaluateSocketCached = (
     if (!evaluate) return null;
 
     // Build context with evaluate-on-miss resolve
-    const resolve = <K extends DataTypes.Kind>(targetNodeId: string, inSocket: string, overrideCursorData?: Resolver.CursorData): DataTypes.EvalOf<K> | null => {
+    const resolve = <K extends DataTypes.Kind = DataTypes.ConcreteKind>(targetNodeId: string, inSocket: string, overrideCursorData?: Resolver.CursorData): DataTypes.EvalOf<K> | null => {
         const effectiveCursorData = overrideCursorData ?? cursorData;
         const targetNode = nodes[graphId]?.[targetNodeId];
         if (!targetNode) return null;

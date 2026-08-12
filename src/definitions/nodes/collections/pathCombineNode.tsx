@@ -352,7 +352,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathCombineDefinition>, in
 
 const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: keyof PathCombineDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "operationCount" || socket === "enabledCount") {
-        const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
+        const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.PathOp>>(node.id, "pathOps");
         const enabled = supersocketEval ? supersocketEval.data.filter((e) => e.enabled ?? true).length : node.payload.paths.filter((p) => p.enabled).length;
         // Every enabled entry past the seed applies one op, so operations = enabled − 1 (floored at 0).
         return {
@@ -362,13 +362,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
     }
 
     if (socket === "pathOpArray") {
-        const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
+        const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.PathOp>>(node.id, "pathOps");
         if (supersocketEval) {
             return { kind: "array<pathOp>", data: supersocketEval.data };
         }
-        const pathOpData: { path: DataTypes.TypeOf<"path"> | null; enabled: boolean | null; op: number | null }[] = [];
+        const pathOpData: { path: DataTypes.TypeOf<DataTypes.Path> | null; enabled: boolean | null; op: number | null }[] = [];
         for (const row of node.payload.paths) {
-            const resolved = context.resolve<"pathOp">(node.id, row.socket) as DataTypes.AnyEval | null;
+            const resolved = context.resolve<DataTypes.PathOp | DataTypes.Path>(node.id, row.socket);
             if (resolved && resolved.kind === "pathOp") {
                 pathOpData.push({ path: resolved.data.path, enabled: resolved.data.enabled ?? row.enabled, op: resolved.data.op ?? row.op });
             } else if (resolved && resolved.kind === "path") {
@@ -382,10 +382,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
 
     if (socket !== "output") return null;
 
-    const entries: { op: PaperHelper.PathOpKind; path: DataTypes.TypeOf<"path"> | null }[] = [];
+    const entries: { op: PaperHelper.PathOpKind; path: DataTypes.TypeOf<DataTypes.Path> | null }[] = [];
 
     // Supersocket path: fold the provided array<pathOp> directly.
-    const supersocketEval = context.resolve<"array<pathOp>">(node.id, "pathOps");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.PathOp>>(node.id, "pathOps");
     if (supersocketEval) {
         for (const entry of supersocketEval.data) {
             if (!(entry.enabled ?? true)) continue;
@@ -394,9 +394,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathCombineDefinition>, socket: 
     } else {
         // Individual rows: each socket may carry a bare path or a composed pathOp (which overrides op/enabled).
         for (const row of node.payload.paths) {
-            const resolved = context.resolve<"pathOp">(node.id, row.socket) as DataTypes.AnyEval | null;
+            const resolved = context.resolve<DataTypes.PathOp | DataTypes.Path>(node.id, row.socket);
 
-            let path: DataTypes.TypeOf<"path"> | null;
+            let path: DataTypes.TypeOf<DataTypes.Path> | null;
             let enabled: boolean;
             let op: number;
             if (resolved && resolved.kind === "pathOp") {
@@ -430,8 +430,8 @@ const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.Me
 
     const sourceOut = NodeTypes.getSocketType(fromNode, link.fromSocket, "out", graphId, ctx);
     const destIn = NodeTypes.getSocketType(toNode, link.toSocket, "in", graphId, ctx);
-    const pathIn: SocketTypes.Term = SocketTypes.of("path");
-    const pathOut: SocketTypes.Term = SocketTypes.of("path");
+    const pathIn: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+    const pathOut: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
     return SocketTypes.canFlow(sourceOut, pathIn) && SocketTypes.canFlow(pathOut, destIn);
 };

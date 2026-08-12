@@ -50,21 +50,21 @@ const def = signature({
 export type BurstDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        spurCount: DataTypes.TypeOf<"integer">;
-        spanMode: DataTypes.TypeOf<"enum">;
-        spreadAlign: DataTypes.TypeOf<"enum">;
-        radius: DataTypes.TypeOf<"length">;
-        spread: DataTypes.TypeOf<"length">;
-        innerRadius: DataTypes.TypeOf<"length">;
-        outerRadius: DataTypes.TypeOf<"length">;
-        arcMode: DataTypes.TypeOf<"enum">;
-        thetaStart: DataTypes.TypeOf<"angle">;
-        sweep: DataTypes.TypeOf<"angle">;
-        thetaFrom: DataTypes.TypeOf<"angle">;
-        thetaTo: DataTypes.TypeOf<"angle">;
-        thetaInclusive: DataTypes.TypeOf<"boolean">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        spurCount: DataTypes.TypeOf<DataTypes.Integer>;
+        spanMode: DataTypes.TypeOf<DataTypes.Enum>;
+        spreadAlign: DataTypes.TypeOf<DataTypes.Enum>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        spread: DataTypes.TypeOf<DataTypes.Length>;
+        innerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        outerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        arcMode: DataTypes.TypeOf<DataTypes.Enum>;
+        thetaStart: DataTypes.TypeOf<DataTypes.Angle>;
+        sweep: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaInclusive: DataTypes.TypeOf<DataTypes.Boolean>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -303,24 +303,24 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BurstDefinition>, inSocket
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof BurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
+    const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
     if (!isFinite(spurCount) || spurCount <= 0) return null;
 
     const N = spurCount;
-    const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
+    const spanMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
     let rI: number;
     let rO: number;
 
     if (spanMode === Enum.Common.spanMode.INNER_OUTER.value) {
-        rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-        rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+        rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+        rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
     } else {
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-        const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+        const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
         if (!radius) return null;
 
-        const spreadAlign = Enum.resolve(context.resolve<"enum">(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
+        const spreadAlign = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
 
         const tIMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.INWARD.value ? spread : 0;
         const tOMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.OUTWARD.value ? spread : 0;
@@ -332,24 +332,24 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     if (rO <= 0) return null;
     rI = Math.max(0, rI);
 
-    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
+    const arcMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
 
     let effectiveStart: number;
     let effectiveSweep: number;
 
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
-        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        const from = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
         effectiveSweep = to - from;
     } else {
-        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
-    const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+    const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
 
-    const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+    const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
@@ -379,9 +379,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     }
 
     if (socket === "output") {
-        const markerStartShape = context.resolve<"shape">(node.id, "markerStart")?.data;
-        const markerEndShape = context.resolve<"shape">(node.id, "markerEnd")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStart")?.data;
+        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEnd")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const paint = StylingPrefab.evaluate(node, context);
         const markers =

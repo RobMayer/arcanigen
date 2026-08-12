@@ -25,13 +25,13 @@ export type SinDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        input: DataTypes.TypeOf<"float">;
+        input: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const TRIG_IN: SocketTypes.Term = SocketTypes.or("angle", "float", "integer");
-const FLOAT_OUT: SocketTypes.Term = SocketTypes.of("float");
+const TRIG_IN: SocketTypes.Term = SocketTypes.or(DataTypes.ANGLE, DataTypes.FLOAT, DataTypes.INTEGER);
+const FLOAT_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.FLOAT);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<SinDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"sin", SinDefinition> => {
     return {

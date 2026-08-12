@@ -43,18 +43,18 @@ const def = signature({
 export type TransformDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        positionMode: DataTypes.TypeOf<"enum">;
-        positionX: DataTypes.TypeOf<"length">;
-        positionY: DataTypes.TypeOf<"length">;
-        positionRadius: DataTypes.TypeOf<"length">;
-        positionTheta: DataTypes.TypeOf<"angle">;
-        preRotation: DataTypes.TypeOf<"angle">;
-        postRotation: DataTypes.TypeOf<"angle">;
-        skewX: DataTypes.TypeOf<"angle">;
-        skewY: DataTypes.TypeOf<"angle">;
-        scaleX: DataTypes.TypeOf<"float">;
-        scaleY: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        positionMode: DataTypes.TypeOf<DataTypes.Enum>;
+        positionX: DataTypes.TypeOf<DataTypes.Length>;
+        positionY: DataTypes.TypeOf<DataTypes.Length>;
+        positionRadius: DataTypes.TypeOf<DataTypes.Length>;
+        positionTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        preRotation: DataTypes.TypeOf<DataTypes.Angle>;
+        postRotation: DataTypes.TypeOf<DataTypes.Angle>;
+        skewX: DataTypes.TypeOf<DataTypes.Angle>;
+        skewY: DataTypes.TypeOf<DataTypes.Angle>;
+        scaleX: DataTypes.TypeOf<DataTypes.Float>;
+        scaleY: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -208,17 +208,17 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TransformDefinition>, _inS
 
 /** Resolves all transform parameters and builds a CSS transform string + translation offsets */
 const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, context: Resolver.Context): { css: string; translateX: number; translateY: number } => {
-    const positionMode = Enum.resolve(context.resolve<"enum">(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
-    const positionX = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
-    const positionY = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
-    const positionRadius = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
-    const positionTheta = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
-    const preRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "preRotation")?.data ?? node.payload.preRotation) ?? 0;
-    const postRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "postRotation")?.data ?? node.payload.postRotation) ?? 0;
-    const skewX = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "skewX")?.data ?? node.payload.skewX) ?? 0;
-    const skewY = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "skewY")?.data ?? node.payload.skewY) ?? 0;
-    const scaleX = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "scaleX")?.data ?? node.payload.scaleX) ?? 1;
-    const scaleY = NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "scaleY")?.data ?? node.payload.scaleY) ?? 1;
+    const positionMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
+    const positionX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
+    const positionY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
+    const positionRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
+    const positionTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+    const preRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "preRotation")?.data ?? node.payload.preRotation) ?? 0;
+    const postRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "postRotation")?.data ?? node.payload.postRotation) ?? 0;
+    const skewX = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewX")?.data ?? node.payload.skewX) ?? 0;
+    const skewY = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewY")?.data ?? node.payload.skewY) ?? 0;
+    const scaleX = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "scaleX")?.data ?? node.payload.scaleX) ?? 1;
+    const scaleY = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "scaleY")?.data ?? node.payload.scaleY) ?? 1;
 
     let translateX: number;
     let translateY: number;
@@ -246,7 +246,7 @@ const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, co
 
 const evaluate = (node: NodeDefinitions.NodeFor<TransformDefinition>, socket: keyof TransformDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const inputShape = context.resolve<"shape">(node.id, "shape")?.data;
+        const inputShape = context.resolve<DataTypes.Shape>(node.id, "shape")?.data;
         if (!inputShape) return null;
 
         const { css, translateX, translateY } = resolveTransform(node, context);
@@ -260,7 +260,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TransformDefinition>, socket: ke
     }
 
     if (socket === "pathOutput") {
-        const inputPath = context.resolve<"path">(node.id, "path")?.data;
+        const inputPath = context.resolve<DataTypes.Path>(node.id, "path")?.data;
         if (!inputPath) return null;
 
         const { css, translateX, translateY } = resolveTransform(node, context);
@@ -276,10 +276,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<TransformDefinition>, socket: ke
     return null;
 };
 
-const SHAPE_IN: SocketTypes.Term = SocketTypes.of("shape");
-const SHAPE_OUT: SocketTypes.Term = SocketTypes.of("shape");
-const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
-const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
+const SHAPE_IN: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
+const SHAPE_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.SHAPE);
+const PATH_IN: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+const PATH_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
 const canInterject = (link: ArcaneGraph.Link, graphId: string, ctx: NodeTypes.MethodContext): boolean => {
     const fromNode = ctx.getNode(graphId, link.fromNode);

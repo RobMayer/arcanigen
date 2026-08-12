@@ -26,13 +26,13 @@ const def = signature({
 export type FloatInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        initialValue: DataTypes.TypeOf<"float">;
-        widget: DataTypes.TypeOf<"enum">;
-        min: DataTypes.TypeOf<"float">;
-        max: DataTypes.TypeOf<"float">;
-        step: DataTypes.TypeOf<"float">;
-        snap: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        initialValue: DataTypes.TypeOf<DataTypes.Float>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
+        min: DataTypes.TypeOf<DataTypes.Float>;
+        max: DataTypes.TypeOf<DataTypes.Float>;
+        step: DataTypes.TypeOf<DataTypes.Float>;
+        snap: DataTypes.TypeOf<DataTypes.Float>;
         socketed: boolean;
     }
 >;
@@ -119,7 +119,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FloatInputDefinition>, _in
 
 const evaluate = (node: NodeDefinitions.NodeFor<FloatInputDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const providedInput = context.getInput?.<"float">(node.id);
+        const providedInput = context.getInput?.<DataTypes.Float>(node.id);
         let data = providedInput?.data ?? node.payload.initialValue;
         let v = NumericString.Emptyable.asNumber(data);
         if (v !== null) {

@@ -43,13 +43,13 @@ const def = signature({
 export type PolygonDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        pointCount: DataTypes.TypeOf<"integer">;
-        rScribe: DataTypes.TypeOf<"enum">;
-        radius: DataTypes.TypeOf<"length">;
-        cornerRadius: DataTypes.TypeOf<"length">;
-        cornerShape: DataTypes.TypeOf<"enum">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        pointCount: DataTypes.TypeOf<DataTypes.Integer>;
+        rScribe: DataTypes.TypeOf<DataTypes.Enum>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        cornerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        cornerShape: DataTypes.TypeOf<DataTypes.Enum>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -249,13 +249,13 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, inSock
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyof PolygonDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output" || socket === "path") {
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
-        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
+        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
         if (radius === null || !isFinite(pointCount)) {
             return null;
         }
 
-        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
 
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
@@ -263,7 +263,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+        const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
 
         const trueRadius = getTrueRadius(radius, scribeMode, pointCount);
         const N = pointCount;
@@ -273,8 +273,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             return [trueRadius * Math.cos(angle), trueRadius * Math.sin(angle)] as const;
         });
 
-        const cornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
-        const cornerShape = Enum.resolve(context.resolve<"enum">(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
+        const cornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
+        const cornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
 
         let d: string;
         let hasCut = false;
@@ -381,8 +381,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
             };
         }
 
-        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const paint = StylingPrefab.evaluate(node, context);
         if (hasCut) paint.fill = null;
@@ -406,13 +406,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonDefinition>, socket: keyo
         };
     }
 
-    const [radius, unit] = Length.Emptyable.parse(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? [null, null];
-    const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount);
+    const [radius, unit] = Length.Emptyable.parse(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? [null, null];
+    const pointCount = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "pointCount")?.data ?? node.payload.pointCount);
     if (radius === null || unit == null || pointCount === null) {
         return null;
     }
 
-    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
     const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
 
     if (socket === "eCircumradius") {

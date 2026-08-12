@@ -27,10 +27,10 @@ const def = signature({
 export type BrushEffectDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        brushTip: DataTypes.TypeOf<"length">;
-        seed: DataTypes.TypeOf<"integer">;
-        shake: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        brushTip: DataTypes.TypeOf<DataTypes.Length>;
+        seed: DataTypes.TypeOf<DataTypes.Integer>;
+        shake: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -90,12 +90,12 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BrushEffectDefinition>, _i
 const evaluate = (node: NodeDefinitions.NodeFor<BrushEffectDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const inputShape = context.resolve<"shape">(node.id, "input")?.data;
+    const inputShape = context.resolve<DataTypes.Shape>(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
-    const tipPx = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "brushTip")?.data ?? node.payload.brushTip) ?? 0;
-    const shake = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "shake")?.data ?? node.payload.shake) ?? 0));
+    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
+    const tipPx = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "brushTip")?.data ?? node.payload.brushTip) ?? 0;
+    const shake = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "shake")?.data ?? node.payload.shake) ?? 0));
 
     const tipRadius = tipPx / 4;
     const shakeScale = shake * 10;
@@ -163,6 +163,6 @@ export const BrushEffectNodeType: NodeTypes.Type<"brushEffect", BrushEffectDefin
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

@@ -107,9 +107,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>, so
     if (socket !== "output") {
         return null;
     }
-    const valStr = context.resolve<"angle">(node.id, "value")?.data ?? node.payload.value;
-    const posStr = context.resolve<"float">(node.id, "position")?.data ?? node.payload.position;
-    const enabled = context.resolve<"boolean">(node.id, "enabled")?.data ?? node.payload.enabled;
+    const valStr = context.resolve<DataTypes.Angle>(node.id, "value")?.data ?? node.payload.value;
+    const posStr = context.resolve<DataTypes.Float>(node.id, "position")?.data ?? node.payload.position;
+    const enabled = context.resolve<DataTypes.Boolean>(node.id, "enabled")?.data ?? node.payload.enabled;
     return {
         kind: "stop:angle",
         data: {

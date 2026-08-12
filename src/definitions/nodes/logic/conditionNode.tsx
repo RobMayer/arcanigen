@@ -93,7 +93,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ConditionDefinition>, inSo
 
 const evaluate = (node: NodeDefinitions.NodeFor<ConditionDefinition>, socket: keyof ConditionDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "result") {
-        const condition = context.resolve<"boolean">(node.id, "if");
+        const condition = context.resolve<DataTypes.Boolean>(node.id, "if");
         const value = condition !== null ? condition.data : node.payload.if;
         return value ? context.resolve(node.id, "then") : context.resolve(node.id, "else");
     }

@@ -33,18 +33,18 @@ const def = signature({
 export type SubstringDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        string: DataTypes.TypeOf<"string">;
-        startIndex: DataTypes.TypeOf<"integer">;
-        mode: DataTypes.TypeOf<"enum">;
-        length: DataTypes.TypeOf<"integer">;
-        end: DataTypes.TypeOf<"integer">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        string: DataTypes.TypeOf<DataTypes.String>;
+        startIndex: DataTypes.TypeOf<DataTypes.Integer>;
+        mode: DataTypes.TypeOf<DataTypes.Enum>;
+        length: DataTypes.TypeOf<DataTypes.Integer>;
+        end: DataTypes.TypeOf<DataTypes.Integer>;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const STRING_IN: SocketTypes.Term = SocketTypes.of("string");
-const STRING_OUT: SocketTypes.Term = SocketTypes.of("string");
+const STRING_IN: SocketTypes.Term = SocketTypes.of(DataTypes.STRING);
+const STRING_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.STRING);
 
 const MODE_OPTIONS = Enum.options(Enum.Common.substringMode);
 
@@ -132,21 +132,21 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<SubstringDefinition>, _inS
 };
 
 const resolveInt = (context: Resolver.Context, nodeId: string, socketId: keyof SubstringDefinition["inputs"], fallback: EmptyOr<NumericString.Type>, def: number): number => {
-    const raw = context.resolve<"integer" | "float">(nodeId, socketId)?.data ?? fallback;
+    const raw = context.resolve<DataTypes.Integer | DataTypes.Float>(nodeId, socketId)?.data ?? fallback;
     return Math.round(NumericString.Emptyable.asNumber(raw) ?? def);
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<SubstringDefinition>, socket: keyof SubstringDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output" && socket !== "charCount") return null;
 
-    const str = context.resolve<"string">(node.id, "string")?.data ?? node.payload.string ?? "";
+    const str = context.resolve<DataTypes.String>(node.id, "string")?.data ?? node.payload.string ?? "";
     const len = str.length;
 
     // Resolve start: negative counts from the end, then clamp into [0, len].
     const startRaw = resolveInt(context, node.id, "startIndex", node.payload.startIndex, 0);
     const start = Math.max(0, Math.min(len, startRaw < 0 ? len + startRaw : startRaw));
 
-    const mode = Enum.resolve(context.resolve<"enum">(node.id, "mode")?.data, Enum.Common.substringMode) ?? node.payload.mode;
+    const mode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "mode")?.data, Enum.Common.substringMode) ?? node.payload.mode;
 
     let end: number;
     if (mode === Enum.Common.substringMode.LENGTH.value) {

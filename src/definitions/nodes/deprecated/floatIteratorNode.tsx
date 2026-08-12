@@ -239,8 +239,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatIteratorDefinition>, socket
     // Resolve all stops
     const resolved: { value: number; position: number }[] = [];
     for (const stop of stops) {
-        const valStr = context.resolve<"float">(node.id, `value_${stop.id}`)?.data ?? stop.value;
-        const posStr = context.resolve<"float">(node.id, `pos_${stop.id}`)?.data ?? stop.position;
+        const valStr = context.resolve<DataTypes.Float>(node.id, `value_${stop.id}`)?.data ?? stop.value;
+        const posStr = context.resolve<DataTypes.Float>(node.id, `pos_${stop.id}`)?.data ?? stop.position;
         const value = NumericString.Emptyable.asNumber(valStr) ?? 0;
         const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
         resolved.push({ value, position: pos });

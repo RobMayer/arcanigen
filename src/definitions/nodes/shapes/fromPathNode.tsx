@@ -28,7 +28,7 @@ const def = signature({
 export type FromPathDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -122,7 +122,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FromPathDefinition>, _inSo
 const evaluate = (node: NodeDefinitions.NodeFor<FromPathDefinition>, socket: keyof FromPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathVal = context.resolve<"path">(node.id, "path");
+    const pathVal = context.resolve<DataTypes.Path>(node.id, "path");
     if (!pathVal) return null;
 
     const { d, transform: inputTransform, preview } = pathVal.data;

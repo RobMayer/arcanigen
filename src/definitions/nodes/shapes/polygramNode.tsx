@@ -46,15 +46,15 @@ const def = signature({
 export type PolygramDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        pointCount: DataTypes.TypeOf<"integer">;
-        skipCount: DataTypes.TypeOf<"integer">;
-        rScribe: DataTypes.TypeOf<"enum">;
-        radius: DataTypes.TypeOf<"length">;
-        cornerRadius: DataTypes.TypeOf<"length">;
-        cornerShape: DataTypes.TypeOf<"enum">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
-        removeCrossings: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        pointCount: DataTypes.TypeOf<DataTypes.Integer>;
+        skipCount: DataTypes.TypeOf<DataTypes.Integer>;
+        rScribe: DataTypes.TypeOf<DataTypes.Enum>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        cornerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        cornerShape: DataTypes.TypeOf<DataTypes.Enum>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
+        removeCrossings: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -288,16 +288,16 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, inSoc
 
 const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: keyof PolygramDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output" || socket === "path") {
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
-        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? null;
+        const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
         if (radius === null || !isFinite(pointCount)) {
             return null;
         }
 
-        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const distro = context.resolve<"distribution">(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
 
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
@@ -305,7 +305,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+        const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
 
         const trueRadius = getTrueRadius(radius, scribeMode, pointCount);
         const N = pointCount;
@@ -315,10 +315,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
             return [trueRadius * Math.cos(angle), trueRadius * Math.sin(angle)] as const;
         });
 
-        const cornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
-        const cornerShape = Enum.resolve(context.resolve<"enum">(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
+        const cornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
+        const cornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
 
-        const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
+        const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
         const skipCount = Math.min(tempSkipCount, Math.ceil(pointCount / 2) - 2);
         const step = skipCount + 1;
 
@@ -439,7 +439,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         }
 
         let d = subpaths.join(" ");
-        const removeCrossings = context.resolve<"boolean">(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings;
+        const removeCrossings = context.resolve<DataTypes.Boolean>(node.id, "removeCrossings")?.data ?? node.payload.removeCrossings;
         if (removeCrossings) {
             d = PaperHelper.healD(d) ?? d;
         }
@@ -474,15 +474,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygramDefinition>, socket: key
         };
     }
 
-    const [radius, unit] = Length.Emptyable.parse(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? [null, null];
-    const pointCount = NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "pointCount")?.data ?? node.payload.pointCount);
+    const [radius, unit] = Length.Emptyable.parse(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? [null, null];
+    const pointCount = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "pointCount")?.data ?? node.payload.pointCount);
     if (radius === null || unit == null || pointCount === null) {
         return null;
     }
 
-    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<"enum">(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+    const scribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
     const currentRadius = getTrueRadius(radius, scribeMode, pointCount);
-    const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
+    const tempSkipCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "skipCount")?.data ?? node.payload.skipCount) ?? 0));
     const step = Math.min(tempSkipCount, Math.ceil(pointCount / 2) - 2) + 1;
 
     if (socket === "eCircumradius") {

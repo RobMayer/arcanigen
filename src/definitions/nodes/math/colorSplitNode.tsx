@@ -79,8 +79,8 @@ const def = signature({
 export type ColorSplitDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"color">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.Color>;
     }
 >;
 
@@ -370,7 +370,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ColorSplitDefinition>, inS
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: OutKey, context: Resolver.Context): DataTypes.AnyEval | null => {
-    const color = context.resolve<"color">(node.id, "input")?.data ?? node.payload.value;
+    const color = context.resolve<DataTypes.Color>(node.id, "input")?.data ?? node.payload.value;
     if (color === null) return null;
     const { r, g, b, a } = color;
 

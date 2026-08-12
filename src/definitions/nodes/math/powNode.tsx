@@ -26,7 +26,7 @@ export type PowDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        exponent: DataTypes.TypeOf<"float">;
+        exponent: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 

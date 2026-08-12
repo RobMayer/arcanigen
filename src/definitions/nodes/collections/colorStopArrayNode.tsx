@@ -302,14 +302,14 @@ const DragGrip = styled.div`
 // Resolve the effective stops: the supersocket (an array<stop:color>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop:color) over its inline payload.
 const resolveStops = (node: NodeDefinitions.NodeFor<ColorStopArrayDefinition>, context: Resolver.Context): { value: Color.Type; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<"array<stop:color>">(node.id, "stops");
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopColor>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: Color.Type; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<"stop:color">(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.StopColor>(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? entry.value,

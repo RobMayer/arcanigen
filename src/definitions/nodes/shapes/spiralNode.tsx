@@ -46,18 +46,18 @@ const def = signature({
 export type SpiralDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        spanMode: DataTypes.TypeOf<"enum">;
-        innerRadius: DataTypes.TypeOf<"length">;
-        outerRadius: DataTypes.TypeOf<"length">;
-        radius: DataTypes.TypeOf<"length">;
-        spread: DataTypes.TypeOf<"length">;
-        arcMode: DataTypes.TypeOf<"enum">;
-        thetaStart: DataTypes.TypeOf<"angle">;
-        sweep: DataTypes.TypeOf<"angle">;
-        thetaFrom: DataTypes.TypeOf<"angle">;
-        thetaTo: DataTypes.TypeOf<"angle">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        spanMode: DataTypes.TypeOf<DataTypes.Enum>;
+        innerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        outerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        spread: DataTypes.TypeOf<DataTypes.Length>;
+        arcMode: DataTypes.TypeOf<DataTypes.Enum>;
+        thetaStart: DataTypes.TypeOf<DataTypes.Angle>;
+        sweep: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -294,34 +294,34 @@ const bezierCommand = (points: (readonly [number, number])[], i: number) => {
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof SpiralDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spanMode = Enum.resolve(context.resolve<"enum">(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
+    const spanMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
     let rI: number;
     let rO: number;
 
     if (spanMode === Enum.Common.spanMode.SPREAD.value) {
-        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-        const spread = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spread")?.data ?? node.payload.spread) ?? 0);
+        const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+        const spread = Math.max(0, Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread) ?? 0);
         rI = radius - spread / 2;
         rO = radius + spread / 2;
     } else {
-        rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-        rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
+        rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
+        rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
     }
 
-    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
+    const arcMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
 
     let effectiveStart: number;
     let effectiveSweep: number;
 
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
-        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        const from = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
         effectiveSweep = to - from;
     } else {
-        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
     if (effectiveSweep === 0) {
@@ -358,9 +358,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     if (socket === "output") {
         const paint = StylingPrefab.evaluate(node, context);
 
-        const markerStartShape = context.resolve<"shape">(node.id, "markerStartShape")?.data;
-        const markerEndShape = context.resolve<"shape">(node.id, "markerEndShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStartShape")?.data;
+        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEndShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const markers =
             markerStartShape || markerEndShape

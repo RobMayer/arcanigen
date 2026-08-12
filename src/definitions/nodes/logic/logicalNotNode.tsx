@@ -63,7 +63,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LogicalNotDefinition>, inS
 
 const evaluate = (node: NodeDefinitions.NodeFor<LogicalNotDefinition>, socket: keyof LogicalNotDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const input = context.resolve<"boolean">(node.id, "input");
+        const input = context.resolve<DataTypes.Boolean>(node.id, "input");
         return { kind: "boolean", data: input !== null ? !input.data : true };
     }
     return null;
@@ -83,6 +83,6 @@ export const LogicalNotNodeType: NodeTypes.Type<"logicalNot", LogicalNotDefiniti
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("boolean"), SocketTypes.of("boolean")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.BOOLEAN), SocketTypes.of(DataTypes.BOOLEAN)),
     onInterject: passthroughInterject("input", "output"),
 };

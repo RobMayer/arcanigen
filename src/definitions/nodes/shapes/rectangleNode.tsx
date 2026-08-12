@@ -37,12 +37,12 @@ const def = signature({
 export type RectangleDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        width: DataTypes.TypeOf<"length">;
-        height: DataTypes.TypeOf<"length">;
-        cornerRadius: DataTypes.TypeOf<"length">;
-        cornerShape: DataTypes.TypeOf<"enum">;
-        markerAlign: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        width: DataTypes.TypeOf<DataTypes.Length>;
+        height: DataTypes.TypeOf<DataTypes.Length>;
+        cornerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        cornerShape: DataTypes.TypeOf<DataTypes.Enum>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -195,10 +195,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, inSo
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: keyof RectangleDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "width")?.data ?? node.payload.width, "0px")) ?? 0;
-    const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "height")?.data ?? node.payload.height, "0px")) ?? 0;
-    const cornerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
-    const cornerShape = Enum.resolve(context.resolve<"enum">(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
+    const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "width")?.data ?? node.payload.width, "0px")) ?? 0;
+    const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "height")?.data ?? node.payload.height, "0px")) ?? 0;
+    const cornerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "cornerRadius")?.data ?? node.payload.cornerRadius, "0px")) ?? 0;
+    const cornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "cornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.cornerShape ?? 0;
     if (!width || !height) {
         return null;
     }
@@ -260,8 +260,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
     }
 
     if (socket === "output") {
-        const markerShape = context.resolve<"shape">(node.id, "markerShape")?.data;
-        const markerAlign = context.resolve<"boolean">(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
         const diag = Math.sqrt(width * width + height * height);
         const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };

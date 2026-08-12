@@ -22,8 +22,8 @@ const def = signature({
 export type PathLengthDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        sampleAt: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        sampleAt: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -89,13 +89,13 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathLengthDefinition>, inS
 const evaluate = (node: NodeDefinitions.NodeFor<PathLengthDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
     const total = PaperHelper.pathLength(pathData);
     if (total === null) return null;
 
-    const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "sampleAt")?.data ?? node.payload.sampleAt) ?? 100;
+    const pct = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "sampleAt")?.data ?? node.payload.sampleAt) ?? 100;
     const frac = Math.max(0, Math.min(100, pct)) / 100;
 
     return {

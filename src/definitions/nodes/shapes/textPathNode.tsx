@@ -48,19 +48,19 @@ const def = signature({
 export type TextPathDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        font: DataTypes.TypeOf<"enum">;
-        text: DataTypes.TypeOf<"string">;
-        size: DataTypes.TypeOf<"length">;
-        spacing: DataTypes.TypeOf<"length">;
-        rotation: DataTypes.TypeOf<"angle">;
-        anchor: DataTypes.TypeOf<"enum">;
-        align: DataTypes.TypeOf<"enum">;
-        offsetMode: DataTypes.TypeOf<"enum">;
-        offsetPercent: DataTypes.TypeOf<"float">;
-        offsetLength: DataTypes.TypeOf<"length">;
-        offsetOrigin: DataTypes.TypeOf<"enum">;
-        reversePath: DataTypes.TypeOf<"boolean">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        font: DataTypes.TypeOf<DataTypes.Enum>;
+        text: DataTypes.TypeOf<DataTypes.String>;
+        size: DataTypes.TypeOf<DataTypes.Length>;
+        spacing: DataTypes.TypeOf<DataTypes.Length>;
+        rotation: DataTypes.TypeOf<DataTypes.Angle>;
+        anchor: DataTypes.TypeOf<DataTypes.Enum>;
+        align: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetMode: DataTypes.TypeOf<DataTypes.Enum>;
+        offsetPercent: DataTypes.TypeOf<DataTypes.Float>;
+        offsetLength: DataTypes.TypeOf<DataTypes.Length>;
+        offsetOrigin: DataTypes.TypeOf<DataTypes.Enum>;
+        reversePath: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"]
 >;
 
@@ -270,41 +270,41 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
     if (socket !== "output" && socket !== "charCount") return null;
 
     if (socket === "charCount") {
-        const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
+        const text = context.resolve<DataTypes.String>(node.id, "text")?.data ?? node.payload.text;
         return { kind: "integer", data: `${(text ?? "").length}` };
     }
 
-    const pathData = context.resolve<"path">(node.id, "path")?.data;
+    const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
-    const reversePath = context.resolve<"boolean">(node.id, "reversePath")?.data ?? node.payload.reversePath;
+    const reversePath = context.resolve<DataTypes.Boolean>(node.id, "reversePath")?.data ?? node.payload.reversePath;
     const pathD = reversePath ? (PaperHelper.reverseD(pathData.d) ?? pathData.d) : pathData.d;
 
-    const text = context.resolve<"string">(node.id, "text")?.data ?? node.payload.text;
+    const text = context.resolve<DataTypes.String>(node.id, "text")?.data ?? node.payload.text;
     if (!text) return null;
 
-    const fontVal = Enum.resolve(context.resolve<"enum">(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
+    const fontVal = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "font")?.data, Fonts.ENUM) ?? node.payload.font ?? 0;
     const fontFamily = Fonts.familyOf(fontVal);
 
-    const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<"length">(node.id, "size")?.data ?? node.payload.size) ?? 16);
-    const spacing = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
-    const rotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
-    const align = Enum.resolve(context.resolve<"enum">(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
-    const anchor = Enum.resolve(context.resolve<"enum">(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
+    const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "size")?.data ?? node.payload.size) ?? 16);
+    const spacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
+    const rotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
+    const align = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
+    const anchor = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
 
     const textAnchorValue: string = Resolver.EnumMappings.linearAlign[align] ?? "start";
     const dominantBaseline: string = Resolver.EnumMappings.textAnchor[anchor] ?? "central";
 
-    const offsetMode = Enum.resolve(context.resolve<"enum">(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
-    const offsetOrigin = Enum.resolve(context.resolve<"enum">(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
+    const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;
+    const offsetOrigin = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetOrigin")?.data, Enum.Common.linearAlign) ?? node.payload.offsetOrigin;
     const originPct = ["0%", "50%", "100%"][offsetOrigin] ?? "0%";
 
     let startOffset: string;
     if (offsetMode === Enum.Common.offsetMode.RELATIVE.value) {
-        const pct = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
+        const pct = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "offsetPercent")?.data ?? node.payload.offsetPercent) ?? 0;
         startOffset = `calc(clamp(0%, ${originPct} + ${pct}%, 100%))`;
     } else {
-        const len = context.resolve<"length">(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
+        const len = context.resolve<DataTypes.Length>(node.id, "offsetLength")?.data ?? node.payload.offsetLength;
         const lenNum = Length.Emptyable.asNumber(len) ?? 0;
         startOffset = `calc(clamp(0%, ${originPct} + ${lenNum}px, 100%))`;
     }

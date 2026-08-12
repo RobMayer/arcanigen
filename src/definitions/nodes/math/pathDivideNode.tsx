@@ -22,14 +22,14 @@ const def = signature({
 export type PathDivideDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
         swap: boolean;
     }
 >;
 
 // interject-only rules (mirror the def's socket types)
-const PATH_IN: SocketTypes.Term = SocketTypes.of("path");
-const PATH_OUT: SocketTypes.Term = SocketTypes.of("path");
+const PATH_IN: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
+const PATH_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.PATH);
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathDivideDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathDivide", PathDivideDefinition> => {
     return {
@@ -89,13 +89,13 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PathDivideDefinition>, inS
 const evaluate = (node: NodeDefinitions.NodeFor<PathDivideDefinition>, socket: keyof PathDivideDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const pathAData = context.resolve<"path">(node.id, "pathA")?.data;
+    const pathAData = context.resolve<DataTypes.Path>(node.id, "pathA")?.data;
     if (!pathAData) return null;
 
-    const pathBData = context.resolve<"path">(node.id, "pathB")?.data;
+    const pathBData = context.resolve<DataTypes.Path>(node.id, "pathB")?.data;
     if (!pathBData) return null;
 
-    const swap = context.resolve<"boolean">(node.id, "swap")?.data ?? node.payload.swap;
+    const swap = context.resolve<DataTypes.Boolean>(node.id, "swap")?.data ?? node.payload.swap;
     return swap ? PaperHelper.divide(pathBData, pathAData) : PaperHelper.divide(pathAData, pathBData);
 };
 

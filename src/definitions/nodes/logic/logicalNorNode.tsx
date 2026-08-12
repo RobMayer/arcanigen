@@ -111,7 +111,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LogicalNorDefinition>, socket: k
     if (socket === "output") {
         let result = false;
         for (const input of node.payload.inputs) {
-            const val = context.resolve<"boolean">(node.id, input);
+            const val = context.resolve<DataTypes.Boolean>(node.id, input);
             if (val === null) return null;
             result = result || val.data;
         }

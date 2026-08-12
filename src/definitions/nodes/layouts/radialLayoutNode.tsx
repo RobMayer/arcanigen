@@ -46,17 +46,17 @@ const def = signature({
 export type RadialLayoutDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        count: DataTypes.TypeOf<"integer">;
-        radius: DataTypes.TypeOf<"length">;
-        arcMode: DataTypes.TypeOf<"enum">;
-        thetaStart: DataTypes.TypeOf<"angle">;
-        sweep: DataTypes.TypeOf<"angle">;
-        thetaFrom: DataTypes.TypeOf<"angle">;
-        thetaTo: DataTypes.TypeOf<"angle">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        count: DataTypes.TypeOf<DataTypes.Integer>;
+        radius: DataTypes.TypeOf<DataTypes.Length>;
+        arcMode: DataTypes.TypeOf<DataTypes.Enum>;
+        thetaStart: DataTypes.TypeOf<DataTypes.Angle>;
+        sweep: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
         thetaInclusive: boolean;
         memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<"angle">;
+        memberRotation: DataTypes.TypeOf<DataTypes.Angle>;
     } & TransformPrefab.Definition["payload"]
 >;
 
@@ -229,7 +229,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, i
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket: keyof RadialLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const countStr = context.resolve<"integer">(node.id, "count")?.data ?? node.payload.count;
+    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
 
@@ -239,34 +239,34 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
 
     if (socket !== "output") return null;
 
-    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
 
-    const arcMode = Enum.resolve(context.resolve<"enum">(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
+    const arcMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
 
     let effectiveStart: number;
     let effectiveSweep: number;
 
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
-        const from = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-        const to = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        const from = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
         effectiveSweep = to - from;
     } else {
-        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
-    const thetaInclusive = context.resolve<"boolean">(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+    const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
 
-    const distro = context.resolve<"distribution">(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+    const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
         NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
     );
 
-    const memberAlign = context.resolve<"boolean">(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<"angle">(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
+    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
     const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 
@@ -274,7 +274,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
 
     const children = [];
     for (let i = 0; i < count; i++) {
-        const shape = context.resolve<"shape">(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
         if (shape === null) continue;
 
         const coeff = delerp(i, 0, denominator);
@@ -323,6 +323,6 @@ export const RadialLayoutNodeType: NodeTypes.Type<"radialLayout", RadialLayoutDe
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

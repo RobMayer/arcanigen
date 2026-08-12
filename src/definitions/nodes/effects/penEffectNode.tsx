@@ -27,11 +27,11 @@ const def = signature({
 export type PenEffectDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        nib: DataTypes.TypeOf<"length">;
-        seed: DataTypes.TypeOf<"integer">;
-        smudge: DataTypes.TypeOf<"float">;
-        jitter: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        nib: DataTypes.TypeOf<DataTypes.Length>;
+        seed: DataTypes.TypeOf<DataTypes.Integer>;
+        smudge: DataTypes.TypeOf<DataTypes.Float>;
+        jitter: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -95,13 +95,13 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PenEffectDefinition>, _inS
 const evaluate = (node: NodeDefinitions.NodeFor<PenEffectDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const inputShape = context.resolve<"shape">(node.id, "input")?.data;
+    const inputShape = context.resolve<DataTypes.Shape>(node.id, "input")?.data;
     if (!inputShape) return null;
 
-    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<"integer">(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
-    const nibPx = Length.Emptyable.asNumber(context.resolve<"length">(node.id, "nib")?.data ?? node.payload.nib) ?? 0;
-    const smudge = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "smudge")?.data ?? node.payload.smudge) ?? 0));
-    const jitter = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<"float">(node.id, "jitter")?.data ?? node.payload.jitter) ?? 0));
+    const seed = Math.max(0, Math.round(NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "seed")?.data ?? node.payload.seed) ?? 0));
+    const nibPx = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "nib")?.data ?? node.payload.nib) ?? 0;
+    const smudge = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "smudge")?.data ?? node.payload.smudge) ?? 0));
+    const jitter = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "jitter")?.data ?? node.payload.jitter) ?? 0));
 
     const nibRadius = nibPx / 4;
 
@@ -141,6 +141,6 @@ export const PenEffectNodeType: NodeTypes.Type<"penEffect", PenEffectDefinition>
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of("shape"), SocketTypes.of("shape")),
+    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
     onInterject: passthroughInterject("input", "output"),
 };

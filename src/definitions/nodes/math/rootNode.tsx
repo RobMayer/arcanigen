@@ -26,7 +26,7 @@ export type RootDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        degree: DataTypes.TypeOf<"float">;
+        degree: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 

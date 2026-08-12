@@ -22,8 +22,8 @@ const def = signature({
 export type StringOutputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        widget: DataTypes.TypeOf<"enum">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 

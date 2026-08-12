@@ -20,8 +20,8 @@ const def = signature({
 export type ParagraphDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        value: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        value: DataTypes.TypeOf<DataTypes.String>;
     }
 >;
 
@@ -77,7 +77,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ParagraphDefinition>, inSo
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<ParagraphDefinition>, socket: keyof ParagraphDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const str = context.resolve<"string">(node.id, "value")?.data ?? node.payload.value;
+    const str = context.resolve<DataTypes.String>(node.id, "value")?.data ?? node.payload.value;
     if (socket === "output") return { kind: "string", data: str };
     if (socket === "charCount") return { kind: "integer", data: `${str.length}` };
     return null;

@@ -38,14 +38,14 @@ const def = signature({
 export type GlyphDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
-        pathData: DataTypes.TypeOf<"string">;
-        width: DataTypes.TypeOf<"length">;
-        height: DataTypes.TypeOf<"length">;
-        viewX: DataTypes.TypeOf<"float">;
-        viewY: DataTypes.TypeOf<"float">;
-        viewW: DataTypes.TypeOf<"float">;
-        viewH: DataTypes.TypeOf<"float">;
+        label: DataTypes.TypeOf<DataTypes.String>;
+        pathData: DataTypes.TypeOf<DataTypes.String>;
+        width: DataTypes.TypeOf<DataTypes.Length>;
+        height: DataTypes.TypeOf<DataTypes.Length>;
+        viewX: DataTypes.TypeOf<DataTypes.Float>;
+        viewY: DataTypes.TypeOf<DataTypes.Float>;
+        viewW: DataTypes.TypeOf<DataTypes.Float>;
+        viewH: DataTypes.TypeOf<DataTypes.Float>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -191,14 +191,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const pathD = node.payload.pathData;
     if (!pathD) return null;
 
-    const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "width")?.data ?? node.payload.width, "0px"));
-    const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<"length">(node.id, "height")?.data ?? node.payload.height, "0px"));
+    const width = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "width")?.data ?? node.payload.width, "0px"));
+    const height = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "height")?.data ?? node.payload.height, "0px"));
     if (!width || !height) return null;
 
-    const viewX = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewX")?.data ?? node.payload.viewX) ?? 0;
-    const viewY = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewY")?.data ?? node.payload.viewY) ?? 0;
-    const viewW = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewW")?.data ?? node.payload.viewW) ?? 512;
-    const viewH = NumericString.Emptyable.asNumber(context.resolve<"float" | "integer">(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
+    const viewX = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "viewX")?.data ?? node.payload.viewX) ?? 0;
+    const viewY = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "viewY")?.data ?? node.payload.viewY) ?? 0;
+    const viewW = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "viewW")?.data ?? node.payload.viewW) ?? 512;
+    const viewH = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
     const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);

@@ -26,7 +26,7 @@ const def = signature({
 export type NotesDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
-        label: DataTypes.TypeOf<"string">;
+        label: DataTypes.TypeOf<DataTypes.String>;
         text: string;
     }
 >;
