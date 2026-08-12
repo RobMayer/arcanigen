@@ -88,6 +88,9 @@ const evaluateSubgraphForCache = (
 
                 return evaluateNodeInSubgraph(link.fromNode, link.fromSocket, effectiveCursorData) as DataTypes.EvalOf<K> | null;
             },
+            resolveOutput: <K extends DataTypes.Kind = DataTypes.ConcreteKind>(targetNodeId: string, outSocket: string, overrideCursorData?: Resolver.CursorData): DataTypes.EvalOf<K> | null => {
+                return evaluateNodeInSubgraph(targetNodeId, outSocket, overrideCursorData ?? cursorData) as DataTypes.EvalOf<K> | null;
+            },
             subgraph: (nestedGraphId: string, nestedOutputNodeId: string, nestedResolveInput: (inputNodeId: string, nestedCursorData: Resolver.CursorData) => DataTypes.AnyEval | null, innerCursorData: Resolver.CursorData) => {
                 return evaluateSubgraphForCache(nodes, links, interfaces, nestedGraphId, nestedOutputNodeId, nestedResolveInput, innerCursorData);
             },
@@ -152,10 +155,16 @@ const evaluateSocketCached = (
         return evaluateSocketCached(graphCache, nodes, links, interfaces, graphId, link.fromNode, link.fromSocket, effectiveCursorData) as DataTypes.EvalOf<K> | null;
     };
 
+    // Evaluate any node's OUTPUT socket directly (no input-wire lookup) — for loop Ends summoning by senderId.
+    const resolveOutput = <K extends DataTypes.Kind = DataTypes.ConcreteKind>(targetNodeId: string, outSocket: string, overrideCursorData?: Resolver.CursorData): DataTypes.EvalOf<K> | null => {
+        return evaluateSocketCached(graphCache, nodes, links, interfaces, graphId, targetNodeId, outSocket, overrideCursorData ?? cursorData) as DataTypes.EvalOf<K> | null;
+    };
+
     const context: Resolver.Context = {
         graphId,
         cursorData,
         resolve,
+        resolveOutput,
         subgraph: (subgraphId: string, subOutputNodeId: string, subResolveInput: (inputNodeId: string, cursorData: Resolver.CursorData) => DataTypes.AnyEval | null, innerCursorData: Resolver.CursorData) => {
             return evaluateSubgraphForCache(nodes, links, interfaces, subgraphId, subOutputNodeId, subResolveInput, innerCursorData);
         },

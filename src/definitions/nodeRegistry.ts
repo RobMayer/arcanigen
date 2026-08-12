@@ -18,6 +18,7 @@ import { LengthDefinition, LengthPrimitiveType } from "./nodes/primitives/length
 import { TokensLengthDefinition, TokensLengthPrimitiveType } from "./nodes/primitives/tokensLengthNode";
 import { CircleDefinition, CircleNodeType } from "./nodes/shapes/circleNode";
 import { ShapePreviewDefinition, ShapePreviewType } from "./nodes/debug/shapePreviewNode";
+import { DebugDefinition, DebugNodeType } from "./nodes/debug/debugNode";
 import { FloatInputDefinition, FloatInputType } from "./nodes/interface/inputs/floatInputNode";
 import { FloatOutputDefinition, FloatOutputType } from "./nodes/interface/outputs/floatOutputNode";
 import { CustomDefinition, CustomNodeType } from "./nodes/interface/customNode";
@@ -145,6 +146,10 @@ import { RepeatedLayoutDefinition, RepeatedLayoutNodeType } from "./nodes/layout
 import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collections/sequenceIndexNode";
 import { PathLayoutDefinition, PathLayoutNodeType } from "./nodes/layouts/pathLayoutNode";
 import { ScatterLayoutDefinition, ScatterLayoutNodeType } from "./nodes/layouts/scatterLayoutNode";
+import { ForEachDefinition, ForEachNodeType } from "./nodes/arrayOps/foreachNode";
+import { MapDefinition, MapNodeType } from "./nodes/arrayOps/mapNode";
+import { FilterDefinition, FilterNodeType } from "./nodes/arrayOps/filterNode";
+import { GatherDefinition, GatherNodeType } from "./nodes/arrayOps/gatherNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecated/colorIteratorNode";
 import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
@@ -238,6 +243,7 @@ export namespace Registries {
 
         //debug
         shapePreview: ShapePreviewDefinition;
+        debug: DebugDefinition;
 
         // subgraph interfaces
         floatInput: FloatInputDefinition;
@@ -339,6 +345,10 @@ export namespace Registries {
         sequenceIndex: SequenceIndexDefinition;
         pathLayout: PathLayoutDefinition;
         scatterLayout: ScatterLayoutDefinition;
+        forEach: ForEachDefinition;
+        map: MapDefinition;
+        filter: FilterDefinition;
+        gather: GatherDefinition;
         colorIterator: ColorIteratorDefinition;
         colorIterator2: ColorIterator2Definition;
         colorStop: ColorStopBreakoutDefinition;
@@ -436,6 +446,10 @@ export namespace Registries {
         sequenceIndex: SequenceIndexNodeType,
         pathLayout: PathLayoutNodeType,
         scatterLayout: ScatterLayoutNodeType,
+        forEach: ForEachNodeType,
+        map: MapNodeType,
+        filter: FilterNodeType,
+        gather: GatherNodeType,
         colorIterator: ColorIteratorNodeType,
         colorIterator2: ColorIterator2NodeType,
         colorStop: ColorStopNodeType,
@@ -479,6 +493,7 @@ export namespace Registries {
         container: ContainerNodeType,
         patch: PatchNodeType,
         shapePreview: ShapePreviewType,
+        debug: DebugNodeType,
 
         floatInput: FloatInputType,
         floatOutput: FloatOutputType,

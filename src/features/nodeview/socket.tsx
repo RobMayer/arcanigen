@@ -187,11 +187,19 @@ export const Socket = styled(
 
     corner-shape: round;
     /* Leading space -> only the OUTERMOST ctor matches, so loopFor<array<...>> shapes as loopFor, not array.
-       "any"/"unknown" serialize without an "array<" token, so they stay round for free. */
+       "any"/"unknown" serialize without an "array<" token, so they stay round for free. The inner element
+       still colors the socket via the ~= leaf rules below (a loopFor<color> reads color-ish). */
     &[data-sockettype*=" array<"] {
         corner-shape: bevel;
     }
-    /* Future: Bus<T> -> corner-shape: square; LoopFor<T> -> shape TBD. */
+    /* loopFor pipeline sockets: a direction-dependent shape, mirrored between in and out. */
+    &[data-socketside="in"][data-sockettype*=" loopFor<"] {
+        corner-shape: bevel square square bevel;
+    }
+    &[data-socketside="out"][data-sockettype*=" loopFor<"] {
+        corner-shape: square bevel bevel square;
+    }
+    /* Future: Bus<T> -> corner-shape: square. */
 
     --tl: var(--flavour-base);
     --br: var(--flavour-base);

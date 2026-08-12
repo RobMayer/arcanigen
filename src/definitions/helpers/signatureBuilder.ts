@@ -54,12 +54,14 @@ export namespace SignatureBuilder {
 
     // --- type-level derivation: signature -> compile-time Definition -----------------------------
     // A socket's compile-time type is its CONSTRUCTOR Kind: a concrete atomic maps to `DataTypes.Atomic<K>`,
-    // a concrete `$.arrayOf` to `DataTypes.ArrayOf<...>`, a `oneOf` to the union of its members. A var /
-    // wildcard / coercion-var / not-yet-first-class ctor (loopFor/bus) maps to the open `DataTypes.AnyKind`
-    // (parity — the solver's Terms carry the real precision at edit time). Shape proven in the migration spike.
+    // a concrete `$.arrayOf` to `DataTypes.ArrayOf<...>`, `$.loopFor` to `DataTypes.LoopFor<...>`, a `oneOf` to
+    // the union of its members. A var / wildcard / coercion-var / not-yet-first-class ctor (bus) maps to the
+    // open `DataTypes.AnyKind` (parity — the solver's Terms carry the real precision at edit time). Shape
+    // proven in the migration spike.
 
-    // Keeps `ArrayOf`'s `X extends AnyKind` bound satisfied even when the inner resolves to a bare AnyKind.
+    // Keeps a ctor's `X extends AnyKind` bound satisfied even when the inner resolves to a bare AnyKind.
     type ArrayOfK<X> = X extends DataTypes.AnyKind ? DataTypes.ArrayOf<X> : DataTypes.AnyKind;
+    type LoopForK<X> = X extends DataTypes.AnyKind ? DataTypes.LoopFor<X> : DataTypes.AnyKind;
 
     type EvalMembers<M, A> = M extends readonly unknown[] ? EvalExpr<M[number], A> : DataTypes.AnyKind;
 
@@ -89,7 +91,9 @@ export namespace SignatureBuilder {
               : X extends { $x: "ctor"; ctor: infer C; of: infer O }
                 ? C extends "array"
                     ? ArrayOfK<EvalExpr<O, A>> // array<inner> — recurse (covers concrete AND var inner)
-                    : DataTypes.AnyKind // loopFor / bus — land with array-ops (spot #3)
+                    : C extends "loopFor"
+                      ? LoopForK<EvalExpr<O, A>> // loopFor<inner> — recurse (phantom element; rep is {senderId,count})
+                      : DataTypes.AnyKind // bus — lands with Rung-8 (portal/bus)
                 : DataTypes.AnyKind;
 
     // A `"prefix_*"` socket key becomes `` `prefix_${string}` `` index signature; others stay literal.
@@ -116,8 +120,8 @@ export namespace SignatureBuilder {
             case "oneOf":
                 return SocketTypes.union(...x.members.map((m) => exprToTerm(m, bounds)));
             case "ctor":
-                // array is the one real container today; loopFor/bus land with the registry reshape.
-                return x.ctor === "array" ? SocketTypes.ctor("array", exprToTerm(x.of, bounds)) : SocketTypes.any();
+                // array + loopFor are first-class Term ctors; bus lands with Rung-8 (portal/bus).
+                return x.ctor === "array" || x.ctor === "loopFor" ? SocketTypes.ctor(x.ctor, exprToTerm(x.of, bounds)) : SocketTypes.any();
         }
     };
 

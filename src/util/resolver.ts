@@ -88,6 +88,10 @@ export namespace Resolver {
         graphId: string;
         cursorData: CursorData;
         resolve: <K extends DataTypes.Kind = DataTypes.ConcreteKind>(nodeId: string, inSocket: string, cursorData?: CursorData) => DataTypes.EvalOf<K> | null;
+        /** Evaluate a specific node's OUTPUT socket directly by id (not via a wire). Loop Ends use this to
+         *  summon the paired ForEach's `each` by the bus's senderId at a chosen cursor -- Filter re-fetches
+         *  the surviving elements this way, since there is no wire from ForEach.each to Filter. */
+        resolveOutput: <K extends DataTypes.Kind = DataTypes.ConcreteKind>(nodeId: string, outSocket: string, cursorData?: CursorData) => DataTypes.EvalOf<K> | null;
         subgraph: (
             graphId: string,
             outputNodeId: string,

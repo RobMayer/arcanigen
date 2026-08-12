@@ -33,9 +33,16 @@ export namespace SignatureEngine {
         dom[v] = cur === null || cur === undefined ? new Set(cands) : new Set([...cur].filter((k) => cands.has(k)));
     };
 
-    // The inner argument of a parameterized kind.
+    // The inner argument of a parameterized kind, or null when there's no single concrete element to
+    // constrain by. A wildcard/empty element (`loopFor<?>`, `array<>`) serializes to a form that doesn't
+    // round-trip through `parse` -- such a neighbour accepts any element, so it imposes NO constraint.
     const kindArg = (kind: string, ctor: string): string | null => {
-        const parsed = SocketTypes.parse(kind);
+        let parsed: SocketTypes.Term;
+        try {
+            parsed = SocketTypes.parse(kind);
+        } catch {
+            return null;
+        }
         if (parsed.t === "ctor" && parsed.name === ctor && parsed.args.length === 1) return SocketTypes.serialize(parsed.args[0]);
         return null;
     };
@@ -55,8 +62,13 @@ export namespace SignatureEngine {
                         const a = kindArg(k, term.name);
                         if (a !== null) cands.add(a);
                     }
-                    intersectInto(dom, inner.id, cands);
-                    grounded.add(inner.id);
+                    // Only narrow when a neighbour pinned a concrete element. A purely wildcard downstream
+                    // (an accept-any `loopFor<?>`/`array<?>` input) yields no candidates and must NOT
+                    // collapse the element var to the empty domain.
+                    if (cands.size > 0) {
+                        intersectInto(dom, inner.id, cands);
+                        grounded.add(inner.id);
+                    }
                 }
                 return;
             }
@@ -210,7 +222,10 @@ export namespace SignatureEngine {
         for (const sock of Object.keys(xin)) {
             const linkId = (node.in as Record<string, string | null>)[sock];
             const r = linkId ? queryNeighbourRule(graphId, node.id, linkId, "out", ctx) : null;
-            inKinds[sock] = r ? new Set<string>(SocketTypes.project(r)) : null;
+            const proj = r ? SocketTypes.project(r) : [];
+            // An empty projection (wildcard `any` / unsolved var / empty set) carries NO kind info -> treat as
+            // unconstrained (null), NOT as an empty domain that would collapse our element/equality vars to nothing.
+            inKinds[sock] = proj.length > 0 ? new Set<string>(proj) : null;
         }
         const outKinds: Record<string, Set<string> | null> = {};
         for (const sock of Object.keys(xout)) {
@@ -220,6 +235,7 @@ export namespace SignatureEngine {
                 const down = queryNeighbourRule(graphId, node.id, linkId, "in", ctx);
                 if (!down) continue;
                 const ks = new Set<string>(SocketTypes.project(down));
+                if (ks.size === 0) continue; // wildcard/var downstream accepts anything -> imposes no constraint
                 accepted = accepted === null ? ks : intersectSet(accepted, ks);
             }
             outKinds[sock] = accepted;

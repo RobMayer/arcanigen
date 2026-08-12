@@ -155,6 +155,21 @@ export namespace Project {
         return useSyncExternalStore(ctx.socketTypes.subscribe, getSnapshot);
     };
 
+    /** The carried type's outermost constructor ("loopFor"/"array"/"") -- for a wire's structural css. */
+    export const useLinkCtor = (graphId: GraphId, link: ArcaneGraph.Link | null): string => {
+        const ctx = useContext(CTX)!;
+        const getSnapshot = useCallback(() => {
+            if (!link) return "";
+            const from = ctx.mc.getNode(graphId, link.fromNode);
+            const to = ctx.mc.getNode(graphId, link.toNode);
+            if (!from || !to) return "";
+            const outType = NodeTypes.getSocketType(from, link.fromSocket, "out", graphId, ctx.mc);
+            const inType = NodeTypes.getSocketType(to, link.toSocket, "in", graphId, ctx.mc);
+            return SocketTypes.linkCtor(outType, inType);
+        }, [ctx, graphId, link]);
+        return useSyncExternalStore(ctx.socketTypes.subscribe, getSnapshot);
+    };
+
     export const usePendingConnection = () => {
         const ctx = useContext(CTX)!;
 

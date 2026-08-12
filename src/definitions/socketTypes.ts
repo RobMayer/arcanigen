@@ -16,14 +16,14 @@ export namespace SocketTypes {
 
     export type Term =
         | { t: "atom"; kind: string } // one opaque kind string, e.g. "point" or "array<stop:color>"
-        | { t: "ctor"; name: CtorName; args: Term[] } // parameterized: array<T> (the one constructor)
+        | { t: "ctor"; name: CtorName; args: Term[] } // parameterized: array<T> / loopFor<T>
         | { t: "var"; id: string; bound?: string } // unification variable; bound = lattice name
         | { t: "any" } // top / gradual wildcard
         | { t: "union"; members: Term[] } // "A | B" -- an "either" output (condition/switch)
         | { t: "set"; mode: "and" | "or"; members: Term[] }; // a concrete multi-kind rule ("or" disjunctive / "and" conjunctive)
 
-    export type CtorName = "array";
-    const CTOR_NAMES = new Set<string>(["array"]);
+    export type CtorName = "array" | "loopFor";
+    const CTOR_NAMES = new Set<string>(["array", "loopFor"]);
 
     export type Subst = Map<string, Term>;
 
@@ -69,8 +69,8 @@ export namespace SocketTypes {
      * Parse a concrete kind string (e.g. "array<stop:color>") to a Term. Grammar:
      *   term  := app ('|' app)*
      *   app   := IDENT ('<' term (',' term)* '>')?
-     * an `array` head becomes a ctor; an uppercase-initial bare ident becomes a var; any other head
-     * (incl. atomic `stop:color`/`tokens:length`) becomes an atom.
+     * a registered ctor head (`array`/`loopFor`) becomes a ctor; an uppercase-initial bare ident becomes a
+     * var; any other head (incl. atomic `stop:color`/`tokens:length`) becomes an atom.
      */
     export const parse = (src: string): Term => {
         let i = 0;
@@ -112,7 +112,7 @@ export namespace SocketTypes {
                     i++; // consume '>'
                     return { t: "ctor", name: head as CtorName, args };
                 }
-                // defensive: any non-`array` parameterized head — capture the whole balanced span as an atom
+                // defensive: any non-ctor parameterized head — capture the whole balanced span as an atom
                 const spanStart = start;
                 let depth = 0;
                 do {
@@ -236,7 +236,7 @@ export namespace SocketTypes {
         const lt = t.kind.indexOf("<");
         if (lt < 0) return t;
         const head = t.kind.slice(0, lt);
-        if (!CTOR_NAMES.has(head)) return t; // non-`array` head stays an atom
+        if (!CTOR_NAMES.has(head)) return t; // non-ctor head stays an atom
         return parse(t.kind);
     };
 
@@ -393,10 +393,10 @@ export namespace SocketTypes {
      *  `toRepresentation` renders it as the token "any". */
     export const ANY: Term = any();
 
-    /** Build a Term from a kind TOKEN. Recurses structurally over constructor tokens (`arrayOf(LAYER)` ->
-     *  `ctor("array", atom("layer"))`) so a Token becomes a Term with no stringify-then-parse at the bridge.
-     *  (`loopFor` tokens fall through to a flat atom until loopFor is a first-class Term ctor -- array-ops.) */
-    export const of = (token: DataTypes.Token<DataTypes.AnyKind>): Term => (token.ctor === "array" && token.inner ? ctor("array", of(token.inner)) : atom(token.tag));
+    /** Build a Term from a kind TOKEN. Recurses structurally over ANY constructor token (`arrayOf(LAYER)` ->
+     *  `ctor("array", atom("layer"))`, `loopFor(COLOR)` -> `ctor("loopFor", atom("color"))`) so a Token becomes
+     *  a Term with no stringify-then-parse at the bridge. */
+    export const of = (token: DataTypes.Token<DataTypes.AnyKind>): Term => (token.ctor && token.inner ? ctor(token.ctor, of(token.inner)) : atom(token.tag));
 
     // Canonical member order by tag (set equality is order-independent; this is just for stability).
     const byTag = (a: DataTypes.Token<DataTypes.AnyKind>, b: DataTypes.Token<DataTypes.AnyKind>): number => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0);
@@ -463,8 +463,48 @@ export namespace SocketTypes {
         return { attr, title };
     };
 
-    /** Representative concrete Kind for the link's wire color (cosmetic -- one-way projection). */
-    export const representativeKind = (out: Term, inp: Term): string => project(out)[0] ?? project(inp)[0] ?? "float";
+    /** Representative concrete Kind for the link's wire color (cosmetic -- one-way projection). A `loopFor`
+     *  pipeline wire reads as the element it carries (unwrap to the inner leaf) so no per-element link rules
+     *  are needed; every other term keeps its direct projection (arrays already have element-matched rules). */
+    const repr = (t: Term): string | null => {
+        switch (t.t) {
+            case "atom": {
+                const c = asCtor(t);
+                return c.t === "ctor" ? repr(c) : t.kind;
+            }
+            case "ctor":
+                // a loopFor pipeline reads as its element (unwrap, even when the ctor is wrapped in a
+                // materialized set below); arrays keep their compound projection (they have matching rules).
+                return t.name === "loopFor" ? repr(t.args[0]) : (project(t)[0] ?? null);
+            case "set":
+            case "union": {
+                for (const m of t.members) {
+                    const r = repr(m);
+                    if (r !== null) return r;
+                }
+                return null;
+            }
+            default:
+                return null; // var / any -- no concrete color
+        }
+    };
+    export const representativeKind = (out: Term, inp: Term): string => repr(out) ?? repr(inp) ?? "float";
+
+    /** The outermost constructor of the carried (representative) type -- "loopFor" / "array" / "" -- for a
+     *  wire's STRUCTURAL css treatment (a loopFor pipeline reads distinctly from a plain data wire), the way
+     *  a socket's shape keys off its outer ctor. Prefers the producer (out), falls back to the consumer (in). */
+    const ctorOf = (t: Term): string | null => {
+        const c = t.t === "atom" ? asCtor(t) : t;
+        if (c.t === "ctor") return c.name;
+        if (c.t === "set" || c.t === "union") {
+            for (const m of c.members) {
+                const r = ctorOf(m);
+                if (r) return r;
+            }
+        }
+        return null;
+    };
+    export const linkCtor = (out: Term, inp: Term): string => ctorOf(out) ?? ctorOf(inp) ?? "";
 
     /** Intersection of two rules' concrete kinds (mode from the first operand). `any` is the universe. */
     export const intersect = (a: Term, b: Term): Term => {

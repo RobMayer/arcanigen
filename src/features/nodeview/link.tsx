@@ -21,6 +21,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const graphId = useGraphId();
     const mc = Project.useMC();
     const linkType = Project.useLinkType(graphId, link);
+    const linkCtor = Project.useLinkCtor(graphId, link);
     const [, paneControls] = useDragPaneInternal();
 
     const style = useMemo(() => {
@@ -151,6 +152,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 ref={ref}
                 tabIndex={-1}
                 data-linktype={linkType}
+                data-linkctor={linkCtor}
                 onKeyDown={handleKeyDown}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -264,6 +266,27 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             --animMarch: 12px;
             animation: ${keyframesMarch} 0.2s linear infinite reverse;
             stroke: black;
+            stroke-linecap: round;
+            stroke-dasharray: 4px 8px;
+            stroke-dashoffset: 0px;
+            stroke-width: 4px;
+        }
+        &[data-part="select"] {
+            stroke-width: 7px;
+        }
+    }
+
+    /* loopFor pipeline: a marching-ant "pipe" INVERTED from shape's (shape = black ants on a colored wire;
+       loopFor = colored ants on a black pipe). Color still comes from the element via --flavour. */
+    &[data-linkctor="loopFor"] > svg > g > path {
+        &[data-part="display"] {
+            stroke: oklch(from var(--flavour) calc(l * 0.875) c h);
+            stroke-width: 6px;
+        }
+        &[data-part="effect"] {
+            --animMarch: 12px;
+            animation: ${keyframesMarch} 0.2s linear infinite reverse;
+            stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
             stroke-linecap: round;
             stroke-dasharray: 4px 8px;
             stroke-dashoffset: 0px;
