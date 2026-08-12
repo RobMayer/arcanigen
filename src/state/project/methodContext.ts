@@ -204,6 +204,18 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirtyNodeGraphs.add(graphId);
         this.dirtyLinkGraphs.add(graphId);
 
+        // A removed link can un-ground shared type variables. Per-node re-solve trusts neighbours' cached
+        // socket types, so a cyclic mutual constraint (e.g. ForEach.each <-> Map.result) would sustain a
+        // stale grounding after its external anchor is gone. Clear the whole weakly-connected component's
+        // solved socket types up front; the onDisconnect recompute cascade then re-derives them from the
+        // wires that actually remain (a cleared socket falls back to its neighbour-free signature default,
+        // which breaks the cycle).
+        const postGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
+        const seeds = removed.links.flatMap((l) => [l.fromNode, l.toNode]);
+        for (const nodeId of ArcaneGraph.weaklyConnectedComponent(postGraph, seeds)) {
+            this.clearSocketTypes(graphId, nodeId);
+        }
+
         this.fireOnDisconnect(removed.links, graphId);
 
         const affectedNodes = new Set(removed.links.map((l) => l.toNode));

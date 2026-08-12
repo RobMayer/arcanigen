@@ -123,6 +123,33 @@ export namespace ArcaneGraph {
         return result;
     };
 
+    /** All nodes weakly-connected to any of `ids` via ANY wire (either direction), INCLUDING the seeds.
+     *  Scopes socket-type re-solving on disconnect: a removed link can un-ground shared type variables
+     *  anywhere in the connected component, and per-node re-solve trusts neighbours' cached types. */
+    export const weaklyConnectedComponent = <N>(graph: GraphOf<N>, ids: Iterable<NodeId>): NodeId[] => {
+        const visited = new Set<NodeId>();
+        const queue: NodeId[] = [];
+        for (const id of ids) {
+            if (id in graph.nodes && !visited.has(id)) {
+                visited.add(id);
+                queue.push(id);
+            }
+        }
+        while (queue.length > 0) {
+            const nodeId = queue.shift()!;
+            for (const linkId of linksOf(graph, nodeId, null)) {
+                const link = graph.links[linkId];
+                if (!link) continue;
+                const other = link.fromNode === nodeId ? link.toNode : link.fromNode;
+                if (other in graph.nodes && !visited.has(other)) {
+                    visited.add(other);
+                    queue.push(other);
+                }
+            }
+        }
+        return [...visited];
+    };
+
     // note: does not include the starting node itself
     export const deepDownstreamOf = <N>(graph: GraphOf<N>, id: NodeId, socket: SocketId | null = null): NodeId[] => {
         const result: NodeId[] = [];
