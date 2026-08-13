@@ -1,3 +1,22 @@
+# Housekeeping
+
+- [ ] migrate angle from `${number}` to `${number}${"deg" | "rad" | "turn"}` akin to Length.
+- [ ] ValuePreview robustness
+- [ ] socket sidedness robustness in anchor positioning
+    - [ ] allow twice nested accordion (currently only supports one accordion depth)
+
+## Array / Point expansion (array-ops built; Reducer now unblocked)
+
+- [ ] Point-cloud **Reducer / dedup** — now buildable on the new array-ops (Filter/Gather + loopFor); it was always "a special case of array ops". The big deferred point-cloud piece.
+- [ ] Side-channel array datatypes (`array<angle>`, etc.) → From-Crossings angle/tangent outputs + Scatter per-point angle-alignment input
+- [ ] Vector math on points (dot, cross, normalize, distance, per-component ops) — would inherit the `$.defaulted` widgets
+- [ ] Adopt `point` inputs on existing nodes (Transforms position, Line, gradients)
+- [ ] Future consumers: **Spike** (home + array → rays), **Constellation** (connect point sets)
+
+## Shapes
+
+- [ ] The creative/visible track — see **More Nodes → more shapes** below (Banded Star/Burst/Arc/Spiral/Line, etc.)
+
 # More Nodes
 
 - [ ] Gradients
