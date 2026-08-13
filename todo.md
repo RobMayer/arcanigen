@@ -1,9 +1,9 @@
 # Housekeeping
 
-- [ ] migrate angle from `${number}` to `${number}${"deg" | "rad" | "turn"}` akin to Length.
+- [x] migrate angle from `${number}` to `${number}${"deg" | "rad" | "turn"}` akin to Length.
 - [ ] ValuePreview robustness
-- [ ] socket sidedness robustness in anchor positioning
-    - [ ] allow twice nested accordion (currently only supports one accordion depth)
+- [x] socket sidedness robustness in anchor positioning
+    - [x] allow twice nested accordion (accordion must list its whole subtree; anchor() last-in-tree-order handles depth)
 
 ## Array / Point expansion (array-ops built; Reducer now unblocked)
 

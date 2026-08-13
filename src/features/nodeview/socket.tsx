@@ -62,7 +62,7 @@ export const GraphConnectionProvider = ({ children, graphId }: { children?: Reac
         <GraphViewConnectionCTX value={connectionContextValue}>
             {children}
             {pendingConnection && pendingConnection.scope === graphId ? (
-                <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} type={SocketTypes.toCSS(pendingConnection.type)} />
+                <PendingConnection nodeId={pendingConnection.node} socketId={pendingConnection.socket} side={pendingConnection.side} type={SocketTypes.toCSS(pendingConnection.type)} />
             ) : null}
         </GraphViewConnectionCTX>
     );
@@ -147,8 +147,8 @@ export const Socket = styled(
         }, [pendingConnection, canConnect, nodeId, socketId, connected]);
 
         const style = useMemo(() => {
-            return { "--socket": `--socket_${nodeId}_${socketId}` } as CSSProperties;
-        }, [nodeId, socketId]);
+            return { "--socket": `--socket_${nodeId}_${socketId}_${side}` } as CSSProperties;
+        }, [nodeId, socketId, side]);
 
         return (
             <div
@@ -300,13 +300,13 @@ export const Socket = styled(
     }
 `;
 
-const PendingConnection = styled(({ nodeId, socketId, className, type }: { nodeId: string; socketId: string; className?: string; type: string }) => {
+const PendingConnection = styled(({ nodeId, socketId, side, className, type }: { nodeId: string; socketId: string; side: "in" | "out"; className?: string; type: string }) => {
     const style = useMemo(
         () =>
             ({
-                "--source": `--socket_${nodeId}_${socketId}`,
+                "--source": `--socket_${nodeId}_${socketId}_${side}`,
             }) as CSSProperties,
-        [nodeId, socketId],
+        [nodeId, socketId, side],
     );
 
     const [, paneControls] = useDragPaneInternal();

@@ -115,8 +115,8 @@ export const Slot = ({ children, label }: { children?: ReactNode; label?: ReactN
 
 // A single row carrying both halves of one passthrough pair: an "in" socket on the far
 // left and an "out" socket on the far right, with arbitrary controls (grip, remove) between.
-// The two halves must use DISTINCT socket ids — the socket anchor name is keyed by
-// nodeId+socketId with no side, so a shared id would collide and mis-route wires.
+// The two halves may share a socket id: anchor names are keyed by nodeId+socketId+side, so
+// the in and out anchors stay distinct.
 export const SocketPair = <D extends NodeDefinitions.Generic>({
     node,
     socketInId,
@@ -154,6 +154,8 @@ const PairBase = styled.div`
     }
 `;
 
+// socketsIn/socketsOut: pipe-delimited socket ids this accordion catches when collapsed. List the
+// WHOLE subtree, including sockets in nested accordions -- an ancestor must cover its descendants.
 export const NodeAccordion = styled(
     ({
         className,
@@ -184,7 +186,7 @@ export const NodeAccordion = styled(
                             ? undefined
                             : socketsIn
                                   .split("|")
-                                  .map((each) => `--socketFB_${nodeId}_${each}`)
+                                  .map((each) => `--socketFB_${nodeId}_${each}_in`)
                                   .join(", "),
                 },
                 {
@@ -193,7 +195,7 @@ export const NodeAccordion = styled(
                             ? undefined
                             : socketsOut
                                   .split("|")
-                                  .map((each) => `--socketFB_${nodeId}_${each}`)
+                                  .map((each) => `--socketFB_${nodeId}_${each}_out`)
                                   .join(", "),
                 },
             ];

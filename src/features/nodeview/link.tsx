@@ -27,9 +27,11 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         if (!link) {
             return {};
         }
+        // socket -> accordion fallback -> node-edge fallback. One --socketFB tier covers any nesting
+        // depth: nested accordions share the name, anchor() picks the last (innermost mounted) one.
         return {
-            "--fromTarget": `anchor(--socket_${link.fromNode}_${link.fromSocket} center, anchor(--socketFB_${link.fromNode}_${link.fromSocket} center, anchor(--nodeFB_${link.fromNode}_out center, 0px)))`,
-            "--toTarget": `anchor(--socket_${link.toNode}_${link.toSocket} center, anchor(--socketFB_${link.toNode}_${link.toSocket} center, anchor(--nodeFB_${link.toNode}_in center, 0px)))`,
+            "--fromTarget": `anchor(--socket_${link.fromNode}_${link.fromSocket}_out center, anchor(--socketFB_${link.fromNode}_${link.fromSocket}_out center, anchor(--nodeFB_${link.fromNode}_out center, 0px)))`,
+            "--toTarget": `anchor(--socket_${link.toNode}_${link.toSocket}_in center, anchor(--socketFB_${link.toNode}_${link.toSocket}_in center, anchor(--nodeFB_${link.toNode}_in center, 0px)))`,
             "--fromNode": `--node_${link.fromNode}`,
             "--toNode": `--node_${link.toNode}`,
         } as CSSProperties;
@@ -254,10 +256,6 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         }
     }
 
-    /* Container shapes the wire, mirroring sockets (atomics still set the COLOR via --flavour): a singleton
-       is the default thin wire; array<...> is a thicker wire; loopFor<...> marches. The OUTER ctor is keyed
-       via the spaced serialization (the leading-space *= match), the same grammar socket shapes use.
-       shape/layer are atomics -> plain thin colored wires now (no longer special-cased). */
     &[data-linktype*=" array<"] > svg > g > path[data-part="display"] {
         stroke-width: 4px;
     }
