@@ -43,7 +43,7 @@ const def = signature({
     out: { sequencedOutput: "angle", sampledOutput: "angle", stopCount: "integer" },
 });
 
-export type AngleIterator2Definition = SignatureBuilder.DefinitionFrom<
+export type AngleIteratorDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
@@ -53,7 +53,7 @@ export type AngleIterator2Definition = SignatureBuilder.DefinitionFrom<
     } & IterationPrefab.Definition["payload"]
 >;
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIterator2Definition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"angleIterator", AngleIteratorDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
     const s1: `stop_${string}` = `stop_${nanoid()}`;
     return {
@@ -90,15 +90,15 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Defin
                 { socket: s1, value: "360deg", position: "100", enabled: true },
             ],
         },
-        type: "angleIterator2",
+        type: "angleIterator",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIteratorDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Definition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<AngleIteratorDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -111,7 +111,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as AngleIterator2Definition["payload"]).stops, { socket, value: "180", position: "50", enabled: true }],
+                stops: [...(n.payload as AngleIteratorDefinition["payload"]).stops, { socket, value: "180", position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -129,7 +129,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleIterat
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as AngleIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
+                        stops: (n.payload as AngleIteratorDefinition["payload"]).stops.filter((s) => s.socket !== socket),
                     },
                 };
             });
@@ -251,7 +251,7 @@ const StopEntry = ({
     handleReorderStop,
 }: {
     entry: { socket: string; value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
-    node: NodeDefinitions.NodeFor<AngleIterator2Definition>;
+    node: NodeDefinitions.NodeFor<AngleIteratorDefinition>;
     index: number;
     handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<Angle.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
     handleRemoveStop: (socket: string) => void;
@@ -372,7 +372,7 @@ const DragGrip = styled.div`
 
 // Resolve the effective stops: the supersocket (an array<stop:angle>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop:angle) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
+const resolveStops = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
     const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopAngle>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: Angle.Emptyable.asNumber((s.value ?? "") as EmptyOr<Angle.Type>) ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
@@ -398,7 +398,7 @@ const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, c
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, outSocket: keyof AngleIterator2Definition["outputs"], _deps: AllDeps): (keyof AngleIterator2Definition["inputs"])[] => {
+const dependsOn = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, outSocket: keyof AngleIteratorDefinition["outputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
     if (outSocket === "sequencedOutput") {
         return [...IterationPrefab.SEQUENCED_DEPS, "angleTraversal", "continuity", "stops", ...stopSockets];
@@ -412,7 +412,7 @@ const dependsOn = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, outS
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>, inSocket: keyof AngleIterator2Definition["inputs"], _deps: AllDeps): (keyof AngleIterator2Definition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, inSocket: keyof AngleIteratorDefinition["inputs"], _deps: AllDeps): (keyof AngleIteratorDefinition["outputs"])[] => {
     if (inSocket === "stops") {
         return ["sequencedOutput", "sampledOutput", "stopCount"];
     }
@@ -428,7 +428,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AngleIterator2Definition>,
     return ["sequencedOutput", "sampledOutput", "stopCount"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socket: keyof AngleIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket: keyof AngleIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopCount") {
         return { kind: "integer", data: `${resolveStops(node, context).length}` };
     }
@@ -462,7 +462,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socke
 
 // Supersocket override: connecting the whole array clears the now-hidden element family,
 // then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleIterator", AngleIteratorDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction === "in") {
         const link = ctx.getLink(graphId, linkId);
         if (link && link.toSocket === "stops") {
@@ -481,8 +481,8 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"angleIterator2", AngleIter
     SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
-export const AngleIterator2NodeType: NodeTypes.Type<"angleIterator2", AngleIterator2Definition> = {
-    type: "angleIterator2",
+export const AngleIteratorNodeType: NodeTypes.Type<"angleIterator", AngleIteratorDefinition> = {
+    type: "angleIterator",
     displayName: "Angle Iterator",
     defaultLabel: "Angle Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.loop} />,

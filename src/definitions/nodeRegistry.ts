@@ -150,8 +150,7 @@ import { ForEachDefinition, ForEachNodeType } from "./nodes/arrayOps/foreachNode
 import { MapDefinition, MapNodeType } from "./nodes/arrayOps/mapNode";
 import { FilterDefinition, FilterNodeType } from "./nodes/arrayOps/filterNode";
 import { GatherDefinition, GatherNodeType } from "./nodes/arrayOps/gatherNode";
-import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/deprecated/colorIteratorNode";
-import { ColorIterator2Definition, ColorIterator2NodeType } from "./nodes/collections/colorIterator2Node";
+import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
 import { FloatStopArrayDefinition, FloatStopArrayNodeType } from "./nodes/collections/floatStopArrayNode";
@@ -163,17 +162,13 @@ import { LengthStopArrayDefinition, LengthStopArrayNodeType } from "./nodes/coll
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
 import { LinearGradientDefinition, LinearGradientNodeType } from "./nodes/collections/linearGradientNode";
 import { RadialGradientDefinition, RadialGradientNodeType } from "./nodes/collections/radialGradientNode";
-import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/deprecated/floatIteratorNode";
-import { FloatIterator2Definition, FloatIterator2NodeType } from "./nodes/collections/floatIterator2Node";
+import { FloatIteratorDefinition, FloatIteratorNodeType } from "./nodes/collections/floatIteratorNode";
 import { StopFloatBreakoutDefinition, FloatStopNodeType } from "./nodes/collections/floatStopNode";
-import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/deprecated/integerIteratorNode";
-import { IntegerIterator2Definition, IntegerIterator2NodeType } from "./nodes/collections/integerIterator2Node";
+import { IntegerIteratorDefinition, IntegerIteratorNodeType } from "./nodes/collections/integerIteratorNode";
 import { IntegerStopBreakoutDefinition, IntegerStopNodeType } from "./nodes/collections/integerStopNode";
-import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/deprecated/lengthIteratorNode";
-import { LengthIterator2Definition, LengthIterator2NodeType } from "./nodes/collections/lengthIterator2Node";
+import { LengthIteratorDefinition, LengthIteratorNodeType } from "./nodes/collections/lengthIteratorNode";
 import { LengthStopBreakoutDefinition, LengthStopNodeType } from "./nodes/collections/lengthStopNode";
-import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/deprecated/angleIteratorNode";
-import { AngleIterator2Definition, AngleIterator2NodeType } from "./nodes/collections/angleIterator2Node";
+import { AngleIteratorDefinition, AngleIteratorNodeType } from "./nodes/collections/angleIteratorNode";
 import { AngleStopBreakoutDefinition, AngleStopNodeType } from "./nodes/collections/angleStopNode";
 import { TransformDefinition, TransformType } from "./nodes/shapes/transformNode";
 import { PencilEffectDefinition, PencilEffectNodeType } from "./nodes/effects/pencilEffectNode";
@@ -350,7 +345,6 @@ export namespace Registries {
         filter: FilterDefinition;
         gather: GatherDefinition;
         colorIterator: ColorIteratorDefinition;
-        colorIterator2: ColorIterator2Definition;
         colorStop: ColorStopBreakoutDefinition;
         colorStopArray: ColorStopArrayDefinition;
         floatStopArray: FloatStopArrayDefinition;
@@ -360,16 +354,12 @@ export namespace Registries {
         integerStopArray: IntegerStopArrayDefinition;
         lengthStopArray: LengthStopArrayDefinition;
         floatIterator: FloatIteratorDefinition;
-        floatIterator2: FloatIterator2Definition;
         floatStop: StopFloatBreakoutDefinition;
         integerIterator: IntegerIteratorDefinition;
-        integerIterator2: IntegerIterator2Definition;
         integerStop: IntegerStopBreakoutDefinition;
         lengthIterator: LengthIteratorDefinition;
-        lengthIterator2: LengthIterator2Definition;
         lengthStop: LengthStopBreakoutDefinition;
         angleIterator: AngleIteratorDefinition;
-        angleIterator2: AngleIterator2Definition;
         angleStop: AngleStopBreakoutDefinition;
         restyle: RestyleDefinition;
         linearGradient: LinearGradientDefinition;
@@ -451,7 +441,6 @@ export namespace Registries {
         filter: FilterNodeType,
         gather: GatherNodeType,
         colorIterator: ColorIteratorNodeType,
-        colorIterator2: ColorIterator2NodeType,
         colorStop: ColorStopNodeType,
         colorStopArray: ColorStopArrayNodeType,
         floatStopArray: FloatStopArrayNodeType,
@@ -461,16 +450,12 @@ export namespace Registries {
         integerStopArray: IntegerStopArrayNodeType,
         lengthStopArray: LengthStopArrayNodeType,
         floatIterator: FloatIteratorNodeType,
-        floatIterator2: FloatIterator2NodeType,
         floatStop: FloatStopNodeType,
         integerIterator: IntegerIteratorNodeType,
-        integerIterator2: IntegerIterator2NodeType,
         integerStop: IntegerStopNodeType,
         lengthIterator: LengthIteratorNodeType,
-        lengthIterator2: LengthIterator2NodeType,
         lengthStop: LengthStopNodeType,
         angleIterator: AngleIteratorNodeType,
-        angleIterator2: AngleIterator2NodeType,
         angleStop: AngleStopNodeType,
         restyle: RestyleNodeType,
         linearGradient: LinearGradientNodeType,

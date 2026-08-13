@@ -11,6 +11,7 @@ import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
 import { Enum } from "../../datatypes/enum";
+import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { IterationPrefab } from "../../helpers/iterationPrefab";
@@ -27,13 +28,13 @@ const def = signature({
         startOffset: "integer",
         endOffset: "integer",
         samplePosition: $.oneOf("float", "integer"),
-        stops: $.arrayOf("stop:float"),
-        "stop_*": "stop:float",
+        stops: $.arrayOf("stop:integer"),
+        "stop_*": "stop:integer",
     },
-    out: { sequencedOutput: "float", sampledOutput: "float", stopCount: "integer" },
+    out: { sequencedOutput: "integer", sampledOutput: "integer", stopCount: "integer" },
 });
 
-export type FloatIterator2Definition = SignatureBuilder.DefinitionFrom<
+export type IntegerIteratorDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
@@ -41,7 +42,7 @@ export type FloatIterator2Definition = SignatureBuilder.DefinitionFrom<
     } & IterationPrefab.Definition["payload"]
 >;
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<IntegerIteratorDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"integerIterator", IntegerIteratorDefinition> => {
     const s0: `stop_${string}` = `stop_${nanoid()}`;
     const s1: `stop_${string}` = `stop_${nanoid()}`;
     return {
@@ -71,18 +72,18 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Defin
             samplePosition: input.samplePosition ?? "50",
             stops: input.stops ?? [
                 { socket: s0, value: "0", position: "0", enabled: true },
-                { socket: s1, value: "1", position: "100", enabled: true },
+                { socket: s1, value: "10", position: "100", enabled: true },
             ],
         },
-        type: "floatIterator2",
+        type: "integerIterator",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterator2Definition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
 
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<FloatIterator2Definition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<IntegerIteratorDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -95,7 +96,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as FloatIterator2Definition["payload"]).stops, { socket, value: "0.5", position: "50", enabled: true }],
+                stops: [...(n.payload as IntegerIteratorDefinition["payload"]).stops, { socket, value: "5", position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -113,7 +114,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
                     in: restIn,
                     payload: {
                         ...n.payload,
-                        stops: (n.payload as FloatIterator2Definition["payload"]).stops.filter((s) => s.socket !== socket),
+                        stops: (n.payload as IntegerIteratorDefinition["payload"]).stops.filter((s) => s.socket !== socket),
                     },
                 };
             });
@@ -180,7 +181,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FloatIterat
             )}
 
             <IterationPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
-            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampleOutput" socketsIn={"samplePosition"}>
+            <NodeAccordion label="Sample At" nodeId={node.id} socketsOut="sampledOutput" socketsIn={"samplePosition"}>
                 <SocketOut node={node} socketId={"sampledOutput"}>
                     Sampled Output
                 </SocketOut>
@@ -214,7 +215,7 @@ const StopEntry = ({
     handleReorderStop,
 }: {
     entry: { socket: string; value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean };
-    node: NodeDefinitions.NodeFor<FloatIterator2Definition>;
+    node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>;
     index: number;
     handleStopUpdate: (socket: string, update: Partial<{ value: EmptyOr<NumericString.Type>; position: EmptyOr<NumericString.Type>; enabled: boolean }>) => void;
     handleRemoveStop: (socket: string) => void;
@@ -264,8 +265,8 @@ const StopEntry = ({
             <SocketIn node={node} socketId={entry.socket as `stop_${string}`}>
                 <StopRow>
                     <CheckBox checked={entry.enabled} onToggle={(enabled) => handleStopUpdate(entry.socket, { enabled })} disabled={connected} />
-                    <DecimalInput className={"stopValue"} value={entry.value} onCommit={(value) => handleStopUpdate(entry.socket, { value })} disabled={connected} />
-                    <DecimalInput className={"stopPosition"} value={entry.position} onCommit={(position) => handleStopUpdate(entry.socket, { position })} disabled={connected} min={"0"} max={"100"} />
+                    <IntegerInput value={entry.value} onCommit={(value) => handleStopUpdate(entry.socket, { value })} disabled={connected} />
+                    <DecimalInput value={entry.position} onCommit={(position) => handleStopUpdate(entry.socket, { position })} disabled={connected} min={"0"} max={"100"} />
                     <DragGrip draggable onDragStart={handleDragStart}>
                         <Icon shape={ICONS.Caret.Vertical} />
                     </DragGrip>
@@ -284,13 +285,7 @@ const StopRow = styled.div`
     gap: 3px;
     width: 100%;
 
-    & > .stopValue {
-        flex: 3.5 1 0;
-        width: 0;
-        min-width: 0;
-    }
-
-    & .stopPosition {
+    & input[type="text"] {
         flex: 1 1 0;
         width: 0;
         min-width: 0;
@@ -333,17 +328,15 @@ const DragGrip = styled.div`
     }
 `;
 
-// Resolve the effective stops: the supersocket (an array<stop:float>) overrides everything;
-// otherwise fold each per-stop socket (a connected stop:float) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
-    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopFloat>>(node.id, "stops");
+const resolveStops = (node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopInteger>>(node.id, "stops");
     if (supersocketEval) {
         return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: number; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
-        const connected = context.resolve<DataTypes.StopFloat>(node.id, entry.socket);
+        const connected = context.resolve<DataTypes.StopInteger>(node.id, entry.socket);
         if (connected) {
             resolved.push({
                 value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
@@ -361,7 +354,11 @@ const resolveStops = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, c
     return resolved;
 };
 
-const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outSocket: keyof FloatIterator2Definition["outputs"], _deps: AllDeps): (keyof FloatIterator2Definition["inputs"])[] => {
+const dependsOn = (
+    node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>,
+    outSocket: keyof IntegerIteratorDefinition["outputs"],
+    _deps: AllDeps,
+): (keyof IntegerIteratorDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
     if (outSocket === "sequencedOutput") {
         return [...IterationPrefab.SEQUENCED_DEPS, "stops", ...stopSockets];
@@ -375,7 +372,11 @@ const dependsOn = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, outS
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>, inSocket: keyof FloatIterator2Definition["inputs"], _deps: AllDeps): (keyof FloatIterator2Definition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>,
+    inSocket: keyof IntegerIteratorDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof IntegerIteratorDefinition["outputs"])[] => {
     if (inSocket === "stops") {
         return ["sequencedOutput", "sampledOutput", "stopCount"];
     }
@@ -391,7 +392,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<FloatIterator2Definition>,
     return ["sequencedOutput", "sampledOutput", "stopCount"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socket: keyof FloatIterator2Definition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<IntegerIteratorDefinition>, socket: keyof IntegerIteratorDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "stopCount") {
         return { kind: "integer", data: `${resolveStops(node, context).length}` };
     }
@@ -411,13 +412,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<FloatIterator2Definition>, socke
     if (active.length === 0) return null;
     active.sort((a, b) => a.position - b.position);
 
-    const value = IterationPrefab.sampleStopsWith(active, position, (a, b, t) => a + t * (b - a));
-    return { kind: "float", data: `${value}` };
+    const value = Math.round(IterationPrefab.sampleStopsWith(active, position, (a, b, t) => a + t * (b - a)));
+    return { kind: "integer", data: `${value}` };
 };
 
-// Supersocket override: connecting the whole `array<stop:float>` clears the now-hidden element family,
+// Supersocket override: connecting the whole array clears the now-hidden element family,
 // then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
-const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIterator2Definition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"integerIterator", IntegerIteratorDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
     if (direction === "in") {
         const link = ctx.getLink(graphId, linkId);
         if (link && link.toSocket === "stops") {
@@ -436,10 +437,10 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"floatIterator2", FloatIter
     SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
-export const FloatIterator2NodeType: NodeTypes.Type<"floatIterator2", FloatIterator2Definition> = {
-    type: "floatIterator2",
-    displayName: "Float Iterator",
-    defaultLabel: "Float Iterator",
+export const IntegerIteratorNodeType: NodeTypes.Type<"integerIterator", IntegerIteratorDefinition> = {
+    type: "integerIterator",
+    displayName: "Integer Iterator",
+    defaultLabel: "Integer Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.loop} />,
     flavour: "danger",
     category: "Logic",

@@ -1142,6 +1142,96 @@ export namespace Project {
                         }
                     }
                 }
+
+                // Dedeprecate the iterators: the old `xIterator` exposed a bare {value_,pos_} socket PAIR per
+                // stop; the reworked node takes a single compound `stop:X` socket. `xIterator2` (already the
+                // compound shape) just reclaims the clean `xIterator` name; old-shape `xIterator` is transformed.
+                // A wired old value_/pos_ can't retarget onto the compound socket, so inject the matching xStop
+                // constructor as an adapter (value/position -> stop:X), same pattern as the point migration.
+                const RENAME: { [k: string]: string } = {
+                    floatIterator2: "floatIterator",
+                    integerIterator2: "integerIterator",
+                    lengthIterator2: "lengthIterator",
+                    angleIterator2: "angleIterator",
+                    colorIterator2: "colorIterator",
+                };
+                const STOP_NODE: { [k: string]: string } = {
+                    floatIterator: "floatStop",
+                    integerIterator: "integerStop",
+                    lengthIterator: "lengthStop",
+                    angleIterator: "angleStop",
+                    colorIterator: "colorStop",
+                };
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (RENAME[node.type]) {
+                            // already the compound shape -- just reclaim the clean name
+                            node.type = RENAME[node.type];
+                            continue;
+                        }
+                        const stopType = STOP_NODE[node.type];
+                        if (!stopType) continue;
+                        // old-shape iterator. colorIterator's per-stop value lives under `color`, others `value`.
+                        const valueField = node.type === "colorIterator" ? "color" : "value";
+                        const oldStops = Array.isArray(node.payload.stops) ? node.payload.stops : [];
+                        const newStops: any[] = [];
+                        for (const stop of oldStops) {
+                            const socket = `stop_${stop.id}`;
+                            const valSock = `${valueField}_${stop.id}`;
+                            const posSock = `pos_${stop.id}`;
+                            const valLink = node.in?.[valSock];
+                            const posLink = node.in?.[posSock];
+                            const value = stop[valueField];
+                            newStops.push({ socket, value, position: stop.position, enabled: true });
+
+                            if (valLink != null || posLink != null) {
+                                // inject an xStop adapter that reconstructs the compound stop from the wire(s)
+                                const sid = nanoid();
+                                const stopNode = NodeTypes.get(stopType as "floatStop").create({}, sid) as any;
+                                stopNode.payload.value = value;
+                                stopNode.payload.position = stop.position;
+                                stopNode.payload.enabled = true;
+                                input.nodes[graphId][sid] = stopNode;
+
+                                const pos = input.positions?.[graphId]?.[nodeId] ?? { x: 0, y: 0 };
+                                if (!input.positions[graphId]) input.positions[graphId] = {};
+                                input.positions[graphId][sid] = { x: pos.x - 220, y: pos.y };
+                                if (!input.uiState) input.uiState = {};
+                                input.uiState[`node_accordion[${graphId}][${sid}]`] = true;
+
+                                if (valLink != null) {
+                                    const lk = input.links?.[graphId]?.[valLink];
+                                    if (lk) {
+                                        lk.toNode = sid;
+                                        lk.toSocket = "value";
+                                        stopNode.in.value = valLink;
+                                    }
+                                }
+                                if (posLink != null) {
+                                    const lk = input.links?.[graphId]?.[posLink];
+                                    if (lk) {
+                                        lk.toNode = sid;
+                                        lk.toSocket = "position";
+                                        stopNode.in.position = posLink;
+                                    }
+                                }
+                                const nl = nanoid();
+                                input.links[graphId][nl] = { id: nl, fromNode: sid, toNode: nodeId, fromSocket: "output", toSocket: socket };
+                                stopNode.out.output.push(nl);
+                                node.in[socket] = nl;
+                            } else {
+                                node.in[socket] = null;
+                            }
+                            delete node.in[valSock];
+                            delete node.in[posSock];
+                        }
+                        node.payload.stops = newStops;
+                        node.in.stops = null; // supersocket
+                        node.out.stopCount = []; // new output
+                        // node.type stays the same reclaimed string -- no reassignment
+                    }
+                }
                 input.version = 9;
             }
             // next version alterations go here...

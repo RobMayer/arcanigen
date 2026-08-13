@@ -129,6 +129,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
             <SocketIn node={node} socketId={"shape"}>
                 Shape
             </SocketIn>
+            <hr />
             <SocketOut node={node} socketId={"pathOutput"}>
                 Path
             </SocketOut>
@@ -136,24 +137,28 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
                 Path
             </SocketIn>
             <hr />
-            <NodeAccordion label={"Translate"} nodeId={node.id} socketsIn={"position"}>
-                <SocketIn node={node} socketId={"position"} label={"Position"}>
-                    <PointRow>
-                        <LoopButton.Lite value={`${node.payload.positionMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ positionMode: Number(v) })} disabled={positionConnected} />
-                        {isPolar ? (
-                            <>
-                                <LengthInput className={"pointField"} value={node.payload.positionRadius} onCommit={(positionRadius) => handleUpdate({ positionRadius })} disabled={positionConnected} required />
-                                <AngleInput className={"pointField"} value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={positionConnected} />
-                            </>
-                        ) : (
-                            <>
-                                <LengthInput className={"pointField"} value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={positionConnected} required />
-                                <LengthInput className={"pointField"} value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={positionConnected} required />
-                            </>
-                        )}
-                    </PointRow>
-                </SocketIn>
-            </NodeAccordion>
+            <SocketIn node={node} socketId={"position"} label={"Position"}>
+                <PointRow>
+                    <LoopButton.Lite value={`${node.payload.positionMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ positionMode: Number(v) })} disabled={positionConnected} />
+                    {isPolar ? (
+                        <>
+                            <LengthInput
+                                className={"pointField"}
+                                value={node.payload.positionRadius}
+                                onCommit={(positionRadius) => handleUpdate({ positionRadius })}
+                                disabled={positionConnected}
+                                required
+                            />
+                            <AngleInput className={"pointField"} value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={positionConnected} />
+                        </>
+                    ) : (
+                        <>
+                            <LengthInput className={"pointField"} value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={positionConnected} required />
+                            <LengthInput className={"pointField"} value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={positionConnected} required />
+                        </>
+                    )}
+                </PointRow>
+            </SocketIn>
             <NodeAccordion label={"Rotation"} nodeId={node.id} socketsIn={"preRotation|postRotation"}>
                 <SocketIn node={node} socketId={"preRotation"} label={"Pre-Rotation"}>
                     <AngleInput.SliderInput value={node.payload.preRotation} onCommit={(preRotation) => handleUpdate({ preRotation })} disabled={node.in.preRotation !== null} />
@@ -182,15 +187,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
     );
 };
 
-const PARAM_INPUTS: (keyof TransformDefinition["inputs"])[] = [
-    "position",
-    "preRotation",
-    "postRotation",
-    "skewX",
-    "skewY",
-    "scaleX",
-    "scaleY",
-];
+const PARAM_INPUTS: (keyof TransformDefinition["inputs"])[] = ["position", "preRotation", "postRotation", "skewX", "skewY", "scaleX", "scaleY"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<TransformDefinition>, outSocket: keyof TransformDefinition["outputs"], _deps: AllDeps): (keyof TransformDefinition["inputs"])[] => {
     if (outSocket === "output") return ["shape", ...PARAM_INPUTS];

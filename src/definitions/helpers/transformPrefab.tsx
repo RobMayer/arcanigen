@@ -66,15 +66,18 @@ export namespace TransformPrefab {
 
         return (
             <AccordionMaybe has={accordion} socketsIn={"position|rotation"} label={"Transforms"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"rotation"} label={"Rotation"}>
-                    <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
-                </SocketIn>
                 <SocketIn node={node} socketId={"position"} label={"Position"}>
                     <PointRow>
                         <LoopButton.Lite value={`${node.payload.positionMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ positionMode: Number(v) })} disabled={positionConnected} />
                         {isPolar ? (
                             <>
-                                <LengthInput className={"pointField"} value={node.payload.positionRadius} onCommit={(positionRadius) => handleUpdate({ positionRadius })} disabled={positionConnected} required />
+                                <LengthInput
+                                    className={"pointField"}
+                                    value={node.payload.positionRadius}
+                                    onCommit={(positionRadius) => handleUpdate({ positionRadius })}
+                                    disabled={positionConnected}
+                                    required
+                                />
                                 <AngleInput className={"pointField"} value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={positionConnected} />
                             </>
                         ) : (
@@ -84,6 +87,9 @@ export namespace TransformPrefab {
                             </>
                         )}
                     </PointRow>
+                </SocketIn>
+                <SocketIn node={node} socketId={"rotation"} label={"Rotation"}>
+                    <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
             </AccordionMaybe>
         );
