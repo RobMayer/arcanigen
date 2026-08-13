@@ -89,11 +89,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -241,11 +237,7 @@ const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = [
     "markerStartShape",
     "markerEndShape",
     "markerAlign",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];

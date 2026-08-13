@@ -42,11 +42,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RepeatedLayoutDefin
             input: null,
             count: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -95,7 +91,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RepeatedLay
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RepeatedLayoutDefinition["inputs"])[] = ["input", "count", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof RepeatedLayoutDefinition["inputs"])[] = ["input", "count", "position", "rotation"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, outSocket: keyof RepeatedLayoutDefinition["outputs"], _deps: AllDeps): (keyof RepeatedLayoutDefinition["inputs"])[] => {
     if (outSocket === "output") {

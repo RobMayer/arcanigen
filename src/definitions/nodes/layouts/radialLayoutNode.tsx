@@ -80,11 +80,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinit
             memberAlign: null,
             memberRotation: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -204,11 +200,7 @@ const GEOMETRY_INPUTS: (keyof RadialLayoutDefinition["inputs"])[] = [
     "thetaCurve",
     "memberAlign",
     "memberRotation",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 

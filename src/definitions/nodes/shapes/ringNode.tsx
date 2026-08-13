@@ -66,11 +66,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RingDefinition>>, i
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -197,11 +193,7 @@ const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = [
     "spanMode",
     "innerRadius",
     "outerRadius",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof RingDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];

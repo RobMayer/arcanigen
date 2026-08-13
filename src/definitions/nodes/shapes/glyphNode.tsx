@@ -71,11 +71,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GlyphDefinition>>, 
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -164,11 +160,7 @@ const GEOMETRY_INPUTS: (keyof GlyphDefinition["inputs"])[] = [
     "viewY",
     "viewW",
     "viewH",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof GlyphDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];

@@ -766,7 +766,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 8;
+        export const CURRENT = 9;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1034,6 +1034,115 @@ export namespace Project {
                     }
                 }
                 input.version = 8;
+            }
+            if (input.version === 8) {
+                // Position slices (the {Mode,X,Y,Radius,Theta} authoring cluster) collapse to a single
+                // `point` input socket per slice. Nodes that had NO wired sub-socket just swap the socket
+                // signature; nodes with ANY wired sub-socket get a Point node injected upstream (the wire
+                // can't fold into a payload), reproducing the old inline resolve. Table-driven so each
+                // converted node type is added here in lockstep with its def change.
+                const SLICE_SUFFIXES = ["Mode", "X", "Y", "Radius", "Theta"];
+                // Every node that carries the shared TransformPrefab `position` slice, plus the standalone
+                // transform. Each converted node type is listed here in lockstep with its def change; a type
+                // absent from this table keeps its old sockets untouched.
+                const POSITION_ONLY = [{ prefix: "position", pointSocket: "position" }];
+                const POSITION_SLICES: { [type: string]: { prefix: string; pointSocket: string }[] } = {
+                    transform: POSITION_ONLY,
+                    rectangle: POSITION_ONLY,
+                    text: POSITION_ONLY,
+                    spirograph: POSITION_ONLY,
+                    circle: POSITION_ONLY,
+                    polygon: POSITION_ONLY,
+                    arc: POSITION_ONLY,
+                    line: [
+                        { prefix: "position", pointSocket: "position" },
+                        { prefix: "start", pointSocket: "startPoint" },
+                        { prefix: "end", pointSocket: "endPoint" },
+                    ],
+                    star: POSITION_ONLY,
+                    polyring: POSITION_ONLY,
+                    polygram: POSITION_ONLY,
+                    burst: POSITION_ONLY,
+                    spiroring: POSITION_ONLY,
+                    glyph: POSITION_ONLY,
+                    ring: POSITION_ONLY,
+                    fromPath: POSITION_ONLY,
+                    knot: POSITION_ONLY,
+                    spiral: POSITION_ONLY,
+                    radialLayout: POSITION_ONLY,
+                    repeatedLayout: POSITION_ONLY,
+                    polygonLayout: POSITION_ONLY,
+                    linearGradient: [
+                        { prefix: "start", pointSocket: "startPoint" },
+                        { prefix: "end", pointSocket: "endPoint" },
+                    ],
+                    radialGradient: [
+                        { prefix: "center", pointSocket: "centerPoint" },
+                        { prefix: "startOffset", pointSocket: "focalPoint" },
+                    ],
+                    glowEffect: [{ prefix: "offset", pointSocket: "offset" }],
+                };
+
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        const slices = POSITION_SLICES[node.type];
+                        if (!slices) continue;
+                        for (const { prefix, pointSocket } of slices) {
+                            const subSockets = SLICE_SUFFIXES.map((s) => `${prefix}${s}`);
+                            const anyWired = subSockets.some((sock) => node.in?.[sock] != null);
+
+                            if (!anyWired) {
+                                // payload-only: drop the sub-sockets, add the point socket. Authoring payload
+                                // (positionMode/X/Y/Radius/Theta) stays put for inline expression.
+                                for (const sock of subSockets) delete node.in[sock];
+                                node.in[pointSocket] = null;
+                                continue;
+                            }
+
+                            // inject a Point node that resolves to the same {x,y} the consumer used to compute inline
+                            const pid = nanoid();
+                            const point = NodeTypes.get("point").create({}, pid) as any;
+                            point.payload.mode = node.payload[`${prefix}Mode`];
+                            point.payload.x = node.payload[`${prefix}X`];
+                            point.payload.y = node.payload[`${prefix}Y`];
+                            point.payload.radius = node.payload[`${prefix}Radius`];
+                            point.payload.theta = node.payload[`${prefix}Theta`];
+                            input.nodes[graphId][pid] = point;
+
+                            // place it just left of the consumer so it doesn't land across the viewport
+                            const pos = input.positions?.[graphId]?.[nodeId] ?? { x: 0, y: 0 };
+                            if (!input.positions[graphId]) input.positions[graphId] = {};
+                            input.positions[graphId][pid] = { x: pos.x - 220, y: pos.y };
+
+                            // start the injected node folded so it doesn't clutter the graph
+                            if (!input.uiState) input.uiState = {};
+                            input.uiState[`node_accordion[${graphId}][${pid}]`] = true;
+
+                            for (const s of SLICE_SUFFIXES) {
+                                const sock = `${prefix}${s}`;
+                                const linkId = node.in[sock];
+                                if (linkId) {
+                                    // retarget the existing wire onto the Point node (leaves the source's out[] intact)
+                                    const link = input.links?.[graphId]?.[linkId];
+                                    if (link) {
+                                        link.toNode = pid;
+                                        link.toSocket = s.toLowerCase();
+                                        point.in[s.toLowerCase()] = linkId;
+                                    }
+                                }
+                                delete node.in[sock];
+                            }
+
+                            // add the single Point.output -> consumer.<pointSocket> link
+                            const newLinkId = nanoid();
+                            input.links[graphId][newLinkId] = { id: newLinkId, fromNode: pid, toNode: nodeId, fromSocket: "output", toSocket: pointSocket };
+                            point.out.output.push(newLinkId);
+                            node.in[pointSocket] = newLinkId;
+                        }
+                    }
+                }
+                input.version = 9;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

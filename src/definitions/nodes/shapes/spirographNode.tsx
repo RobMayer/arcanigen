@@ -95,11 +95,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpirographDefiniti
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -277,11 +273,7 @@ const GEOMETRY_INPUTS: (keyof SpirographDefinition["inputs"])[] = [
     "markerStartShape",
     "markerEndShape",
     "markerAlign",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof SpirographDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];

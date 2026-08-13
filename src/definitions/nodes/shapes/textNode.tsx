@@ -81,11 +81,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextDefinition>>, i
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -208,11 +204,7 @@ const ALL_INPUTS: (keyof TextDefinition["inputs"])[] = [
     "strokeDashOffset",
     "fillColor",
     "paintOrder",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
 ];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<TextDefinition>, outSocket: keyof TextDefinition["outputs"], _deps: AllDeps): (keyof TextDefinition["inputs"])[] => {

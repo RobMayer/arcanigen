@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
-import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
+import styled from "styled-components";
+import { Icon, ICONS, NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -10,13 +11,13 @@ import { SocketTypes } from "../../socketTypes";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
-import { Length } from "../../datatypes/length";
 import { Angle } from "../../datatypes/angle";
 import { NumericString } from "../../datatypes/numericString";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { RadioButton } from "../../../components/buttons/RadioButton";
+import { LoopButton } from "../../../components/buttons/LoopButton";
+import { PointHelper } from "../../helpers/pointHelper";
 import { Shape } from "../../shapeTypes";
 import { SVGPath } from "../../../types";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
@@ -26,11 +27,7 @@ const def = signature({
     in: {
         shape: "shape",
         path: "path",
-        positionMode: "enum",
-        positionX: "length",
-        positionY: "length",
-        positionRadius: "length",
-        positionTheta: "angle",
+        position: "point",
         preRotation: "angle",
         postRotation: "angle",
         skewX: "angle",
@@ -65,11 +62,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinitio
         in: {
             shape: null,
             path: null,
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             preRotation: null,
             postRotation: null,
             skewX: null,
@@ -99,7 +92,23 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinitio
     };
 };
 
-const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
+const MODE_OPTIONS = [
+    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
+    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
+];
+
+const PointRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+
+    & > .pointField {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+`;
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -109,8 +118,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
         [methods],
     );
 
-    const isCartesian = node.payload.positionMode === Enum.Common.positionMode.CARTESIAN.value;
     const isPolar = node.payload.positionMode === Enum.Common.positionMode.POLAR.value;
+    const positionConnected = node.in.position !== null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -127,32 +136,22 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
                 Path
             </SocketIn>
             <hr />
-            <NodeAccordion label={"Translate"} nodeId={node.id} socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta"}>
-                <SocketIn node={node} socketId={"positionMode"} label={"Mode"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.positionMode}`}
-                        onValue={(v) => handleUpdate({ positionMode: Number(v) })}
-                        disabled={node.in.positionMode !== null}
-                        options={POSITION_MODE_OPTIONS}
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"positionX"} label={"X"}>
-                    <LengthInput value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={node.in.positionX !== null || isPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"positionY"} label={"Y"}>
-                    <LengthInput value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={node.in.positionY !== null || isPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"positionRadius"} label={"Radius"}>
-                    <LengthInput
-                        value={node.payload.positionRadius}
-                        onCommit={(positionRadius) => handleUpdate({ positionRadius })}
-                        disabled={node.in.positionRadius !== null || isCartesian}
-                        required
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"positionTheta"} label={"Theta"}>
-                    <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
+            <NodeAccordion label={"Translate"} nodeId={node.id} socketsIn={"position"}>
+                <SocketIn node={node} socketId={"position"} label={"Position"}>
+                    <PointRow>
+                        <LoopButton.Lite value={`${node.payload.positionMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ positionMode: Number(v) })} disabled={positionConnected} />
+                        {isPolar ? (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.positionRadius} onCommit={(positionRadius) => handleUpdate({ positionRadius })} disabled={positionConnected} required />
+                                <AngleInput className={"pointField"} value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={positionConnected} />
+                            </>
+                        ) : (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={positionConnected} required />
+                                <LengthInput className={"pointField"} value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={positionConnected} required />
+                            </>
+                        )}
+                    </PointRow>
                 </SocketIn>
             </NodeAccordion>
             <NodeAccordion label={"Rotation"} nodeId={node.id} socketsIn={"preRotation|postRotation"}>
@@ -184,11 +183,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
 };
 
 const PARAM_INPUTS: (keyof TransformDefinition["inputs"])[] = [
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "preRotation",
     "postRotation",
     "skewX",
@@ -209,11 +204,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TransformDefinition>, _inS
 
 /** Resolves all transform parameters and builds a CSS transform string + translation offsets */
 const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, context: Resolver.Context): { css: string; translateX: number; translateY: number } => {
-    const positionMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
-    const positionX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
-    const positionY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
-    const positionRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
-    const positionTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+    const position =
+        context.resolve<DataTypes.Point>(node.id, "position")?.data ??
+        PointHelper.resolve(node.payload.positionMode, node.payload.positionX, node.payload.positionY, node.payload.positionRadius, node.payload.positionTheta);
     const preRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "preRotation")?.data ?? node.payload.preRotation) ?? 0;
     const postRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "postRotation")?.data ?? node.payload.postRotation) ?? 0;
     const skewX = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewX")?.data ?? node.payload.skewX) ?? 0;
@@ -221,16 +214,8 @@ const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, co
     const scaleX = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "scaleX")?.data ?? node.payload.scaleX) ?? 1;
     const scaleY = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "scaleY")?.data ?? node.payload.scaleY) ?? 1;
 
-    let translateX: number;
-    let translateY: number;
-    if (positionMode === Enum.Common.positionMode.POLAR.value) {
-        const thetaRad = ((positionTheta - 90) * Math.PI) / 180;
-        translateX = positionRadius * Math.cos(thetaRad);
-        translateY = positionRadius * Math.sin(thetaRad);
-    } else {
-        translateX = positionX;
-        translateY = positionY;
-    }
+    const translateX = position.x;
+    const translateY = position.y;
 
     // Build transform string: postRotation translate preRotation skewX skewY scale
     // SVG applies right-to-left: scale -> skewY -> skewX -> preRotate -> translate -> postRotate

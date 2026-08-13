@@ -48,11 +48,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FromPathDefinition>
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -105,7 +101,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FromPathDef
     );
 };
 
-const GEOMETRY_INPUTS: (keyof FromPathDefinition["inputs"])[] = ["path", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof FromPathDefinition["inputs"])[] = ["path", "position", "rotation"];
 const STYLING_INPUTS: (keyof FromPathDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<FromPathDefinition>, outSocket: keyof FromPathDefinition["outputs"], _deps: AllDeps): (keyof FromPathDefinition["inputs"])[] => {

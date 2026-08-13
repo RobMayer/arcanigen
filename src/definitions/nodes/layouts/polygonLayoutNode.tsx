@@ -66,11 +66,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonLayoutDefini
             memberRotation: null,
             pointDistro: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -169,11 +165,7 @@ const GEOMETRY_INPUTS: (keyof PolygonLayoutDefinition["inputs"])[] = [
     "pointDistro",
     "memberAlign",
     "memberRotation",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 

@@ -1,35 +1,44 @@
-import { RadioButton } from "../../components/buttons/RadioButton";
+import styled from "styled-components";
+import { Icon, ICONS } from "../../components/Icon";
+import { LoopButton } from "../../components/buttons/LoopButton";
 import { LengthInput } from "../../components/inputs/LengthInput";
 import { AngleInput } from "../../components/inputs/AngleInput";
 import { NodeAccordion, SocketIn } from "../../features/nodeview/slots";
 import { NodeDefinitions } from "../nodeTypes";
 import { DataTypes } from "../dataTypes";
 import { Enum } from "../datatypes/enum";
-import { Length } from "../datatypes/length";
 import { Angle } from "../datatypes/angle";
-import { NumericString } from "../datatypes/numericString";
+import { PointHelper } from "./pointHelper";
 import { Resolver } from "../../util/resolver";
 import { ReactNode } from "react";
 
-const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
+const MODE_OPTIONS = [
+    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
+    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
+];
+
+const PointRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+
+    & > .pointField {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+`;
 
 export namespace TransformPrefab {
     export const SIG_IN = {
-        positionMode: "enum",
-        positionX: "length",
-        positionY: "length",
-        positionRadius: "length",
-        positionTheta: "angle",
+        position: "point",
         rotation: "angle",
     } as const;
 
     export type Definition = {
         inputs: {
-            positionMode: DataTypes.Enum;
-            positionX: DataTypes.Length;
-            positionY: DataTypes.Length;
-            positionRadius: DataTypes.Length;
-            positionTheta: DataTypes.Angle;
+            position: DataTypes.Point;
             rotation: DataTypes.Angle;
         };
         outputs: NodeDefinitions.Generic["outputs"];
@@ -52,64 +61,42 @@ export namespace TransformPrefab {
         node: NodeDefinitions.NodeFor<Definition>;
         accordion?: boolean;
     }) => {
-        const isCartesian = node.payload.positionMode === Enum.Common.positionMode.CARTESIAN.value;
         const isPolar = node.payload.positionMode === Enum.Common.positionMode.POLAR.value;
+        const positionConnected = node.in.position !== null;
 
         return (
-            <AccordionMaybe has={accordion} socketsIn={"positionMode|positionX|positionY|positionRadius|positionTheta|rotation"} label={"Transforms"} nodeId={node.id}>
+            <AccordionMaybe has={accordion} socketsIn={"position|rotation"} label={"Transforms"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"rotation"} label={"Rotation"}>
                     <AngleInput.SliderInput value={node.payload.rotation} onCommit={(rotation) => handleUpdate({ rotation })} disabled={node.in.rotation !== null} />
                 </SocketIn>
-                <SocketIn node={node} socketId={"positionMode"} label={"Position Mode"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.positionMode}`}
-                        onValue={(v) => handleUpdate({ positionMode: Number(v) })}
-                        disabled={node.in.positionMode !== null}
-                        options={POSITION_MODE_OPTIONS}
-                    />
-                </SocketIn>
-                <hr />
-                <SocketIn node={node} socketId={"positionX"} label={"Position X"}>
-                    <LengthInput value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={node.in.positionX !== null || isPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"positionY"} label={"Position Y"}>
-                    <LengthInput value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={node.in.positionY !== null || isPolar} required />
-                </SocketIn>
-                <hr />
-                <SocketIn node={node} socketId={"positionRadius"} label={"Position Radius"}>
-                    <LengthInput
-                        value={node.payload.positionRadius}
-                        onCommit={(positionRadius) => handleUpdate({ positionRadius })}
-                        disabled={node.in.positionRadius !== null || isCartesian}
-                        required
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"positionTheta"} label={"Position Theta"}>
-                    <AngleInput.SliderInput value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={node.in.positionTheta !== null || isCartesian} />
+                <SocketIn node={node} socketId={"position"} label={"Position"}>
+                    <PointRow>
+                        <LoopButton.Lite value={`${node.payload.positionMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ positionMode: Number(v) })} disabled={positionConnected} />
+                        {isPolar ? (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.positionRadius} onCommit={(positionRadius) => handleUpdate({ positionRadius })} disabled={positionConnected} required />
+                                <AngleInput className={"pointField"} value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={positionConnected} />
+                            </>
+                        ) : (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={positionConnected} required />
+                                <LengthInput className={"pointField"} value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={positionConnected} required />
+                            </>
+                        )}
+                    </PointRow>
                 </SocketIn>
             </AccordionMaybe>
         );
     };
 
     export const evaluate = (node: NodeDefinitions.NodeFor<Definition>, context: Resolver.Context) => {
-        const positionMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "positionMode")?.data, Enum.Common.positionMode) ?? node.payload.positionMode;
-        const positionX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
-        const positionY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
-        const positionRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
-        const positionTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+        const position =
+            context.resolve<DataTypes.Point>(node.id, "position")?.data ??
+            PointHelper.resolve(node.payload.positionMode, node.payload.positionX, node.payload.positionY, node.payload.positionRadius, node.payload.positionTheta);
         const rotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
 
-        let translateX: number;
-        let translateY: number;
-        if (positionMode === Enum.Common.positionMode.POLAR.value) {
-            const thetaRad = ((positionTheta - 90) * Math.PI) / 180;
-            translateX = positionRadius * Math.cos(thetaRad);
-            translateY = positionRadius * Math.sin(thetaRad);
-        } else {
-            translateX = positionX;
-            translateY = positionY;
-        }
+        const translateX = position.x;
+        const translateY = position.y;
 
         const css: string[] = [];
         const transforms = { translateX, translateY, rotation };

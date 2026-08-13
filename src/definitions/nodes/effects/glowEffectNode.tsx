@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
+import styled from "styled-components";
 import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
-import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
+import { Icon, ICONS, NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -9,7 +10,7 @@ import { LengthInput } from "../../../components/inputs/LengthInput";
 import { SliderInput } from "../../../components/inputs/SliderInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { RadioButton } from "../../../components/buttons/RadioButton";
+import { LoopButton } from "../../../components/buttons/LoopButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -17,15 +18,31 @@ import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
-import { Angle } from "../../datatypes/angle";
 import { Length } from "../../datatypes/length";
+import { PointHelper } from "../../helpers/pointHelper";
 import { Color } from "../../datatypes/color";
 import { Enum } from "../../datatypes/enum";
 import { FilterPrimitive } from "../../shapeTypes";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
-const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
+const MODE_OPTIONS = [
+    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
+    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
+];
+
+const PointRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+
+    & > .pointField {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+`;
 
 const def = signature({
     in: {
@@ -36,11 +53,7 @@ const def = signature({
         spread: "length",
         strength: "float",
         opacity: "float",
-        offsetMode: "enum",
-        offsetX: "length",
-        offsetY: "length",
-        offsetRadius: "length",
-        offsetTheta: "angle",
+        offset: "point",
     },
     out: { output: "shape" },
 });
@@ -74,11 +87,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GlowEffectDefiniti
             spread: null,
             strength: null,
             opacity: null,
-            offsetMode: null,
-            offsetX: null,
-            offsetY: null,
-            offsetRadius: null,
-            offsetTheta: null,
+            offset: null,
         },
         out: { output: [] },
         payload: {
@@ -107,8 +116,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
         [methods],
     );
 
-    const isCartesian = node.payload.offsetMode === Enum.Common.positionMode.CARTESIAN.value;
     const isPolar = node.payload.offsetMode === Enum.Common.positionMode.POLAR.value;
+    const offsetConnected = node.in.offset !== null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -138,33 +147,28 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
             <SocketIn node={node} socketId={"opacity"} label={"Opacity"}>
                 <SliderInput value={node.payload.opacity} onCommit={(opacity) => handleUpdate({ opacity })} disabled={node.in.opacity !== null} min={"0"} max={"1"} step={"0.001"} />
             </SocketIn>
-            <SocketIn node={node} socketId={"offsetMode"} label={"Offset Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.offsetMode}`}
-                    onValue={(v) => handleUpdate({ offsetMode: Number(v) })}
-                    disabled={node.in.offsetMode !== null}
-                    options={OFFSET_MODE_OPTIONS}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetX"} label={"Offset X"}>
-                <LengthInput value={node.payload.offsetX} onCommit={(offsetX) => handleUpdate({ offsetX })} disabled={node.in.offsetX !== null || isPolar} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetY"} label={"Offset Y"}>
-                <LengthInput value={node.payload.offsetY} onCommit={(offsetY) => handleUpdate({ offsetY })} disabled={node.in.offsetY !== null || isPolar} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetRadius"} label={"Offset Radius"}>
-                <LengthInput value={node.payload.offsetRadius} onCommit={(offsetRadius) => handleUpdate({ offsetRadius })} disabled={node.in.offsetRadius !== null || isCartesian} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"offsetTheta"} label={"Offset Angle"}>
-                <AngleInput.SliderInput value={node.payload.offsetTheta} onCommit={(offsetTheta) => handleUpdate({ offsetTheta })} disabled={node.in.offsetTheta !== null || isCartesian} />
+            <SocketIn node={node} socketId={"offset"} label={"Offset"}>
+                <PointRow>
+                    <LoopButton.Lite value={`${node.payload.offsetMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ offsetMode: Number(v) })} disabled={offsetConnected} />
+                    {isPolar ? (
+                        <>
+                            <LengthInput className={"pointField"} value={node.payload.offsetRadius} onCommit={(offsetRadius) => handleUpdate({ offsetRadius })} disabled={offsetConnected} required />
+                            <AngleInput className={"pointField"} value={node.payload.offsetTheta} onCommit={(offsetTheta) => handleUpdate({ offsetTheta })} disabled={offsetConnected} />
+                        </>
+                    ) : (
+                        <>
+                            <LengthInput className={"pointField"} value={node.payload.offsetX} onCommit={(offsetX) => handleUpdate({ offsetX })} disabled={offsetConnected} required />
+                            <LengthInput className={"pointField"} value={node.payload.offsetY} onCommit={(offsetY) => handleUpdate({ offsetY })} disabled={offsetConnected} required />
+                        </>
+                    )}
+                </PointRow>
             </SocketIn>
         </TypicalNode>
     );
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<GlowEffectDefinition>, outSocket: "output", _deps: AllDeps): (keyof GlowEffectDefinition["inputs"])[] => {
-    if (outSocket === "output") return ["input", "artColor", "color", "blur", "spread", "strength", "opacity", "offsetMode", "offsetX", "offsetY", "offsetRadius", "offsetTheta"];
+    if (outSocket === "output") return ["input", "artColor", "color", "blur", "spread", "strength", "opacity", "offset"];
     return [];
 };
 
@@ -185,19 +189,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     const strength = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "strength")?.data ?? node.payload.strength) ?? 1);
     const opacity = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "opacity")?.data ?? node.payload.opacity) ?? 1));
 
-    const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetMode")?.data, Enum.Common.positionMode) ?? node.payload.offsetMode;
-    let dx: number;
-    let dy: number;
-    if (offsetMode === Enum.Common.positionMode.POLAR.value) {
-        const radius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetRadius")?.data ?? node.payload.offsetRadius) ?? 0;
-        const theta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "offsetTheta")?.data ?? node.payload.offsetTheta) ?? 0;
-        const thetaRad = ((theta - 90) * Math.PI) / 180;
-        dx = radius * Math.cos(thetaRad);
-        dy = radius * Math.sin(thetaRad);
-    } else {
-        dx = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetX")?.data ?? node.payload.offsetX) ?? 0;
-        dy = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetY")?.data ?? node.payload.offsetY) ?? 0;
-    }
+    const offset =
+        context.resolve<DataTypes.Point>(node.id, "offset")?.data ??
+        PointHelper.resolve(node.payload.offsetMode, node.payload.offsetX, node.payload.offsetY, node.payload.offsetRadius, node.payload.offsetTheta);
+    const dx = offset.x;
+    const dy = offset.y;
 
     const filter: FilterPrimitive[] = [];
     let lastResult = "SourceGraphic";

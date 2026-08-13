@@ -122,11 +122,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<KnotDefinition>>, i
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -411,11 +407,7 @@ const GEOMETRY_INPUTS: (keyof KnotDefinition["inputs"])[] = [
     "markerShape",
     "markerAlign",
     "removeCrossings",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof KnotDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];

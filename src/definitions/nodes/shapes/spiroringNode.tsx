@@ -98,11 +98,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiroringDefinitio
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -309,11 +305,7 @@ const GEOMETRY_INPUTS: (keyof SpiroringDefinition["inputs"])[] = [
     ...RADIUS_INPUTS,
     "turns",
     "removeCrossings",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof SpiroringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];

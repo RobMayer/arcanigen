@@ -7,10 +7,10 @@
 
 ## Array / Point expansion (array-ops built; Reducer now unblocked)
 
-- [ ] Point-cloud **Reducer / dedup** — now buildable on the new array-ops (Filter/Gather + loopFor); it was always "a special case of array ops". The big deferred point-cloud piece.
-- [ ] Side-channel array datatypes (`array<angle>`, etc.) → From-Crossings angle/tangent outputs + Scatter per-point angle-alignment input
-- [ ] Vector math on points (dot, cross, normalize, distance, per-component ops) — would inherit the `$.defaulted` widgets
-- [ ] Adopt `point` inputs on existing nodes (Transforms position, Line, gradients)
+- [x] Adopt `point` inputs on existing nodes (Transforms position, Line, gradients, glow) - single `point` socket replaces the {Mode,X,Y,Radius,Theta} slice; injecting v8->9 save migration
+- [ ] Point-cloud **Reducer / dedup**
+- [ ] More arrat types
+- [ ] Vector math on points (dot, cross, normalize, distance, per-component ops)
 - [ ] Future consumers: **Spike** (home + array → rays), **Constellation** (connect point sets)
 
 ## Shapes
@@ -34,7 +34,7 @@
 - [ ] Linear Symmetry
 - [ ] Radial Symmetry
 - [x] Reverse Path
-- [x] Path Length
+- [x] Path Lengthhttps://app.zoom.us/wc/77948641561/join?ref_from=launch&pwd=N2hDU0ZWRlJGU1Q0aG5aeEFWazdRdz09&fromPWA=1
 - [ ] Grid
     - [ ] Cartesian
     - [ ] Iso

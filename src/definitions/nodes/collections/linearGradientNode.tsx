@@ -14,13 +14,14 @@ import { NumericString } from "../../datatypes/numericString";
 import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { Color } from "../../datatypes/color";
-import { Length } from "../../datatypes/length";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
+import { LoopButton } from "../../../components/buttons/LoopButton";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
+import { PointHelper } from "../../helpers/pointHelper";
 import { EmptyOr } from "../../../util/misc";
 import { GradientPaint, GradientStop } from "../../shapeTypes";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
@@ -28,7 +29,23 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const SPREAD_OPTIONS = Enum.options(Enum.Common.gradientSpread);
 const FRAMING_OPTIONS = Enum.options(Enum.Common.framing);
-const POSITION_MODE_OPTIONS = Enum.options(Enum.Common.positionMode);
+const MODE_OPTIONS = [
+    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
+    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
+];
+
+const PointRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+
+    & > .pointField {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+`;
 
 type StopEntryData = { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean };
 
@@ -38,16 +55,8 @@ const def = signature({
         framing: "enum",
         spread: "enum",
         angle: "angle",
-        startMode: "enum",
-        startX: "length",
-        startY: "length",
-        startRadius: "length",
-        startTheta: "angle",
-        endMode: "enum",
-        endX: "length",
-        endY: "length",
-        endRadius: "length",
-        endTheta: "angle",
+        startPoint: "point",
+        endPoint: "point",
         "stop_*": "stop:color",
     },
     out: { output: "gradient", stopCount: "integer" },
@@ -84,16 +93,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LinearGradientDefin
             framing: null,
             spread: null,
             angle: null,
-            startMode: null,
-            startX: null,
-            startY: null,
-            startRadius: null,
-            startTheta: null,
-            endMode: null,
-            endX: null,
-            endY: null,
-            endRadius: null,
-            endTheta: null,
+            startPoint: null,
+            endPoint: null,
             [s0]: null,
             [s1]: null,
         },
@@ -125,7 +126,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LinearGradientDefin
     };
 };
 
-const COORDINATE_SOCKETS = "framing|angle|startMode|startX|startY|startRadius|startTheta|endMode|endX|endY|endRadius|endTheta";
+const COORDINATE_SOCKETS = "framing|angle|startPoint|endPoint";
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LinearGradientDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const { alterNode, removeLinks } = Project.useMethods();
@@ -200,10 +201,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LinearGradi
     // Auto/Manual gating (only decidable when framing isn't itself driven by a link).
     const framingAuto = node.payload.framing === Enum.Common.framing.AUTO.value && node.in.framing === null;
     const framingManual = node.payload.framing === Enum.Common.framing.MANUAL.value && node.in.framing === null;
-    const startIsCartesian = node.payload.startMode === Enum.Common.positionMode.CARTESIAN.value && node.in.startMode === null;
-    const startIsPolar = node.payload.startMode === Enum.Common.positionMode.POLAR.value && node.in.startMode === null;
-    const endIsCartesian = node.payload.endMode === Enum.Common.positionMode.CARTESIAN.value && node.in.endMode === null;
-    const endIsPolar = node.payload.endMode === Enum.Common.positionMode.POLAR.value && node.in.endMode === null;
+    const startIsPolar = node.payload.startMode === Enum.Common.positionMode.POLAR.value;
+    const startConnected = node.in.startPoint !== null;
+    const endIsPolar = node.payload.endMode === Enum.Common.positionMode.POLAR.value;
+    const endConnected = node.in.endPoint !== null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -246,57 +247,37 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LinearGradi
                     <AngleInput.SliderInput value={node.payload.angle} onCommit={(angle) => handleUpdate({ angle })} disabled={node.in.angle !== null || framingManual} unbound />
                 </SocketIn>
                 <hr />
-                <SocketIn node={node} socketId={"startMode"} label={"Start Mode"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.startMode}`}
-                        onValue={(v) => handleUpdate({ startMode: Number(v) })}
-                        disabled={node.in.startMode !== null || framingAuto}
-                        options={POSITION_MODE_OPTIONS}
-                    />
+                <SocketIn node={node} socketId={"startPoint"} label={"Start Point"}>
+                    <PointRow>
+                        <LoopButton.Lite value={`${node.payload.startMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ startMode: Number(v) })} disabled={startConnected || framingAuto} />
+                        {startIsPolar ? (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.startRadius} onCommit={(startRadius) => handleUpdate({ startRadius })} disabled={startConnected || framingAuto} required />
+                                <AngleInput className={"pointField"} value={node.payload.startTheta} onCommit={(startTheta) => handleUpdate({ startTheta })} disabled={startConnected || framingAuto} />
+                            </>
+                        ) : (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.startX} onCommit={(startX) => handleUpdate({ startX })} disabled={startConnected || framingAuto} required />
+                                <LengthInput className={"pointField"} value={node.payload.startY} onCommit={(startY) => handleUpdate({ startY })} disabled={startConnected || framingAuto} required />
+                            </>
+                        )}
+                    </PointRow>
                 </SocketIn>
-                <SocketIn node={node} socketId={"startX"} label={"Start X"}>
-                    <LengthInput value={node.payload.startX} onCommit={(startX) => handleUpdate({ startX })} disabled={node.in.startX !== null || framingAuto || startIsPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"startY"} label={"Start Y"}>
-                    <LengthInput value={node.payload.startY} onCommit={(startY) => handleUpdate({ startY })} disabled={node.in.startY !== null || framingAuto || startIsPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"startRadius"} label={"Start Radius"}>
-                    <LengthInput
-                        value={node.payload.startRadius}
-                        onCommit={(startRadius) => handleUpdate({ startRadius })}
-                        disabled={node.in.startRadius !== null || framingAuto || startIsCartesian}
-                        required
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"startTheta"} label={"Start Theta"}>
-                    <AngleInput.SliderInput
-                        value={node.payload.startTheta}
-                        onCommit={(startTheta) => handleUpdate({ startTheta })}
-                        disabled={node.in.startTheta !== null || framingAuto || startIsCartesian}
-                    />
-                </SocketIn>
-                <hr />
-                <SocketIn node={node} socketId={"endMode"} label={"End Mode"}>
-                    <RadioButton.Group
-                        orientation={"horizontal"}
-                        value={`${node.payload.endMode}`}
-                        onValue={(v) => handleUpdate({ endMode: Number(v) })}
-                        disabled={node.in.endMode !== null || framingAuto}
-                        options={POSITION_MODE_OPTIONS}
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endX"} label={"End X"}>
-                    <LengthInput value={node.payload.endX} onCommit={(endX) => handleUpdate({ endX })} disabled={node.in.endX !== null || framingAuto || endIsPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endY"} label={"End Y"}>
-                    <LengthInput value={node.payload.endY} onCommit={(endY) => handleUpdate({ endY })} disabled={node.in.endY !== null || framingAuto || endIsPolar} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endRadius"} label={"End Radius"}>
-                    <LengthInput value={node.payload.endRadius} onCommit={(endRadius) => handleUpdate({ endRadius })} disabled={node.in.endRadius !== null || framingAuto || endIsCartesian} required />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endTheta"} label={"End Theta"}>
-                    <AngleInput.SliderInput value={node.payload.endTheta} onCommit={(endTheta) => handleUpdate({ endTheta })} disabled={node.in.endTheta !== null || framingAuto || endIsCartesian} />
+                <SocketIn node={node} socketId={"endPoint"} label={"End Point"}>
+                    <PointRow>
+                        <LoopButton.Lite value={`${node.payload.endMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ endMode: Number(v) })} disabled={endConnected || framingAuto} />
+                        {endIsPolar ? (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.endRadius} onCommit={(endRadius) => handleUpdate({ endRadius })} disabled={endConnected || framingAuto} required />
+                                <AngleInput className={"pointField"} value={node.payload.endTheta} onCommit={(endTheta) => handleUpdate({ endTheta })} disabled={endConnected || framingAuto} />
+                            </>
+                        ) : (
+                            <>
+                                <LengthInput className={"pointField"} value={node.payload.endX} onCommit={(endX) => handleUpdate({ endX })} disabled={endConnected || framingAuto} required />
+                                <LengthInput className={"pointField"} value={node.payload.endY} onCommit={(endY) => handleUpdate({ endY })} disabled={endConnected || framingAuto} required />
+                            </>
+                        )}
+                    </PointRow>
                 </SocketIn>
             </NodeAccordion>
             <NodeAccordion label={"Additional Options"} nodeId={node.id} socketsIn={"spread"} socketsOut={"stopCount"}>
@@ -492,30 +473,7 @@ const toGradientStops = (resolved: { value: Color.Type; position: number; enable
 };
 
 /** Angle convention: 0deg = top, CW positive (matches the Line shape). */
-const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
-
-const resolvePoint = (mode: number, x: number, y: number, radius: number, theta: number): [number, number] => {
-    if (mode === Enum.Common.positionMode.POLAR.value) {
-        const t = toRad(theta);
-        return [radius * Math.cos(t), radius * Math.sin(t)];
-    }
-    return [x, y];
-};
-
-const GEOMETRY_INPUTS: (keyof LinearGradientDefinition["inputs"])[] = [
-    "framing",
-    "angle",
-    "startMode",
-    "startX",
-    "startY",
-    "startRadius",
-    "startTheta",
-    "endMode",
-    "endX",
-    "endY",
-    "endRadius",
-    "endTheta",
-];
+const GEOMETRY_INPUTS: (keyof LinearGradientDefinition["inputs"])[] = ["framing", "angle", "startPoint", "endPoint"];
 
 const dependsOn = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, outSocket: keyof LinearGradientDefinition["outputs"], _deps: AllDeps): (keyof LinearGradientDefinition["inputs"])[] => {
     const stopSockets = node.payload.stops.map((s) => s.socket) as `stop_${string}`[];
@@ -560,21 +518,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, socke
     };
 
     if (gradient.units === "userSpaceOnUse") {
-        const startMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "startMode")?.data, Enum.Common.positionMode) ?? node.payload.startMode;
-        const startX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
-        const startY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
-        const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
-        const startTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
-
-        const endMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "endMode")?.data, Enum.Common.positionMode) ?? node.payload.endMode;
-        const endX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
-        const endY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
-        const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
-        const endTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
-
-        const [x1, y1] = resolvePoint(startMode, startX, startY, startRadius, startTheta);
-        const [x2, y2] = resolvePoint(endMode, endX, endY, endRadius, endTheta);
-        gradient.linear = { x1, y1, x2, y2 };
+        const start =
+            context.resolve<DataTypes.Point>(node.id, "startPoint")?.data ??
+            PointHelper.resolve(node.payload.startMode, node.payload.startX, node.payload.startY, node.payload.startRadius, node.payload.startTheta);
+        const end =
+            context.resolve<DataTypes.Point>(node.id, "endPoint")?.data ??
+            PointHelper.resolve(node.payload.endMode, node.payload.endX, node.payload.endY, node.payload.endRadius, node.payload.endTheta);
+        gradient.linear = { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
     }
 
     return { kind: "gradient", data: gradient };

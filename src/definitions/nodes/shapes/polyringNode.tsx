@@ -115,11 +115,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolyringDefinition>
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -371,11 +367,7 @@ const GEOMETRY_INPUTS: (keyof PolyringDefinition["inputs"])[] = [
     "innerCornerShape",
     "markerShape",
     "markerAlign",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof PolyringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];

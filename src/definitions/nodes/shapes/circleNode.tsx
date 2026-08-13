@@ -49,11 +49,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<CircleDefinition>>,
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -111,7 +107,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
     );
 };
 
-const GEOMETRY_INPUTS: (keyof CircleDefinition["inputs"])[] = ["radius", "positionMode", "positionX", "positionY", "positionRadius", "positionTheta", "rotation"];
+const GEOMETRY_INPUTS: (keyof CircleDefinition["inputs"])[] = ["radius", "position", "rotation"];
 const STYLING_INPUTS: (keyof CircleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, outSocket: keyof CircleDefinition["outputs"], _deps: AllDeps): (keyof CircleDefinition["inputs"])[] => {

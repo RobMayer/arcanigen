@@ -104,11 +104,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StarDefinition>>, i
             paintOrder: null,
             opacity: null,
             // transforms
-            positionMode: null,
-            positionX: null,
-            positionY: null,
-            positionRadius: null,
-            positionTheta: null,
+            position: null,
             rotation: null,
         },
         out: {
@@ -325,11 +321,7 @@ const GEOMETRY_INPUTS: (keyof StarDefinition["inputs"])[] = [
     "innerCornerShape",
     "markerShape",
     "markerAlign",
-    "positionMode",
-    "positionX",
-    "positionY",
-    "positionRadius",
-    "positionTheta",
+    "position",
     "rotation",
 ];
 const STYLING_INPUTS: (keyof StarDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
