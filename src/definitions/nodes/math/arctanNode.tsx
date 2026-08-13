@@ -17,7 +17,7 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
-    in: { input: $.oneOf("float", "integer") },
+    in: { input: $.defaulted($.oneOf("float", "integer"), "float") },
     out: { output: "angle" },
 });
 
@@ -79,10 +79,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ArctanDefinition>, _inSock
 
 const evaluate = (node: NodeDefinitions.NodeFor<ArctanDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input");
-        const kind = val?.kind ?? "float";
-        const data = val?.data ?? node.payload.input;
-        const { value } = extractSingle(kind, data);
+        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
+        const { value } = extractSingle(val.kind, val.data);
         const degrees = (Math.atan(value) * 180) / Math.PI;
         return { kind: "angle", data: `${degrees}` };
     }

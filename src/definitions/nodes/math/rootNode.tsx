@@ -18,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { N: $.NUMERIC },
-    in: ({ N }) => ({ input: N, degree: $.oneOf("float", "integer") }),
+    in: ({ N }) => ({ input: $.defaulted(N, "float"), degree: $.defaulted($.oneOf("float", "integer"), "float") }),
     out: ({ N }) => ({ output: N }),
 });
 
@@ -26,6 +26,7 @@ export type RootDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        input: DataTypes.TypeOf<DataTypes.Float>;
         degree: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
@@ -39,6 +40,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RootDefinition>>, i
         out: { output: [] },
         payload: {
             label: "",
+            input: "4",
             degree: input.degree ?? "2",
         },
         type: "root",
@@ -60,8 +62,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RootDefinit
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
+            <SocketIn node={node} socketId={"input"} label={"Input"}>
+                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
             </SocketIn>
             <SocketIn node={node} socketId={"degree"} label={"Degree"}>
                 <DecimalInput value={node.payload.degree} onCommit={(degree) => handleUpdate({ degree })} disabled={node.in.degree !== null} />
@@ -82,12 +84,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RootDefinition>, inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<RootDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input");
-        if (!val) return null;
+        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
         const { value, unit } = extractSingle(val.kind, val.data);
-        const degVal = context.resolve(node.id, "degree");
-        const degData = degVal?.data ?? node.payload.degree;
-        const { value: deg } = extractSingle(degVal?.kind ?? "float", degData);
+        const degVal = context.resolve(node.id, "degree") ?? { kind: "float", data: node.payload.degree };
+        const { value: deg } = extractSingle(degVal.kind, degVal.data);
         const result = deg === 0 ? 0 : Math.pow(value, 1 / deg);
         return wrapResult(result, val.kind, unit);
     }

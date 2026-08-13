@@ -2,9 +2,10 @@ import { nanoid } from "nanoid";
 import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -17,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ a: T, b: T }),
+    in: ({ T }) => ({ a: $.defaulted(T, "float"), b: $.defaulted(T, "float") }),
     out: ({ T }) => ({ output: T }),
 });
 
@@ -25,6 +26,8 @@ export type MaxDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        a: DataTypes.TypeOf<DataTypes.Float>;
+        b: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -40,6 +43,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<MaxDefinition>>, i
         },
         payload: {
             label: "",
+            a: "0",
+            b: "0",
         },
         type: "max",
     };
@@ -48,16 +53,22 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<MaxDefinition>>, i
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MaxDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<MaxDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>
-                A
+            <SocketIn node={node} socketId={"a"} label={"A"}>
+                <DecimalInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"b"}>
-                B
+            <SocketIn node={node} socketId={"b"} label={"B"}>
+                <DecimalInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
             </SocketIn>
         </TypicalNode>
     );
@@ -74,9 +85,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<MaxDefinition>, _inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<MaxDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const aVal = context.resolve(node.id, "a");
-        const bVal = context.resolve(node.id, "b");
-        if (!aVal || !bVal) return null;
+        const aVal = context.resolve(node.id, "a") ?? { kind: "float", data: node.payload.a };
+        const bVal = context.resolve(node.id, "b") ?? { kind: "float", data: node.payload.b };
         const { a, b, unit } = extractPair(aVal.kind, aVal.data, bVal.kind, bVal.data);
         const outputKind = dominantKind(aVal.kind, bVal.kind);
         return wrapResult(Math.max(a, b), outputKind, unit);

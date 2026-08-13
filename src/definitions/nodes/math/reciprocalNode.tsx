@@ -2,9 +2,10 @@ import { nanoid } from "nanoid";
 import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -17,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { N: $.NUMERIC },
-    in: ({ N }) => ({ input: N }),
+    in: ({ N }) => ({ input: $.defaulted(N, "float") }),
     out: ({ N }) => ({ output: N }),
 });
 
@@ -25,6 +26,7 @@ export type ReciprocalDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        input: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -37,6 +39,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ReciprocalDefiniti
         out: { output: [] },
         payload: {
             label: "",
+            input: "1",
         },
         type: "reciprocal",
     };
@@ -45,13 +48,19 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ReciprocalDefiniti
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReciprocalDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<ReciprocalDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
+            <SocketIn node={node} socketId={"input"} label={"Input"}>
+                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
             </SocketIn>
         </TypicalNode>
     );
@@ -68,8 +77,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ReciprocalDefinition>, _in
 
 const evaluate = (node: NodeDefinitions.NodeFor<ReciprocalDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input");
-        if (!val) return null;
+        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
         const { value, unit } = extractSingle(val.kind, val.data);
         return wrapResult(value === 0 ? 0 : 1 / value, val.kind, unit);
     }

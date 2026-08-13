@@ -41,6 +41,9 @@ export namespace SocketTypes {
         families?: ReadonlySet<string>;
         /** Equality vars restricted to a membership set (e.g. `$.NUMERIC`) — the var's kind ceiling. */
         sets?: Record<string, ReadonlySet<string>>;
+        /** Input sockets with a `$.defaulted(...)` fallback kind — used when the socket is disconnected: it
+         *  CONTRIBUTES this kind to output resolution but does NOT narrow its own accept type. */
+        defaults?: Record<string, string>;
     };
 
     // --- Constructors ---------------------------------------------------------------------------

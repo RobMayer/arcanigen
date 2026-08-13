@@ -161,11 +161,7 @@ export namespace Project {
      * node's own socket, and no blend), so a node asking "what am I receiving?" gets an honest source of
      * truth. Null when the input is unconnected. Inspect it with `SocketTypes.project`/`subsumes`.
      */
-    export const useInboundType = <D extends NodeDefinitions.Generic>(
-        graphId: GraphId,
-        { id: nodeId }: NodeDefinitions.NodeFor<D>,
-        inSocket: string,
-    ): SocketTypes.Term | null => {
+    export const useInboundType = <D extends NodeDefinitions.Generic>(graphId: GraphId, { id: nodeId }: NodeDefinitions.NodeFor<D>, inSocket: string): SocketTypes.Term | null => {
         const ctx = useContext(CTX)!;
         const lookup = useCallback((): SocketTypes.Term | null => {
             const node = ctx.nodes.ref.current[graphId]?.[nodeId];
@@ -772,26 +768,6 @@ export namespace Project {
     export namespace Versioning {
         export const CURRENT = 8;
 
-        // Derived socket-type state no longer lives on the payload — it's regenerated into the transient
-        // SocketTypeCache — and a link's carried type is computed live from its endpoints, not stored.
-        // These fields are dead in any pre-v8 save (`connectedKind` — the integer/length cast-badge kind,
-        // missed by the original v8 sweep and folded in here since v8 is unreleased). None collides with a
-        // live payload field on any current node type, so a blanket delete is safe. See migrationNotes.md.
-        const STALE_TYPE_FIELDS = [
-            "connectedType",
-            "connectedTypeA",
-            "connectedTypeB",
-            "connectedTypeInput",
-            "connectedTypeMin",
-            "connectedTypeMax",
-            "connectedTypeValue",
-            "connectedTypeTarget",
-            "connectedTypeTolerance",
-            "resolvedInTypes",
-            "resolvedOutTypes",
-            "connectedKind",
-        ];
-
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
                 for (const graphId in input.nodes) {
@@ -917,19 +893,59 @@ export namespace Project {
                 input.version = 7;
             }
             if (input.version === 7) {
-                // Strip dead persisted socket-type state (see STALE_TYPE_FIELDS) from every node payload,
-                // including patch's per-pair type state nested in payload.pairs[].
+                const STALE_TYPE_FIELDS = [
+                    "connectedType",
+                    "connectedTypeA",
+                    "connectedTypeB",
+                    "connectedTypeInput",
+                    "connectedTypeMin",
+                    "connectedTypeMax",
+                    "connectedTypeValue",
+                    "connectedTypeTarget",
+                    "connectedTypeTolerance",
+                    "resolvedInTypes",
+                    "resolvedOutTypes",
+                    "connectedKind",
+                ];
+
+                const NEW_PAYLOAD_FIELDS: { [key: string]: any } = {
+                    add: { a: "0", b: "0" },
+                    subtract: { a: "0", b: "0" },
+                    min: { a: "0", b: "0" },
+                    max: { a: "0", b: "0" },
+                    multiply: { a: "1", b: "1" },
+                    divide: { a: "1", b: "1" },
+                    modulo: { a: "0", b: "1" },
+                    remainder: { a: "0", b: "1" },
+                    clamp: { input: "0", min: "0", max: "1" },
+                    lerp: { a: "0", b: "1" },
+                    abs: { input: "0" },
+                    negate: { input: "0" },
+                    reciprocal: { input: "1" },
+                    pow: { input: "2" },
+                    root: { input: "4" },
+                    round: { input: "0" },
+                };
                 for (const graphId in input.nodes) {
                     for (const nodeId in input.nodes[graphId]) {
                         const payload = input.nodes[graphId][nodeId].payload;
-                        if (!payload) continue;
+                        const type = input.nodes[graphId][nodeId].type;
+                        if (!payload || !type) continue;
+
                         for (const field of STALE_TYPE_FIELDS) delete payload[field];
+                        // special case for "pairs" (patchNode)
                         if (Array.isArray(payload.pairs)) {
                             for (const pair of payload.pairs) {
                                 delete pair.connectedType;
                                 delete pair.resolvedInTypes;
                             }
                         }
+
+                        // add new fields
+                        input.nodes[graphId][nodeId].payload = {
+                            ...NEW_PAYLOAD_FIELDS[type],
+                            ...input.nodes[graphId][nodeId].payload,
+                        };
                     }
                 }
                 // Link type is now computed live from its endpoints' solved types, never stored.

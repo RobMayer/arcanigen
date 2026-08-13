@@ -17,7 +17,7 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
-    in: { input: $.oneOf("angle", "float", "integer") },
+    in: { input: $.defaulted($.oneOf("angle", "float", "integer"), "float") },
     out: { output: "float" },
 });
 
@@ -79,11 +79,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TanDefinition>, _inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<TanDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input");
-        const kind = val?.kind ?? "float";
-        const data = val?.data ?? node.payload.input;
-        const { value } = extractSingle(kind, data);
-        const radians = kind === "angle" ? (value * Math.PI) / 180 : value;
+        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
+        const { value } = extractSingle(val.kind, val.data);
+        const radians = val.kind === "angle" ? (value * Math.PI) / 180 : value;
         return { kind: "float", data: `${Math.tan(radians)}` };
     }
     return null;

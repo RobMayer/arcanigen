@@ -18,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { N: $.NUMERIC },
-    in: ({ N }) => ({ input: N, exponent: $.oneOf("float", "integer") }),
+    in: ({ N }) => ({ input: $.defaulted(N, "float"), exponent: $.defaulted($.oneOf("float", "integer"), "float") }),
     out: ({ N }) => ({ output: N }),
 });
 
@@ -26,6 +26,7 @@ export type PowDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        input: DataTypes.TypeOf<DataTypes.Float>;
         exponent: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
@@ -39,6 +40,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PowDefinition>>, id
         out: { output: [] },
         payload: {
             label: "",
+            input: "2",
             exponent: input.exponent ?? "2",
         },
         type: "pow",
@@ -60,8 +62,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PowDefiniti
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
+            <SocketIn node={node} socketId={"input"} label={"Input"}>
+                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
             </SocketIn>
             <SocketIn node={node} socketId={"exponent"} label={"Exponent"}>
                 <DecimalInput value={node.payload.exponent} onCommit={(exponent) => handleUpdate({ exponent })} disabled={node.in.exponent !== null} />
@@ -82,12 +84,10 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PowDefinition>, inSocket: 
 
 const evaluate = (node: NodeDefinitions.NodeFor<PowDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input");
-        if (!val) return null;
+        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
         const { value, unit } = extractSingle(val.kind, val.data);
-        const expVal = context.resolve(node.id, "exponent");
-        const expData = expVal?.data ?? node.payload.exponent;
-        const { value: exp } = extractSingle(expVal?.kind ?? "float", expData);
+        const expVal = context.resolve(node.id, "exponent") ?? { kind: "float", data: node.payload.exponent };
+        const { value: exp } = extractSingle(expVal.kind, expVal.data);
         return wrapResult(Math.pow(value, exp), val.kind, unit);
     }
     return null;

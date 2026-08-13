@@ -18,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ a: T, b: T, t: $.oneOf("float", "integer") }),
+    in: ({ T }) => ({ a: $.defaulted(T, "float"), b: $.defaulted(T, "float"), t: $.defaulted($.oneOf("float", "integer"), "float") }),
     out: ({ T }) => ({ output: T }),
 });
 
@@ -26,6 +26,8 @@ export type LerpDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        a: DataTypes.TypeOf<DataTypes.Float>;
+        b: DataTypes.TypeOf<DataTypes.Float>;
         t: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
@@ -39,6 +41,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LerpDefinition>>, i
         out: { output: [] },
         payload: {
             label: "",
+            a: "0",
+            b: "1",
             t: input.t ?? "0.5",
         },
         type: "lerp",
@@ -60,11 +64,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LerpDefinit
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>
-                A
+            <SocketIn node={node} socketId={"a"} label={"A"}>
+                <DecimalInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"b"}>
-                B
+            <SocketIn node={node} socketId={"b"} label={"B"}>
+                <DecimalInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
             </SocketIn>
             <SocketIn node={node} socketId={"t"} label={"T"}>
                 <DecimalInput value={node.payload.t} onCommit={(t) => handleUpdate({ t })} disabled={node.in.t !== null} />
@@ -84,14 +88,12 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LerpDefinition>, _inSocket
 
 const evaluate = (node: NodeDefinitions.NodeFor<LerpDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const aVal = context.resolve(node.id, "a");
-        const bVal = context.resolve(node.id, "b");
-        if (!aVal || !bVal) return null;
+        const aVal = context.resolve(node.id, "a") ?? { kind: "float", data: node.payload.a };
+        const bVal = context.resolve(node.id, "b") ?? { kind: "float", data: node.payload.b };
         const { a, b, unit } = extractPair(aVal.kind, aVal.data, bVal.kind, bVal.data);
 
-        const tVal = context.resolve(node.id, "t");
-        const tData = tVal?.data ?? node.payload.t;
-        const { value: t } = extractSingle(tVal?.kind ?? "float", tData);
+        const tVal = context.resolve(node.id, "t") ?? { kind: "float", data: node.payload.t };
+        const { value: t } = extractSingle(tVal.kind, tVal.data);
 
         const outputKind = dominantKind(aVal.kind, bVal.kind);
         return wrapResult(a + (b - a) * t, outputKind, unit);

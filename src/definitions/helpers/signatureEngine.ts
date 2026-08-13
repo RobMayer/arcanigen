@@ -255,32 +255,50 @@ export namespace SignatureEngine {
             if (inOccs.length === 0 && outOccs.length === 0) continue;
 
             const members = new Set(L.members);
-            const domIn: Record<string, Set<string>> = {};
-            for (const s of inOccs) domIn[s] = inKinds[s] ? intersectSet(inKinds[s]!, members) : new Set(members);
+            // Two domains per input: `accept` = what the socket advertises (a `$.defaulted` fallback NEVER
+            // narrows it, so you can still connect any member to override); `join` = what it contributes to
+            // OUTPUT resolution -- a DISCONNECTED `$.defaulted` socket contributes only its fallback kind, so
+            // the output collapses (e.g. add(float-widget, length) -> length; add empty,empty -> float).
+            const acceptDom: Record<string, Set<string>> = {};
+            const joinDom: Record<string, Set<string>> = {};
+            for (const s of inOccs) {
+                if (inKinds[s]) {
+                    const d = intersectSet(inKinds[s]!, members);
+                    acceptDom[s] = d;
+                    joinDom[s] = d;
+                } else {
+                    acceptDom[s] = new Set(members);
+                    const def = inst.defaults?.[s];
+                    joinDom[s] = def && members.has(def) ? new Set([def]) : new Set(members);
+                }
+            }
             let dOut = new Set(members);
             for (const s of outOccs) if (outKinds[s]) dOut = intersectSet(dOut, outKinds[s]!);
 
-            const out = intersectSet(achievableJoins(Object.values(domIn), L) ?? new Set(members), dOut);
+            // OUTPUT = join over the CONTRIBUTION domains (defaults applied) ∩ downstream.
+            const outResolved = intersectSet(achievableJoins(Object.values(joinDom), L) ?? new Set(members), dOut);
+            for (const s of outOccs) {
+                resOut[s] = orRule([...outResolved]);
+                handledOut.add(s);
+            }
 
+            // INPUT accept = each socket's advertised kinds (defaults ignored) -- unchanged from before.
+            const outAccept = intersectSet(achievableJoins(Object.values(acceptDom), L) ?? new Set(members), dOut);
             for (const s of inOccs) {
                 const otherJoins = achievableJoins(
-                    inOccs.filter((o) => o !== s).map((o) => domIn[o]),
+                    inOccs.filter((o) => o !== s).map((o) => acceptDom[o]),
                     L,
                 );
-                const valid = [...domIn[s]].filter((k) => {
-                    if (otherJoins === null) return out.has(k); // sole input: k must itself land in `out`
+                const valid = [...acceptDom[s]].filter((k) => {
+                    if (otherJoins === null) return outAccept.has(k); // sole input: k must itself land in the output
                     for (const o of otherJoins) {
                         const j = L.join(k, o);
-                        if (j !== null && out.has(j)) return true;
+                        if (j !== null && outAccept.has(j)) return true;
                     }
                     return false;
                 });
                 resIn[s] = orRule(valid);
                 handledIn.add(s);
-            }
-            for (const s of outOccs) {
-                resOut[s] = orRule([...out]);
-                handledOut.add(s);
             }
         }
 
@@ -292,7 +310,22 @@ export namespace SignatureEngine {
         for (const [sock, term] of Object.entries(xin)) if (!handledIn.has(sock) && inKinds[sock]) constrainFromNeighbour(term, inKinds[sock]!, eqDom, grounded);
         for (const [sock, term] of Object.entries(xout)) if (!handledOut.has(sock) && outKinds[sock]) constrainFromNeighbour(term, outKinds[sock]!, eqDom, grounded);
         for (const [sock, term] of Object.entries(xin)) if (!handledIn.has(sock)) resIn[sock] = materialize(term, eqDom, "in", grounded);
-        for (const [sock, term] of Object.entries(xout)) if (!handledOut.has(sock)) resOut[sock] = materialize(term, eqDom, "out", grounded);
+
+        // `$.defaulted` on an INPUT carrying a bare var: the var's fallback kind, used to resolve OUTPUT
+        // occurrences when the var is UNGROUNDED (no real connection pins it). Input accept is never narrowed
+        // (it keeps its full domain above), so you can still connect anything to override the widget.
+        const varDefaults: Record<string, string> = {};
+        for (const [sock, def] of Object.entries(inst.defaults ?? {})) {
+            const t = xin[sock];
+            if (t?.t === "var") varDefaults[t.id] = def;
+        }
+        for (const [sock, term] of Object.entries(xout)) {
+            if (handledOut.has(sock)) continue;
+            resOut[sock] =
+                term.t === "var" && !grounded.has(term.id) && varDefaults[term.id] !== undefined
+                    ? orRule([varDefaults[term.id]])
+                    : materialize(term, eqDom, "out", grounded);
+        }
 
         return { in: resIn, out: resOut };
     };
@@ -317,6 +350,27 @@ export namespace SignatureEngine {
         const dom: Record<string, Domain> = {};
         for (const [v, latName] of Object.entries(inst.bounds)) dom[v] = new Set(SocketTypes.LATTICES[latName].members);
         for (const [v, set] of Object.entries(inst.sets ?? {})) dom[v] = new Set(set);
+        // Pre-solve fallback (fresh/uncached node = treated as fully disconnected): a var OUTPUT whose input
+        // carriers are ALL `$.defaulted` resolves to their fallback -- JOINED for a coercion (bounds) var, or
+        // the value itself for an equality (sets) var -- so a pristine `add`/`abs` shows the collapsed kind,
+        // not the whole NUMERIC set.
+        if (side === "out" && inst.defaults && term.t === "var") {
+            const v = term.id;
+            const carriers = Object.keys(inst.in).filter((s) => isBareVar(inst.in[s], v));
+            if (carriers.length > 0 && carriers.every((s) => inst.defaults![s])) {
+                const defs = carriers.map((s) => inst.defaults![s]);
+                const lat = SocketTypes.LATTICES[inst.bounds[v]];
+                if (lat) {
+                    const joined = achievableJoins(
+                        defs.map((d) => new Set([d])),
+                        lat,
+                    );
+                    if (joined && joined.size > 0) dom[v] = joined;
+                } else {
+                    dom[v] = new Set(defs); // equality/sets var -- no lattice, use the fallback kind directly
+                }
+            }
+        }
         return materialize(term, dom, side, new Set());
     };
 

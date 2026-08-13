@@ -14,6 +14,7 @@ import { useGraphId } from "../../../state/graphId";
 import { extractSingle, wrapResult, applyRounding } from "../../helpers/mathHelper";
 import { Enum } from "../../datatypes/enum";
 import { Dropdown } from "../../../components/inputs/Dropdown";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 
 const ROUNDING_MODE_OPTIONS = Enum.options(Enum.Common.roundingMode);
@@ -33,6 +34,7 @@ export type RoundDefinition = SignatureBuilder.DefinitionFrom<
     {
         label: string;
         mode: number;
+        input: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -46,6 +48,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RoundDefinition>>, 
         payload: {
             label: "",
             mode: input.mode ?? Enum.Common.roundingMode.HALF_EXPAND.value,
+            input: "0",
         },
         type: "round",
     };
@@ -91,8 +94,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RoundDefini
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
+            <SocketIn node={node} socketId={"input"} label={"Input"}>
+                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
             </SocketIn>
             <SocketIn node={node} socketId={"mode"} label={"Mode"}>
                 <Dropdown value={`${node.payload.mode}`} onValue={(v) => handleUpdate({ mode: Number(v) })} disabled={node.in.mode !== null}>
@@ -119,8 +122,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<RoundDefinition>, inSocket
 
 const evaluate = (node: NodeDefinitions.NodeFor<RoundDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input");
-        if (!val) return null;
+        // a disconnected input falls back to its inline float widget value
+        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
         const { value, unit } = extractSingle(val.kind, val.data);
         const mode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "mode")?.data, Enum.Common.roundingMode) ?? node.payload.mode;
         const outputKind = val.kind === "float" ? "integer" : val.kind;
@@ -130,12 +133,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<RoundDefinition>, socket: "outpu
 };
 
 const ENUM_IN: SocketTypes.Term = SocketTypes.of(DataTypes.ENUM);
-const OUTPUT_DEFAULT: SocketTypes.Term = roundedOutputType(SocketTypes.NUMERIC);
+// Disconnected, the inline float widget grounds the value, so the output is the float->integer remap of a
+// float = integer. (`def` is type-only; round's widget is applied here + in resolveRound, not the engine.)
+const OUTPUT_WIDGET: SocketTypes.Term = roundedOutputType(SocketTypes.of(DataTypes.FLOAT));
 
 // Resolve every socket's concrete type from the live graph: the input adopts its upstream's kind
 // (or, absent one, whatever the downstream consumers allow, clamped to NUMERIC); the output is that
 // with float -> integer remapped. Recomputed on every hook and stashed in the socket-type cache.
 const resolveRound = (node: RoundNode, graphId: string, ctx: NodeTypes.MethodContext): { in: Record<string, SocketTypes.Term>; out: Record<string, SocketTypes.Term> } => {
+    // Disconnected: the float widget grounds the value -> input still accepts NUMERIC, output rounds to integer.
+    if (node.in.input === null) {
+        return { in: { input: SocketTypes.NUMERIC, mode: ENUM_IN }, out: { output: OUTPUT_WIDGET } };
+    }
     const connectedType = queryUpstreamOutType(node, "input", graphId, ctx);
     const downstream = queryDownstreamTypes(node, graphId, ctx);
     const inType = effectiveInputType(connectedType, downstream ?? SocketTypes.ANY);
@@ -167,7 +176,7 @@ const getSocketType = (node: NodeDefinitions.NodeFor<RoundDefinition>, socketId:
         case "input":
             return SocketTypes.NUMERIC;
         case "output":
-            return OUTPUT_DEFAULT;
+            return OUTPUT_WIDGET;
         case "mode":
             return ENUM_IN;
         default:

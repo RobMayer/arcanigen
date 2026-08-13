@@ -27,7 +27,13 @@ export namespace SignatureBuilder {
     // `Transforms`/`Stylings` blocks spread into a shape) satisfy `Expr`; without it, `as const` makes the
     // members readonly and they no longer fit a mutable `Expr[]`. (EvalMembers/exprToTerm already tolerate it.)
     /** A socket type-expression: a bare atomic kind, or a tagged combinator, or an arg token. */
-    export type Expr = DataTypes.AtomicKind | { $x: "any" } | { $x: "arg"; name: string } | { $x: "oneOf"; members: readonly Expr[] } | { $x: "ctor"; ctor: string; of: Expr };
+    export type Expr =
+        | DataTypes.AtomicKind
+        | { $x: "any" }
+        | { $x: "arg"; name: string }
+        | { $x: "oneOf"; members: readonly Expr[] }
+        | { $x: "ctor"; ctor: string; of: Expr }
+        | { $x: "defaulted"; of: Expr; default: DataTypes.AtomicKind }; // socket type `of`, but a concrete kind when disconnected (widget fallback)
 
     /** A variable's constraint (declared in `args`). */
     export type Constraint =
@@ -40,8 +46,9 @@ export namespace SignatureBuilder {
     type ArgsInput = Record<string, Constraint>;
     type SocketMap = Record<string, Expr>;
 
-    /** The token handed to the `in`/`out` thunks for each declared arg. Referencing it is typo-safe. */
-    type Tokens<A extends ArgsInput> = { [K in keyof A]: { $x: "arg"; name: K } };
+    /** The token handed to the `in`/`out` thunks for each declared arg. Referencing it is typo-safe.
+     *  Carries the arg's `constraint` (compile-time only) so `$.defaulted(T, k)` can check `k` is in T's domain. */
+    type Tokens<A extends ArgsInput> = { [K in keyof A]: { $x: "arg"; name: K; constraint: A[K] } };
 
     /** What `signature(...)` returns: the resolved maps (types carry the exprs) + the solved-ready instance. */
     export type Result<A extends ArgsInput, In extends SocketMap, Out extends SocketMap> = {
@@ -88,7 +95,9 @@ export namespace SignatureBuilder {
                 : DataTypes.AnyKind
             : X extends { $x: "oneOf"; members: infer M }
               ? EvalMembers<M, A>
-              : X extends { $x: "ctor"; ctor: infer C; of: infer O }
+              : X extends { $x: "defaulted"; of: infer O }
+                ? EvalExpr<O, A> // compile-time type = the accepted inner (the default doesn't change it)
+                : X extends { $x: "ctor"; ctor: infer C; of: infer O }
                 ? C extends "array"
                     ? ArrayOfK<EvalExpr<O, A>> // array<inner> — recurse (covers concrete AND var inner)
                     : C extends "loopFor"
@@ -122,6 +131,8 @@ export namespace SignatureBuilder {
             case "ctor":
                 // array + loopFor are first-class Term ctors; bus lands with Rung-8 (portal/bus).
                 return x.ctor === "array" || x.ctor === "loopFor" ? SocketTypes.ctor(x.ctor, exprToTerm(x.of, bounds)) : SocketTypes.any();
+            case "defaulted":
+                return exprToTerm(x.of, bounds); // the socket ACCEPTS `of`; the default only feeds the solve
         }
     };
 
@@ -148,8 +159,20 @@ export namespace SignatureBuilder {
                 if (s) sets[name] = s;
             }
         }
+        // `$.defaulted(of, k)` sockets: record the disconnected-fallback kind for the solver (input side only).
+        const defaults: Record<string, string> = {};
+        for (const [key, expr] of Object.entries(inMap)) {
+            if (typeof expr === "object" && "$x" in expr && expr.$x === "defaulted") defaults[key] = expr.default;
+        }
         const mapRec = (m: SocketMap) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, exprToTerm(v, bounds)]));
-        return { in: mapRec(inMap), out: mapRec(outMap), bounds, ...(families.size ? { families } : {}), ...(Object.keys(sets).length ? { sets } : {}) };
+        return {
+            in: mapRec(inMap),
+            out: mapRec(outMap),
+            bounds,
+            ...(families.size ? { families } : {}),
+            ...(Object.keys(sets).length ? { sets } : {}),
+            ...(Object.keys(defaults).length ? { defaults } : {}),
+        };
     };
 
     // --- the factory ----------------------------------------------------------------------------
@@ -167,7 +190,7 @@ export namespace SignatureBuilder {
         out: Out | ((t: Tokens<A>) => Out);
     }): Result<A, In, Out> => {
         const args = (config.args ?? {}) as A;
-        const tokens = Object.fromEntries(Object.keys(args).map((k) => [k, { $x: "arg", name: k }])) as Tokens<A>;
+        const tokens = Object.fromEntries(Object.keys(args).map((k) => [k, { $x: "arg", name: k, constraint: (args as ArgsInput)[k] }])) as Tokens<A>;
         const inMap = typeof config.in === "function" ? config.in(tokens) : config.in;
         const outMap = typeof config.out === "function" ? config.out(tokens) : config.out;
         return { args, in: inMap, out: outMap, instance: toInstance(args, inMap, outMap) };
@@ -181,6 +204,33 @@ export namespace SignatureBuilder {
     const arrayOf = <X extends Expr>(of: X) => ({ $x: "ctor", ctor: "array", of }) as { $x: "ctor"; ctor: "array"; of: X };
     const loopFor = <X extends Expr>(of: X) => ({ $x: "ctor", ctor: "loopFor", of }) as { $x: "ctor"; ctor: "loopFor"; of: X };
     const busOf = <X extends Expr>(of: X) => ({ $x: "ctor", ctor: "bus", of }) as { $x: "ctor"; ctor: "bus"; of: X };
+
+    // --- $.defaulted: a socket that ACCEPTS `of` but falls back to a concrete kind when disconnected --------
+    // `PossibilitiesOf<X>` = the atomic kinds `X` can resolve to; the default must be one of them, so
+    // `$.defaulted($.oneOf("shape","layer"), "sequence")` is a compile error. A var's domain comes from the
+    // arg token's `constraint` (threaded through `Tokens`).
+    type AtomicsIn<M> = M extends readonly unknown[] ? Extract<M[number], DataTypes.AtomicKind> : never;
+    type PossibilitiesOfConstraint<C> = C extends DataTypes.AtomicKind
+        ? C
+        : C extends { $x: "any" }
+          ? DataTypes.AtomicKind
+          : C extends { $x: "oneOf"; members: infer M }
+            ? AtomicsIn<M>
+            : C extends { $x: "combine"; members: infer M }
+              ? AtomicsIn<M>
+              : C extends { $x: "each"; of: infer I }
+                ? PossibilitiesOfConstraint<I>
+                : never;
+    type PossibilitiesOf<X> = X extends DataTypes.AtomicKind
+        ? X
+        : X extends { $x: "any" }
+          ? DataTypes.AtomicKind
+          : X extends { $x: "oneOf"; members: infer M }
+            ? AtomicsIn<M>
+            : X extends { $x: "arg"; constraint: infer C }
+              ? PossibilitiesOfConstraint<C>
+              : never; // ctor / bus etc. -- no sensible scalar default
+    const defaulted = <X extends Expr, const K extends PossibilitiesOf<X> & DataTypes.AtomicKind>(of: X, def: K) => ({ $x: "defaulted", of, default: def }) as { $x: "defaulted"; of: X; default: K };
 
     const NUMERIC = oneOf("integer", "float", "length", "angle");
     const COLOR_OR_GRADIENT = oneOf("color", "gradient");
@@ -220,7 +270,7 @@ export namespace SignatureBuilder {
     });
     const combine = Object.assign(combineFn, { NUMERIC_ADDABLE, NUMERIC_SCALABLE });
 
-    export const $ = { ANY, oneOf, each, arrayOf, loopFor, busOf, NUMERIC, COLOR_OR_GRADIENT, combine };
+    export const $ = { ANY, oneOf, each, arrayOf, loopFor, busOf, defaulted, NUMERIC, COLOR_OR_GRADIENT, combine };
 }
 
 export const signature = SignatureBuilder.signature;
