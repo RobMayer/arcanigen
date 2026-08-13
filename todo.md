@@ -34,7 +34,7 @@
 - [ ] Linear Symmetry
 - [ ] Radial Symmetry
 - [x] Reverse Path
-- [x] Path Lengthhttps://app.zoom.us/wc/77948641561/join?ref_from=launch&pwd=N2hDU0ZWRlJGU1Q0aG5aeEFWazdRdz09&fromPWA=1
+- [x] Path Length
 - [ ] Grid
     - [ ] Cartesian
     - [ ] Iso
