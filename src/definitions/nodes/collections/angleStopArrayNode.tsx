@@ -51,8 +51,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleStopArrayDefin
         payload: {
             label: "",
             stops: input.stops ?? [
-                { socket: s0, value: "0", position: "0", enabled: true },
-                { socket: s1, value: "360", position: "100", enabled: true },
+                { socket: s0, value: "0deg", position: "0", enabled: true },
+                { socket: s1, value: "360deg", position: "100", enabled: true },
             ],
         },
         type: "angleStopArray",
@@ -76,7 +76,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleStopAr
             in: { ...n.in, [socket]: null },
             payload: {
                 ...n.payload,
-                stops: [...(n.payload as AngleStopArrayDefinition["payload"]).stops, { socket, value: "180", position: "50", enabled: true }],
+                stops: [...(n.payload as AngleStopArrayDefinition["payload"]).stops, { socket, value: "180deg", position: "50", enabled: true }],
             },
         }));
     }, [alterNode, node.id]);
@@ -296,24 +296,24 @@ const DragGrip = styled.div`
 
 // Resolve the effective stops: the supersocket (an array<stop:angle>) overrides everything;
 // otherwise fold each per-stop socket (a connected stop:angle) over its inline payload.
-const resolveStops = (node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
+const resolveStops = (node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, context: Resolver.Context): { value: string; position: number; enabled: boolean }[] => {
     const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopAngle>>(node.id, "stops");
     if (supersocketEval) {
-        return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
+        return supersocketEval.data.map((s) => ({ value: s.value ?? "", position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
-    const resolved: { value: number; position: number; enabled: boolean }[] = [];
+    const resolved: { value: string; position: number; enabled: boolean }[] = [];
     for (const entry of node.payload.stops) {
         const connected = context.resolve<DataTypes.StopAngle>(node.id, entry.socket);
         if (connected) {
             resolved.push({
-                value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
+                value: connected.data.value ?? entry.value,
                 position: connected.data.position ?? NumericString.Emptyable.asNumber(entry.position) ?? 0,
                 enabled: connected.data.enabled ?? entry.enabled,
             });
         } else {
             resolved.push({
-                value: NumericString.Emptyable.asNumber(entry.value) ?? 0,
+                value: entry.value,
                 position: NumericString.Emptyable.asNumber(entry.position) ?? 0,
                 enabled: entry.enabled,
             });
@@ -344,7 +344,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleStopArrayDefinition>, socke
     }
     if (socket === "output") {
         const stops = resolveStops(node, context).sort((a, b) => a.position - b.position);
-        return { kind: "array<stop:angle>", data: stops.map((s) => ({ value: s.value, position: s.position, enabled: s.enabled })) };
+        return { kind: "array<stop:angle>", data: stops.map((s) => ({ value: s.value === "" ? null : s.value, position: s.position, enabled: s.enabled })) };
     }
     return null;
 };

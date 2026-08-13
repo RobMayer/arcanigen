@@ -17,6 +17,7 @@ import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
+import { Angle } from "../../datatypes/angle";
 import { Length } from "../../datatypes/length";
 import { Color } from "../../datatypes/color";
 import { Enum } from "../../datatypes/enum";
@@ -92,7 +93,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GlowEffectDefiniti
             offsetX: "0px",
             offsetY: "0px",
             offsetRadius: "0px",
-            offsetTheta: "0",
+            offsetTheta: "0deg",
         },
         type: "glowEffect",
     };
@@ -189,7 +190,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     let dy: number;
     if (offsetMode === Enum.Common.positionMode.POLAR.value) {
         const radius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "offsetRadius")?.data ?? node.payload.offsetRadius) ?? 0;
-        const theta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "offsetTheta")?.data ?? node.payload.offsetTheta) ?? 0;
+        const theta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "offsetTheta")?.data ?? node.payload.offsetTheta) ?? 0;
         const thetaRad = ((theta - 90) * Math.PI) / 180;
         dx = radius * Math.cos(thetaRad);
         dy = radius * Math.sin(thetaRad);

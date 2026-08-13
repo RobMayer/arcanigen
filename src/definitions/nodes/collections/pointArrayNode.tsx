@@ -36,7 +36,7 @@ export type PointArrayDefinition = SignatureBuilder.DefinitionFrom<
     }
 >;
 
-const newEntry = (socket: `point_${string}`, mode: number, x: EmptyOr<Length.Type>, y: EmptyOr<Length.Type>): PointEntryData => ({ socket, mode, x, y, radius: "100px", theta: "0" });
+const newEntry = (socket: `point_${string}`, mode: number, x: EmptyOr<Length.Type>, y: EmptyOr<Length.Type>): PointEntryData => ({ socket, mode, x, y, radius: "100px", theta: "0deg" });
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PointArrayDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pointArray", PointArrayDefinition> => {
     const s0: `point_${string}` = `point_${nanoid()}`;

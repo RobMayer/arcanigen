@@ -411,7 +411,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "hsv_s":
         case "hsv_v": {
             const [h, s, v] = componentsFromRGB(Enum.Common.colorSpace.HSV.value, r, g, b);
-            if (socket === "hsv_h") return { kind: "angle", data: `${h}` };
+            if (socket === "hsv_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${(socket === "hsv_s" ? s : v) * 100}` };
         }
         // HSL
@@ -419,7 +419,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "hsl_s":
         case "hsl_l": {
             const [h, s, l] = componentsFromRGB(Enum.Common.colorSpace.HSL.value, r, g, b);
-            if (socket === "hsl_h") return { kind: "angle", data: `${h}` };
+            if (socket === "hsl_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${(socket === "hsl_s" ? s : l) * 100}` };
         }
         // HWK
@@ -427,7 +427,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "hwk_w":
         case "hwk_k": {
             const [h, w, k] = componentsFromRGB(Enum.Common.colorSpace.HWK.value, r, g, b);
-            if (socket === "hwk_h") return { kind: "angle", data: `${h}` };
+            if (socket === "hwk_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${(socket === "hwk_w" ? w : k) * 100}` };
         }
         // HSI
@@ -435,7 +435,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "hsi_s":
         case "hsi_i": {
             const [h, s, i] = componentsFromRGB(Enum.Common.colorSpace.HSI.value, r, g, b);
-            if (socket === "hsi_h") return { kind: "angle", data: `${h}` };
+            if (socket === "hsi_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${(socket === "hsi_s" ? s : i) * 100}` };
         }
         // HCY
@@ -443,7 +443,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "hcy_c":
         case "hcy_y": {
             const [h, c, y] = componentsFromRGB(Enum.Common.colorSpace.HCY.value, r, g, b);
-            if (socket === "hcy_h") return { kind: "angle", data: `${h}` };
+            if (socket === "hcy_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${(socket === "hcy_c" ? c : y) * 100}` };
         }
         // CIELAB — L is natively 0–100; a/b are signed floats already on a 100-ish magnitude
@@ -467,7 +467,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "oklch_c":
         case "oklch_h": {
             const [l, c, h] = componentsFromRGB(Enum.Common.colorSpace.OKLCH.value, r, g, b);
-            if (socket === "oklch_h") return { kind: "angle", data: `${h}` };
+            if (socket === "oklch_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${(socket === "oklch_l" ? l : c) * 100}` };
         }
         // CIELCH — L is 0–100, C is ≥0 (~0–150 in-gamut), already 100-magnitude; H is angle
@@ -475,7 +475,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorSplitDefinition>, socket: O
         case "cielch_c":
         case "cielch_h": {
             const [l, c, h] = componentsFromRGB(Enum.Common.colorSpace.CIELCH.value, r, g, b);
-            if (socket === "cielch_h") return { kind: "angle", data: `${h}` };
+            if (socket === "cielch_h") return { kind: "angle", data: `${h}deg` };
             return { kind: "float", data: `${socket === "cielch_l" ? l : c}` };
         }
         // Alpha

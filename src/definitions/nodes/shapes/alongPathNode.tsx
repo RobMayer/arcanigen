@@ -3,6 +3,7 @@ import { passthroughCanInterject, passthroughInterject } from "../../helpers/nod
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -74,7 +75,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AlongPathDefinition
         payload: {
             label: "",
             memberAlign: true,
-            memberRotation: "0",
+            memberRotation: "0deg",
             overflowMode: Enum.Common.overflowMode.CLAMP.value,
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
@@ -181,7 +182,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
     if (!shapeData) return null;
 
     const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign ?? true;
-    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
     const overflowMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
 
     const offsetMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "offsetMode")?.data, Enum.Common.offsetMode) ?? node.payload.offsetMode;

@@ -926,6 +926,58 @@ export namespace Project {
                     root: { input: "4" },
                     round: { input: "0" },
                 };
+
+                // Angle datatype became unit-suffixed (`"45deg"` instead of bare `"45"`). Backfill "deg" onto
+                // every persisted angle payload field. Canonical unit is degrees, so pre-migration bare numbers
+                // ARE degrees. XFORM = the shared transform-prefab angle fields present on every shape.
+                const XFORM = ["positionTheta", "rotation"];
+                const ANGLE_PAYLOAD_FIELDS: { [key: string]: string[] } = {
+                    transform: ["positionTheta", "preRotation", "postRotation", "skewX", "skewY"],
+                    circle: XFORM,
+                    rectangle: XFORM,
+                    ring: XFORM,
+                    polyring: XFORM,
+                    polygon: XFORM,
+                    polygram: XFORM,
+                    knot: XFORM,
+                    star: XFORM,
+                    glyph: XFORM,
+                    fromPath: XFORM,
+                    spirograph: XFORM,
+                    spiroring: XFORM,
+                    repeatedLayout: XFORM,
+                    arc: [...XFORM, "thetaStart", "sweep", "thetaFrom", "thetaTo"],
+                    burst: [...XFORM, "thetaStart", "sweep", "thetaFrom", "thetaTo"],
+                    spiral: [...XFORM, "thetaStart", "sweep", "thetaFrom", "thetaTo"],
+                    line: [...XFORM, "startTheta", "endTheta"],
+                    text: [...XFORM, "letterRotation"],
+                    textPath: ["rotation"],
+                    alongPath: ["memberRotation"],
+                    pathLayout: ["memberRotation"],
+                    polygonLayout: [...XFORM, "memberRotation"],
+                    radialLayout: [...XFORM, "thetaStart", "sweep", "thetaFrom", "thetaTo", "memberRotation"],
+                    point: ["theta"],
+                    glowEffect: ["offsetTheta"],
+                    linearGradient: ["angle", "startTheta", "endTheta"],
+                    radialGradient: ["centerTheta", "startOffsetTheta"],
+                    colorJoin: ["hsv_h", "hsl_h", "hwk_h", "hsi_h", "hcy_h", "cielch_h", "oklch_h"],
+                    angle: ["value"],
+                    angleInput: ["initialValue", "min", "max", "step", "snap"],
+                    angleStop: ["value"],
+                };
+                // Types that hold their angle values inside an array of entries.
+                const ANGLE_STOP_ARRAYS: { [key: string]: { array: string; field: string } } = {
+                    angleStopArray: { array: "stops", field: "value" },
+                    angleIterator2: { array: "stops", field: "value" },
+                    angleIterator: { array: "stops", field: "value" },
+                    pointArray: { array: "points", field: "theta" },
+                };
+                const appendDeg = (v: any): any => {
+                    if (typeof v === "number") return `${v}deg`;
+                    if (typeof v === "string" && /^[+-]?\d*\.?\d+$/.test(v)) return `${v}deg`;
+                    return v;
+                };
+
                 for (const graphId in input.nodes) {
                     for (const nodeId in input.nodes[graphId]) {
                         const payload = input.nodes[graphId][nodeId].payload;
@@ -942,10 +994,37 @@ export namespace Project {
                         }
 
                         // add new fields
-                        input.nodes[graphId][nodeId].payload = {
+                        const merged = {
                             ...NEW_PAYLOAD_FIELDS[type],
                             ...input.nodes[graphId][nodeId].payload,
                         };
+                        input.nodes[graphId][nodeId].payload = merged;
+
+                        // backfill "deg" onto angle payload values
+                        for (const field of ANGLE_PAYLOAD_FIELDS[type] ?? []) {
+                            if (field in merged) merged[field] = appendDeg(merged[field]);
+                        }
+                        const stopSpec = ANGLE_STOP_ARRAYS[type];
+                        if (stopSpec && Array.isArray(merged[stopSpec.array])) {
+                            for (const entry of merged[stopSpec.array]) {
+                                if (entry && typeof entry === "object") entry[stopSpec.field] = appendDeg(entry[stopSpec.field]);
+                            }
+                        }
+
+                        // A custom (subgraph) node stores each interface INPUT's value under `value_<interfaceNodeId>`.
+                        // Backfill "deg" onto those too, but ONLY where the interface node is an angleInput -- look
+                        // its type up in the node's own subgraph (payload.graphId) so other input kinds are untouched.
+                        if (type === "custom") {
+                            const subGraphId = merged.graphId as string | undefined;
+                            const subGraph = subGraphId ? input.nodes[subGraphId] : undefined;
+                            if (subGraph) {
+                                for (const key of Object.keys(merged)) {
+                                    if (!key.startsWith("value_")) continue;
+                                    const interfaceId = key.slice("value_".length);
+                                    if (subGraph[interfaceId]?.type === "angleInput") merged[key] = appendDeg(merged[key]);
+                                }
+                            }
+                        }
                     }
                 }
                 // Link type is now computed live from its endpoints' solved types, never stored.

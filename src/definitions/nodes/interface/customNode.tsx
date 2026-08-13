@@ -796,7 +796,8 @@ const InputSlotInteger = ({ host, source, handleValue }: InputWidgetProps<Intege
 
 const OutputSlotAngle = ({ host, source }: OutputWidgetProps<AngleOutputDefinition>) => {
     const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
-    const output = resolved?.kind === "angle" ? `${Number(NumericString.Emptyable.asNumber(resolved?.data)?.toFixed?.(2))}°` : "« none »";
+    const angleParsed = resolved?.kind === "angle" ? Angle.Emptyable.parse(resolved.data) : null;
+    const output = angleParsed ? `${Number(angleParsed[0].toFixed(2))}${angleParsed[1]}` : "« none »";
 
     switch (source.payload.widget) {
         case Enum.Common.typicalOutputWidget.NONE.value: {

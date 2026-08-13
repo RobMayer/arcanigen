@@ -11,6 +11,7 @@ import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { Color } from "../../datatypes/color";
 import { Length } from "../../datatypes/length";
@@ -104,17 +105,17 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<LinearGradientDefin
             label: "",
             framing: input.framing ?? Enum.Common.framing.AUTO.value,
             spread: input.spread ?? Enum.Common.gradientSpread.PAD.value,
-            angle: input.angle ?? "0",
+            angle: input.angle ?? "0deg",
             startMode: input.startMode ?? Enum.Common.positionMode.CARTESIAN.value,
             startX: input.startX ?? "0px",
             startY: input.startY ?? "0px",
             startRadius: input.startRadius ?? "0px",
-            startTheta: input.startTheta ?? "0",
+            startTheta: input.startTheta ?? "0deg",
             endMode: input.endMode ?? Enum.Common.positionMode.CARTESIAN.value,
             endX: input.endX ?? "100px",
             endY: input.endY ?? "0px",
             endRadius: input.endRadius ?? "100px",
-            endTheta: input.endTheta ?? "90",
+            endTheta: input.endTheta ?? "90deg",
             stops: input.stops ?? [
                 { socket: s0, value: { r: 0, g: 0, b: 0, a: 1 }, position: "0", enabled: true },
                 { socket: s1, value: { r: 1, g: 1, b: 1, a: 1 }, position: "100", enabled: true },
@@ -546,7 +547,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, socke
 
     const spreadIdx = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spread")?.data, Enum.Common.gradientSpread) ?? node.payload.spread ?? 0;
     const spread = Resolver.EnumMappings.gradientSpread[spreadIdx] ?? "pad";
-    const angle = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "angle")?.data ?? node.payload.angle) ?? 0;
+    const angle = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "angle")?.data ?? node.payload.angle) ?? 0;
 
     const framing = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "framing")?.data, Enum.Common.framing) ?? node.payload.framing ?? 0;
 
@@ -563,13 +564,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LinearGradientDefinition>, socke
         const startX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
         const startY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
         const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
-        const startTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
+        const startTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
 
         const endMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "endMode")?.data, Enum.Common.positionMode) ?? node.payload.endMode;
         const endX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
         const endY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
         const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
-        const endTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
+        const endTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
 
         const [x1, y1] = resolvePoint(startMode, startX, startY, startRadius, startTheta);
         const [x2, y2] = resolvePoint(endMode, endX, endY, endRadius, endTheta);

@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -98,7 +99,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextDefinition>>, i
             size: "16px",
             spacing: "0px",
             lineHeight: "",
-            letterRotation: "0",
+            letterRotation: "0deg",
             anchor: Enum.Common.verticalAlign.MIDDLE.value,
             align: Enum.Common.linearAlign.CENTER.value,
             // stroke
@@ -116,8 +117,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextDefinition>>, i
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            rotation: "0",
+            positionTheta: "0deg",
+            rotation: "0deg",
             ...input,
         },
         type: "text",
@@ -240,7 +241,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof T
     const spacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
     // Empty line height falls back to a font-relative default.
     const lineHeight = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "lineHeight")?.data ?? node.payload.lineHeight) ?? size * 1.2;
-    const letterRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "letterRotation")?.data ?? node.payload.letterRotation) ?? 0;
+    const letterRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "letterRotation")?.data ?? node.payload.letterRotation) ?? 0;
     const align = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
     const anchor = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
 

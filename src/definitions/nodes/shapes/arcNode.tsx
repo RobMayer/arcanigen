@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -94,10 +95,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ArcDefinition>>, i
             label: "",
             radius: "150px",
             arcMode: Enum.Common.arcMode.START_SWEEP.value,
-            thetaStart: "0",
-            sweep: "90",
-            thetaFrom: "0",
-            thetaTo: "90",
+            thetaStart: "0deg",
+            sweep: "90deg",
+            thetaFrom: "0deg",
+            thetaTo: "90deg",
             pieSlice: false,
             markerAlign: true,
             // stroke
@@ -115,8 +116,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ArcDefinition>>, i
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            rotation: "0",
+            positionTheta: "0deg",
+            rotation: "0deg",
         },
         type: "arc",
     };
@@ -246,13 +247,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
     let effectiveSweep: number;
 
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
-        const from = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-        const to = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        const from = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
         effectiveSweep = to - from;
     } else {
-        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+        effectiveStart = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
     effectiveSweep = Math.max(-360, Math.min(360, effectiveSweep));

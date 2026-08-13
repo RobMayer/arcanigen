@@ -116,8 +116,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonDefinition>>
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            rotation: "0",
+            positionTheta: "0deg",
+            rotation: "0deg",
         },
         type: "polygon",
     };

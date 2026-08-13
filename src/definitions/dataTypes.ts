@@ -79,7 +79,7 @@ export namespace DataTypes {
         "tokens:length": string;
         "stop:float": { value: number | null; position: number | null; enabled: boolean | null };
         "stop:color": { value: ColorRep.Type; position: number | null; enabled: boolean | null };
-        "stop:angle": { value: number | null; position: number | null; enabled: boolean | null };
+        "stop:angle": { value: string | null; position: number | null; enabled: boolean | null };
         "stop:integer": { value: number | null; position: number | null; enabled: boolean | null };
         "stop:length": { value: string | null; position: number | null; enabled: boolean | null };
     };

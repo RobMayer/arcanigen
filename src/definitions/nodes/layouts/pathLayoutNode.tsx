@@ -3,6 +3,7 @@ import { passthroughCanInterject, passthroughInterject } from "../../helpers/nod
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -115,7 +116,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinitio
             skipFirst: false,
             skipLast: false,
             memberAlign: true,
-            memberRotation: "0",
+            memberRotation: "0deg",
             ...input,
         },
         type: "pathLayout",
@@ -297,7 +298,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
     const spacingModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode;
     const overflowModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
     const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
     const skipFirst = context.resolve<DataTypes.Boolean>(node.id, "skipFirst")?.data ?? node.payload.skipFirst;
     const skipLast = context.resolve<DataTypes.Boolean>(node.id, "skipLast")?.data ?? node.payload.skipLast;
 

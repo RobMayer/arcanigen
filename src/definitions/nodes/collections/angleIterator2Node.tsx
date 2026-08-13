@@ -86,8 +86,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIterator2Defin
             endOffset: input.endOffset ?? "0",
             samplePosition: input.samplePosition ?? "50",
             stops: input.stops ?? [
-                { socket: s0, value: "0", position: "0", enabled: true },
-                { socket: s1, value: "360", position: "100", enabled: true },
+                { socket: s0, value: "0deg", position: "0", enabled: true },
+                { socket: s1, value: "360deg", position: "100", enabled: true },
             ],
         },
         type: "angleIterator2",
@@ -375,7 +375,7 @@ const DragGrip = styled.div`
 const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, context: Resolver.Context): { value: number; position: number; enabled: boolean }[] => {
     const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.StopAngle>>(node.id, "stops");
     if (supersocketEval) {
-        return supersocketEval.data.map((s) => ({ value: s.value ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
+        return supersocketEval.data.map((s) => ({ value: Angle.Emptyable.asNumber((s.value ?? "") as EmptyOr<Angle.Type>) ?? 0, position: s.position ?? 0, enabled: s.enabled ?? true }));
     }
 
     const resolved: { value: number; position: number; enabled: boolean }[] = [];
@@ -383,13 +383,13 @@ const resolveStops = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, c
         const connected = context.resolve<DataTypes.StopAngle>(node.id, entry.socket);
         if (connected) {
             resolved.push({
-                value: connected.data.value ?? NumericString.Emptyable.asNumber(entry.value) ?? 0,
+                value: Angle.Emptyable.asNumber((connected.data.value ?? entry.value) as EmptyOr<Angle.Type>) ?? 0,
                 position: connected.data.position ?? NumericString.Emptyable.asNumber(entry.position) ?? 0,
                 enabled: connected.data.enabled ?? entry.enabled,
             });
         } else {
             resolved.push({
-                value: NumericString.Emptyable.asNumber(entry.value) ?? 0,
+                value: Angle.Emptyable.asNumber(entry.value) ?? 0,
                 position: NumericString.Emptyable.asNumber(entry.position) ?? 0,
                 enabled: entry.enabled,
             });
@@ -457,7 +457,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIterator2Definition>, socke
     const lerp = cyclical ? (a: number, b: number, t: number) => lerpAngle(a, b, t, traversal) : (a: number, b: number, t: number) => a + (b - a) * t;
 
     const value = IterationPrefab.sampleStopsWith(active, position, lerp);
-    return { kind: "angle", data: `${value}` };
+    return { kind: "angle", data: `${value}deg` };
 };
 
 // Supersocket override: connecting the whole array clears the now-hidden element family,

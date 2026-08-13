@@ -9,13 +9,12 @@ import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
 import { DataTypes } from "../../../dataTypes";
 import { addInterface, removeInterface, handleInputSocketedChange } from "../../../helpers/interfaceHelper";
 import { AngleInput } from "../../../../components/inputs/AngleInput";
-import { DecimalInput } from "../../../../components/inputs/DecimalInput";
 import { TextInput } from "../../../../components/inputs/TextInput";
 import { Project } from "../../../../state/project";
 import { Enum } from "../../../datatypes/enum";
 import { Dropdown } from "../../../../components/inputs/Dropdown";
 import { CheckBox } from "../../../../components/buttons/CheckBox";
-import { NumericString } from "../../../datatypes/numericString";
+import { Angle } from "../../../datatypes/angle";
 import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../../helpers/signatureEngine";
 
@@ -48,11 +47,11 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AngleInputDefiniti
         },
         payload: {
             label: "",
-            initialValue: "0",
-            min: "0",
-            max: "360",
-            step: "1",
-            snap: "1",
+            initialValue: "0deg",
+            min: "0deg",
+            max: "360deg",
+            step: "1deg",
+            snap: "1deg",
             widget: Enum.Common.numberInputWidget.INPUT.value,
             wraps: false,
             socketed: true,
@@ -97,16 +96,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleInputD
                 <AngleInput value={node.payload.initialValue} onCommit={(initialValue) => handleUpdate({ initialValue })} unbound={!node.payload.wraps} />
             </Slot>
             <Slot label={"Minimum"}>
-                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
+                <AngleInput unbound value={node.payload.min} onCommit={(min) => handleUpdate({ min })} required={node.payload.widget === 2} />
             </Slot>
             <Slot label={"Maximum"}>
-                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} required={node.payload.widget === 2} />
+                <AngleInput unbound value={node.payload.max} onCommit={(max) => handleUpdate({ max })} required={node.payload.widget === 2} />
             </Slot>
             <Slot label={"Step"}>
-                <DecimalInput value={node.payload.step} onCommit={(step) => handleUpdate({ step })} required={node.payload.widget === 2} />
+                <AngleInput unbound value={node.payload.step} onCommit={(step) => handleUpdate({ step })} required={node.payload.widget === 2} />
             </Slot>
             <Slot label={"Snap"}>
-                <DecimalInput value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
+                <AngleInput unbound value={node.payload.snap} onCommit={(snap) => handleUpdate({ snap })} />
             </Slot>
             <Slot label={"Wraps"}>
                 <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })}>
@@ -129,19 +128,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleInputDefinition>, socket: "
     if (socket === "output") {
         const providedInput = context.getInput?.<DataTypes.Angle>(node.id);
         let data = providedInput?.data ?? node.payload.initialValue;
-        let v = NumericString.Emptyable.asNumber(data);
+        let v = Angle.Emptyable.asNumber(data);
         if (v !== null) {
-            const snap = NumericString.Emptyable.asNumber(node.payload.snap);
+            const snap = Angle.Emptyable.asNumber(node.payload.snap);
             if (snap !== null && snap > 0) v = Math.round(v / snap) * snap;
             if (node.payload.wraps) {
                 v = ((v % 360) + 360) % 360;
             } else {
-                const min = NumericString.Emptyable.asNumber(node.payload.min);
-                const max = NumericString.Emptyable.asNumber(node.payload.max);
+                const min = Angle.Emptyable.asNumber(node.payload.min);
+                const max = Angle.Emptyable.asNumber(node.payload.max);
                 if (min !== null) v = Math.max(min, v);
                 if (max !== null) v = Math.min(max, v);
             }
-            data = `${v}`;
+            data = `${v}deg`;
         }
         return { kind: "angle", data };
     }

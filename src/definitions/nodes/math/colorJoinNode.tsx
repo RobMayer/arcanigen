@@ -11,6 +11,7 @@ import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Enum } from "../../datatypes/enum";
 import { NumericString } from "../../datatypes/numericString";
+import { Angle } from "../../datatypes/angle";
 import { componentsToRGB } from "../../../util/colorSpaces";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
@@ -172,15 +173,15 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ColorJoinDefinitio
             rgb255_r: "0", rgb255_g: "0", rgb255_b: "0",
             cmy_c: "100", cmy_m: "100", cmy_y: "100",
             cmyk_c: "0", cmyk_m: "0", cmyk_y: "0", cmyk_k: "100",
-            hsv_h: "0", hsv_s: "0", hsv_v: "0",
-            hsl_h: "0", hsl_s: "0", hsl_l: "0",
-            hwk_h: "0", hwk_w: "0", hwk_k: "100",
-            hsi_h: "0", hsi_s: "0", hsi_i: "0",
-            hcy_h: "0", hcy_c: "0", hcy_y: "0",
+            hsv_h: "0deg", hsv_s: "0", hsv_v: "0",
+            hsl_h: "0deg", hsl_s: "0", hsl_l: "0",
+            hwk_h: "0deg", hwk_w: "0", hwk_k: "100",
+            hsi_h: "0deg", hsi_s: "0", hsi_i: "0",
+            hcy_h: "0deg", hcy_c: "0", hcy_y: "0",
             cielab_l: "0", cielab_a: "0", cielab_b: "0",
-            cielch_l: "0", cielch_c: "0", cielch_h: "0",
+            cielch_l: "0", cielch_c: "0", cielch_h: "0deg",
             oklab_l: "0", oklab_a: "0", oklab_b: "0",
-            oklch_l: "0", oklch_c: "0", oklch_h: "0",
+            oklch_l: "0", oklch_c: "0", oklch_h: "0deg",
             alpha_f: "100", alpha_b: "255",
         },
         type: "colorJoin",
@@ -411,7 +412,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ColorJoinDefinition>, socket: "o
     const readAng = (sid: InKey, fallback: string): number => {
         const resolved = context.resolve<DataTypes.Angle>(node.id, sid)?.data;
         const payloadVal = node.payload[sid as keyof ColorJoinDefinition["payload"]] as DataTypes.TypeOf<DataTypes.Angle>;
-        return NumericString.Emptyable.asNumber(resolved ?? payloadVal) ?? Number(fallback);
+        return Angle.Emptyable.asNumber(resolved ?? payloadVal) ?? Number(fallback);
     };
 
     const modeRaw = context.resolve<DataTypes.Enum>(node.id, "mode")?.data ?? node.payload.mode;

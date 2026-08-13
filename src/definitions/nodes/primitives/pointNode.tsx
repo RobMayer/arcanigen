@@ -52,7 +52,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PointDefinition>>,
             x: "0px",
             y: "0px",
             radius: "100px",
-            theta: "0",
+            theta: "0deg",
         },
         type: "point",
     };

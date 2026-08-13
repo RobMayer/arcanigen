@@ -11,6 +11,7 @@ import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { Project } from "../../../state/project";
 import { Enum } from "../../datatypes/enum";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { NumericString } from "../../datatypes/numericString";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
@@ -86,11 +87,11 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinitio
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            preRotation: "0",
-            postRotation: "0",
-            skewX: "0",
-            skewY: "0",
+            positionTheta: "0deg",
+            preRotation: "0deg",
+            postRotation: "0deg",
+            skewX: "0deg",
+            skewY: "0deg",
             scaleX: "1",
             scaleY: "1",
         },
@@ -212,11 +213,11 @@ const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, co
     const positionX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
     const positionY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
     const positionRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
-    const positionTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
-    const preRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "preRotation")?.data ?? node.payload.preRotation) ?? 0;
-    const postRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "postRotation")?.data ?? node.payload.postRotation) ?? 0;
-    const skewX = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewX")?.data ?? node.payload.skewX) ?? 0;
-    const skewY = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewY")?.data ?? node.payload.skewY) ?? 0;
+    const positionTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+    const preRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "preRotation")?.data ?? node.payload.preRotation) ?? 0;
+    const postRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "postRotation")?.data ?? node.payload.postRotation) ?? 0;
+    const skewX = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewX")?.data ?? node.payload.skewX) ?? 0;
+    const skewY = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewY")?.data ?? node.payload.skewY) ?? 0;
     const scaleX = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "scaleX")?.data ?? node.payload.scaleX) ?? 1;
     const scaleY = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "scaleY")?.data ?? node.payload.scaleY) ?? 1;
 

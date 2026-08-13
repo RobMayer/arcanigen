@@ -11,6 +11,7 @@ import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
 import { NumericString } from "../../datatypes/numericString";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { Color } from "../../datatypes/color";
 import { Length } from "../../datatypes/length";
@@ -111,13 +112,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialGradientDefin
             centerX: input.centerX ?? "0px",
             centerY: input.centerY ?? "0px",
             centerRadius: input.centerRadius ?? "0px",
-            centerTheta: input.centerTheta ?? "0",
+            centerTheta: input.centerTheta ?? "0deg",
             endRadius: input.endRadius ?? "100px",
             startOffsetMode: input.startOffsetMode ?? Enum.Common.positionMode.CARTESIAN.value,
             startOffsetX: input.startOffsetX ?? "0px",
             startOffsetY: input.startOffsetY ?? "0px",
             startOffsetRadius: input.startOffsetRadius ?? "0px",
-            startOffsetTheta: input.startOffsetTheta ?? "0",
+            startOffsetTheta: input.startOffsetTheta ?? "0deg",
             startRadius: input.startRadius ?? "0px",
             stops: input.stops ?? [
                 { socket: s0, value: { r: 0, g: 0, b: 0, a: 1 }, position: "0", enabled: true },
@@ -594,7 +595,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socke
         const centerX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "centerX")?.data ?? node.payload.centerX) ?? 0;
         const centerY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "centerY")?.data ?? node.payload.centerY) ?? 0;
         const centerRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "centerRadius")?.data ?? node.payload.centerRadius) ?? 0;
-        const centerTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "centerTheta")?.data ?? node.payload.centerTheta) ?? 0;
+        const centerTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "centerTheta")?.data ?? node.payload.centerTheta) ?? 0;
 
         const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
 
@@ -602,7 +603,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socke
         const offsetX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startOffsetX")?.data ?? node.payload.startOffsetX) ?? 0;
         const offsetY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startOffsetY")?.data ?? node.payload.startOffsetY) ?? 0;
         const offsetRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startOffsetRadius")?.data ?? node.payload.startOffsetRadius) ?? 0;
-        const offsetTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startOffsetTheta")?.data ?? node.payload.startOffsetTheta) ?? 0;
+        const offsetTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startOffsetTheta")?.data ?? node.payload.startOffsetTheta) ?? 0;
 
         const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
 

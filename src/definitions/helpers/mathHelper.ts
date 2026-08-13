@@ -1,7 +1,12 @@
 import { DataTypes } from "../dataTypes";
+import { Angle } from "../datatypes/angle";
 import { Enum } from "../datatypes/enum";
 import { Length } from "../datatypes/length";
 import { NumericString } from "../datatypes/numericString";
+
+// Extract a bare number from any dimensionless kind (float/integer/angle). Angle is unit-suffixed now, so
+// it must go through Angle.parse (canonical degrees) rather than the plain NumericString path.
+const asScalar = (kind: string, data: unknown): number => (kind === "angle" ? (Angle.Emptyable.asNumber(data as Angle.Type | "") ?? 0) : (NumericString.Emptyable.asNumber(data as NumericString.Type | "") ?? 0));
 
 const PRIORITY: Record<string, number> = { integer: 0, float: 1, angle: 2, length: 3 };
 
@@ -16,8 +21,8 @@ export const extractPair = (aKind: string, aData: unknown, bKind: string, bData:
     if (!aIsLength && !bIsLength) {
         // Both are dimensionless (float, integer, angle)
         return {
-            a: NumericString.Emptyable.asNumber(aData as NumericString.Type | "") ?? 0,
-            b: NumericString.Emptyable.asNumber(bData as NumericString.Type | "") ?? 0,
+            a: asScalar(aKind, aData),
+            b: asScalar(bKind, bData),
             unit: null,
         };
     }
@@ -26,7 +31,7 @@ export const extractPair = (aKind: string, aData: unknown, bKind: string, bData:
         const parsed = Length.parse(aData as string);
         return {
             a: parsed ? parsed[0] : 0,
-            b: NumericString.Emptyable.asNumber(bData as NumericString.Type | "") ?? 0,
+            b: asScalar(bKind, bData),
             unit: parsed ? parsed[1] : "px",
         };
     }
@@ -34,7 +39,7 @@ export const extractPair = (aKind: string, aData: unknown, bKind: string, bData:
     if (!aIsLength && bIsLength) {
         const parsed = Length.parse(bData as string);
         return {
-            a: NumericString.Emptyable.asNumber(aData as NumericString.Type | "") ?? 0,
+            a: asScalar(aKind, aData),
             b: parsed ? parsed[0] : 0,
             unit: parsed ? parsed[1] : "px",
         };
@@ -60,7 +65,7 @@ export const extractSingle = (kind: string, data: unknown): { value: number; uni
         const parsed = Length.parse(data as string);
         return { value: parsed ? parsed[0] : 0, unit: parsed ? parsed[1] : "px" };
     }
-    return { value: NumericString.Emptyable.asNumber(data as NumericString.Type | "") ?? 0, unit: null };
+    return { value: asScalar(kind, data), unit: null };
 };
 
 export const wrapResult = (value: number, outputKind: string, unit: Length.Unit | null): DataTypes.AnyEval => {
@@ -68,7 +73,7 @@ export const wrapResult = (value: number, outputKind: string, unit: Length.Unit 
         case "integer":
             return { kind: "integer", data: `${Math.trunc(value)}` };
         case "angle":
-            return { kind: "angle", data: `${value}` };
+            return { kind: "angle", data: `${value}deg` };
         case "length":
             return { kind: "length", data: `${value}${unit ?? "px"}` };
         case "float":

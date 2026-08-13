@@ -45,7 +45,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleStopBreakoutDe
         },
         payload: {
             label: "",
-            value: input.value ?? "0",
+            value: input.value ?? "0deg",
             position: input.position ?? "50",
             enabled: input.enabled ?? true,
         },
@@ -113,7 +113,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleStopBreakoutDefinition>, so
     return {
         kind: "stop:angle",
         data: {
-            value: NumericString.Emptyable.asNumber(valStr),
+            value: valStr === "" ? null : valStr,
             position: NumericString.Emptyable.asNumber(posStr),
             enabled,
         },

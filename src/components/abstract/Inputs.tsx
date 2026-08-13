@@ -1142,54 +1142,44 @@ type SnapValue<U extends string> = Measure<U> | number | `${number}`;
 function snapMeasure<U extends string>(canonicalValue: number, displayUnit: U, snap: SnapValue<U> | SnapValue<U>[] | undefined, units: readonly U[], converter?: Converter<U>): number {
     if (snap === undefined) return canonicalValue;
 
-    const snapValues = Array.isArray(snap) ? snap : [snap];
-
-    let closest = canonicalValue;
-    let closestDist = Infinity;
-
-    for (const snapVal of snapValues) {
-        let snapCanonical: number;
-
+    // Resolve one snap spec to a canonical magnitude. A plain/bare number is interpreted in the display unit;
+    // a unit-qualified string is converted from its own unit. Returns null for an unparseable spec.
+    const toCanonical = (snapVal: SnapValue<U>): number | null => {
         if (typeof snapVal === "number") {
-            // Numeric snap - interpret in display unit
-            if (converter) {
-                snapCanonical = converter[displayUnit].from(formatMeasure(snapVal, displayUnit));
-            } else {
-                snapCanonical = snapVal;
-            }
-        } else {
-            // String snap - could be with or without unit
-            const parsed = parseMeasure(snapVal, units);
-            if (parsed) {
-                // Has unit - convert to canonical
-                const [num, unit] = parsed;
-                if (converter) {
-                    snapCanonical = converter[unit].from(formatMeasure(num, unit));
-                } else {
-                    snapCanonical = num;
-                }
-            } else if (NUMBER_REGEX.test(snapVal)) {
-                // Bare number - interpret in display unit
-                const num = Number(snapVal);
-                if (converter) {
-                    snapCanonical = converter[displayUnit].from(formatMeasure(num, displayUnit));
-                } else {
-                    snapCanonical = num;
-                }
-            } else {
-                // Invalid snap value, skip
-                continue;
-            }
+            return converter ? converter[displayUnit].from(formatMeasure(snapVal, displayUnit)) : snapVal;
         }
+        const parsed = parseMeasure(snapVal, units);
+        if (parsed) {
+            const [num, unit] = parsed;
+            return converter ? converter[unit].from(formatMeasure(num, unit)) : num;
+        }
+        if (NUMBER_REGEX.test(snapVal)) {
+            const num = Number(snapVal);
+            return converter ? converter[displayUnit].from(formatMeasure(num, displayUnit)) : num;
+        }
+        return null;
+    };
 
-        const dist = Math.abs(canonicalValue - snapCanonical);
-        if (dist < closestDist) {
-            closest = snapCanonical;
-            closestDist = dist;
+    // An array is a SET of discrete targets -> snap to the closest. A single value is a GRID step -> snap to
+    // the nearest multiple. (Matches snapNumber's single/array split so the two engines agree.)
+    if (Array.isArray(snap)) {
+        let closest = canonicalValue;
+        let closestDist = Infinity;
+        for (const snapVal of snap) {
+            const snapCanonical = toCanonical(snapVal);
+            if (snapCanonical === null) continue;
+            const dist = Math.abs(canonicalValue - snapCanonical);
+            if (dist < closestDist) {
+                closest = snapCanonical;
+                closestDist = dist;
+            }
         }
+        return closest;
     }
 
-    return closest;
+    const step = toCanonical(snap);
+    if (step === null || step <= 0) return canonicalValue;
+    return Math.round(canonicalValue / step) * step;
 }
 
 export type AbstractSelectProps = Omit<DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>, "title"> & { tooltip?: string; flavour?: Flavour | "inherit" };

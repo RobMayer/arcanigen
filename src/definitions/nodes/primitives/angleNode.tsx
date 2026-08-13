@@ -41,7 +41,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleDefinition>>, 
         },
         payload: {
             label: "",
-            value: "0",
+            value: "0deg",
             wraps: false,
         },
         type: "angle",
@@ -91,7 +91,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleDefinition>, socket: "outpu
         if (val) {
             if (val.kind === "angle") return val;
             const { value } = extractSingle(val.kind, val.data);
-            return { kind: "angle", data: `${value}` };
+            return { kind: "angle", data: `${value}deg` };
         }
         return { kind: "angle", data: node.payload.value };
     }

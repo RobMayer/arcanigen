@@ -6,6 +6,7 @@ import { NodeDefinitions } from "../nodeTypes";
 import { DataTypes } from "../dataTypes";
 import { Enum } from "../datatypes/enum";
 import { Length } from "../datatypes/length";
+import { Angle } from "../datatypes/angle";
 import { NumericString } from "../datatypes/numericString";
 import { Resolver } from "../../util/resolver";
 import { ReactNode } from "react";
@@ -96,8 +97,8 @@ export namespace TransformPrefab {
         const positionX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionX")?.data ?? node.payload.positionX) ?? 0;
         const positionY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionY")?.data ?? node.payload.positionY) ?? 0;
         const positionRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "positionRadius")?.data ?? node.payload.positionRadius) ?? 0;
-        const positionTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
-        const rotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
+        const positionTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "positionTheta")?.data ?? node.payload.positionTheta) ?? 0;
+        const rotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
 
         let translateX: number;
         let translateY: number;

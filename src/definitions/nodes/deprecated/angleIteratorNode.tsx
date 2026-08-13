@@ -85,8 +85,8 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<AngleIteratorDefini
             endOffset: input.endOffset ?? "0",
             samplePosition: input.samplePosition ?? "50",
             stops: [
-                { id: s0, value: "0", position: "0" },
-                { id: s1, value: "360", position: "100" },
+                { id: s0, value: "0deg", position: "0" },
+                { id: s1, value: "360deg", position: "100" },
             ],
         },
         type: "angleIterator",
@@ -315,7 +315,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket
     for (const stop of stops) {
         const valStr = context.resolve<DataTypes.Angle>(node.id, `value_${stop.id}`)?.data ?? stop.value;
         const posStr = context.resolve<DataTypes.Float>(node.id, `pos_${stop.id}`)?.data ?? stop.position;
-        const value = NumericString.Emptyable.asNumber(valStr) ?? 0;
+        const value = Angle.Emptyable.asNumber(valStr) ?? 0;
         const pos = NumericString.Emptyable.asNumber(posStr) ?? 0;
         resolved.push({ value, position: pos });
     }
@@ -324,7 +324,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<AngleIteratorDefinition>, socket
     resolved.sort((a, b) => a.position - b.position);
 
     const value = sampleAngleStops(resolved, position, traversal, cyclical);
-    return { kind: "angle", data: `${value}` };
+    return { kind: "angle", data: `${value}deg` };
 };
 
 export const AngleIteratorNodeType: NodeTypes.Type<"angleIterator", AngleIteratorDefinition> = {

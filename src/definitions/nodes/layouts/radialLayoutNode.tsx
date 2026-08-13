@@ -3,6 +3,7 @@ import { passthroughCanInterject, passthroughInterject } from "../../helpers/nod
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -95,20 +96,20 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinit
             count: input.count ?? "5",
             radius: input.radius ?? "100px",
             arcMode: input.arcMode ?? Enum.Common.arcMode.START_SWEEP.value,
-            thetaStart: input.thetaStart ?? "0",
-            sweep: input.sweep ?? "360",
-            thetaFrom: input.thetaFrom ?? "0",
-            thetaTo: input.thetaTo ?? "360",
+            thetaStart: input.thetaStart ?? "0deg",
+            sweep: input.sweep ?? "360deg",
+            thetaFrom: input.thetaFrom ?? "0deg",
+            thetaTo: input.thetaTo ?? "360deg",
             thetaInclusive: input.thetaInclusive ?? false,
             memberAlign: input.memberAlign ?? false,
-            memberRotation: input.memberRotation ?? "0",
+            memberRotation: input.memberRotation ?? "0deg",
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            rotation: "0",
+            positionTheta: "0deg",
+            rotation: "0deg",
         },
         type: "radialLayout",
     };
@@ -247,13 +248,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
     let effectiveSweep: number;
 
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
-        const from = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
-        const to = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
+        const from = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
+        const to = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
         effectiveSweep = to - from;
     } else {
-        effectiveStart = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
-        effectiveSweep = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
+        effectiveStart = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
+        effectiveSweep = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
     const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
@@ -266,7 +267,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
     );
 
     const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-    const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+    const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
     const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 

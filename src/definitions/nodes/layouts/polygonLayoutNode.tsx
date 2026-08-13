@@ -3,6 +3,7 @@ import { passthroughCanInterject, passthroughInterject } from "../../helpers/nod
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -84,14 +85,14 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PolygonLayoutDefini
             radius: input.radius ?? "100px",
             scribeMode: input.scribeMode ?? Enum.Common.scribeMode.INSCRIBE.value,
             memberAlign: input.memberAlign ?? false,
-            memberRotation: input.memberRotation ?? "0",
+            memberRotation: input.memberRotation ?? "0deg",
             // transforms
             positionMode: Enum.Common.positionMode.CARTESIAN.value,
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            rotation: "0",
+            positionTheta: "0deg",
+            rotation: "0deg",
         },
         type: "polygonLayout",
     };
@@ -238,7 +239,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
         );
 
         const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-        const memberRotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
+        const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
         const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
 

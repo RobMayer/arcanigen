@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -106,7 +107,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TextPathDefinition>
             text: "Text",
             size: "16px",
             spacing: "0px",
-            rotation: "0",
+            rotation: "0deg",
             anchor: Enum.Common.verticalAlign.MIDDLE.value,
             align: Enum.Common.linearAlign.START.value,
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
@@ -288,7 +289,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
 
     const size = Math.max(0, Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "size")?.data ?? node.payload.size) ?? 16);
     const spacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 0;
-    const rotation = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
+    const rotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "rotation")?.data ?? node.payload.rotation) ?? 0;
     const align = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "align")?.data, Enum.Common.linearAlign) ?? node.payload.align;
     const anchor = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "anchor")?.data, Enum.Common.verticalAlign) ?? node.payload.anchor;
 

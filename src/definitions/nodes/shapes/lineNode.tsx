@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
+import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -103,12 +104,12 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, 
             startX: "0px",
             startY: "0px",
             startRadius: "0px",
-            startTheta: "0",
+            startTheta: "0deg",
             endMode: Enum.Common.positionMode.CARTESIAN.value,
             endX: "100px",
             endY: "0px",
             endRadius: "100px",
-            endTheta: "90",
+            endTheta: "90deg",
             markerAlign: true,
             // stroke
             strokeWidth: "1px",
@@ -123,8 +124,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, 
             positionX: "0px",
             positionY: "0px",
             positionRadius: "0px",
-            positionTheta: "0",
-            rotation: "0",
+            positionTheta: "0deg",
+            rotation: "0deg",
         },
         type: "line",
     };
@@ -275,13 +276,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     const startX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startX")?.data ?? node.payload.startX) ?? 0;
     const startY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startY")?.data ?? node.payload.startY) ?? 0;
     const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
-    const startTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
+    const startTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "startTheta")?.data ?? node.payload.startTheta) ?? 0;
 
     const endMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "endMode")?.data, Enum.Common.positionMode) ?? node.payload.endMode;
     const endX = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endX")?.data ?? node.payload.endX) ?? 0;
     const endY = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endY")?.data ?? node.payload.endY) ?? 0;
     const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
-    const endTheta = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
+    const endTheta = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "endTheta")?.data ?? node.payload.endTheta) ?? 0;
 
     const [sx, sy] = resolvePoint(startMode, startX, startY, startRadius, startTheta);
     const [ex, ey] = resolvePoint(endMode, endX, endY, endRadius, endTheta);
