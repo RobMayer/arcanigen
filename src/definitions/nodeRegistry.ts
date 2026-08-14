@@ -177,6 +177,14 @@ import { FilterDefinition, FilterNodeType } from "./nodes/arrayOps/filterNode";
 import { GatherDefinition, GatherNodeType } from "./nodes/arrayOps/gatherNode";
 import { MergeArrayDefinition, MergeArrayNodeType } from "./nodes/arrayOps/mergeArrayNode";
 import { AtIndexDefinition, AtIndexNodeType } from "./nodes/arrayOps/atIndexNode";
+import { ReverseDefinition, ReverseNodeType } from "./nodes/arrayOps/reverseNode";
+import { SliceDefinition, SliceNodeType } from "./nodes/arrayOps/sliceNode";
+import { InjectDefinition, InjectNodeType } from "./nodes/arrayOps/injectNode";
+import { PluckDefinition, PluckNodeType } from "./nodes/arrayOps/pluckNode";
+import { SpliceDefinition, SpliceNodeType } from "./nodes/arrayOps/spliceNode";
+import { ArrayCountDefinition, ArrayCountNodeType } from "./nodes/arrayOps/arrayCountNode";
+import { ReplaceDefinition, ReplaceNodeType } from "./nodes/arrayOps/replaceNode";
+import { RotateArrayDefinition, RotateArrayNodeType } from "./nodes/arrayOps/rotateArrayNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
@@ -412,6 +420,14 @@ export namespace Registries {
         gather: GatherDefinition;
         mergeArray: MergeArrayDefinition;
         atIndex: AtIndexDefinition;
+        reverse: ReverseDefinition;
+        slice: SliceDefinition;
+        inject: InjectDefinition;
+        pluck: PluckDefinition;
+        splice: SpliceDefinition;
+        arrayCount: ArrayCountDefinition;
+        replace: ReplaceDefinition;
+        rotateArray: RotateArrayDefinition;
         colorIterator: ColorIteratorDefinition;
         colorStop: ColorStopBreakoutDefinition;
         colorStopArray: ColorStopArrayDefinition;
@@ -516,6 +532,14 @@ export namespace Registries {
         gather: GatherNodeType,
         mergeArray: MergeArrayNodeType,
         atIndex: AtIndexNodeType,
+        reverse: ReverseNodeType,
+        slice: SliceNodeType,
+        inject: InjectNodeType,
+        pluck: PluckNodeType,
+        splice: SpliceNodeType,
+        arrayCount: ArrayCountNodeType,
+        replace: ReplaceNodeType,
+        rotateArray: RotateArrayNodeType,
         colorIterator: ColorIteratorNodeType,
         colorStop: ColorStopNodeType,
         colorStopArray: ColorStopArrayNodeType,

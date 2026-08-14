@@ -196,9 +196,18 @@ export namespace Enum {
             ABSOLUTE: { value: 1, label: "Absolute" },
         } as const;
 
-        export const substringMode = {
+        // General "how is the extent of a sub-run specified" switch, shared by Substring (chars) and Slice
+        // (array elements): LENGTH = a count from start, END = an exclusive end index.
+        export const subelementMode = {
             LENGTH: { value: 0, label: "Length" },
             END: { value: 1, label: "End" },
+        } as const;
+
+        // Which side of the anchored element an Inject/Splice lands on (anchor on a real element, pick a side
+        // -> no fencepost, length-free: "after -1" appends, "before 0" prepends).
+        export const injectSide = {
+            BEFORE: { value: 0, label: "Before" },
+            AFTER: { value: 1, label: "After" },
         } as const;
 
         export const maskMode = {
@@ -357,7 +366,8 @@ export namespace Enum {
         { label: "Vertical Alignment", options: Common.verticalAlign },
         { label: "Horizontal Alignment", options: Common.horizontalAlign },
         { label: "Offset Mode", options: Common.offsetMode },
-        { label: "Substring Mode", options: Common.substringMode },
+        { label: "Subelement Mode", options: Common.subelementMode },
+        { label: "Inject Side", options: Common.injectSide },
         { label: "Mask Mode", options: Common.maskMode },
         { label: "Spacing Mode", options: Common.spacingMode },
         { label: "Overflow Mode", options: Common.overflowMode },

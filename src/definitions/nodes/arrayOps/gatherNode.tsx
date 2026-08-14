@@ -18,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 const def = signature({
     args: { T: $.ANY },
     in: ({ T }) => ({ source: $.arrayOf(T), indices: $.arrayOf("integer") }),
-    out: ({ T }) => ({ output: $.arrayOf(T) }),
+    out: ({ T }) => ({ output: $.arrayOf(T), count: "integer" }),
 });
 
 export type GatherDefinition = SignatureBuilder.DefinitionFrom<
@@ -37,6 +37,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GatherDefinition>>,
         },
         out: {
             output: [],
+            count: [],
         },
         payload: {
             label: "",
@@ -52,6 +53,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GatherDefin
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
@@ -63,7 +67,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GatherDefin
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<GatherDefinition>, outSocket: keyof GatherDefinition["outputs"], _deps: AllDeps): (keyof GatherDefinition["inputs"])[] => {
-    if (outSocket === "output") {
+    if (outSocket === "output" || outSocket === "count") {
         return ["source", "indices"];
     }
     return [];
@@ -71,7 +75,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<GatherDefinition>, outSocket: 
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<GatherDefinition>, inSocket: keyof GatherDefinition["inputs"], _deps: AllDeps): (keyof GatherDefinition["outputs"])[] => {
     if (inSocket === "source" || inSocket === "indices") {
-        return ["output"];
+        return ["output", "count"];
     }
     return [];
 };
@@ -80,7 +84,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<GatherDefinition>, inSocke
 const unwrapArray = (kind: string): string => (kind.startsWith("array<") && kind.endsWith(">") ? kind.slice("array<".length, -1) : kind);
 
 const evaluate = (node: NodeDefinitions.NodeFor<GatherDefinition>, socket: keyof GatherDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+    if (socket !== "output" && socket !== "count") return null;
 
     const source = context.resolve<DataTypes.ArrayOf<DataTypes.AnyKind>>(node.id, "source");
     const indices = context.resolve<DataTypes.ArrayOf<DataTypes.Integer>>(node.id, "indices");
@@ -95,6 +99,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GatherDefinition>, socket: keyof
         out.push(items[i]);
     }
 
+    if (socket === "count") return { kind: "integer", data: `${out.length}` };
     return { kind: `array<${unwrapArray(source.kind)}>`, data: out };
 };
 

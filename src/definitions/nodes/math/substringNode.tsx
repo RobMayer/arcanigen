@@ -46,7 +46,7 @@ export type SubstringDefinition = SignatureBuilder.DefinitionFrom<
 const STRING_IN: SocketTypes.Term = SocketTypes.of(DataTypes.STRING);
 const STRING_OUT: SocketTypes.Term = SocketTypes.of(DataTypes.STRING);
 
-const MODE_OPTIONS = Enum.options(Enum.Common.substringMode);
+const MODE_OPTIONS = Enum.options(Enum.Common.subelementMode);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<SubstringDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"substring", SubstringDefinition> => {
     return {
@@ -68,7 +68,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<SubstringDefinition
             startIndex: "0",
             // Default to End mode with end=0, which our convention maps to the end of
             // the string — so a fresh node passes the input through unchanged.
-            mode: Enum.Common.substringMode.END.value,
+            mode: Enum.Common.subelementMode.END.value,
             length: "0",
             end: "0",
             ...input,
@@ -85,8 +85,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SubstringDe
         [methods],
     );
 
-    const isLength = node.payload.mode === Enum.Common.substringMode.LENGTH.value;
-    const isEnd = node.payload.mode === Enum.Common.substringMode.END.value;
+    const isLength = node.payload.mode === Enum.Common.subelementMode.LENGTH.value;
+    const isEnd = node.payload.mode === Enum.Common.subelementMode.END.value;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -146,10 +146,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<SubstringDefinition>, socket: ke
     const startRaw = resolveInt(context, node.id, "startIndex", node.payload.startIndex, 0);
     const start = Math.max(0, Math.min(len, startRaw < 0 ? len + startRaw : startRaw));
 
-    const mode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "mode")?.data, Enum.Common.substringMode) ?? node.payload.mode;
+    const mode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "mode")?.data, Enum.Common.subelementMode) ?? node.payload.mode;
 
     let end: number;
-    if (mode === Enum.Common.substringMode.LENGTH.value) {
+    if (mode === Enum.Common.subelementMode.LENGTH.value) {
         const length = Math.max(0, resolveInt(context, node.id, "length", node.payload.length, 0));
         end = start + length;
     } else {

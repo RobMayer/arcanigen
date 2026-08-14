@@ -21,7 +21,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 const def = signature({
     args: { T: $.ANY },
     in: ({ T }) => ({ "input_*": $.arrayOf(T) }),
-    out: ({ T }) => ({ output: $.arrayOf(T) }),
+    out: ({ T }) => ({ output: $.arrayOf(T), count: "integer" }),
 });
 
 export type MergeArrayDefinition = SignatureBuilder.DefinitionFrom<
@@ -38,7 +38,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<MergeArrayDefiniti
     return {
         id,
         in: { [s0]: null, [s1]: null },
-        out: { output: [] },
+        out: { output: [], count: [] },
         payload: { label: "", inputs: [s0, s1] },
         type: "mergeArray",
     };
@@ -101,6 +101,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MergeArrayD
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"}>
                 <ValuePreview value={preview} />
+            </SocketOut>
+            <SocketOut node={node} socketId={"count"}>
+                Count
             </SocketOut>
             <hr />
             <ActionButton onClick={handleAddInput} flavour={"accent"}>
@@ -232,14 +235,14 @@ const DragGrip = styled.div`
 `;
 
 const dependsOn = (node: NodeDefinitions.NodeFor<MergeArrayDefinition>, outSocket: keyof MergeArrayDefinition["outputs"], _deps: AllDeps): (keyof MergeArrayDefinition["inputs"])[] => {
-    if (outSocket === "output") {
+    if (outSocket === "output" || outSocket === "count") {
         return node.payload.inputs as `input_${string}`[];
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<MergeArrayDefinition>, inSocket: keyof MergeArrayDefinition["inputs"], _deps: AllDeps): (keyof MergeArrayDefinition["outputs"])[] => {
-    if (typeof inSocket === "string" && inSocket.startsWith("input_")) return ["output"];
+    if (typeof inSocket === "string" && inSocket.startsWith("input_")) return ["output", "count"];
     return [];
 };
 
@@ -247,7 +250,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<MergeArrayDefinition>, inS
 const unwrapArray = (kind: string): string => (kind.startsWith("array<") && kind.endsWith(">") ? kind.slice("array<".length, -1) : kind);
 
 const evaluate = (node: NodeDefinitions.NodeFor<MergeArrayDefinition>, socket: keyof MergeArrayDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+    if (socket !== "output" && socket !== "count") return null;
 
     const out: unknown[] = [];
     let elementKind: string | null = null;
@@ -259,6 +262,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<MergeArrayDefinition>, socket: k
     }
     if (elementKind === null) return null; // nothing connected -> no element type to emit
 
+    if (socket === "count") return { kind: "integer", data: `${out.length}` };
     return { kind: `array<${elementKind}>`, data: out };
 };
 
@@ -266,7 +270,7 @@ export const MergeArrayNodeType: NodeTypes.Type<"mergeArray", MergeArrayDefiniti
     type: "mergeArray",
     displayName: "Merge Array",
     defaultLabel: "Merge Array",
-    iconNode: <NodeIcon shape={NODE_ICONS.merge} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.ampersand} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
     category: "Math",
     create,

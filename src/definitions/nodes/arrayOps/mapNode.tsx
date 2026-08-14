@@ -18,7 +18,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 const def = signature({
     args: { R: $.ANY },
     in: ({ R }) => ({ pipeline: $.loopFor($.ANY), result: R }),
-    out: ({ R }) => ({ output: $.arrayOf(R) }),
+    out: ({ R }) => ({ output: $.arrayOf(R), count: "integer" }),
 });
 
 export type MapDefinition = SignatureBuilder.DefinitionFrom<
@@ -37,6 +37,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<MapDefinition>>, id
         },
         out: {
             output: [],
+            count: [],
         },
         payload: {
             label: "",
@@ -55,6 +56,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MapDefiniti
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
             <hr />
             <SocketIn node={node} socketId={"result"}>
                 Result
@@ -64,7 +68,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MapDefiniti
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<MapDefinition>, outSocket: keyof MapDefinition["outputs"], _deps: AllDeps): (keyof MapDefinition["inputs"])[] => {
-    if (outSocket === "output") {
+    if (outSocket === "output" || outSocket === "count") {
         return ["pipeline", "result"];
     }
     return [];
@@ -72,13 +76,13 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<MapDefinition>, outSocket: key
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<MapDefinition>, inSocket: keyof MapDefinition["inputs"], _deps: AllDeps): (keyof MapDefinition["outputs"])[] => {
     if (inSocket === "pipeline" || inSocket === "result") {
-        return ["output"];
+        return ["output", "count"];
     }
     return [];
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<MapDefinition>, socket: keyof MapDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    if (socket !== "output") return null;
+    if (socket !== "output" && socket !== "count") return null;
 
     const pipeline = context.resolve<DataTypes.LoopFor<DataTypes.AnyKind>>(node.id, "pipeline");
     if (!pipeline) return null;
@@ -95,6 +99,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<MapDefinition>, socket: keyof Ma
         items.push(r.data);
     }
 
+    if (socket === "count") return { kind: "integer", data: `${items.length}` };
     return { kind: `array<${element}>`, data: items };
 };
 
@@ -102,7 +107,7 @@ export const MapNodeType: NodeTypes.Type<"map", MapDefinition> = {
     type: "map",
     displayName: "Map",
     defaultLabel: "Map",
-    iconNode: <NodeIcon shape={NODE_ICONS.array} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.merge} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
     category: "Math",
     create,

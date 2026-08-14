@@ -19,7 +19,14 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 const def = signature({
     args: { T: $.ANY },
     in: ({ T }) => ({ pipeline: $.loopFor(T), keep: "boolean" }),
-    out: ({ T }) => ({ output: $.arrayOf(T), keptIndices: $.arrayOf("integer") }),
+    out: ({ T }) => ({
+        kept: $.arrayOf(T),
+        keptIndices: $.arrayOf("integer"),
+        keptCount: "integer",
+        rejected: $.arrayOf(T),
+        rejectedIndices: $.arrayOf("integer"),
+        rejectedCount: "integer",
+    }),
 });
 
 export type FilterDefinition = SignatureBuilder.DefinitionFrom<
@@ -37,8 +44,12 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FilterDefinition>>,
             keep: null,
         },
         out: {
-            output: [],
+            kept: [],
             keptIndices: [],
+            keptCount: [],
+            rejected: [],
+            rejectedIndices: [],
+            rejectedCount: [],
         },
         payload: {
             label: "",
@@ -54,22 +65,36 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FilterDefin
             <SocketIn node={node} socketId={"pipeline"}>
                 Pipeline
             </SocketIn>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"kept"}>
+                Kept
             </SocketOut>
-            <SocketOut node={node} socketId={"keptIndices"}>
-                Kept Indices
+            <SocketOut node={node} socketId={"rejected"}>
+                Rejected
             </SocketOut>
             <hr />
             <SocketIn node={node} socketId={"keep"}>
                 Keep
             </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"keptIndices"}>
+                Kept Indices
+            </SocketOut>
+            <SocketOut node={node} socketId={"keptCount"}>
+                Kept Count
+            </SocketOut>
+            <SocketOut node={node} socketId={"rejectedIndices"}>
+                Rejected Indices
+            </SocketOut>
+            <SocketOut node={node} socketId={"rejectedCount"}>
+                Rejected Count
+            </SocketOut>
+            <hr />
         </TypicalNode>
     );
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<FilterDefinition>, outSocket: keyof FilterDefinition["outputs"], _deps: AllDeps): (keyof FilterDefinition["inputs"])[] => {
-    if (outSocket === "output" || outSocket === "keptIndices") {
+    if (outSocket === "kept" || outSocket === "keptIndices" || outSocket === "keptCount" || outSocket === "rejected" || outSocket === "rejectedIndices" || outSocket === "rejectedCount") {
         return ["pipeline", "keep"];
     }
     return [];
@@ -77,7 +102,7 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<FilterDefinition>, outSocket: 
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<FilterDefinition>, inSocket: keyof FilterDefinition["inputs"], _deps: AllDeps): (keyof FilterDefinition["outputs"])[] => {
     if (inSocket === "pipeline" || inSocket === "keep") {
-        return ["output", "keptIndices"];
+        return ["kept", "keptIndices", "keptCount", "rejected", "rejectedIndices", "rejectedCount"];
     }
     return [];
 };
@@ -87,22 +112,27 @@ const evaluate = (node: NodeDefinitions.NodeFor<FilterDefinition>, socket: keyof
     if (!pipeline) return null;
     const { senderId, count } = pipeline.data;
 
+    // Partition every index: `keep === true` -> kept, everything else (false / unresolved) -> rejected.
     const kept: number[] = [];
+    const rejected: number[] = [];
     for (let i = 0; i < count; i++) {
         const keepEval = context.resolve<DataTypes.Boolean>(node.id, "keep", { ...context.cursorData, [senderId]: i });
         if (keepEval?.data === true) kept.push(i);
+        else rejected.push(i);
     }
 
-    if (socket === "keptIndices") {
-        return { kind: "array<integer>", data: kept.map((i) => `${i}`) };
-    }
+    if (socket === "keptCount") return { kind: "integer", data: `${kept.length}` };
+    if (socket === "rejectedCount") return { kind: "integer", data: `${rejected.length}` };
+    if (socket === "keptIndices") return { kind: "array<integer>", data: kept.map((i) => `${i}`) };
+    if (socket === "rejectedIndices") return { kind: "array<integer>", data: rejected.map((i) => `${i}`) };
 
-    if (socket === "output") {
-        // Summon each surviving element from the paired ForEach's `each` output ("each" is the loop-Start
-        // element contract), driven onto the kept index. No wire connects ForEach.each to Filter.
+    if (socket === "kept" || socket === "rejected") {
+        // Summon each partitioned element from the paired ForEach's `each` output ("each" is the loop-Start
+        // element contract), driven onto its index. No wire connects ForEach.each to Filter.
+        const indices = socket === "kept" ? kept : rejected;
         const items: unknown[] = [];
-        let element = "any"; // element kind of the survivors (overwritten by the first real one)
-        for (const i of kept) {
+        let element = "any"; // element kind of the members (overwritten by the first real one)
+        for (const i of indices) {
             const el = context.resolveOutput<DataTypes.AnyKind>(senderId, "each", { ...context.cursorData, [senderId]: i });
             if (!el) continue;
             element = el.kind;
