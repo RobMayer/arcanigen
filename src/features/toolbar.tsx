@@ -26,6 +26,12 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
         void uploadFile(".json").then((text) => {
             const data = JSON.parse(text) as Project.SavedProject;
             if (!data.version || !data.nodes) return;
+            // A saved Custom Node has no "root" graph -- loading it as a project would leave the root view
+            // undefined and crash. Steer the user to Import Custom Node instead.
+            if (!("root" in data.nodes)) {
+                window.alert('This file has no root graph -- it looks like a saved Custom Node.\n\nUse "Import Custom Node" to bring it into the current graph instead.');
+                return;
+            }
             io.load(data);
         });
     }, [io]);
@@ -34,6 +40,12 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
         void uploadFile(".json").then((text) => {
             const data = JSON.parse(text) as Project.SavedProject;
             if (!data.version || !data.nodes) return;
+            // A full project has a "root" graph; Import expects a saved Custom Node (subgraphs only). Importing
+            // a full project would skip its root and silently pull in only its subgraphs, so steer to Load.
+            if ("root" in data.nodes) {
+                window.alert('This file has a root graph -- it looks like a full project, not a Custom Node.\n\nUse "Load Graph" to open it instead.');
+                return;
+            }
             io.importSubgraphs(data);
         });
     }, [io]);

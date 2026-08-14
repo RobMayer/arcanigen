@@ -73,6 +73,8 @@ import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/output
 import { ColorInputDefinition, ColorInputType } from "./nodes/interface/inputs/colorInputNode";
 import { PaintInputDefinition, PaintInputType } from "./nodes/interface/inputs/paintInputNode";
 import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/outputs/colorOutputNode";
+import { PointInputDefinition, PointInputType } from "./nodes/interface/inputs/pointInputNode";
+import { PointOutputDefinition, PointOutputType } from "./nodes/interface/outputs/pointOutputNode";
 import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/inputs/booleanInputNode";
 import { BooleanOutputDefinition, BooleanOutputType } from "./nodes/interface/outputs/booleanOutputNode";
 import { EnumInputDefinition, EnumInputType } from "./nodes/interface/inputs/enumInputNode";
@@ -205,6 +207,7 @@ import { PenEffectDefinition, PenEffectNodeType } from "./nodes/effects/penEffec
 import { BrushEffectDefinition, BrushEffectNodeType } from "./nodes/effects/brushEffectNode";
 import { GlowEffectDefinition, GlowEffectNodeType } from "./nodes/effects/glowEffectNode";
 import { RandomSeedDefinition, RandomSeedNodeType } from "./nodes/primitives/randomSeedNode";
+import { RandomDefinition, RandomNodeType } from "./nodes/math/randomNode";
 import { NotesDefinition, NotesNodeType } from "./nodes/meta/notesNode";
 import { PathUnifyDefinition, PathUnitfyNodeType } from "./nodes/math/pathUnifyNode";
 import { PathJoinDefinition, PathJoinNodeType } from "./nodes/math/pathJoinNode";
@@ -260,6 +263,7 @@ export namespace Registries {
         length: LengthDefinition;
         tokensLength: TokensLengthDefinition;
         randomSeed: RandomSeedDefinition;
+        random: RandomDefinition;
         point: PointDefinition;
 
         // meta
@@ -285,6 +289,8 @@ export namespace Registries {
         colorInput: ColorInputDefinition;
         paintInput: PaintInputDefinition;
         colorOutput: ColorOutputDefinition;
+        pointInput: PointInputDefinition;
+        pointOutput: PointOutputDefinition;
         booleanInput: BooleanInputDefinition;
         booleanOutput: BooleanOutputDefinition;
         enumInput: EnumInputDefinition;
@@ -543,6 +549,7 @@ export namespace Registries {
         length: LengthPrimitiveType,
         tokensLength: TokensLengthPrimitiveType,
         randomSeed: RandomSeedNodeType,
+        random: RandomNodeType,
         point: PointPrimitiveType,
         notes: NotesNodeType,
         container: ContainerNodeType,
@@ -563,6 +570,8 @@ export namespace Registries {
         colorInput: ColorInputType,
         paintInput: PaintInputType,
         colorOutput: ColorOutputType,
+        pointInput: PointInputType,
+        pointOutput: PointOutputType,
         booleanInput: BooleanInputType,
         booleanOutput: BooleanOutputType,
         enumInput: EnumInputType,

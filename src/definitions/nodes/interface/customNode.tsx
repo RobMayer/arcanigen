@@ -17,12 +17,16 @@ import { IntegerInputDefinition } from "./inputs/integerInputNode";
 import { AngleInputDefinition } from "./inputs/angleInputNode";
 import { LengthInputDefinition } from "./inputs/lengthInputNode";
 import { ColorInputDefinition } from "./inputs/colorInputNode";
+import { PointInputDefinition } from "./inputs/pointInputNode";
+import { PointOutputDefinition } from "./outputs/pointOutputNode";
 import { BooleanInputDefinition } from "./inputs/booleanInputNode";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
+import { PointInput } from "../../../components/inputs/PointInput";
+import { PointHelper } from "../../helpers/pointHelper";
 import { NumericString } from "../../datatypes/numericString";
 import { FloatOutputDefinition } from "./outputs/floatOutputNode";
 import { IntegerOutputDefinition } from "./outputs/integerOutputNode";
@@ -202,6 +206,8 @@ const storedValueToEval = (storedValue: unknown, nodeType: string): DataTypes.An
         case "colorInput":
         case "paintInput":
             return { kind: "color", data: storedValue as Color.Type };
+        case "pointInput":
+            return { kind: "point", data: PointHelper.fromAuthoring(storedValue as PointInput.Value) };
         case "booleanInput":
             return { kind: "boolean", data: storedValue as boolean };
         case "enumInput":
@@ -430,6 +436,8 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
     colorInput: SocketTypes.of(DataTypes.COLOR),
     paintInput: SocketTypes.and(DataTypes.COLOR, DataTypes.GRADIENT),
     colorOutput: SocketTypes.of(DataTypes.COLOR),
+    pointInput: SocketTypes.of(DataTypes.POINT),
+    pointOutput: SocketTypes.of(DataTypes.POINT),
     booleanInput: SocketTypes.of(DataTypes.BOOLEAN),
     booleanOutput: SocketTypes.of(DataTypes.BOOLEAN),
     enumInput: SocketTypes.of(DataTypes.ENUM),
@@ -571,6 +579,10 @@ const DynamicSlot = ({
         // Paint Input reuses the Color Input slot UI (identical payload/widget); its socket accepts colour or gradient.
         case "paintInput":
             return <InputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorInputDefinition>} handleValue={handleValue} />;
+        case "pointOutput":
+            return <OutputSlotPoint host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<PointOutputDefinition>} />;
+        case "pointInput":
+            return <InputSlotPoint host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<PointInputDefinition>} handleValue={handleValue} />;
         case "booleanOutput":
             return <OutputSlotBoolean host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<BooleanOutputDefinition>} />;
         case "booleanInput":
@@ -1016,6 +1028,54 @@ const InputSlotColor = ({ host, source, handleValue }: InputWidgetProps<ColorInp
                         alpha={source.payload.alpha}
                         required={source.payload.required}
                     />
+                </InputSocketOrSlot>
+            );
+        }
+    }
+    return null;
+};
+
+const OutputSlotPoint = ({ host, source }: OutputWidgetProps<PointOutputDefinition>) => {
+    const resolved = Project.useCachedOutput(useGraphId(), host, source.id) as DataTypes.EvalOf<DataTypes.ConcreteKind> | null;
+    const output = resolved?.kind === "point" ? `(${Number(resolved.data.x.toFixed(2))}, ${Number(resolved.data.y.toFixed(2))})` : "« none »";
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalOutputWidget.NONE.value: {
+            return (
+                <SocketOut node={host} socketId={source.id}>
+                    {interfaceMemberLabel(source)}
+                </SocketOut>
+            );
+        }
+        case Enum.Common.typicalOutputWidget.PREVIEW.value: {
+            return (
+                <SocketOut node={host} socketId={source.id} label={interfaceMemberLabel(source)}>
+                    <TextPreview>{output}</TextPreview>
+                </SocketOut>
+            );
+        }
+    }
+    return null;
+};
+
+const InputSlotPoint = ({ host, source, handleValue }: InputWidgetProps<PointInputDefinition>) => {
+    const socketed = source.payload.socketed !== false;
+    const label = interfaceMemberLabel(source);
+    const disabled = host.in[source.id] != null;
+    const current = host.payload[`value_${source.id}`] as PointInput.Value;
+
+    switch (source.payload.widget) {
+        case Enum.Common.typicalInputWidget.NONE.value: {
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id}>
+                    {label}
+                </InputSocketOrSlot>
+            );
+        }
+        case Enum.Common.typicalInputWidget.INPUT.value: {
+            return (
+                <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id} label={label}>
+                    <PointInput value={current} onChange={(v) => handleValue({ [`value_${source.id}`]: { ...current, ...v } })} disabled={disabled} />
                 </InputSocketOrSlot>
             );
         }
