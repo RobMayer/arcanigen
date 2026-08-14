@@ -766,7 +766,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 9;
+        export const CURRENT = 10;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1233,6 +1233,71 @@ export namespace Project {
                     }
                 }
                 input.version = 9;
+            }
+            if (input.version === 9) {
+                // The inline point-authoring cluster that v8->v9 left flat (`${prefix}{Mode,X,Y,Radius,Theta}`)
+                // nests into a single object matching `PointInput.Value`, so one shared editor (PointInput) drives
+                // it. Missing slices fall back to the point default. Table-driven: a node type is nested here in
+                // lockstep with its def swapping to PointInput. Mirrors the v8->v9 `POSITION_SLICES` set (payload
+                // key == old prefix). pointArray is absent -- its per-entry payload was already nested.
+                const SLICE_SUFFIXES = ["Mode", "X", "Y", "Radius", "Theta"] as const;
+                const POINT_DEFAULT = { mode: 0, x: "0px", y: "0px", radius: "0px", theta: "0deg" };
+                const POSITION = [{ prefix: "position", key: "position" }];
+                const NEST_POINT_SLICES: { [type: string]: { prefix: string; key: string }[] } = {
+                    transform: POSITION,
+                    rectangle: POSITION,
+                    text: POSITION,
+                    spirograph: POSITION,
+                    circle: POSITION,
+                    polygon: POSITION,
+                    arc: POSITION,
+                    star: POSITION,
+                    polyring: POSITION,
+                    polygram: POSITION,
+                    burst: POSITION,
+                    spiroring: POSITION,
+                    glyph: POSITION,
+                    ring: POSITION,
+                    fromPath: POSITION,
+                    knot: POSITION,
+                    spiral: POSITION,
+                    radialLayout: POSITION,
+                    repeatedLayout: POSITION,
+                    polygonLayout: POSITION,
+                    line: [
+                        { prefix: "position", key: "position" },
+                        { prefix: "start", key: "start" },
+                        { prefix: "end", key: "end" },
+                    ],
+                    linearGradient: [
+                        { prefix: "start", key: "start" },
+                        { prefix: "end", key: "end" },
+                    ],
+                    radialGradient: [
+                        { prefix: "center", key: "center" },
+                        { prefix: "startOffset", key: "startOffset" },
+                    ],
+                    glowEffect: [{ prefix: "offset", key: "offset" }],
+                };
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        const slices = NEST_POINT_SLICES[node.type];
+                        if (!slices || !node.payload) continue;
+                        const p = node.payload as { [k: string]: any };
+                        for (const { prefix, key } of slices) {
+                            p[key] = {
+                                mode: p[`${prefix}Mode`] ?? POINT_DEFAULT.mode,
+                                x: p[`${prefix}X`] ?? POINT_DEFAULT.x,
+                                y: p[`${prefix}Y`] ?? POINT_DEFAULT.y,
+                                radius: p[`${prefix}Radius`] ?? POINT_DEFAULT.radius,
+                                theta: p[`${prefix}Theta`] ?? POINT_DEFAULT.theta,
+                            };
+                            for (const s of SLICE_SUFFIXES) delete p[`${prefix}${s}`];
+                        }
+                    }
+                }
+                input.version = 10;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

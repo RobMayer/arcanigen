@@ -51,6 +51,17 @@ import { PathOpComposeDefinition, PathOpComposeNodeType } from "./nodes/collecti
 import { TokenizerLengthDefinition, TokenizerLengthNodeType } from "./nodes/collections/tokenizerLengthNode";
 import { LayerDefinition, LayerNodeType } from "./nodes/collections/layerNode";
 import { DistributionNodeType, DistributionNodeDefinition } from "./nodes/math/distributionNode";
+import { PointAddDefinition, PointAddType } from "./nodes/math/pointAddNode";
+import { PointSubtractDefinition, PointSubtractType } from "./nodes/math/pointSubtractNode";
+import { PointScaleDefinition, PointScaleType } from "./nodes/math/pointScaleNode";
+import { PointDisplaceDefinition, PointDisplaceType } from "./nodes/math/pointDisplaceNode";
+import { PointRotateDefinition, PointRotateType } from "./nodes/math/pointRotateNode";
+import { PointHadamardDefinition, PointHadamardType } from "./nodes/math/pointHadamardNode";
+import { PointComplexDefinition, PointComplexType } from "./nodes/math/pointComplexNode";
+import { PointDotDefinition, PointDotType } from "./nodes/math/pointDotNode";
+import { PointWedgeDefinition, PointWedgeType } from "./nodes/math/pointWedgeNode";
+import { PointLerpDefinition, PointLerpType } from "./nodes/math/pointLerpNode";
+import { PointDistanceDefinition, PointDistanceType } from "./nodes/math/pointDistanceNode";
 import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/inputs/integerInputNode";
 import { IntegerOutputDefinition, IntegerOutputType } from "./nodes/interface/outputs/integerOutputNode";
 import { AngleInputDefinition, AngleInputType } from "./nodes/interface/inputs/angleInputNode";
@@ -326,6 +337,19 @@ export namespace Registries {
         root: RootDefinition;
         distribution: DistributionNodeDefinition;
 
+        // point math
+        pointAdd: PointAddDefinition;
+        pointSubtract: PointSubtractDefinition;
+        pointScale: PointScaleDefinition;
+        pointDisplace: PointDisplaceDefinition;
+        pointRotate: PointRotateDefinition;
+        pointHadamard: PointHadamardDefinition;
+        pointComplex: PointComplexDefinition;
+        pointDot: PointDotDefinition;
+        pointWedge: PointWedgeDefinition;
+        pointLerp: PointLerpDefinition;
+        pointDistance: PointDistanceDefinition;
+
         // collections
         layerCompose: LayerComposeDefinition;
         pathOpCompose: PathOpComposeDefinition;
@@ -563,6 +587,18 @@ export namespace Registries {
         pow: PowType,
         root: RootType,
         distribution: DistributionNodeType,
+
+        pointAdd: PointAddType,
+        pointSubtract: PointSubtractType,
+        pointScale: PointScaleType,
+        pointDisplace: PointDisplaceType,
+        pointRotate: PointRotateType,
+        pointHadamard: PointHadamardType,
+        pointComplex: PointComplexType,
+        pointDot: PointDotType,
+        pointWedge: PointWedgeType,
+        pointLerp: PointLerpType,
+        pointDistance: PointDistanceType,
         switchCase: SwitchCaseNodeType,
         condition: ConditionNodeType,
         logicalNot: LogicalNotNodeType,

@@ -17,9 +17,8 @@ import { Length } from "../../datatypes/length";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { LengthInput } from "../../../components/inputs/LengthInput";
+import { PointInput } from "../../../components/inputs/PointInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
-import { LoopButton } from "../../../components/buttons/LoopButton";
-import { AngleInput } from "../../../components/inputs/AngleInput";
 import { ActionButton } from "../../../components/buttons/ActionButton";
 import { PointHelper } from "../../helpers/pointHelper";
 import { EmptyOr } from "../../../util/misc";
@@ -29,24 +28,6 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const SPREAD_OPTIONS = Enum.options(Enum.Common.gradientSpread);
 const FRAMING_OPTIONS = Enum.options(Enum.Common.framing);
-const MODE_OPTIONS = [
-    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
-    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
-];
-
-const PointRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    width: 100%;
-
-    & > .pointField {
-        flex: 1 1 0;
-        width: 0;
-        min-width: 0;
-    }
-`;
-
 type StopEntryData = { socket: string; value: Color.Type; position: EmptyOr<NumericString.Type>; enabled: boolean };
 
 const def = signature({
@@ -69,17 +50,9 @@ export type RadialGradientDefinition = SignatureBuilder.DefinitionFrom<
         label: string;
         framing: DataTypes.TypeOf<DataTypes.Enum>;
         spread: DataTypes.TypeOf<DataTypes.Enum>;
-        centerMode: DataTypes.TypeOf<DataTypes.Enum>;
-        centerX: DataTypes.TypeOf<DataTypes.Length>;
-        centerY: DataTypes.TypeOf<DataTypes.Length>;
-        centerRadius: DataTypes.TypeOf<DataTypes.Length>;
-        centerTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        center: PointInput.Value;
         endRadius: DataTypes.TypeOf<DataTypes.Length>;
-        startOffsetMode: DataTypes.TypeOf<DataTypes.Enum>;
-        startOffsetX: DataTypes.TypeOf<DataTypes.Length>;
-        startOffsetY: DataTypes.TypeOf<DataTypes.Length>;
-        startOffsetRadius: DataTypes.TypeOf<DataTypes.Length>;
-        startOffsetTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        startOffset: PointInput.Value;
         startRadius: DataTypes.TypeOf<DataTypes.Length>;
         stops: StopEntryData[];
     }
@@ -109,17 +82,9 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialGradientDefin
             label: "",
             framing: input.framing ?? Enum.Common.framing.AUTO.value,
             spread: input.spread ?? Enum.Common.gradientSpread.PAD.value,
-            centerMode: input.centerMode ?? Enum.Common.positionMode.CARTESIAN.value,
-            centerX: input.centerX ?? "0px",
-            centerY: input.centerY ?? "0px",
-            centerRadius: input.centerRadius ?? "0px",
-            centerTheta: input.centerTheta ?? "0deg",
+            center: input.center ?? { ...PointInput.DEFAULT },
             endRadius: input.endRadius ?? "100px",
-            startOffsetMode: input.startOffsetMode ?? Enum.Common.positionMode.CARTESIAN.value,
-            startOffsetX: input.startOffsetX ?? "0px",
-            startOffsetY: input.startOffsetY ?? "0px",
-            startOffsetRadius: input.startOffsetRadius ?? "0px",
-            startOffsetTheta: input.startOffsetTheta ?? "0deg",
+            startOffset: input.startOffset ?? { ...PointInput.DEFAULT },
             startRadius: input.startRadius ?? "0px",
             stops: input.stops ?? [
                 { socket: s0, value: { r: 0, g: 0, b: 0, a: 1 }, position: "0", enabled: true },
@@ -204,9 +169,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialGradi
 
     // Auto/Manual gating (only decidable when framing isn't itself driven by a link).
     const framingAuto = node.payload.framing === Enum.Common.framing.AUTO.value && node.in.framing === null;
-    const centerIsPolar = node.payload.centerMode === Enum.Common.positionMode.POLAR.value;
     const centerConnected = node.in.centerPoint !== null;
-    const offsetIsPolar = node.payload.startOffsetMode === Enum.Common.positionMode.POLAR.value;
     const focalConnected = node.in.focalPoint !== null;
 
     return (
@@ -248,40 +211,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialGradi
                 </SocketIn>
                 <hr />
                 <SocketIn node={node} socketId={"centerPoint"} label={"Center"}>
-                    <PointRow>
-                        <LoopButton.Lite value={`${node.payload.centerMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ centerMode: Number(v) })} disabled={centerConnected || framingAuto} />
-                        {centerIsPolar ? (
-                            <>
-                                <LengthInput className={"pointField"} value={node.payload.centerRadius} onCommit={(centerRadius) => handleUpdate({ centerRadius })} disabled={centerConnected || framingAuto} required />
-                                <AngleInput className={"pointField"} value={node.payload.centerTheta} onCommit={(centerTheta) => handleUpdate({ centerTheta })} disabled={centerConnected || framingAuto} />
-                            </>
-                        ) : (
-                            <>
-                                <LengthInput className={"pointField"} value={node.payload.centerX} onCommit={(centerX) => handleUpdate({ centerX })} disabled={centerConnected || framingAuto} required />
-                                <LengthInput className={"pointField"} value={node.payload.centerY} onCommit={(centerY) => handleUpdate({ centerY })} disabled={centerConnected || framingAuto} required />
-                            </>
-                        )}
-                    </PointRow>
+                    <PointInput value={node.payload.center} onChange={(v) => handleUpdate({ center: { ...node.payload.center, ...v } })} disabled={centerConnected || framingAuto} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"endRadius"} label={"End Radius"}>
                     <LengthInput value={node.payload.endRadius} onCommit={(endRadius) => handleUpdate({ endRadius })} disabled={node.in.endRadius !== null || framingAuto} min={"0px"} required />
                 </SocketIn>
                 <hr />
                 <SocketIn node={node} socketId={"focalPoint"} label={"Focus"}>
-                    <PointRow>
-                        <LoopButton.Lite value={`${node.payload.startOffsetMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ startOffsetMode: Number(v) })} disabled={focalConnected || framingAuto} />
-                        {offsetIsPolar ? (
-                            <>
-                                <LengthInput className={"pointField"} value={node.payload.startOffsetRadius} onCommit={(startOffsetRadius) => handleUpdate({ startOffsetRadius })} disabled={focalConnected || framingAuto} required />
-                                <AngleInput className={"pointField"} value={node.payload.startOffsetTheta} onCommit={(startOffsetTheta) => handleUpdate({ startOffsetTheta })} disabled={focalConnected || framingAuto} />
-                            </>
-                        ) : (
-                            <>
-                                <LengthInput className={"pointField"} value={node.payload.startOffsetX} onCommit={(startOffsetX) => handleUpdate({ startOffsetX })} disabled={focalConnected || framingAuto} required />
-                                <LengthInput className={"pointField"} value={node.payload.startOffsetY} onCommit={(startOffsetY) => handleUpdate({ startOffsetY })} disabled={focalConnected || framingAuto} required />
-                            </>
-                        )}
-                    </PointRow>
+                    <PointInput value={node.payload.startOffset} onChange={(v) => handleUpdate({ startOffset: { ...node.payload.startOffset, ...v } })} disabled={focalConnected || framingAuto} />
                 </SocketIn>
                 <SocketIn node={node} socketId={"startRadius"} label={"Start Radius"}>
                     <LengthInput
@@ -530,17 +467,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialGradientDefinition>, socke
     };
 
     if (gradient.units === "userSpaceOnUse") {
-        const center =
-            context.resolve<DataTypes.Point>(node.id, "centerPoint")?.data ??
-            PointHelper.resolve(node.payload.centerMode, node.payload.centerX, node.payload.centerY, node.payload.centerRadius, node.payload.centerTheta);
+        const center = context.resolve<DataTypes.Point>(node.id, "centerPoint")?.data ?? PointHelper.fromAuthoring(node.payload.center);
         const centerX = center.x;
         const centerY = center.y;
 
         const endRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "endRadius")?.data ?? node.payload.endRadius) ?? 0;
 
-        const offset =
-            context.resolve<DataTypes.Point>(node.id, "focalPoint")?.data ??
-            PointHelper.resolve(node.payload.startOffsetMode, node.payload.startOffsetX, node.payload.startOffsetY, node.payload.startOffsetRadius, node.payload.startOffsetTheta);
+        const offset = context.resolve<DataTypes.Point>(node.id, "focalPoint")?.data ?? PointHelper.fromAuthoring(node.payload.startOffset);
 
         const startRadius = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "startRadius")?.data ?? node.payload.startRadius) ?? 0;
 

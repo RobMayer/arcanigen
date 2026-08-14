@@ -1,17 +1,15 @@
 import { nanoid } from "nanoid";
-import styled from "styled-components";
 import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
-import { Icon, ICONS, NodeIcon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
+import { PointInput } from "../../../components/inputs/PointInput";
 import { SliderInput } from "../../../components/inputs/SliderInput";
 import { ColorHexInput } from "../../../components/inputs/ColorHexInput";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { LoopButton } from "../../../components/buttons/LoopButton";
-import { AngleInput } from "../../../components/inputs/AngleInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { SocketTypes } from "../../socketTypes";
@@ -21,28 +19,9 @@ import { NumericString } from "../../datatypes/numericString";
 import { Length } from "../../datatypes/length";
 import { PointHelper } from "../../helpers/pointHelper";
 import { Color } from "../../datatypes/color";
-import { Enum } from "../../datatypes/enum";
 import { FilterPrimitive } from "../../shapeTypes";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
-
-const MODE_OPTIONS = [
-    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
-    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
-];
-
-const PointRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    width: 100%;
-
-    & > .pointField {
-        flex: 1 1 0;
-        width: 0;
-        min-width: 0;
-    }
-`;
 
 const def = signature({
     in: {
@@ -68,11 +47,7 @@ export type GlowEffectDefinition = SignatureBuilder.DefinitionFrom<
         spread: DataTypes.TypeOf<DataTypes.Length>;
         strength: DataTypes.TypeOf<DataTypes.Float>;
         opacity: DataTypes.TypeOf<DataTypes.Float>;
-        offsetMode: DataTypes.TypeOf<DataTypes.Enum>;
-        offsetX: DataTypes.TypeOf<DataTypes.Length>;
-        offsetY: DataTypes.TypeOf<DataTypes.Length>;
-        offsetRadius: DataTypes.TypeOf<DataTypes.Length>;
-        offsetTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        offset: PointInput.Value;
     }
 >;
 
@@ -98,11 +73,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<GlowEffectDefiniti
             spread: "1px",
             strength: "1",
             opacity: "0.5",
-            offsetMode: Enum.Common.positionMode.CARTESIAN.value,
-            offsetX: "0px",
-            offsetY: "0px",
-            offsetRadius: "0px",
-            offsetTheta: "0deg",
+            offset: { ...PointInput.DEFAULT },
         },
         type: "glowEffect",
     };
@@ -116,7 +87,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
         [methods],
     );
 
-    const isPolar = node.payload.offsetMode === Enum.Common.positionMode.POLAR.value;
     const offsetConnected = node.in.offset !== null;
 
     return (
@@ -148,20 +118,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
                 <SliderInput value={node.payload.opacity} onCommit={(opacity) => handleUpdate({ opacity })} disabled={node.in.opacity !== null} min={"0"} max={"1"} step={"0.001"} />
             </SocketIn>
             <SocketIn node={node} socketId={"offset"} label={"Offset"}>
-                <PointRow>
-                    <LoopButton.Lite value={`${node.payload.offsetMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ offsetMode: Number(v) })} disabled={offsetConnected} />
-                    {isPolar ? (
-                        <>
-                            <LengthInput className={"pointField"} value={node.payload.offsetRadius} onCommit={(offsetRadius) => handleUpdate({ offsetRadius })} disabled={offsetConnected} required />
-                            <AngleInput className={"pointField"} value={node.payload.offsetTheta} onCommit={(offsetTheta) => handleUpdate({ offsetTheta })} disabled={offsetConnected} />
-                        </>
-                    ) : (
-                        <>
-                            <LengthInput className={"pointField"} value={node.payload.offsetX} onCommit={(offsetX) => handleUpdate({ offsetX })} disabled={offsetConnected} required />
-                            <LengthInput className={"pointField"} value={node.payload.offsetY} onCommit={(offsetY) => handleUpdate({ offsetY })} disabled={offsetConnected} required />
-                        </>
-                    )}
-                </PointRow>
+                <PointInput value={node.payload.offset} onChange={(v) => handleUpdate({ offset: { ...node.payload.offset, ...v } })} disabled={offsetConnected} />
             </SocketIn>
         </TypicalNode>
     );
@@ -189,9 +146,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
     const strength = Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "strength")?.data ?? node.payload.strength) ?? 1);
     const opacity = Math.max(0, Math.min(1, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float>(node.id, "opacity")?.data ?? node.payload.opacity) ?? 1));
 
-    const offset =
-        context.resolve<DataTypes.Point>(node.id, "offset")?.data ??
-        PointHelper.resolve(node.payload.offsetMode, node.payload.offsetX, node.payload.offsetY, node.payload.offsetRadius, node.payload.offsetTheta);
+    const offset = context.resolve<DataTypes.Point>(node.id, "offset")?.data ?? PointHelper.fromAuthoring(node.payload.offset);
     const dx = offset.x;
     const dy = offset.y;
 

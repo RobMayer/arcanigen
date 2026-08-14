@@ -53,11 +53,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RepeatedLayoutDefin
             label: "",
             count: input.count ?? "5",
             // transforms
-            positionMode: Enum.Common.positionMode.CARTESIAN.value,
-            positionX: "0px",
-            positionY: "0px",
-            positionRadius: "0px",
-            positionTheta: "0deg",
+            position: { ...TransformPrefab.POSITION_DEFAULT },
             rotation: "0deg",
         },
         type: "repeatedLayout",

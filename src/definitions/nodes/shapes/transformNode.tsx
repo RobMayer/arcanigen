@@ -1,6 +1,5 @@
 import { nanoid } from "nanoid";
-import styled from "styled-components";
-import { Icon, ICONS, NodeIcon, NODE_ICONS } from "../../../components/Icon";
+import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
@@ -10,13 +9,11 @@ import { DataTypes } from "../../dataTypes";
 import { SocketTypes } from "../../socketTypes";
 import { ArcaneGraph } from "../../../util/structs/arcaneGraph";
 import { Project } from "../../../state/project";
-import { Enum } from "../../datatypes/enum";
 import { Angle } from "../../datatypes/angle";
 import { NumericString } from "../../datatypes/numericString";
-import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { LoopButton } from "../../../components/buttons/LoopButton";
+import { PointInput } from "../../../components/inputs/PointInput";
 import { PointHelper } from "../../helpers/pointHelper";
 import { Shape } from "../../shapeTypes";
 import { SVGPath } from "../../../types";
@@ -42,11 +39,7 @@ export type TransformDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: DataTypes.TypeOf<DataTypes.String>;
-        positionMode: DataTypes.TypeOf<DataTypes.Enum>;
-        positionX: DataTypes.TypeOf<DataTypes.Length>;
-        positionY: DataTypes.TypeOf<DataTypes.Length>;
-        positionRadius: DataTypes.TypeOf<DataTypes.Length>;
-        positionTheta: DataTypes.TypeOf<DataTypes.Angle>;
+        position: PointInput.Value;
         preRotation: DataTypes.TypeOf<DataTypes.Angle>;
         postRotation: DataTypes.TypeOf<DataTypes.Angle>;
         skewX: DataTypes.TypeOf<DataTypes.Angle>;
@@ -76,11 +69,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinitio
         },
         payload: {
             label: "",
-            positionMode: Enum.Common.positionMode.CARTESIAN.value,
-            positionX: "0px",
-            positionY: "0px",
-            positionRadius: "0px",
-            positionTheta: "0deg",
+            position: { ...PointInput.DEFAULT },
             preRotation: "0deg",
             postRotation: "0deg",
             skewX: "0deg",
@@ -92,25 +81,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinitio
     };
 };
 
-const MODE_OPTIONS = [
-    { value: `${Enum.Common.positionMode.CARTESIAN.value}`, label: <Icon shape={ICONS.Coordinates.Cartesian} /> },
-    { value: `${Enum.Common.positionMode.POLAR.value}`, label: <Icon shape={ICONS.Coordinates.Polar} /> },
-];
-
-const PointRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    width: 100%;
-
-    & > .pointField {
-        flex: 1 1 0;
-        width: 0;
-        min-width: 0;
-    }
-`;
-
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinition>>) => {
             methods.update(v);
@@ -118,7 +89,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
         [methods],
     );
 
-    const isPolar = node.payload.positionMode === Enum.Common.positionMode.POLAR.value;
     const positionConnected = node.in.position !== null;
 
     return (
@@ -138,26 +108,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDe
             </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"position"} label={"Position"}>
-                <PointRow>
-                    <LoopButton.Lite value={`${node.payload.positionMode}`} options={MODE_OPTIONS} onValue={(v) => handleUpdate({ positionMode: Number(v) })} disabled={positionConnected} />
-                    {isPolar ? (
-                        <>
-                            <LengthInput
-                                className={"pointField"}
-                                value={node.payload.positionRadius}
-                                onCommit={(positionRadius) => handleUpdate({ positionRadius })}
-                                disabled={positionConnected}
-                                required
-                            />
-                            <AngleInput className={"pointField"} value={node.payload.positionTheta} onCommit={(positionTheta) => handleUpdate({ positionTheta })} disabled={positionConnected} />
-                        </>
-                    ) : (
-                        <>
-                            <LengthInput className={"pointField"} value={node.payload.positionX} onCommit={(positionX) => handleUpdate({ positionX })} disabled={positionConnected} required />
-                            <LengthInput className={"pointField"} value={node.payload.positionY} onCommit={(positionY) => handleUpdate({ positionY })} disabled={positionConnected} required />
-                        </>
-                    )}
-                </PointRow>
+                <PointInput value={node.payload.position} onChange={(v) => handleUpdate({ position: { ...node.payload.position, ...v } })} disabled={positionConnected} />
             </SocketIn>
             <NodeAccordion label={"Rotation"} nodeId={node.id} socketsIn={"preRotation|postRotation"}>
                 <SocketIn node={node} socketId={"preRotation"} label={"Pre-Rotation"}>
@@ -201,9 +152,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TransformDefinition>, _inS
 
 /** Resolves all transform parameters and builds a CSS transform string + translation offsets */
 const resolveTransform = (node: NodeDefinitions.NodeFor<TransformDefinition>, context: Resolver.Context): { css: string; translateX: number; translateY: number } => {
-    const position =
-        context.resolve<DataTypes.Point>(node.id, "position")?.data ??
-        PointHelper.resolve(node.payload.positionMode, node.payload.positionX, node.payload.positionY, node.payload.positionRadius, node.payload.positionTheta);
+    const position = context.resolve<DataTypes.Point>(node.id, "position")?.data ?? PointHelper.fromAuthoring(node.payload.position);
     const preRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "preRotation")?.data ?? node.payload.preRotation) ?? 0;
     const postRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "postRotation")?.data ?? node.payload.postRotation) ?? 0;
     const skewX = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "skewX")?.data ?? node.payload.skewX) ?? 0;

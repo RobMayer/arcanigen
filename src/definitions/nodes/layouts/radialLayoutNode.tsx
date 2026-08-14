@@ -100,11 +100,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinit
             memberAlign: input.memberAlign ?? false,
             memberRotation: input.memberRotation ?? "0deg",
             // transforms
-            positionMode: Enum.Common.positionMode.CARTESIAN.value,
-            positionX: "0px",
-            positionY: "0px",
-            positionRadius: "0px",
-            positionTheta: "0deg",
+            position: { ...TransformPrefab.POSITION_DEFAULT },
             rotation: "0deg",
         },
         type: "radialLayout",

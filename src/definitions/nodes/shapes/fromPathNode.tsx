@@ -68,11 +68,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<FromPathDefinition>
             paintOrder: 0,
             opacity: "100",
             // transforms
-            positionMode: Enum.Common.positionMode.CARTESIAN.value,
-            positionX: "0px",
-            positionY: "0px",
-            positionRadius: "0px",
-            positionTheta: "0deg",
+            position: { ...TransformPrefab.POSITION_DEFAULT },
             rotation: "0deg",
         },
         type: "fromPath",
