@@ -460,6 +460,18 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
     stopAngleOutput: SocketTypes.of(DataTypes.STOP_ANGLE),
     arrayStopAngleInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_ANGLE)),
     arrayStopAngleOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_ANGLE)),
+    arrayAngleInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.ANGLE)),
+    arrayAngleOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.ANGLE)),
+    arrayIntegerInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.INTEGER)),
+    arrayIntegerOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.INTEGER)),
+    arrayFloatInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.FLOAT)),
+    arrayFloatOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.FLOAT)),
+    arrayLengthInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.LENGTH)),
+    arrayLengthOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.LENGTH)),
+    arrayColorInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.COLOR)),
+    arrayColorOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.COLOR)),
+    arrayBooleanInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.BOOLEAN)),
+    arrayBooleanOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.BOOLEAN)),
     stopIntegerInput: SocketTypes.of(DataTypes.STOP_INTEGER),
     stopIntegerOutput: SocketTypes.of(DataTypes.STOP_INTEGER),
     arrayStopIntegerInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_INTEGER)),
@@ -607,6 +619,13 @@ const DynamicSlot = ({
         case "arrayStopAngleInput":
         case "arrayStopIntegerInput":
         case "arrayStopLengthInput":
+        case "arrayAngleInput":
+        case "arrayIntegerInput":
+        case "arrayFloatInput":
+        case "arrayPointInput":
+        case "arrayLengthInput":
+        case "arrayColorInput":
+        case "arrayBooleanInput":
             return <InputSlotPassthrough host={hostNode} source={sourceNode} />;
         case "layerOutput":
         case "pathOpOutput":
@@ -620,6 +639,13 @@ const DynamicSlot = ({
         case "arrayStopAngleOutput":
         case "arrayStopIntegerOutput":
         case "arrayStopLengthOutput":
+        case "arrayAngleOutput":
+        case "arrayIntegerOutput":
+        case "arrayFloatOutput":
+        case "arrayPointOutput":
+        case "arrayLengthOutput":
+        case "arrayColorOutput":
+        case "arrayBooleanOutput":
             return <OutputSlotPassthrough host={hostNode} source={sourceNode} />;
     }
     return null;

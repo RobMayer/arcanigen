@@ -101,6 +101,18 @@ import { StopAngleInputDefinition, StopAngleInputType } from "./nodes/interface/
 import { StopAngleOutputDefinition, StopAngleOutputType } from "./nodes/interface/outputs/stopAngleOutputNode";
 import { ArrayStopAngleInputDefinition, ArrayStopAngleInputType } from "./nodes/interface/inputs/arrayStopAngleInputNode";
 import { ArrayStopAngleOutputDefinition, ArrayStopAngleOutputType } from "./nodes/interface/outputs/arrayStopAngleOutputNode";
+import { ArrayAngleInputDefinition, ArrayAngleInputType } from "./nodes/interface/inputs/arrayAngleInputNode";
+import { ArrayAngleOutputDefinition, ArrayAngleOutputType } from "./nodes/interface/outputs/arrayAngleOutputNode";
+import { ArrayIntegerInputDefinition, ArrayIntegerInputType } from "./nodes/interface/inputs/arrayIntegerInputNode";
+import { ArrayIntegerOutputDefinition, ArrayIntegerOutputType } from "./nodes/interface/outputs/arrayIntegerOutputNode";
+import { ArrayFloatInputDefinition, ArrayFloatInputType } from "./nodes/interface/inputs/arrayFloatInputNode";
+import { ArrayFloatOutputDefinition, ArrayFloatOutputType } from "./nodes/interface/outputs/arrayFloatOutputNode";
+import { ArrayLengthInputDefinition, ArrayLengthInputType } from "./nodes/interface/inputs/arrayLengthInputNode";
+import { ArrayLengthOutputDefinition, ArrayLengthOutputType } from "./nodes/interface/outputs/arrayLengthOutputNode";
+import { ArrayColorInputDefinition, ArrayColorInputType } from "./nodes/interface/inputs/arrayColorInputNode";
+import { ArrayColorOutputDefinition, ArrayColorOutputType } from "./nodes/interface/outputs/arrayColorOutputNode";
+import { ArrayBooleanInputDefinition, ArrayBooleanInputType } from "./nodes/interface/inputs/arrayBooleanInputNode";
+import { ArrayBooleanOutputDefinition, ArrayBooleanOutputType } from "./nodes/interface/outputs/arrayBooleanOutputNode";
 import { StopIntegerInputDefinition, StopIntegerInputType } from "./nodes/interface/inputs/stopIntegerInputNode";
 import { StopIntegerOutputDefinition, StopIntegerOutputType } from "./nodes/interface/outputs/stopIntegerOutputNode";
 import { ArrayStopIntegerInputDefinition, ArrayStopIntegerInputType } from "./nodes/interface/inputs/arrayStopIntegerInputNode";
@@ -167,6 +179,12 @@ import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collec
 import { FloatStopArrayDefinition, FloatStopArrayNodeType } from "./nodes/collections/floatStopArrayNode";
 import { AngleStopArrayDefinition, AngleStopArrayNodeType } from "./nodes/collections/angleStopArrayNode";
 import { PointArrayDefinition, PointArrayNodeType } from "./nodes/collections/pointArrayNode";
+import { AngleArrayDefinition, AngleArrayNodeType } from "./nodes/collections/angleArrayNode";
+import { IntegerArrayDefinition, IntegerArrayNodeType } from "./nodes/collections/integerArrayNode";
+import { FloatArrayDefinition, FloatArrayNodeType } from "./nodes/collections/floatArrayNode";
+import { LengthArrayDefinition, LengthArrayNodeType } from "./nodes/collections/lengthArrayNode";
+import { ColorArrayDefinition, ColorArrayNodeType } from "./nodes/collections/colorArrayNode";
+import { BooleanArrayDefinition, BooleanArrayNodeType } from "./nodes/collections/booleanArrayNode";
 import { FromCrossingsDefinition, FromCrossingsNodeType } from "./nodes/collections/fromCrossingsNode";
 import { IntegerStopArrayDefinition, IntegerStopArrayNodeType } from "./nodes/collections/integerStopArrayNode";
 import { LengthStopArrayDefinition, LengthStopArrayNodeType } from "./nodes/collections/lengthStopArrayNode";
@@ -201,6 +219,8 @@ import { PathDivideDefinition, PathDivideNodeType } from "./nodes/math/pathDivid
 import { PathCombineDefinition, PathCombineNodeType } from "./nodes/collections/pathCombineNode";
 import { ContainerDefinition, ContainerNodeType } from "./nodes/meta/containerNode";
 import { PatchDefinition, PatchNodeType } from "./nodes/meta/patchNode";
+import { ArrayPointInputDefinition, ArrayPointInputType } from "./nodes/interface/inputs/arrayPointInputNode";
+import { ArrayPointOutputDefinition, ArrayPointOutputType } from "./nodes/interface/outputs/arrayPointOutputNode";
 
 export namespace Registries {
     export type NODEDEFINITIONS = {
@@ -293,6 +313,20 @@ export namespace Registries {
         stopAngleOutput: StopAngleOutputDefinition;
         arrayStopAngleInput: ArrayStopAngleInputDefinition;
         arrayStopAngleOutput: ArrayStopAngleOutputDefinition;
+        arrayAngleInput: ArrayAngleInputDefinition;
+        arrayAngleOutput: ArrayAngleOutputDefinition;
+        arrayIntegerInput: ArrayIntegerInputDefinition;
+        arrayIntegerOutput: ArrayIntegerOutputDefinition;
+        arrayFloatInput: ArrayFloatInputDefinition;
+        arrayFloatOutput: ArrayFloatOutputDefinition;
+        arrayPointInput: ArrayPointInputDefinition;
+        arrayPointOutput: ArrayPointOutputDefinition;
+        arrayLengthInput: ArrayLengthInputDefinition;
+        arrayLengthOutput: ArrayLengthOutputDefinition;
+        arrayColorInput: ArrayColorInputDefinition;
+        arrayColorOutput: ArrayColorOutputDefinition;
+        arrayBooleanInput: ArrayBooleanInputDefinition;
+        arrayBooleanOutput: ArrayBooleanOutputDefinition;
         stopIntegerInput: StopIntegerInputDefinition;
         stopIntegerOutput: StopIntegerOutputDefinition;
         arrayStopIntegerInput: ArrayStopIntegerInputDefinition;
@@ -374,6 +408,12 @@ export namespace Registries {
         floatStopArray: FloatStopArrayDefinition;
         angleStopArray: AngleStopArrayDefinition;
         pointArray: PointArrayDefinition;
+        angleArray: AngleArrayDefinition;
+        integerArray: IntegerArrayDefinition;
+        floatArray: FloatArrayDefinition;
+        lengthArray: LengthArrayDefinition;
+        colorArray: ColorArrayDefinition;
+        booleanArray: BooleanArrayDefinition;
         fromCrossings: FromCrossingsDefinition;
         integerStopArray: IntegerStopArrayDefinition;
         lengthStopArray: LengthStopArrayDefinition;
@@ -470,6 +510,12 @@ export namespace Registries {
         floatStopArray: FloatStopArrayNodeType,
         angleStopArray: AngleStopArrayNodeType,
         pointArray: PointArrayNodeType,
+        angleArray: AngleArrayNodeType,
+        integerArray: IntegerArrayNodeType,
+        floatArray: FloatArrayNodeType,
+        lengthArray: LengthArrayNodeType,
+        colorArray: ColorArrayNodeType,
+        booleanArray: BooleanArrayNodeType,
         fromCrossings: FromCrossingsNodeType,
         integerStopArray: IntegerStopArrayNodeType,
         lengthStopArray: LengthStopArrayNodeType,
@@ -545,6 +591,20 @@ export namespace Registries {
         stopAngleOutput: StopAngleOutputType,
         arrayStopAngleInput: ArrayStopAngleInputType,
         arrayStopAngleOutput: ArrayStopAngleOutputType,
+        arrayAngleInput: ArrayAngleInputType,
+        arrayAngleOutput: ArrayAngleOutputType,
+        arrayIntegerInput: ArrayIntegerInputType,
+        arrayIntegerOutput: ArrayIntegerOutputType,
+        arrayFloatInput: ArrayFloatInputType,
+        arrayFloatOutput: ArrayFloatOutputType,
+        arrayPointInput: ArrayPointInputType,
+        arrayPointOutput: ArrayPointOutputType,
+        arrayLengthInput: ArrayLengthInputType,
+        arrayLengthOutput: ArrayLengthOutputType,
+        arrayColorInput: ArrayColorInputType,
+        arrayColorOutput: ArrayColorOutputType,
+        arrayBooleanInput: ArrayBooleanInputType,
+        arrayBooleanOutput: ArrayBooleanOutputType,
         stopIntegerInput: StopIntegerInputType,
         stopIntegerOutput: StopIntegerOutputType,
         arrayStopIntegerInput: ArrayStopIntegerInputType,

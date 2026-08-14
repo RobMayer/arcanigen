@@ -312,6 +312,12 @@ export const ValuePreview = ({ value: rawValue }: { value: DataTypes.AnyEval | n
         case "array<pathOp>":
         case "point":
         case "array<point>":
+        case "array<angle>":
+        case "array<integer>":
+        case "array<float>":
+        case "array<length>":
+        case "array<color>":
+        case "array<boolean>":
         case "sequence":
         case "stop:float":
         case "array<stop:float>":
