@@ -175,6 +175,8 @@ import { ForEachDefinition, ForEachNodeType } from "./nodes/arrayOps/foreachNode
 import { MapDefinition, MapNodeType } from "./nodes/arrayOps/mapNode";
 import { FilterDefinition, FilterNodeType } from "./nodes/arrayOps/filterNode";
 import { GatherDefinition, GatherNodeType } from "./nodes/arrayOps/gatherNode";
+import { MergeArrayDefinition, MergeArrayNodeType } from "./nodes/arrayOps/mergeArrayNode";
+import { AtIndexDefinition, AtIndexNodeType } from "./nodes/arrayOps/atIndexNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
@@ -408,6 +410,8 @@ export namespace Registries {
         map: MapDefinition;
         filter: FilterDefinition;
         gather: GatherDefinition;
+        mergeArray: MergeArrayDefinition;
+        atIndex: AtIndexDefinition;
         colorIterator: ColorIteratorDefinition;
         colorStop: ColorStopBreakoutDefinition;
         colorStopArray: ColorStopArrayDefinition;
@@ -510,6 +514,8 @@ export namespace Registries {
         map: MapNodeType,
         filter: FilterNodeType,
         gather: GatherNodeType,
+        mergeArray: MergeArrayNodeType,
+        atIndex: AtIndexNodeType,
         colorIterator: ColorIteratorNodeType,
         colorStop: ColorStopNodeType,
         colorStopArray: ColorStopArrayNodeType,

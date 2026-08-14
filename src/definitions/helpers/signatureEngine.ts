@@ -174,22 +174,33 @@ export namespace SignatureEngine {
      */
     const expand = (inst: Instance, node: AnyNode): { xin: Record<string, SocketTypes.Term>; xout: Record<string, SocketTypes.Term> } => {
         const families = inst.families;
-        if (!families || families.size === 0) return { xin: inst.in, xout: inst.out };
+        const hasStar = Object.keys(inst.in).some((k) => starPrefix(k) !== null);
+        // Nothing variadic to expand (no `*` sockets) and no `$.each` families -> pass through untouched.
+        if ((!families || families.size === 0) && !hasStar) return { xin: inst.in, xout: inst.out };
 
         const memberVars: Record<string, SocketTypes.Term[]> = {};
         const xin: Record<string, SocketTypes.Term> = {};
         for (const [key, term] of Object.entries(inst.in)) {
             const prefix = starPrefix(key);
-            const fam = prefix ? familyOf(term, families) : null;
-            if (prefix && fam) {
+            if (!prefix) {
+                xin[key] = term;
+                continue;
+            }
+            const liveMembers = Object.keys(node.in as Record<string, unknown>).filter((k) => k.startsWith(prefix));
+            const fam = families ? familyOf(term, families) : null;
+            if (fam) {
+                // `$.each` family: each live member is its OWN independent var; the output folds them into a union.
                 memberVars[fam] ??= [];
-                for (const m of Object.keys(node.in as Record<string, unknown>).filter((k) => k.startsWith(prefix))) {
+                for (const m of liveMembers) {
                     const mv = SocketTypes.tvar(`${fam}@${m}`);
                     xin[m] = mv;
                     memberVars[fam].push(mv);
                 }
             } else {
-                xin[key] = term;
+                // Concrete or plain-var `*` family: every live member carries the SAME term, so a shared var
+                // (e.g. `array<T>`) narrows across all members -> they COLLAPSE to one type. This is the
+                // dynamically-sized analogue of a plain arg on fixed sockets (sigDefIdeas Rung 5.2/5.3, decision 7).
+                for (const m of liveMembers) xin[m] = term;
             }
         }
         const subst = (term: SocketTypes.Term): SocketTypes.Term => {
