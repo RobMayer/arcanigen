@@ -87,7 +87,7 @@ export const PointWedgeType: NodeTypes.Type<"pointWedge", PointWedgeDefinition> 
     type: "pointWedge",
     displayName: "Wedge (Point)",
     defaultLabel: "Wedge",
-    iconNode: <NodeIcon shape={NODE_ICONS.plusMinus} modifierIcon={NODE_ICONS.point} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.wedgeProduct} modifierIcon={NODE_ICONS.point} />,
     flavour: "help",
     category: "Math",
     evaluate,

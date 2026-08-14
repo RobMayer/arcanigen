@@ -86,7 +86,7 @@ export const PointDistanceType: NodeTypes.Type<"pointDistance", PointDistanceDef
     type: "pointDistance",
     displayName: "Distance (Point)",
     defaultLabel: "Distance",
-    iconNode: <NodeIcon shape={NODE_ICONS.range} modifierIcon={NODE_ICONS.point} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.distance} modifierIcon={NODE_ICONS.point} />,
     flavour: "help",
     category: "Math",
     evaluate,

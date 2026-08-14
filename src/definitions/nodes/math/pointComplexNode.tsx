@@ -93,7 +93,7 @@ export const PointComplexType: NodeTypes.Type<"pointComplex", PointComplexDefini
     type: "pointComplex",
     displayName: "Complex (Point)",
     defaultLabel: "Complex",
-    iconNode: <NodeIcon shape={NODE_ICONS.combine} modifierIcon={NODE_ICONS.point} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.complexProduct} modifierIcon={NODE_ICONS.point} />,
     flavour: "help",
     category: "Math",
     evaluate,

@@ -118,7 +118,7 @@ export const PointLerpType: NodeTypes.Type<"pointLerp", PointLerpDefinition> = {
     type: "pointLerp",
     displayName: "Lerp (Point)",
     defaultLabel: "Lerp",
-    iconNode: <NodeIcon shape={NODE_ICONS.route} modifierIcon={NODE_ICONS.point} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.range} modifierIcon={NODE_ICONS.point} />,
     flavour: "help",
     category: "Math",
     evaluate,

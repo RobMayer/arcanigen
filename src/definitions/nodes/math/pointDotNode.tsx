@@ -86,7 +86,7 @@ export const PointDotType: NodeTypes.Type<"pointDot", PointDotDefinition> = {
     type: "pointDot",
     displayName: "Dot (Point)",
     defaultLabel: "Dot",
-    iconNode: <NodeIcon shape={NODE_ICONS.intersection} modifierIcon={NODE_ICONS.point} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.dotProduct} modifierIcon={NODE_ICONS.point} />,
     flavour: "help",
     category: "Math",
     evaluate,

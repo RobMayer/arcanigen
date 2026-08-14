@@ -100,7 +100,7 @@ export const PointDisplaceType: NodeTypes.Type<"pointDisplace", PointDisplaceDef
     type: "pointDisplace",
     displayName: "Displace (Point)",
     defaultLabel: "Displace",
-    iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.point} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.displace} modifierIcon={NODE_ICONS.point} />,
     flavour: "help",
     category: "Math",
     evaluate,
