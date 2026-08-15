@@ -99,7 +99,7 @@ export const ForNNodeType: NodeTypes.Type<"forN", ForNDefinition> = {
     type: "forN",
     displayName: "For N",
     defaultLabel: "For N",
-    iconNode: <NodeIcon shape={NODE_ICONS.num} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.list} modifierIcon={NODE_ICONS.array} />,
     flavour: "danger",
     category: "Collection Ops",
     create,

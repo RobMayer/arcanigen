@@ -148,7 +148,7 @@ export const FilterNodeType: NodeTypes.Type<"filter", FilterDefinition> = {
     type: "filter",
     displayName: "Filter",
     defaultLabel: "Filter",
-    iconNode: <NodeIcon shape={NODE_ICONS.array} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.filter} modifierIcon={NODE_ICONS.array} />,
     flavour: "danger",
     category: "Collection Ops",
     create,

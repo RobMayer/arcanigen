@@ -108,7 +108,7 @@ export const MapNodeType: NodeTypes.Type<"map", MapDefinition> = {
     type: "map",
     displayName: "Map",
     defaultLabel: "Map",
-    iconNode: <NodeIcon shape={NODE_ICONS.merge} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.signpost} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
     category: "Collection Ops",
     create,

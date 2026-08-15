@@ -112,7 +112,7 @@ export const ForEachNodeType: NodeTypes.Type<"forEach", ForEachDefinition> = {
     type: "forEach",
     displayName: "For Each",
     defaultLabel: "For Each",
-    iconNode: <NodeIcon shape={NODE_ICONS.array} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.loop} modifierIcon={NODE_ICONS.array} />,
     flavour: "danger",
     category: "Collection Ops",
     create,

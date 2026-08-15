@@ -107,7 +107,7 @@ export const GatherNodeType: NodeTypes.Type<"gather", GatherDefinition> = {
     type: "gather",
     displayName: "Gather",
     defaultLabel: "Gather",
-    iconNode: <NodeIcon shape={NODE_ICONS.array} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.gather} modifierIcon={NODE_ICONS.array} />,
     flavour: "danger",
     category: "Collection Ops",
     create,

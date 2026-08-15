@@ -123,7 +123,7 @@ export const ShuffleArrayNodeType: NodeTypes.Type<"shuffleArray", ShuffleArrayDe
     type: "shuffleArray",
     displayName: "Shuffle Array",
     defaultLabel: "Shuffle Array",
-    iconNode: <NodeIcon shape={NODE_ICONS.array} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.random} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
     category: "Collection Ops",
     create,
