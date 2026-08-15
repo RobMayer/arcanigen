@@ -186,7 +186,7 @@ import { ArrayCountDefinition, ArrayCountNodeType } from "./nodes/arrayOps/array
 import { ReplaceDefinition, ReplaceNodeType } from "./nodes/arrayOps/replaceNode";
 import { RotateArrayDefinition, RotateArrayNodeType } from "./nodes/arrayOps/rotateArrayNode";
 import { ShuffleArrayDefinition, ShuffleArrayNodeType } from "./nodes/arrayOps/shuffleArrayNode";
-import { RangeDefinition, RangeNodeType } from "./nodes/collections/rangeNode";
+import { ForNDefinition, ForNNodeType } from "./nodes/arrayOps/forNNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
@@ -431,7 +431,7 @@ export namespace Registries {
         replace: ReplaceDefinition;
         rotateArray: RotateArrayDefinition;
         shuffleArray: ShuffleArrayDefinition;
-        range: RangeDefinition;
+        forN: ForNDefinition;
         colorIterator: ColorIteratorDefinition;
         colorStop: ColorStopBreakoutDefinition;
         colorStopArray: ColorStopArrayDefinition;
@@ -545,7 +545,7 @@ export namespace Registries {
         replace: ReplaceNodeType,
         rotateArray: RotateArrayNodeType,
         shuffleArray: ShuffleArrayNodeType,
-        range: RangeNodeType,
+        forN: ForNNodeType,
         colorIterator: ColorIteratorNodeType,
         colorStop: ColorStopNodeType,
         colorStopArray: ColorStopArrayNodeType,
