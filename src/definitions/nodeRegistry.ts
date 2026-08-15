@@ -185,6 +185,8 @@ import { SpliceDefinition, SpliceNodeType } from "./nodes/arrayOps/spliceNode";
 import { ArrayCountDefinition, ArrayCountNodeType } from "./nodes/arrayOps/arrayCountNode";
 import { ReplaceDefinition, ReplaceNodeType } from "./nodes/arrayOps/replaceNode";
 import { RotateArrayDefinition, RotateArrayNodeType } from "./nodes/arrayOps/rotateArrayNode";
+import { ShuffleArrayDefinition, ShuffleArrayNodeType } from "./nodes/arrayOps/shuffleArrayNode";
+import { RangeDefinition, RangeNodeType } from "./nodes/collections/rangeNode";
 import { ColorIteratorDefinition, ColorIteratorNodeType } from "./nodes/collections/colorIteratorNode";
 import { ColorStopBreakoutDefinition, ColorStopNodeType } from "./nodes/collections/colorStopNode";
 import { ColorStopArrayDefinition, ColorStopArrayNodeType } from "./nodes/collections/colorStopArrayNode";
@@ -428,6 +430,8 @@ export namespace Registries {
         arrayCount: ArrayCountDefinition;
         replace: ReplaceDefinition;
         rotateArray: RotateArrayDefinition;
+        shuffleArray: ShuffleArrayDefinition;
+        range: RangeDefinition;
         colorIterator: ColorIteratorDefinition;
         colorStop: ColorStopBreakoutDefinition;
         colorStopArray: ColorStopArrayDefinition;
@@ -540,6 +544,8 @@ export namespace Registries {
         arrayCount: ArrayCountNodeType,
         replace: ReplaceNodeType,
         rotateArray: RotateArrayNodeType,
+        shuffleArray: ShuffleArrayNodeType,
+        range: RangeNodeType,
         colorIterator: ColorIteratorNodeType,
         colorStop: ColorStopNodeType,
         colorStopArray: ColorStopArrayNodeType,
