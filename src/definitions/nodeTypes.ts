@@ -83,7 +83,7 @@ export namespace NodeTypes {
         category: Category;
         flavour: Flavour;
         /** Keeps the type loadable for existing saves but hides it from the Add Node drawer. */
-        deprecated?: boolean;
+        hidden?: boolean;
         /** Disables this node in the root drawer — it may only be added inside a subgraph (e.g. interface in/out nodes). */
         rootRestricted?: boolean;
         create: (input: Partial<NodeDefinitions.PayloadTypeOf<D>>, id?: string) => NodeDefinitions.BuiltNodeOf<T, D>;

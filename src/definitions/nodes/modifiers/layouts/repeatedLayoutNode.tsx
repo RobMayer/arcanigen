@@ -1,22 +1,22 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
-import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
-import { Resolver } from "../../../util/resolver";
-import { Enum } from "../../datatypes/enum";
+import { passthroughCanInterject, passthroughInterject } from "../../../helpers/nodeHelper";
+import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
+import { Resolver } from "../../../../util/resolver";
+import { Enum } from "../../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
-import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
-import { DataTypes } from "../../dataTypes";
-import { SocketTypes } from "../../socketTypes";
-import { Project } from "../../../state/project";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { NumericString } from "../../datatypes/numericString";
-import { TransformPrefab } from "../../helpers/transformPrefab";
-import { GroupShape } from "../../shapeTypes";
-import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
-import { SignatureEngine } from "../../helpers/signatureEngine";
+import { TypicalNode } from "../../../../features/nodeview/node";
+import { SocketIn, SocketOut } from "../../../../features/nodeview/slots";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { SocketTypes } from "../../../socketTypes";
+import { Project } from "../../../../state/project";
+import { IntegerInput } from "../../../../components/inputs/IntegerInput";
+import { NumericString } from "../../../datatypes/numericString";
+import { TransformPrefab } from "../../../helpers/transformPrefab";
+import { GroupShape } from "../../../shapeTypes";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
 const def = signature({
     in: {

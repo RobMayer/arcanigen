@@ -1,23 +1,23 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
-import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
+import { passthroughCanInterject, passthroughInterject } from "../../../helpers/nodeHelper";
+import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
-import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { LengthInput } from "../../../components/inputs/LengthInput";
-import { SliderInput } from "../../../components/inputs/SliderInput";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
-import { DataTypes } from "../../dataTypes";
-import { SocketTypes } from "../../socketTypes";
-import { Project } from "../../../state/project";
-import { Resolver } from "../../../util/resolver";
-import { NumericString } from "../../datatypes/numericString";
-import { Length } from "../../datatypes/length";
-import { FilterPrimitive } from "../../shapeTypes";
-import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
-import { SignatureEngine } from "../../helpers/signatureEngine";
+import { TypicalNode } from "../../../../features/nodeview/node";
+import { SocketIn, SocketOut } from "../../../../features/nodeview/slots";
+import { LengthInput } from "../../../../components/inputs/LengthInput";
+import { SliderInput } from "../../../../components/inputs/SliderInput";
+import { IntegerInput } from "../../../../components/inputs/IntegerInput";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { SocketTypes } from "../../../socketTypes";
+import { Project } from "../../../../state/project";
+import { Resolver } from "../../../../util/resolver";
+import { NumericString } from "../../../datatypes/numericString";
+import { Length } from "../../../datatypes/length";
+import { FilterPrimitive } from "../../../shapeTypes";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
 const def = signature({
     in: { input: "shape", nib: "length", seed: "integer", smudge: "float", jitter: "float" },

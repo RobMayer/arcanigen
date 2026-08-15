@@ -56,13 +56,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<MapDefiniti
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
             <hr />
             <SocketIn node={node} socketId={"result"}>
                 Result
             </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

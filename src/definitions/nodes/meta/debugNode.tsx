@@ -154,7 +154,7 @@ export const DebugNodeType: NodeTypes.Type<"debug", DebugDefinition> = {
     type: "debug",
     displayName: "Debug",
     defaultLabel: "Debug",
-    iconNode: <NodeIcon shape={NODE_ICONS.list} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.zoom} />,
     flavour: "info",
     category: "Meta",
     evaluate,

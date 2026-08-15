@@ -61,7 +61,7 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
             if (each.type === "result" || (each.type as string) === "custom") {
                 return false;
             }
-            if (each.deprecated) {
+            if (each.hidden) {
                 return false;
             }
             return true;

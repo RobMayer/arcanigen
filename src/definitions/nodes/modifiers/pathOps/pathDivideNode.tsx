@@ -1,18 +1,18 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
-import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
-import { DataTypes } from "../../dataTypes";
-import { SocketTypes } from "../../socketTypes";
+import { passthroughCanInterject, passthroughInterject } from "../../../helpers/nodeHelper";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { SocketTypes } from "../../../socketTypes";
 import { ReactNode, useCallback } from "react";
-import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketOut, SocketIn } from "../../../features/nodeview/slots";
-import { CheckBox } from "../../../components/buttons/CheckBox";
-import { Project } from "../../../state/project";
-import { Resolver } from "../../../util/resolver";
-import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
-import { PaperHelper } from "../../../util/paperHelper";
-import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
-import { SignatureEngine } from "../../helpers/signatureEngine";
+import { TypicalNode } from "../../../../features/nodeview/node";
+import { SocketOut, SocketIn } from "../../../../features/nodeview/slots";
+import { CheckBox } from "../../../../components/buttons/CheckBox";
+import { Project } from "../../../../state/project";
+import { Resolver } from "../../../../util/resolver";
+import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
+import { PaperHelper } from "../../../../util/paperHelper";
+import { signature, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
 const def = signature({
     in: { pathA: "path", pathB: "path", swap: "boolean" },

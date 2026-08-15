@@ -1,30 +1,30 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
-import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
-import { Resolver } from "../../../util/resolver";
-import { Length } from "../../datatypes/length";
-import { Angle } from "../../datatypes/angle";
-import { Enum } from "../../datatypes/enum";
+import { passthroughCanInterject, passthroughInterject } from "../../../helpers/nodeHelper";
+import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
+import { Resolver } from "../../../../util/resolver";
+import { Length } from "../../../datatypes/length";
+import { Angle } from "../../../datatypes/angle";
+import { Enum } from "../../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
-import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
-import { LengthInput } from "../../../components/inputs/LengthInput";
-import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
-import { DataTypes } from "../../dataTypes";
-import { SocketTypes } from "../../socketTypes";
-import { Project } from "../../../state/project";
-import { RadioButton } from "../../../components/buttons/RadioButton";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
-import { NumericString } from "../../datatypes/numericString";
-import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AngleInput } from "../../../components/inputs/AngleInput";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { OffsetPathShape } from "../../shapeTypes";
-import { distroInterpolator } from "../../../util/misc";
-import { GroupShape } from "../../shapeTypes";
-import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
-import { SignatureEngine } from "../../helpers/signatureEngine";
+import { TypicalNode } from "../../../../features/nodeview/node";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../../features/nodeview/slots";
+import { LengthInput } from "../../../../components/inputs/LengthInput";
+import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
+import { DataTypes } from "../../../dataTypes";
+import { SocketTypes } from "../../../socketTypes";
+import { Project } from "../../../../state/project";
+import { RadioButton } from "../../../../components/buttons/RadioButton";
+import { DecimalInput } from "../../../../components/inputs/DecimalInput";
+import { NumericString } from "../../../datatypes/numericString";
+import { CheckBox } from "../../../../components/buttons/CheckBox";
+import { AngleInput } from "../../../../components/inputs/AngleInput";
+import { IntegerInput } from "../../../../components/inputs/IntegerInput";
+import { OffsetPathShape } from "../../../shapeTypes";
+import { distroInterpolator } from "../../../../util/misc";
+import { GroupShape } from "../../../shapeTypes";
+import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
+import { SignatureEngine } from "../../../helpers/signatureEngine";
 
 const def = signature({
     in: {
