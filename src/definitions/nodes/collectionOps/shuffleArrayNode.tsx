@@ -56,16 +56,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ShuffleArra
             <SocketOut node={node} socketId={"shuffledIndices"}>
                 Shuffled Indices
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
-            <hr />
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
             <SocketIn node={node} socketId={"seed"} label={"Seed"}>
                 <IntegerInput value={node.payload.seed} onCommit={(seed) => handleUpdate({ seed })} disabled={node.in.seed !== null} />
             </SocketIn>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

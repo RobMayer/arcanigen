@@ -50,11 +50,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FromCrossin
             <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pointCount">
-                <SocketOut node={node} socketId={"pointCount"}>
-                    Point Count
-                </SocketOut>
-            </NodeAccordion>
+            <SocketOut node={node} socketId={"pointCount"}>
+                Point Count
+            </SocketOut>
         </TypicalNode>
     );
 };

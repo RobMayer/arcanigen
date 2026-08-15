@@ -65,9 +65,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<InjectDefin
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
@@ -86,6 +83,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<InjectDefin
                     options={SIDE_OPTIONS}
                 />
             </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

@@ -59,9 +59,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PluckDefini
             <SocketOut node={node} socketId={"rest"}>
                 Rest
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
             <hr />
             <SocketIn node={node} socketId={"source"}>
                 Source
@@ -69,6 +66,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PluckDefini
             <SocketIn node={node} socketId={"index"} label={"Index"}>
                 <IntegerInput value={node.payload.index} onCommit={(index) => handleUpdate({ index })} disabled={node.in.index !== null} />
             </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

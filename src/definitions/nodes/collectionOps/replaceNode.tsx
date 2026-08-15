@@ -53,10 +53,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReplaceDefi
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
-            <hr />
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
@@ -66,6 +62,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReplaceDefi
             <SocketIn node={node} socketId={"value"}>
                 Value
             </SocketIn>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

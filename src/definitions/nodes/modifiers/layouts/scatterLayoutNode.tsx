@@ -51,15 +51,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ScatterLayo
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketOut node={node} socketId={"sequence"}>
+                Sequence
+            </SocketOut>
             <SocketIn node={node} socketId={"input"}>
                 Input
             </SocketIn>
             <SocketIn node={node} socketId={"points"}>
                 Points
             </SocketIn>
-            <SocketOut node={node} socketId={"sequence"}>
-                Sequence
-            </SocketOut>
         </TypicalNode>
     );
 };

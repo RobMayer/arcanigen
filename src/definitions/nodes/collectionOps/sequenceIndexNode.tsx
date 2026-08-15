@@ -46,12 +46,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SequenceInd
             <SocketOut node={node} socketId={"index"}>
                 Index
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
             <SocketIn node={node} socketId={"sequence"}>
                 Sequence
             </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

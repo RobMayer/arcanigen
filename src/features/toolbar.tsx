@@ -10,6 +10,7 @@ import { downloadBlob, uploadFile } from "../util/fileIO";
 import { buildExportSvg } from "../util/fontEmbed";
 import { Modal } from "../components/popups/Modal";
 import { ChangeLog } from "../changelog";
+import { buildShowcaseProject } from "../util/showcaseGraph";
 
 export const Toolbar = styled(({ className }: { className?: string }) => {
     const [marqueeMode, setMarqueeMode] = Session.useMarqueeMode();
@@ -85,6 +86,11 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
         });
     }, [dpi]);
 
+    const handleShowcase = useCallback(() => {
+        if (!window.confirm("Replace the current graph with the node showcase? Unsaved work will be lost.")) return;
+        io.load(buildShowcaseProject(io.save().version));
+    }, [io]);
+
     const changelogControls = Modal.useControls();
 
     return (
@@ -93,6 +99,7 @@ export const Toolbar = styled(({ className }: { className?: string }) => {
             <ActionButton onClick={handleLoad}>Load Graph</ActionButton>
             <Sep />
             <ActionButton onClick={handleImport}>Import Custom Node</ActionButton>
+            {import.meta.env.DEV && <ActionButton onClick={handleShowcase}>Node Showcase</ActionButton>}
             <Sep />
             <ActionButton onClick={handleExportSvg}>Export SVG</ActionButton>
             <ActionButton onClick={handleExportPng}>Export PNG</ActionButton>

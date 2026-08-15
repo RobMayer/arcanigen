@@ -64,9 +64,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpliceDefin
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
@@ -85,6 +82,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpliceDefin
                     options={SIDE_OPTIONS}
                 />
             </SocketIn>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

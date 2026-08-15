@@ -72,9 +72,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SliceDefini
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
@@ -96,6 +93,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SliceDefini
             <SocketIn node={node} socketId={"end"} label={"End"}>
                 <IntegerInput value={node.payload.end} onCommit={(end) => handleUpdate({ end })} disabled={node.in.end !== null || !isEnd} />
             </SocketIn>
+            <hr />
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };

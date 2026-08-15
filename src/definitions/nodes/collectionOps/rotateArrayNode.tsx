@@ -52,16 +52,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RotateArray
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"count"}>
-                Count
-            </SocketOut>
-            <hr />
             <SocketIn node={node} socketId={"source"}>
                 Source
             </SocketIn>
             <SocketIn node={node} socketId={"by"} label={"By"}>
                 <IntegerInput value={node.payload.by} onCommit={(by) => handleUpdate({ by })} disabled={node.in.by !== null} />
             </SocketIn>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
         </TypicalNode>
     );
 };
