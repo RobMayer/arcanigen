@@ -57,11 +57,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReplaceDefi
                 Count
             </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"source"} label={"Source"} />
+            <SocketIn node={node} socketId={"source"}>
+                Source
+            </SocketIn>
             <SocketIn node={node} socketId={"index"} label={"Index"}>
                 <IntegerInput value={node.payload.index} onCommit={(index) => handleUpdate({ index })} disabled={node.in.index !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"value"} label={"Value"} />
+            <SocketIn node={node} socketId={"value"}>
+                Value
+            </SocketIn>
         </TypicalNode>
     );
 };

@@ -14,12 +14,12 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 // For N is a loop START like ForEach, but generated from a count instead of an input array -- the
-// `for (i = 0; i < n; i++)` counterpart to ForEach's `arr.forEach(...)`. It emits the same `each`/`index`/
-// `pipeline` shape so it's a drop-in for Map AND Filter (Filter summons the loop-start's `each` by senderId).
-// For a bare count loop `each == index == i`; `each` exists to satisfy the loop-start summon contract.
+// `for (i = 0; i < n; i++)` counterpart to ForEach's `arr.forEach(...)`. It emits the same `each`/`pipeline`
+// shape so it's a drop-in for Map AND Filter (Filter summons the loop-start's `each` by senderId). For a
+// bare count loop `each` IS the iteration number i -- it's surfaced to the user as "Iteration".
 const def = signature({
     in: { count: "integer" },
-    out: { each: "integer", index: "integer", pipeline: $.loopFor("integer") },
+    out: { each: "integer", pipeline: $.loopFor("integer") },
 });
 
 export type ForNDefinition = SignatureBuilder.DefinitionFrom<
@@ -34,7 +34,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ForNDefinition>>, i
     return {
         id,
         in: { count: null },
-        out: { each: [], index: [], pipeline: [] },
+        out: { each: [], pipeline: [] },
         payload: { label: "", count: "10", ...input },
         type: "forN",
     };
@@ -58,17 +58,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ForNDefinit
             </SocketIn>
             <hr />
             <SocketOut node={node} socketId={"each"}>
-                Each
-            </SocketOut>
-            <SocketOut node={node} socketId={"index"}>
-                Index
+                Iteration
             </SocketOut>
         </TypicalNode>
     );
 };
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<ForNDefinition>, outSocket: keyof ForNDefinition["outputs"], _deps: AllDeps): (keyof ForNDefinition["inputs"])[] => {
-    // `index` is a pure read of the driver-injected cursor -- no input feeds it.
     if (outSocket === "each" || outSocket === "pipeline") {
         return ["count"];
     }
@@ -90,13 +86,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<ForNDefinition>, socket: keyof F
         return { kind: "loopFor<integer>", data: { senderId: node.id, count: n } };
     }
 
-    const iter = context.cursorData[node.id] ?? 0;
-
-    if (socket === "index") {
-        return { kind: "integer", data: `${iter}` };
-    }
-
     if (socket === "each") {
+        const iter = context.cursorData[node.id] ?? 0;
         if (iter < 0 || iter >= n) return null;
         return { kind: "integer", data: `${iter}` };
     }

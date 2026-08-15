@@ -150,17 +150,7 @@ export const Socket = styled(
             return { "--socket": `--socket_${nodeId}_${socketId}_${side}` } as CSSProperties;
         }, [nodeId, socketId, side]);
 
-        return (
-            <div
-                ref={socketRef}
-                className={className}
-                style={style}
-                data-socketside={side}
-                data-sockettype={attr}
-                data-state={state}
-                title={title}
-            />
-        );
+        return <div ref={socketRef} className={className} style={style} data-socketside={side} data-sockettype={attr} data-state={state} title={title} />;
     },
 )`
     height: calc(1lh - (1lh - 1em) / 2);
@@ -213,11 +203,11 @@ export const Socket = styled(
     &[data-sockettype~="angle"],
     &[data-sockettype~="boolean"],
     &[data-sockettype~="point"],
+    &[data-sockettype~="gradient"],
     &[data-sockettype~="tokens:length"] {
         --tl: var(--flavour-accent);
         --br: var(--flavour-accent);
     }
-    &[data-sockettype~="gradient"],
     &[data-sockettype~="stop:float"],
     &[data-sockettype~="stop:color"],
     &[data-sockettype~="stop:angle"],
@@ -248,11 +238,6 @@ export const Socket = styled(
     &[data-sockettype~="any"] {
         --tl: var(--flavour-base);
         --br: var(--flavour-base);
-    }
-
-    &[data-sockettype~="color"][data-sockettype~="gradient"] {
-        --tl: var(--flavour-base);
-        --tr: var(--flavour-info);
     }
 
     background: linear-gradient(135deg, oklch(from var(--tl) calc(l * 0.5) calc(c * 0.5) h) 0 50%, oklch(from var(--br) calc(l * 0.5) calc(c * 0.5) h) 50% 100%);

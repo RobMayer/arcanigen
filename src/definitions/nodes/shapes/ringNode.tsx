@@ -192,7 +192,7 @@ const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof RingDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof RingDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RingDefinition>, outSocket: keyof RingDefinition["outputs"], _deps: AllDeps): (keyof RingDefinition["inputs"])[] => {
     if (outSocket === "path") {

@@ -249,7 +249,7 @@ const GEOMETRY_INPUTS: (keyof PolygramDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof PolygramDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof PolygramDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygramDefinition>, outSocket: keyof PolygramDefinition["outputs"], _deps: AllDeps): (keyof PolygramDefinition["inputs"])[] => {
     if (outSocket === "output") {

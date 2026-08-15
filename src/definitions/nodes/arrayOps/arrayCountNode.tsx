@@ -46,7 +46,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArrayCountD
                 <ValuePreview value={countPreview} />
             </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"source"} label={"Source"} />
+            <SocketIn node={node} socketId={"source"}>
+                Source
+            </SocketIn>
         </TypicalNode>
     );
 };

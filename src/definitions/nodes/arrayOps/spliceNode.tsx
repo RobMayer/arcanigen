@@ -67,8 +67,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpliceDefin
             <SocketOut node={node} socketId={"count"}>
                 Count
             </SocketOut>
-            <SocketIn node={node} socketId={"source"} label={"Source"} />
-            <SocketIn node={node} socketId={"insert"} label={"Insert"} />
+            <SocketIn node={node} socketId={"source"}>
+                Source
+            </SocketIn>
+            <SocketIn node={node} socketId={"insert"}>
+                Insert
+            </SocketIn>
             <SocketIn node={node} socketId={"anchor"} label={"Anchor"}>
                 <IntegerInput value={node.payload.anchor} onCommit={(anchor) => handleUpdate({ anchor })} disabled={node.in.anchor !== null} />
             </SocketIn>

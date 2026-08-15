@@ -203,7 +203,7 @@ const GEOMETRY_INPUTS: (keyof ArcDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof ArcDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof ArcDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<ArcDefinition>, outSocket: keyof ArcDefinition["outputs"], _deps: AllDeps): (keyof ArcDefinition["inputs"])[] => {
     if (outSocket === "path") {

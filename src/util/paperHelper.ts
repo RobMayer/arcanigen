@@ -296,4 +296,122 @@ export namespace PaperHelper {
             return null;
         }
     };
+
+    // ─── Sampling ────────────────────────────────────────────────────────────
+
+    // A path sampled at one arc-length offset: world-space point plus tangent heading in degrees.
+    export type Sample = { x: number; y: number; angle: number };
+
+    // How a distance-along-path is expressed: a fraction of total length plus an absolute px nudge.
+    // Same shape alongPath/pathLayout hand to the renderer's offsetPath.
+    export type Distance = { percent: number; px: number };
+
+    // The subpaths of an item with their individual arc lengths, in draw order. A plain path is a
+    // single segment; a compound path is its children. This is what lets a global offset be treated
+    // as ONE concatenated length line (subpath 1, then subpath 2, ...) — matching the DOM
+    // getPointAtLength semantics that alongPath/pathLayout render with.
+    function segmentsOf(item: paper.PathItem): { path: paper.Path; length: number }[] {
+        const paths = item instanceof paper.CompoundPath ? (item.children as paper.Path[]) : [item as paper.Path];
+        return paths.map((path) => ({ path, length: path.length }));
+    }
+
+    // Map one Distance to a Sample against the concatenated length line. Wrap/clamp mirrors
+    // resolveOffsetPath exactly so a point sampled here lands where an offsetPath shape renders.
+    function sampleSegments(segments: { path: paper.Path; length: number }[], total: number, distance: Distance, overflow: "wrap" | "clamp"): Sample | null {
+        let dist = (distance.percent / 100) * total + distance.px;
+        if (overflow === "wrap") {
+            dist = ((dist % total) + total) % total;
+        } else {
+            dist = Math.max(0, Math.min(total, dist));
+        }
+
+        let acc = 0;
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const isLast = i === segments.length - 1;
+            if (dist <= acc + seg.length || isLast) {
+                const local = Math.max(0, Math.min(seg.length, dist - acc));
+                const pt = seg.path.getPointAt(local);
+                const tan = seg.path.getTangentAt(local);
+                if (!pt || !tan) return null;
+                return { x: pt.x, y: pt.y, angle: (Math.atan2(tan.y, tan.x) * 180) / Math.PI };
+            }
+            acc += seg.length;
+        }
+        return null;
+    }
+
+    // Sample every offset against one already-imported item. Compound paths sample as one
+    // concatenated length line; a length-0 path yields an all-null array.
+    function sampleItem(item: paper.PathItem, distances: Distance[], overflow: "wrap" | "clamp"): (Sample | null)[] {
+        const segments = segmentsOf(item);
+        const total = segments.reduce((sum, s) => sum + s.length, 0);
+        if (total <= 0) return distances.map(() => null);
+        return distances.map((d) => sampleSegments(segments, total, d, overflow));
+    }
+
+    // Sample many offsets in one import (transforms baked in, so points come back in world space —
+    // like crossings/pathLength). Each entry is null if that offset couldn't be sampled.
+    export const sampleMany = (pathData: SVGPath, distances: Distance[], overflow: "wrap" | "clamp"): (Sample | null)[] => {
+        ensurePaper();
+        const item = importAny(pathData);
+        if (!item) return distances.map(() => null);
+        try {
+            const out = sampleItem(item, distances, overflow);
+            item.remove();
+            return out;
+        } catch (e) {
+            console.warn(e);
+            item.remove();
+            return distances.map(() => null);
+        }
+    };
+
+    // Single-offset convenience over sampleMany.
+    export const sampleAt = (pathData: SVGPath, distance: Distance, overflow: "wrap" | "clamp"): Sample | null => {
+        return sampleMany(pathData, [distance], overflow)[0] ?? null;
+    };
+
+    // Local-space single sample from a raw `d` (no transform baked). For the renderer's offsetPath,
+    // which applies the path's transform separately via its own <g>, so sampling must stay in the
+    // path's own coordinate space. Compound `d` (multiple subpaths) samples as one concatenated line.
+    export const sampleLocalD = (d: string, distance: Distance, overflow: "wrap" | "clamp"): Sample | null => {
+        ensurePaper();
+        const item = paper.project.importSVG(`<path d="${d}"/>`, { insert: false }) as paper.PathItem;
+        if (!item) return null;
+        try {
+            const out = sampleItem(item, [distance], overflow)[0] ?? null;
+            item.remove();
+            return out;
+        } catch (e) {
+            console.warn(e);
+            item.remove();
+            return null;
+        }
+    };
+
+    // Split a compound path into its individual subpaths, each as its own path (transforms baked into
+    // geometry on import, like crossings/pathLength). A plain path returns a single entry. Empty
+    // subpaths are dropped. Returns null only if the path fails to import.
+    export const decompound = (pathData: SVGPath): SVGPath[] | null => {
+        ensurePaper();
+        const item = importAny(pathData);
+        if (!item) return null;
+        try {
+            const children = item instanceof paper.CompoundPath ? (item.children as paper.Path[]) : [item as paper.Path];
+            const out = children
+                .filter((c) => c && c.pathData)
+                .map((c) => ({
+                    d: c.pathData,
+                    transform: "",
+                    preview: { x: c.bounds.x, y: c.bounds.y, w: c.bounds.width, h: c.bounds.height },
+                }));
+            item.remove();
+            return out;
+        } catch (e) {
+            console.warn(e);
+            item.remove();
+            return null;
+        }
+    };
 }

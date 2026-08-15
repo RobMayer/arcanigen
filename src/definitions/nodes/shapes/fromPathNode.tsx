@@ -98,7 +98,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<FromPathDef
 };
 
 const GEOMETRY_INPUTS: (keyof FromPathDefinition["inputs"])[] = ["path", "position", "rotation"];
-const STYLING_INPUTS: (keyof FromPathDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof FromPathDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<FromPathDefinition>, outSocket: keyof FromPathDefinition["outputs"], _deps: AllDeps): (keyof FromPathDefinition["inputs"])[] => {
     if (outSocket === "output") {

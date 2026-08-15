@@ -210,7 +210,7 @@ const GEOMETRY_INPUTS: (keyof PolygonDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof PolygonDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof PolygonDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonDefinition>, outSocket: keyof PolygonDefinition["outputs"], _deps: AllDeps): (keyof PolygonDefinition["inputs"])[] => {
     if (outSocket === "output") {

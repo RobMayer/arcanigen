@@ -166,7 +166,7 @@ const GEOMETRY_INPUTS: (keyof RectangleDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof RectangleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof RectangleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RectangleDefinition>, outSocket: keyof RectangleDefinition["outputs"], _deps: AllDeps): (keyof RectangleDefinition["inputs"])[] => {
     if (outSocket === "path") {

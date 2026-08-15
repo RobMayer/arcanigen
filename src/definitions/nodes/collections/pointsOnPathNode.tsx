@@ -1,9 +1,7 @@
 import { nanoid } from "nanoid";
-import { passthroughCanInterject, passthroughInterject } from "../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { Length } from "../../datatypes/length";
-import { Angle } from "../../datatypes/angle";
 import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
@@ -12,23 +10,19 @@ import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/s
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
-import { SocketTypes } from "../../socketTypes";
 import { Project } from "../../../state/project";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { NumericString } from "../../datatypes/numericString";
 import { CheckBox } from "../../../components/buttons/CheckBox";
-import { AngleInput } from "../../../components/inputs/AngleInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { OffsetPathShape } from "../../shapeTypes";
 import { distroInterpolator } from "../../../util/misc";
-import { GroupShape } from "../../shapeTypes";
+import { PaperHelper } from "../../../util/paperHelper";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     in: {
-        input: "shape",
         path: "path",
         count: "integer",
         spacingMode: "enum",
@@ -43,13 +37,11 @@ const def = signature({
         pointDistro: "distribution",
         skipFirst: "boolean",
         skipLast: "boolean",
-        memberAlign: "boolean",
-        memberRotation: "angle",
     },
-    out: { output: "shape", sequence: "sequence" },
+    out: { points: $.arrayOf("point"), angles: $.arrayOf("angle"), pointCount: "integer" },
 });
 
-export type PathLayoutDefinition = SignatureBuilder.DefinitionFrom<
+export type PointsOnPathDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
@@ -65,8 +57,6 @@ export type PathLayoutDefinition = SignatureBuilder.DefinitionFrom<
         padEnd: DataTypes.TypeOf<DataTypes.Length>;
         skipFirst: boolean;
         skipLast: boolean;
-        memberAlign: boolean;
-        memberRotation: DataTypes.TypeOf<DataTypes.Angle>;
     }
 >;
 
@@ -75,11 +65,10 @@ const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
 const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathLayout", PathLayoutDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PointsOnPathDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pointsOnPath", PointsOnPathDefinition> => {
     return {
         id,
         in: {
-            input: null,
             path: null,
             count: null,
             spacingMode: null,
@@ -94,12 +83,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinitio
             pointDistro: null,
             skipFirst: null,
             skipLast: null,
-            memberAlign: null,
-            memberRotation: null,
         },
         out: {
-            output: [],
-            sequence: [],
+            points: [],
+            angles: [],
+            pointCount: [],
         },
         payload: {
             label: "",
@@ -115,17 +103,15 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinitio
             padEnd: "0px",
             skipFirst: false,
             skipLast: false,
-            memberAlign: true,
-            memberRotation: "0deg",
             ...input,
         },
-        type: "pathLayout",
+        type: "pointsOnPath",
     };
 };
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PointsOnPathDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<PointsOnPathDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -139,18 +125,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
+            <SocketOut node={node} socketId={"points"}>
+                Points
             </SocketOut>
-            <SocketOut node={node} socketId={"sequence"}>
-                Sequence
+            <SocketOut node={node} socketId={"angles"}>
+                Angles
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
             <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pointCount">
+                <SocketOut node={node} socketId={"pointCount"}>
+                    Point Count
+                </SocketOut>
+            </NodeAccordion>
             <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>
@@ -166,15 +154,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
             <SocketIn node={node} socketId={"spacing"} label={"Spacing"}>
                 <LengthInput value={node.payload.spacing} onCommit={(spacing) => handleUpdate({ spacing })} disabled={node.in.spacing !== null || !isFixedSpacing} min={"0px"} required />
             </SocketIn>
-            <NodeAccordion label={"More"} nodeId={node.id} socketsIn={"memberAlign|memberRotation|skipFirst|skipList"}>
-                <SocketIn node={node} socketId={"memberAlign"}>
-                    <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
-                        Align to Path
-                    </CheckBox>
-                </SocketIn>
-                <SocketIn node={node} socketId={"memberRotation"} label={"Member Rotation"}>
-                    <AngleInput.SliderInput value={node.payload.memberRotation} onCommit={(memberRotation) => handleUpdate({ memberRotation })} disabled={node.in.memberRotation !== null} />
-                </SocketIn>
+            <NodeAccordion label={"More"} nodeId={node.id} socketsIn={"pointDistro|skipFirst|skipLast"}>
                 <SocketIn node={node} socketId={"pointDistro"}>
                     Distribution
                 </SocketIn>
@@ -245,8 +225,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
     );
 };
 
-const ALL_INPUTS: (keyof PathLayoutDefinition["inputs"])[] = [
-    "input",
+const ALL_INPUTS: (keyof PointsOnPathDefinition["inputs"])[] = [
     "path",
     "count",
     "spacingMode",
@@ -261,45 +240,30 @@ const ALL_INPUTS: (keyof PathLayoutDefinition["inputs"])[] = [
     "pointDistro",
     "skipFirst",
     "skipLast",
-    "memberAlign",
-    "memberRotation",
 ];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<PathLayoutDefinition>, outSocket: keyof PathLayoutDefinition["outputs"], _deps: AllDeps): (keyof PathLayoutDefinition["inputs"])[] => {
-    if (outSocket === "output") {
-        return ALL_INPUTS;
-    }
-    if (outSocket === "sequence") {
-        return ["count"];
-    }
-    return [];
+const dependsOn = (_node: NodeDefinitions.NodeFor<PointsOnPathDefinition>, _outSocket: keyof PointsOnPathDefinition["outputs"], _deps: AllDeps): (keyof PointsOnPathDefinition["inputs"])[] => {
+    return ALL_INPUTS;
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<PathLayoutDefinition>, inSocket: keyof PathLayoutDefinition["inputs"], _deps: AllDeps): (keyof PathLayoutDefinition["outputs"])[] => {
-    if (inSocket === "count") {
-        return ["output", "sequence"];
-    }
-    return ["output"];
+const contributesTo = (_node: NodeDefinitions.NodeFor<PointsOnPathDefinition>, _inSocket: keyof PointsOnPathDefinition["inputs"], _deps: AllDeps): (keyof PointsOnPathDefinition["outputs"])[] => {
+    return ["points", "angles", "pointCount"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: keyof PathLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
-    const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
-    if (!isFinite(count)) return null;
-
-    if (socket === "sequence") {
-        return { kind: "sequence", data: { senderId: node.id, count } };
-    }
-
-    if (socket !== "output") return null;
+// Sample the path at every layout position. points[i] and angles[i] stay index-aligned: a position
+// that fails to sample (or is skipped) drops from both. Distance math is pathLayout's, verbatim.
+const resolveSamples = (node: NodeDefinitions.NodeFor<PointsOnPathDefinition>, context: Resolver.Context): { points: { x: number; y: number }[]; angles: string[] } => {
+    const empty = { points: [], angles: [] };
 
     const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
-    if (!pathData) return null;
+    if (!pathData) return empty;
+
+    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
+    const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
+    if (!isFinite(count)) return empty;
 
     const spacingModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode;
     const overflowModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
-    const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
-    const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
     const skipFirst = context.resolve<DataTypes.Boolean>(node.id, "skipFirst")?.data ?? node.payload.skipFirst;
     const skipLast = context.resolve<DataTypes.Boolean>(node.id, "skipLast")?.data ?? node.payload.skipLast;
 
@@ -319,8 +283,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         offset = { percent: originPct, px: lenNum };
     }
 
-    // Distribution (only for Even mode)
-    const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+    const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? {
+        func: Enum.Common.distroFunctions.LINEAR.value,
+        easing: Enum.Common.distroEasing.IN.value,
+        intensity: "1",
+    };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
@@ -330,18 +297,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
     const spacingNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
 
     const overflow: "clamp" | "wrap" = overflowModeEnum === Enum.Common.overflowMode.WRAP.value ? "wrap" : "clamp";
-    const rotate = { auto: memberAlign, degrees: memberRotation };
 
-    const children: OffsetPathShape[] = [];
+    const distances: PaperHelper.Distance[] = [];
     for (let i = 0; i < count; i++) {
         if (skipFirst && i === 0) continue;
         if (skipLast && i === count - 1) continue;
 
-        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
-        if (shape === null) continue;
-
         let spacing: { percent: number; px: number };
-
         if (spacingModeEnum === Enum.Common.spacingMode.SPACE_BETWEEN.value) {
             const segments = count - 1;
             const t = segments > 0 ? distroLerper(i / segments) : 0.5;
@@ -361,43 +323,45 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
             const delta = (i - (count - 1) / 2) * spacingNum;
             spacing = { percent: 50, px: (padStartNum - padEndNum) / 2 + delta };
         } else {
-            // FixedEnd
             spacing = { percent: 100, px: -(padEndNum + (count - 1 - i) * spacingNum) };
         }
 
-        const distance = { percent: spacing.percent + offset.percent, px: spacing.px + offset.px };
-
-        children.push({
-            type: "offsetPath",
-            shape,
-            path: {
-                d: pathData.d,
-                distance,
-                overflow,
-                rotate,
-            },
-            transform: pathData.transform ?? "",
-            preview: pathData.preview,
-        });
+        distances.push({ percent: spacing.percent + offset.percent, px: spacing.px + offset.px });
     }
 
-    const group: GroupShape = {
-        type: "group",
-        children,
-        transform: "",
-        preview: pathData.preview,
-    };
-
-    return { kind: "shape", data: group };
+    const samples = PaperHelper.sampleMany(pathData, distances, overflow);
+    const points: { x: number; y: number }[] = [];
+    const angles: string[] = [];
+    for (const s of samples) {
+        if (!s) continue;
+        points.push({ x: s.x, y: s.y });
+        angles.push(`${s.angle}deg`);
+    }
+    return { points, angles };
 };
 
-export const PathLayoutNodeType: NodeTypes.Type<"pathLayout", PathLayoutDefinition> = {
-    type: "pathLayout",
-    displayName: "Path Layout",
-    defaultLabel: "Path Layout",
-    iconNode: <NodeIcon shape={NODE_ICONS.path} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
-    flavour: "emphasis",
-    category: "Modifiers",
+const evaluate = (node: NodeDefinitions.NodeFor<PointsOnPathDefinition>, socket: keyof PointsOnPathDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const { points, angles } = resolveSamples(node, context);
+
+    if (socket === "points") {
+        return { kind: "array<point>", data: points };
+    }
+    if (socket === "angles") {
+        return { kind: "array<angle>", data: angles };
+    }
+    if (socket === "pointCount") {
+        return { kind: "integer", data: `${points.length}` };
+    }
+    return null;
+};
+
+export const PointsOnPathNodeType: NodeTypes.Type<"pointsOnPath", PointsOnPathDefinition> = {
+    type: "pointsOnPath",
+    displayName: "Points on Path",
+    defaultLabel: "Points on Path",
+    iconNode: <NodeIcon shape={NODE_ICONS.sequence} modifierIcon={NODE_ICONS.point} />,
+    flavour: "danger",
+    category: "Values",
     create,
     dependsOn,
     contributesTo,
@@ -405,6 +369,4 @@ export const PathLayoutNodeType: NodeTypes.Type<"pathLayout", PathLayoutDefiniti
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
-    canInterject: passthroughCanInterject(SocketTypes.of(DataTypes.SHAPE), SocketTypes.of(DataTypes.SHAPE)),
-    onInterject: passthroughInterject("input", "output"),
 };

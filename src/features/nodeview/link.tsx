@@ -298,6 +298,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="angle"],
     &[data-linktype~="boolean"],
     &[data-linktype~="point"],
+    &[data-linktype~="gradient"],
     &[data-linktype~="tokens:length"] {
         --flavour: var(--flavour-accent);
     }
@@ -305,7 +306,6 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="pathOp"] {
         --flavour: var(--flavour-emphasis);
     }
-    &[data-linktype~="gradient"],
     &[data-linktype~="stop:float"],
     &[data-linktype~="stop:color"],
     &[data-linktype~="stop:angle"],

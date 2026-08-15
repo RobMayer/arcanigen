@@ -366,7 +366,7 @@ const GEOMETRY_INPUTS: (keyof PolyringDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof PolyringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof PolyringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolyringDefinition>, outSocket: keyof PolyringDefinition["outputs"], _deps: AllDeps): (keyof PolyringDefinition["inputs"])[] => {
     if (outSocket === "output") {
@@ -559,11 +559,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
         const innerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerCornerRadius")?.data ?? node.payload.innerCornerRadius, "0px")) ?? 0;
         const innerCornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "innerCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.innerCornerShape ?? 0;
 
-        // Markers
         const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        // Distribution
         const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),

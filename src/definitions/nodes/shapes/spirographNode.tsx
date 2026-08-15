@@ -272,7 +272,7 @@ const GEOMETRY_INPUTS: (keyof SpirographDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof SpirographDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof SpirographDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpirographDefinition>, outSocket: keyof SpirographDefinition["outputs"], _deps: AllDeps): (keyof SpirographDefinition["inputs"])[] => {
     if (outSocket === "eCircumradius" || outSocket === "eApothem") {

@@ -104,7 +104,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<CircleDefin
 };
 
 const GEOMETRY_INPUTS: (keyof CircleDefinition["inputs"])[] = ["radius", "position", "rotation"];
-const STYLING_INPUTS: (keyof CircleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof CircleDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<CircleDefinition>, outSocket: keyof CircleDefinition["outputs"], _deps: AllDeps): (keyof CircleDefinition["inputs"])[] => {
     if (outSocket === "path") {

@@ -75,7 +75,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SliceDefini
             <SocketOut node={node} socketId={"count"}>
                 Count
             </SocketOut>
-            <SocketIn node={node} socketId={"source"} label={"Source"} />
+            <SocketIn node={node} socketId={"source"}>
+                Source
+            </SocketIn>
             <SocketIn node={node} socketId={"startIndex"} label={"Start Index"}>
                 <IntegerInput value={node.payload.startIndex} onCommit={(startIndex) => handleUpdate({ startIndex })} disabled={node.in.startIndex !== null} />
             </SocketIn>

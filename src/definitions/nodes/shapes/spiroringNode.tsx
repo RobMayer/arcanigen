@@ -304,7 +304,7 @@ const GEOMETRY_INPUTS: (keyof SpiroringDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof SpiroringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof SpiroringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpiroringDefinition>, outSocket: keyof SpiroringDefinition["outputs"], _deps: AllDeps): (keyof SpiroringDefinition["inputs"])[] => {
     if (RADIUS_OUTPUTS.includes(outSocket)) {

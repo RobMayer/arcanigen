@@ -275,7 +275,7 @@ const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
+const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
     if (outSocket === "path") {

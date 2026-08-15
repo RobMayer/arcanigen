@@ -236,7 +236,7 @@ const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
+const STYLING_INPUTS: (keyof SpiralDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpiralDefinition>, outSocket: keyof SpiralDefinition["outputs"], _deps: AllDeps): (keyof SpiralDefinition["inputs"])[] => {
     if (outSocket === "path") {

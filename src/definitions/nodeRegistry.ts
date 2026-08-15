@@ -46,6 +46,7 @@ import { LerpDefinition, LerpType } from "./nodes/math/lerpNode";
 import { PowDefinition, PowType } from "./nodes/math/powNode";
 import { RootDefinition, RootType } from "./nodes/math/rootNode";
 import { PolygonDefinition, PolygonNodeType } from "./nodes/shapes/polygonNode";
+import { PolylineDefinition, PolylineNodeType } from "./nodes/shapes/polylineNode";
 import { LayerComposeDefinition, LayerComposeNodeType } from "./nodes/collections/layerComposeNode";
 import { PathOpComposeDefinition, PathOpComposeNodeType } from "./nodes/collections/pathOpComposeNode";
 import { TokenizerLengthDefinition, TokenizerLengthNodeType } from "./nodes/collections/tokenizerLengthNode";
@@ -200,6 +201,9 @@ import { LengthArrayDefinition, LengthArrayNodeType } from "./nodes/collections/
 import { ColorArrayDefinition, ColorArrayNodeType } from "./nodes/collections/colorArrayNode";
 import { BooleanArrayDefinition, BooleanArrayNodeType } from "./nodes/collections/booleanArrayNode";
 import { FromCrossingsDefinition, FromCrossingsNodeType } from "./nodes/collections/fromCrossingsNode";
+import { PointOnPathDefinition, PointOnPathNodeType } from "./nodes/collections/pointOnPathNode";
+import { PointsOnPathDefinition, PointsOnPathNodeType } from "./nodes/collections/pointsOnPathNode";
+import { DecompoundPathDefinition, DecompoundPathNodeType } from "./nodes/collections/decompoundPathNode";
 import { IntegerStopArrayDefinition, IntegerStopArrayNodeType } from "./nodes/collections/integerStopArrayNode";
 import { LengthStopArrayDefinition, LengthStopArrayNodeType } from "./nodes/collections/lengthStopArrayNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/collections/restyleNode";
@@ -243,6 +247,7 @@ export namespace Registries {
 
         circle: CircleDefinition;
         polygon: PolygonDefinition;
+        polyline: PolylineDefinition;
         polygram: PolygramDefinition;
         ring: RingDefinition;
         rectangle: RectangleDefinition;
@@ -445,6 +450,9 @@ export namespace Registries {
         colorArray: ColorArrayDefinition;
         booleanArray: BooleanArrayDefinition;
         fromCrossings: FromCrossingsDefinition;
+        pointOnPath: PointOnPathDefinition;
+        pointsOnPath: PointsOnPathDefinition;
+        decompoundPath: DecompoundPathDefinition;
         integerStopArray: IntegerStopArrayDefinition;
         lengthStopArray: LengthStopArrayDefinition;
         floatIterator: FloatIteratorDefinition;
@@ -498,6 +506,7 @@ export namespace Registries {
         result: ResultNodeType,
         circle: CircleNodeType,
         polygon: PolygonNodeType,
+        polyline: PolylineNodeType,
         polygram: PolygramNodeType,
         ring: RingNodeType,
         polyring: PolyringNodeType,
@@ -559,6 +568,9 @@ export namespace Registries {
         colorArray: ColorArrayNodeType,
         booleanArray: BooleanArrayNodeType,
         fromCrossings: FromCrossingsNodeType,
+        pointOnPath: PointOnPathNodeType,
+        pointsOnPath: PointsOnPathNodeType,
+        decompoundPath: DecompoundPathNodeType,
         integerStopArray: IntegerStopArrayNodeType,
         lengthStopArray: LengthStopArrayNodeType,
         floatIterator: FloatIteratorNodeType,

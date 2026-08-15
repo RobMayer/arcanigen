@@ -144,7 +144,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TextPathDef
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"path"} label={"Path"} />
+            <SocketIn node={node} socketId={"path"}>
+                Path
+            </SocketIn>
             <SocketIn node={node} socketId={"text"} label={"Text"}>
                 <BlockInput.WithModal value={node.payload.text} onCommit={(text) => handleUpdate({ text })} disabled={node.in.text !== null} title={"Edit Text"} />
             </SocketIn>

@@ -1,4 +1,5 @@
 import { createElement, CSSProperties, ReactNode, useId, useMemo } from "react";
+import { PaperHelper } from "../util/paperHelper";
 import {
     Shape,
     Paint,
@@ -357,27 +358,18 @@ const GroupElement = ({ shape }: { shape: GroupShape }) => {
 // ─── Offset Path ─────────────────────────────────────────────────────────────
 
 const resolveOffsetPath = (def: OffsetPathShape["path"]): string => {
-    const tempPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    tempPath.setAttribute("d", def.d);
-    const totalLength = tempPath.getTotalLength();
-
-    let dist = (def.distance.percent / 100) * totalLength + def.distance.px;
-    if (def.overflow === "wrap") {
-        dist = ((dist % totalLength) + totalLength) % totalLength;
-    } else {
-        dist = Math.max(0, Math.min(totalLength, dist));
-    }
-
-    const pt = tempPath.getPointAtLength(dist);
+    // Sample in the path's own coordinate space (transform is applied by the outer <g> below). Shares
+    // the sampler the point-on-path data nodes use, so a shape placed here and a point emitted there
+    // land in the same spot.
+    const sample = PaperHelper.sampleLocalD(def.d, def.distance, def.overflow);
+    if (!sample) return "";
 
     let angle = def.rotate.degrees;
     if (def.rotate.auto) {
-        const epsilon = Math.min(0.1, totalLength * 0.001);
-        const pt2 = tempPath.getPointAtLength(Math.min(dist + epsilon, totalLength));
-        angle += Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * (180 / Math.PI);
+        angle += sample.angle;
     }
 
-    return `translate(${pt.x}, ${pt.y}) rotate(${angle})`;
+    return `translate(${sample.x}, ${sample.y}) rotate(${angle})`;
 };
 
 const OffsetPathElement = ({ shape }: { shape: OffsetPathShape }) => {

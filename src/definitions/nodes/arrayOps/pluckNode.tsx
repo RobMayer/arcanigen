@@ -56,10 +56,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PluckDefini
             <SocketOut node={node} socketId={"entry"} label={"Entry"}>
                 <ValuePreview value={entryPreview} />
             </SocketOut>
-            <SocketOut node={node} socketId={"rest"} label={"Rest"} />
-            <SocketOut node={node} socketId={"count"} label={"Count"} />
+            <SocketOut node={node} socketId={"rest"}>
+                Rest
+            </SocketOut>
+            <SocketOut node={node} socketId={"count"}>
+                Count
+            </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"source"} label={"Source"} />
+            <SocketIn node={node} socketId={"source"}>
+                Source
+            </SocketIn>
             <SocketIn node={node} socketId={"index"} label={"Index"}>
                 <IntegerInput value={node.payload.index} onCommit={(index) => handleUpdate({ index })} disabled={node.in.index !== null} />
             </SocketIn>

@@ -56,7 +56,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RotateArray
                 Count
             </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"source"} label={"Source"} />
+            <SocketIn node={node} socketId={"source"}>
+                Source
+            </SocketIn>
             <SocketIn node={node} socketId={"by"} label={"By"}>
                 <IntegerInput value={node.payload.by} onCommit={(by) => handleUpdate({ by })} disabled={node.in.by !== null} />
             </SocketIn>

@@ -87,7 +87,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>, 
     };
 };
 
-const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<LineDefinition>>) => {
             methods.update(v);
@@ -107,17 +107,13 @@ const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefiniti
                 Path
             </SocketOut>
 
-            <NodeAccordion label={"Start Point"} socketsIn={"startPoint"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"startPoint"} label={"Point"}>
-                    <PointInput value={node.payload.start} onChange={(v) => handleUpdate({ start: { ...node.payload.start, ...v } })} disabled={startConnected} />
-                </SocketIn>
-            </NodeAccordion>
+            <SocketIn node={node} socketId={"startPoint"} label={"Start Point"}>
+                <PointInput value={node.payload.start} onChange={(v) => handleUpdate({ start: { ...node.payload.start, ...v } })} disabled={startConnected} />
+            </SocketIn>
 
-            <NodeAccordion label={"End Point"} socketsIn={"endPoint"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"endPoint"} label={"Point"}>
-                    <PointInput value={node.payload.end} onChange={(v) => handleUpdate({ end: { ...node.payload.end, ...v } })} disabled={endConnected} />
-                </SocketIn>
-            </NodeAccordion>
+            <SocketIn node={node} socketId={"endPoint"} label={"End Point"}>
+                <PointInput value={node.payload.end} onChange={(v) => handleUpdate({ end: { ...node.payload.end, ...v } })} disabled={endConnected} />
+            </SocketIn>
 
             <NodeAccordion label={"Markers"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"markerStartShape"}>
@@ -139,16 +135,8 @@ const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<LineDefiniti
     );
 };
 
-const GEOMETRY_INPUTS: (keyof LineDefinition["inputs"])[] = [
-    "startPoint",
-    "endPoint",
-    "markerStartShape",
-    "markerEndShape",
-    "markerAlign",
-    "position",
-    "rotation",
-];
-const STYLING_INPUTS: (keyof LineDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder"];
+const GEOMETRY_INPUTS: (keyof LineDefinition["inputs"])[] = ["startPoint", "endPoint", "markerStartShape", "markerEndShape", "markerAlign", "position", "rotation"];
+const STYLING_INPUTS: (keyof LineDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<LineDefinition>, outSocket: keyof LineDefinition["outputs"], _deps: AllDeps): (keyof LineDefinition["inputs"])[] => {
     if (outSocket === "path") {

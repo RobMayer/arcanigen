@@ -159,7 +159,7 @@ const GEOMETRY_INPUTS: (keyof GlyphDefinition["inputs"])[] = [
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof GlyphDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder"];
+const STYLING_INPUTS: (keyof GlyphDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<GlyphDefinition>, outSocket: keyof GlyphDefinition["outputs"], _deps: AllDeps): (keyof GlyphDefinition["inputs"])[] => {
     if (outSocket === "path") {
