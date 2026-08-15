@@ -55,7 +55,7 @@ export const SubgraphEditorProvider = ({ children }: { children: ReactNode }) =>
 };
 
 /** Categories a custom node may be filed under (the hidden Result bucket is excluded). */
-const ASSIGNABLE_CATEGORIES: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math", "Inputs", "Outputs"];
+const ASSIGNABLE_CATEGORIES: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Collection Ops", "Meta", "Math", "Inputs", "Outputs"];
 
 const SubgraphEditorInner = ({ graphId }: { graphId: string }) => {
     const subgraphMethods = Project.useSubgraphMethods();

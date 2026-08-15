@@ -442,7 +442,7 @@ export const FloatIteratorNodeType: NodeTypes.Type<"floatIterator", FloatIterato
     defaultLabel: "Float Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.loop} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

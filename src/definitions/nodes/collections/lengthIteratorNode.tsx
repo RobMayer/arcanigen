@@ -451,7 +451,7 @@ export const LengthIteratorNodeType: NodeTypes.Type<"lengthIterator", LengthIter
     defaultLabel: "Length Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.loop} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

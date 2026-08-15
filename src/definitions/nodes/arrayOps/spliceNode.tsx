@@ -136,7 +136,7 @@ export const SpliceNodeType: NodeTypes.Type<"splice", SpliceDefinition> = {
     defaultLabel: "Splice",
     iconNode: <NodeIcon shape={NODE_ICONS.merge} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

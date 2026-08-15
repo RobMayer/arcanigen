@@ -125,7 +125,7 @@ export const IntegerStopNodeType: NodeTypes.Type<"integerStop", IntegerStopBreak
     displayName: "Integer Stop",
     defaultLabel: "Integer Stop",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

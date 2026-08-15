@@ -87,7 +87,7 @@ export const PathIntersectNodeType: NodeTypes.Type<"pathIntersect", PathIntersec
     displayName: "Path Intersect",
     defaultLabel: "Path Intersect",
     iconNode: <NodeIcon shape={NODE_ICONS.pathIntersect} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

@@ -305,7 +305,7 @@ export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", Tokenize
     displayName: "Tokenzer (Length)",
     defaultLabel: "Tokenzer (Length)",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.tokenizerFor} />,
-    flavour: "danger",
+    flavour: "help",
     category: "Math",
     create,
     dependsOn,

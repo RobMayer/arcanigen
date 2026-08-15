@@ -124,7 +124,7 @@ export const ClipNodeType: NodeTypes.Type<"clip", ClipDefinition> = {
     displayName: "Clip",
     defaultLabel: "Clip",
     iconNode: <NodeIcon shape={NODE_ICONS.clip} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

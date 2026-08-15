@@ -136,7 +136,7 @@ export const InjectNodeType: NodeTypes.Type<"inject", InjectDefinition> = {
     defaultLabel: "Inject",
     iconNode: <NodeIcon shape={NODE_ICONS.plus} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

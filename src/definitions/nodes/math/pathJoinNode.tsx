@@ -85,7 +85,7 @@ export const PathJoinNodeType: NodeTypes.Type<"pathJoin", PathJoinDefinition> = 
     displayName: "Path Join",
     defaultLabel: "Path Join",
     iconNode: <NodeIcon shape={NODE_ICONS.pathJoin} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

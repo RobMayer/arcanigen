@@ -109,7 +109,7 @@ export const PluckNodeType: NodeTypes.Type<"pluck", PluckDefinition> = {
     defaultLabel: "Pluck",
     iconNode: <NodeIcon shape={NODE_ICONS.subtract} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

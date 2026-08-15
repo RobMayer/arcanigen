@@ -78,7 +78,7 @@ export const ReverseNodeType: NodeTypes.Type<"reverse", ReverseDefinition> = {
     defaultLabel: "Reverse",
     iconNode: <NodeIcon shape={ICONS.Media.FastBackward} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

@@ -338,7 +338,7 @@ export const LengthArrayNodeType: NodeTypes.Type<"lengthArray", LengthArrayDefin
     displayName: "Length Array",
     defaultLabel: "Length Array",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

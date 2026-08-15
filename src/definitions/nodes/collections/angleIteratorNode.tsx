@@ -487,7 +487,7 @@ export const AngleIteratorNodeType: NodeTypes.Type<"angleIterator", AngleIterato
     defaultLabel: "Angle Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.loop} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

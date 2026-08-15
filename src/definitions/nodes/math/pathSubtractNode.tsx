@@ -104,7 +104,7 @@ export const PathSubtractNodeType: NodeTypes.Type<"pathSubtract", PathSubtractDe
     displayName: "Path Subtract",
     defaultLabel: "Path Subtract",
     iconNode: <NodeIcon shape={NODE_ICONS.pathSubtract} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

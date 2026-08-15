@@ -104,7 +104,7 @@ export const RotateArrayNodeType: NodeTypes.Type<"rotateArray", RotateArrayDefin
     defaultLabel: "Rotate Array",
     iconNode: <NodeIcon shape={NODE_ICONS.rotate} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

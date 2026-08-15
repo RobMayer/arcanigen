@@ -108,7 +108,7 @@ export const ReplaceNodeType: NodeTypes.Type<"replace", ReplaceDefinition> = {
     defaultLabel: "Replace",
     iconNode: <NodeIcon shape={NODE_ICONS.replace} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

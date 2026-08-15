@@ -130,7 +130,7 @@ export const ScatterLayoutNodeType: NodeTypes.Type<"scatterLayout", ScatterLayou
     displayName: "Scatter Layout",
     defaultLabel: "Scatter Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.point} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

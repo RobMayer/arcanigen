@@ -338,7 +338,7 @@ export const FloatArrayNodeType: NodeTypes.Type<"floatArray", FloatArrayDefiniti
     displayName: "Float Array",
     defaultLabel: "Float Array",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

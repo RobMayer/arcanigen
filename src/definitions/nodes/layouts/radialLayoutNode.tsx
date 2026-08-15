@@ -303,7 +303,7 @@ export const RadialLayoutNodeType: NodeTypes.Type<"radialLayout", RadialLayoutDe
     displayName: "Radial Layout",
     defaultLabel: "Radial Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

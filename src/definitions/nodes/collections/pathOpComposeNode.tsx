@@ -114,7 +114,7 @@ export const PathOpComposeNodeType: NodeTypes.Type<"pathOpCompose", PathOpCompos
     displayName: "Compose Path Op",
     defaultLabel: "Compose Path Op",
     iconNode: <NodeIcon shape={NODE_ICONS.combine} modifierIcon={NODE_ICONS.modifiers.joinOf} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

@@ -738,5 +738,5 @@ export namespace Registries {
 
     // Categories are decoupled from colour: a node's colour comes from its own `flavour`.
     // This is just the set of category names (Custom is the transient subgraph bucket).
-    export const NODE_CATEGORIES = ["Result", "Outputs", "Inputs", "Logic", "Math", "Values", "Modifiers", "Shapes", "Meta", "Custom"] as const;
+    export const NODE_CATEGORIES = ["Result", "Outputs", "Inputs", "Logic", "Collection Ops", "Math", "Values", "Modifiers", "Shapes", "Meta", "Custom"] as const;
 }

@@ -372,7 +372,7 @@ export const ContainerNodeType: NodeTypes.Type<"container", ContainerDefinition>
     displayName: "Container",
     defaultLabel: "Container",
     iconNode: <NodeIcon shape={NODE_ICONS.group} />,
-    flavour: "emphasis",
+    flavour: "info",
     category: "Meta",
     evaluate,
     Controls,

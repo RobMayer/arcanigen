@@ -373,7 +373,7 @@ export const PointArrayNodeType: NodeTypes.Type<"pointArray", PointArrayDefiniti
     displayName: "Point Array",
     defaultLabel: "Point Array",
     iconNode: <NodeIcon shape={NODE_ICONS.point} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

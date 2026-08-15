@@ -125,7 +125,7 @@ export const AngleStopNodeType: NodeTypes.Type<"angleStop", AngleStopBreakoutDef
     displayName: "Angle Stop",
     defaultLabel: "Angle Stop",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

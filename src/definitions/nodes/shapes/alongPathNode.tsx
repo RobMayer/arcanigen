@@ -221,7 +221,7 @@ export const AlongPathNodeType: NodeTypes.Type<"alongPath", AlongPathDefinition>
     displayName: "Along Path",
     defaultLabel: "Along Path",
     iconNode: <NodeIcon shape={NODE_ICONS.sequence} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

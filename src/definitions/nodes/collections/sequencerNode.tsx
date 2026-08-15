@@ -253,7 +253,7 @@ export const SequencerNodeType: NodeTypes.Type<"sequencer", SequencerDefinition>
     defaultLabel: "Sequencer",
     iconNode: <NodeIcon shape={NODE_ICONS.timeline} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

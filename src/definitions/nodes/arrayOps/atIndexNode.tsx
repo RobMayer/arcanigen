@@ -107,7 +107,7 @@ export const AtIndexNodeType: NodeTypes.Type<"atIndex", AtIndexDefinition> = {
     defaultLabel: "At Index",
     iconNode: <NodeIcon shape={NODE_ICONS.location} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

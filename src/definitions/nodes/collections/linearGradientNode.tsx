@@ -489,7 +489,7 @@ export const LinearGradientNodeType: NodeTypes.Type<"linearGradient", LinearGrad
     displayName: "Linear Gradient",
     defaultLabel: "Linear Gradient",
     iconNode: <NodeIcon shape={NODE_ICONS.linearGradient} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

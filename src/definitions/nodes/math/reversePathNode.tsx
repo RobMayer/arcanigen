@@ -87,7 +87,7 @@ export const ReversePathNodeType: NodeTypes.Type<"reversePath", ReversePathDefin
     displayName: "Reverse Path",
     defaultLabel: "Reverse Path",
     iconNode: <NodeIcon shape={ICONS.Media.FastBackward} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

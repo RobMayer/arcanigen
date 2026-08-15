@@ -150,7 +150,7 @@ export const FilterNodeType: NodeTypes.Type<"filter", FilterDefinition> = {
     defaultLabel: "Filter",
     iconNode: <NodeIcon shape={NODE_ICONS.array} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

@@ -379,7 +379,7 @@ export const RestyleNodeType: NodeTypes.Type<"restyle", RestyleDefinition> = {
     displayName: "Re-style",
     defaultLabel: "Re-style",
     iconNode: <NodeIcon shape={NODE_ICONS.restyle} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

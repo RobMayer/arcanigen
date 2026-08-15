@@ -153,7 +153,7 @@ export const SliceNodeType: NodeTypes.Type<"slice", SliceDefinition> = {
     defaultLabel: "Slice",
     iconNode: <NodeIcon shape={NODE_ICONS.split} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

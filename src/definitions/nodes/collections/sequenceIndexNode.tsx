@@ -95,7 +95,7 @@ export const SequenceIndexNodeType: NodeTypes.Type<"sequenceIndex", SequenceInde
     defaultLabel: "Sequence Index",
     iconNode: <NodeIcon shape={NODE_ICONS.timeline} modifierIcon={NODE_ICONS.num} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

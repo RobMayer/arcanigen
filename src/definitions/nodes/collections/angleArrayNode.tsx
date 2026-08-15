@@ -338,7 +338,7 @@ export const AngleArrayNodeType: NodeTypes.Type<"angleArray", AngleArrayDefiniti
     displayName: "Angle Array",
     defaultLabel: "Angle Array",
     iconNode: <NodeIcon shape={NODE_ICONS.angle} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

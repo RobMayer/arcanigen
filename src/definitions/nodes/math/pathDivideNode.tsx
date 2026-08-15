@@ -104,7 +104,7 @@ export const PathDivideNodeType: NodeTypes.Type<"pathDivide", PathDivideDefiniti
     displayName: "Path Divide",
     defaultLabel: "Path Divide",
     iconNode: <NodeIcon shape={NODE_ICONS.pathDivide} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

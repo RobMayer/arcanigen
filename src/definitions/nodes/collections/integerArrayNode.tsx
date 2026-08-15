@@ -338,7 +338,7 @@ export const IntegerArrayNodeType: NodeTypes.Type<"integerArray", IntegerArrayDe
     displayName: "Integer Array",
     defaultLabel: "Integer Array",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

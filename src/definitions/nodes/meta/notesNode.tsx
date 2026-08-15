@@ -209,7 +209,7 @@ export const NotesNodeType: NodeTypes.Type<"notes", NotesDefinition> = {
     displayName: "Note",
     defaultLabel: "Note",
     iconNode: <NodeIcon shape={NODE_ICONS.note} />,
-    flavour: "emphasis",
+    flavour: "info",
     category: "Meta",
     evaluate,
     Controls,

@@ -143,7 +143,7 @@ export const MaskNodeType: NodeTypes.Type<"mask", MaskDefinition> = {
     displayName: "Mask",
     defaultLabel: "Mask",
     iconNode: <NodeIcon shape={NODE_ICONS.mask} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

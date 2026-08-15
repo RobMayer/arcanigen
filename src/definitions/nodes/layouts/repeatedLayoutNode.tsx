@@ -154,7 +154,7 @@ export const RepeatedLayoutNodeType: NodeTypes.Type<"repeatedLayout", RepeatedLa
     displayName: "Repeated Layout",
     defaultLabel: "Repeated Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.loop} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

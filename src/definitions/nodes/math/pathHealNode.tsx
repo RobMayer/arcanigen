@@ -80,7 +80,7 @@ export const PathHealNodeType: NodeTypes.Type<"pathHeal", PathHealNodeDefinition
     displayName: "Path Heal",
     defaultLabel: "Path Heal",
     iconNode: <NodeIcon shape={NODE_ICONS.pathHeal} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

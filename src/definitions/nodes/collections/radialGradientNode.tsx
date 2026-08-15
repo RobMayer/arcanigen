@@ -509,7 +509,7 @@ export const RadialGradientNodeType: NodeTypes.Type<"radialGradient", RadialGrad
     displayName: "Radial Gradient",
     defaultLabel: "Radial Gradient",
     iconNode: <NodeIcon shape={NODE_ICONS.radialGradient} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

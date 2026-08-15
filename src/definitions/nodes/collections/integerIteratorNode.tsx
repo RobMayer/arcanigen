@@ -443,7 +443,7 @@ export const IntegerIteratorNodeType: NodeTypes.Type<"integerIterator", IntegerI
     defaultLabel: "Integer Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.loop} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

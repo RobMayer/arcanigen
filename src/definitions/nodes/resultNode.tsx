@@ -163,7 +163,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
     return (
         <ResultWrapper position={localPosition} data-moveable={`node_${nodeId}`} onFocus={handleFocus}>
             <div data-part={"body"} style={style} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
-                <ResultTitle data-flavour="emphasis">
+                <ResultTitle data-flavour="info">
                     <ResultFallback nodeId={nodeId} side={"in"} />
                     <ActionButton.Lite onClick={toggle} flavour={"inherit"}>
                         <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
@@ -226,7 +226,7 @@ export const ResultNodeType: NodeTypes.Type<"result", ResultDefinition> = {
     displayName: "Result",
     defaultLabel: "Result",
     iconNode: <NodeIcon shape={NODE_ICONS.result} />,
-    flavour: "emphasis",
+    flavour: "info",
     category: "Result",
     create,
     dependsOn,

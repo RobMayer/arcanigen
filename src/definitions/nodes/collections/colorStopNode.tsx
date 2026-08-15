@@ -125,7 +125,7 @@ export const ColorStopNodeType: NodeTypes.Type<"colorStop", ColorStopBreakoutDef
     displayName: "Color Stop",
     defaultLabel: "Color Stop",
     iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

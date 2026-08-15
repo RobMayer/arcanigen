@@ -338,7 +338,7 @@ export const BooleanArrayNodeType: NodeTypes.Type<"booleanArray", BooleanArrayDe
     displayName: "Boolean Array",
     defaultLabel: "Boolean Array",
     iconNode: <NodeIcon shape={NODE_ICONS.power} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

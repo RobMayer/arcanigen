@@ -109,7 +109,7 @@ export const GatherNodeType: NodeTypes.Type<"gather", GatherDefinition> = {
     defaultLabel: "Gather",
     iconNode: <NodeIcon shape={NODE_ICONS.array} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

@@ -118,7 +118,7 @@ export const LayerComposeNodeType: NodeTypes.Type<"layerCompose", LayerComposeDe
     displayName: "Compose Layer",
     defaultLabel: "Compose Layer",
     iconNode: <NodeIcon shape={NODE_ICONS.layers} modifierIcon={NODE_ICONS.modifiers.joinOf} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

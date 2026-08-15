@@ -393,7 +393,7 @@ export const PatchNodeType: NodeTypes.Type<"patch", PatchDefinition> = {
     displayName: "Patch",
     defaultLabel: "Patch",
     iconNode: <NodeIcon shape={NODE_ICONS.patch} />,
-    flavour: "emphasis",
+    flavour: "info",
     category: "Meta",
     create,
     evaluate,

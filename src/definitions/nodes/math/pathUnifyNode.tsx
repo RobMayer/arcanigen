@@ -87,7 +87,7 @@ export const PathUnitfyNodeType: NodeTypes.Type<"pathUnify", PathUnifyDefinition
     displayName: "Path Unify",
     defaultLabel: "Path Unify",
     iconNode: <NodeIcon shape={NODE_ICONS.pathUnify} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

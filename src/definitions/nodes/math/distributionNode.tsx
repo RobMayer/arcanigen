@@ -146,7 +146,7 @@ export const DistributionNodeType: NodeTypes.Type<"distribution", DistributionNo
     displayName: "Distribution",
     defaultLabel: "Distribution",
     iconNode: <NodeIcon shape={NODE_ICONS.func} />,
-    flavour: "help",
+    flavour: "accent",
     category: "Values",
     evaluate,
     Controls,

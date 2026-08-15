@@ -93,7 +93,7 @@ export const FromCrossingsNodeType: NodeTypes.Type<"fromCrossings", FromCrossing
     displayName: "From Crossings",
     defaultLabel: "From Crossings",
     iconNode: <NodeIcon shape={NODE_ICONS.point} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

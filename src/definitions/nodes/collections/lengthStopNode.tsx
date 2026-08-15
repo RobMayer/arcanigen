@@ -124,7 +124,7 @@ export const LengthStopNodeType: NodeTypes.Type<"lengthStop", LengthStopBreakout
     displayName: "Length Stop",
     defaultLabel: "Length Stop",
     iconNode: <NodeIcon shape={NODE_ICONS.length} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

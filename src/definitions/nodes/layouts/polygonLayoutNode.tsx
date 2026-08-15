@@ -277,7 +277,7 @@ export const PolygonLayoutNodeType: NodeTypes.Type<"polygonLayout", PolygonLayou
     displayName: "Polygon Layout",
     defaultLabel: "Polygon Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.shapePolygon} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

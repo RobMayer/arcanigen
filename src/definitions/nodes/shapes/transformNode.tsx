@@ -243,7 +243,7 @@ export const TransformType: NodeTypes.Type<"transform", TransformDefinition> = {
     displayName: "Transform",
     defaultLabel: "Transform",
     iconNode: <NodeIcon shape={NODE_ICONS.dolly} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     evaluate,
     Controls,

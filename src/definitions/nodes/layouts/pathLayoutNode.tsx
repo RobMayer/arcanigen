@@ -397,7 +397,7 @@ export const PathLayoutNodeType: NodeTypes.Type<"pathLayout", PathLayoutDefiniti
     displayName: "Path Layout",
     defaultLabel: "Path Layout",
     iconNode: <NodeIcon shape={NODE_ICONS.path} modifierIcon={NODE_ICONS.modifiers.patternFor} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

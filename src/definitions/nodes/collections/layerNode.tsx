@@ -517,7 +517,7 @@ export const LayerNodeType: NodeTypes.Type<"layers", LayerDefinition> = {
     displayName: "Layers",
     defaultLabel: "Layers",
     iconNode: <NodeIcon shape={NODE_ICONS.layers} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

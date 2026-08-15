@@ -495,7 +495,7 @@ export const ColorIteratorNodeType: NodeTypes.Type<"colorIterator", ColorIterato
     defaultLabel: "Color Iterator",
     iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.loop} />,
     flavour: "danger",
-    category: "Logic",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

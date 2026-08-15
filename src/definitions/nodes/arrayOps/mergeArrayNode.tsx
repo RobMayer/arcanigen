@@ -272,7 +272,7 @@ export const MergeArrayNodeType: NodeTypes.Type<"mergeArray", MergeArrayDefiniti
     defaultLabel: "Merge Array",
     iconNode: <NodeIcon shape={NODE_ICONS.ampersand} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
     flavour: "danger",
-    category: "Math",
+    category: "Collection Ops",
     create,
     dependsOn,
     contributesTo,

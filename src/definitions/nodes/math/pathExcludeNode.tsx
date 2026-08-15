@@ -87,7 +87,7 @@ export const PathExcludeNodeType: NodeTypes.Type<"pathExclude", PathExcludeDefin
     displayName: "Path Exclude",
     defaultLabel: "Path Exclude",
     iconNode: <NodeIcon shape={NODE_ICONS.pathExclude} />,
-    flavour: "help",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

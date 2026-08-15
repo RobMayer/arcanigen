@@ -523,7 +523,7 @@ export const CustomNodeType: NodeTypes.Type<"custom", CustomDefinition> = {
     displayName: "Custom",
     defaultLabel: "Custom",
     iconNode: <NodeIcon shape={NODE_ICONS.user} />,
-    flavour: "emphasis",
+    flavour: "info",
     category: "Meta",
     evaluate,
     Controls,

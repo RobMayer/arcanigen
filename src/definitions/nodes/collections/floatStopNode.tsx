@@ -123,7 +123,7 @@ export const FloatStopNodeType: NodeTypes.Type<"floatStop", StopFloatBreakoutDef
     displayName: "Float Stop",
     defaultLabel: "Float Stop",
     iconNode: <NodeIcon shape={NODE_ICONS.num} modifierIcon={NODE_ICONS.modifiers.stopOf} />,
-    flavour: "danger",
+    flavour: "accent",
     category: "Values",
     create,
     dependsOn,

@@ -450,7 +450,7 @@ export const PathCombineNodeType: NodeTypes.Type<"pathCombine", PathCombineDefin
     displayName: "Path Combine",
     defaultLabel: "Path Combine",
     iconNode: <NodeIcon shape={NODE_ICONS.combine} />,
-    flavour: "danger",
+    flavour: "emphasis",
     category: "Modifiers",
     create,
     dependsOn,

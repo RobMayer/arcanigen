@@ -84,7 +84,7 @@ export const ShapePreviewType: NodeTypes.Type<"shapePreview", ShapePreviewDefini
     displayName: "Preview",
     defaultLabel: "Preview",
     iconNode: <NodeIcon shape={NODE_ICONS.zoom} />,
-    flavour: "emphasis",
+    flavour: "info",
     category: "Meta",
     evaluate,
     Controls,

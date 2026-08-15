@@ -337,7 +337,7 @@ export const ColorArrayNodeType: NodeTypes.Type<"colorArray", ColorArrayDefiniti
     displayName: "Color Array",
     defaultLabel: "Color Array",
     iconNode: <NodeIcon shape={NODE_ICONS.color} modifierIcon={NODE_ICONS.modifiers.arrayOf} />,
-    flavour: "accent",
+    flavour: "danger",
     category: "Values",
     create,
     dependsOn,

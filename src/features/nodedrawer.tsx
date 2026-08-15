@@ -28,7 +28,7 @@ const LocalAccordion = styled(Accordion)`
 
 type DrawerItem = { kind: "node"; nodeType: NodeTypes.Any } | { kind: "subgraph"; id: string; name: string; flavour: Flavour; category: NodeTypes.Category; icon: CustomIconKey };
 
-const VISIBLE_CATEGORIES: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Meta", "Math", "Inputs", "Outputs"];
+const VISIBLE_CATEGORIES: NodeTypes.Category[] = ["Custom", "Shapes", "Values", "Modifiers", "Logic", "Collection Ops", "Meta", "Math", "Inputs", "Outputs"];
 
 const getForbiddenSubgraphs = (currentGraphId: string, users: UsersType): Set<string> => {
     const forbidden = new Set([currentGraphId]);
@@ -157,6 +157,21 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
         setCategoryFilter(new Set());
     }, []);
 
+    // Category chips behave as radio on a plain click (select only this one) and as checkbox on
+    // ctrl/cmd+click (additively toggle). We intercept CheckBox's onClick and mark the event handled so
+    // its default toggle doesn't also run. ("All" keeps its plain onToggle -> always clears, ctrl or not.)
+    const handleCategoryClick = useCallback(
+        (cat: NodeTypes.Category, evt: MouseEvent<HTMLButtonElement>) => {
+            evt.nativeEvent.handled = "active";
+            if (evt.ctrlKey || evt.metaKey) {
+                toggleCategory(cat);
+            } else {
+                setCategoryFilter(new Set([cat]));
+            }
+        },
+        [toggleCategory],
+    );
+
     return (
         <GraphIdContext value={graphId}>
             <LocalAccordion title={"Add Nodes"} isOpen={isOpen} onOpenChange={onOpenToggle} iconClosed={ICONS.Caret.Up}>
@@ -184,11 +199,17 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
                         </ActionButton>
                     </CreateRow>
                     <Sidebar>
-                        <CheckBox checked={categoryFilter.size === 0} onToggle={clearCategoryFilter}>
+                        <CheckBox checked={categoryFilter.size === 0} onToggle={clearCategoryFilter} iconChecked={ICONS.RadioBox.Checked} iconUnchecked={ICONS.RadioBox.Unchecked}>
                             All
                         </CheckBox>
                         {VISIBLE_CATEGORIES.map((cat) => (
-                            <CheckBox key={cat} checked={categoryFilter.has(cat)} onToggle={() => toggleCategory(cat)}>
+                            <CheckBox
+                                key={cat}
+                                checked={categoryFilter.has(cat)}
+                                onClick={(evt) => handleCategoryClick(cat, evt)}
+                                iconChecked={ICONS.RadioBox.Checked}
+                                iconUnchecked={ICONS.RadioBox.Unchecked}
+                            >
                                 {cat}
                             </CheckBox>
                         ))}
