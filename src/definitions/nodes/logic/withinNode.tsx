@@ -1,9 +1,10 @@
 import { nanoid } from "nanoid";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -15,7 +16,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ value: T, target: T, tolerance: T }),
+    in: ({ T }) => ({ value: $.defaulted(T, "float"), target: $.defaulted(T, "float"), tolerance: $.defaulted(T, "float") }),
     out: { output: "boolean" },
 });
 
@@ -23,6 +24,9 @@ export type WithinDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        value: DataTypes.TypeOf<DataTypes.Float>;
+        target: DataTypes.TypeOf<DataTypes.Float>;
+        tolerance: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -31,7 +35,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>
         id,
         in: { value: null, target: null, tolerance: null },
         out: { output: [] },
-        payload: { label: "" },
+        payload: { label: "", value: "0", target: "0", tolerance: "0" },
         type: "within",
     };
 };
@@ -39,19 +43,25 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<WithinDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"value"}>
-                Value
+            <SocketIn node={node} socketId={"value"} label={"Value"}>
+                <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"target"}>
-                Target
+            <SocketIn node={node} socketId={"target"} label={"Target"}>
+                <DecimalInput value={node.payload.target} onCommit={(target) => handleUpdate({ target })} disabled={node.in.target !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"tolerance"}>
-                Tolerance
+            <SocketIn node={node} socketId={"tolerance"} label={"Tolerance"}>
+                <DecimalInput value={node.payload.tolerance} onCommit={(tolerance) => handleUpdate({ tolerance })} disabled={node.in.tolerance !== null} />
             </SocketIn>
         </TypicalNode>
     );
@@ -69,14 +79,13 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<WithinDefinition>, _inSock
 const evaluate = (node: NodeDefinitions.NodeFor<WithinDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const valEval = context.resolve(node.id, "value");
-    const tgtEval = context.resolve(node.id, "target");
-    const tolEval = context.resolve(node.id, "tolerance");
-    if (!valEval || !tgtEval || !tolEval) return null;
+    const valEval = context.resolve(node.id, "value") ?? { kind: "float", data: node.payload.value };
+    const tgtEval = context.resolve(node.id, "target") ?? { kind: "float", data: node.payload.target };
+    const tolEval = context.resolve(node.id, "tolerance") ?? { kind: "float", data: node.payload.tolerance };
 
     // Extract value and target as a pair (handles length unit conversion)
     const { a: val, b: tgt } = extractPair(valEval.kind, valEval.data, tgtEval.kind, tgtEval.data);
-    // Extract tolerance — also paired with value for unit conversion
+    // Extract tolerance -- also paired with value for unit conversion
     const { b: tol } = extractPair(valEval.kind, valEval.data, tolEval.kind, tolEval.data);
 
     return { kind: "boolean", data: Math.abs(val - tgt) <= tol };

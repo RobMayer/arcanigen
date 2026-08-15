@@ -4,6 +4,15 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-16"} version={"3.5.0"}>
+                <Improvement>shape "Array" nodes are now known as "Layout" nodes.</Improvement>
+                <Improvement>several math nodes now come with an additional input field.</Improvement>
+                <Feature>Real Array datatype.</Feature>
+                <Feature>Array Operator nodes (loops, filters, builders, accessors).</Feature>
+                <Feature>Point datatype.</Feature>
+                <Feature>Vector (point) Math Nodes</Feature>
+                <Improvement>all things on nodes that could now take a Point input (position, etc).</Improvement>
+            </Build>
             <Build date={"2026-08-08"} version={"3.4.5"}>
                 <Feature>Added Spirograph Node.</Feature>
                 <Feature>Added SpiroRing Node.</Feature>

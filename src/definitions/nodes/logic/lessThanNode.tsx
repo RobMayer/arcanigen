@@ -1,9 +1,10 @@
 import { nanoid } from "nanoid";
 import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -15,7 +16,7 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ a: T, b: T }),
+    in: ({ T }) => ({ a: $.defaulted(T, "float"), b: $.defaulted(T, "float") }),
     out: { output: "boolean" },
 });
 
@@ -23,6 +24,8 @@ export type LessThanDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        a: DataTypes.TypeOf<DataTypes.Float>;
+        b: DataTypes.TypeOf<DataTypes.Float>;
     }
 >;
 
@@ -31,7 +34,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LessThanDefinition
         id,
         in: { a: null, b: null },
         out: { output: [] },
-        payload: { label: "" },
+        payload: { label: "", a: "0", b: "0" },
         type: "lessThan",
     };
 };
@@ -39,16 +42,22 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<LessThanDefinition
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LessThanDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const handleUpdate = useCallback(
+        (v: Partial<NodeDefinitions.PayloadTypeOf<LessThanDefinition>>) => {
+            methods.update(v);
+        },
+        [methods],
+    );
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"} label={"Output"}>
                 <ValuePreview value={preview} />
             </SocketOut>
-            <SocketIn node={node} socketId={"a"}>
-                A
+            <SocketIn node={node} socketId={"a"} label={"A"}>
+                <DecimalInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
             </SocketIn>
-            <SocketIn node={node} socketId={"b"}>
-                B
+            <SocketIn node={node} socketId={"b"} label={"B"}>
+                <DecimalInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
             </SocketIn>
         </TypicalNode>
     );
@@ -65,9 +74,8 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<LessThanDefinition>, _inSo
 
 const evaluate = (node: NodeDefinitions.NodeFor<LessThanDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
-    const aVal = context.resolve(node.id, "a");
-    const bVal = context.resolve(node.id, "b");
-    if (!aVal || !bVal) return null;
+    const aVal = context.resolve(node.id, "a") ?? { kind: "float", data: node.payload.a };
+    const bVal = context.resolve(node.id, "b") ?? { kind: "float", data: node.payload.b };
     const { a, b } = extractPair(aVal.kind, aVal.data, bVal.kind, bVal.data);
     return { kind: "boolean", data: a < b };
 };

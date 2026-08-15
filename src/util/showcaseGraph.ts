@@ -8,13 +8,13 @@ import type { Project } from "../state/project";
 // and the Custom node are skipped; the Result node is the required singleton terminal, so it gets its
 // canonical id + interface entry rather than a generated one.
 
-const SKIP_CATEGORIES = new Set<string>(["Inputs", "Outputs", "Custom"]);
+const SKIP_CATEGORIES = new Set<string>(["Inputs", "Outputs", "Custom", "Meta"]);
 
 // Canvas-space grid spacing. Heights vary wildly (knot/colorSplit are tall), so the row pitch is generous.
-const COLS = 6;
-const CELL_W = 380;
-const CELL_H = 580;
-const HEADER_DROP = 140; // header note -> first node row
+const COLS = 12;
+const CELL_W = 400;
+const CELL_H = 620;
+const HEADER_DROP = 160; // header note -> first node row
 const BAND_GAP = 200; // gap after a category band
 const START_X = 0;
 

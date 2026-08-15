@@ -766,7 +766,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 10;
+        export const CURRENT = 11;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1298,6 +1298,30 @@ export namespace Project {
                     }
                 }
                 input.version = 10;
+            }
+            if (input.version === 10) {
+                // Comparison nodes gained inline float fields for disconnected inputs (like add/multiply).
+                // Backfill the new payload keys on existing nodes; default "0".
+                const COMPARATOR_FIELDS: { [type: string]: string[] } = {
+                    equal: ["a", "b"],
+                    greaterThan: ["a", "b"],
+                    lessThan: ["a", "b"],
+                    greaterOrEqual: ["a", "b"],
+                    lessOrEqual: ["a", "b"],
+                    between: ["value", "min", "max"],
+                    within: ["value", "target", "tolerance"],
+                };
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        const fields = COMPARATOR_FIELDS[node.type];
+                        if (!fields || !node.payload) continue;
+                        for (const f of fields) {
+                            node.payload[f] = node.payload[f] ?? "0";
+                        }
+                    }
+                }
+                input.version = 11;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

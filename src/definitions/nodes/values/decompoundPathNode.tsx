@@ -53,11 +53,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DecompoundP
             <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pathCount">
-                <SocketOut node={node} socketId={"pathCount"}>
-                    Path Count
-                </SocketOut>
-            </NodeAccordion>
+            <SocketOut node={node} socketId={"pathCount"}>
+                Path Count
+            </SocketOut>
         </TypicalNode>
     );
 };
@@ -69,7 +67,11 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<DecompoundPathDefinition>, out
     return [];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<DecompoundPathDefinition>, _inSocket: keyof DecompoundPathDefinition["inputs"], _deps: AllDeps): (keyof DecompoundPathDefinition["outputs"])[] => {
+const contributesTo = (
+    _node: NodeDefinitions.NodeFor<DecompoundPathDefinition>,
+    _inSocket: keyof DecompoundPathDefinition["inputs"],
+    _deps: AllDeps,
+): (keyof DecompoundPathDefinition["outputs"])[] => {
     return ["output", "pathCount"];
 };
 
