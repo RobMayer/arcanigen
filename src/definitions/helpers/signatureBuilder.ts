@@ -33,7 +33,7 @@ export namespace SignatureBuilder {
         | { $x: "arg"; name: string }
         | { $x: "oneOf"; members: readonly Expr[] }
         | { $x: "ctor"; ctor: string; of: Expr }
-        | { $x: "defaulted"; of: Expr; default: DataTypes.AtomicKind }; // socket type `of`, but a concrete kind when disconnected (widget fallback)
+        | { $x: "defaulted"; of: Expr; default: DataTypes.AtomicKind | ((payloadValue: string) => DataTypes.AtomicKind) }; // socket type `of`, but a concrete kind when disconnected -- a constant, or derived from the field payload
 
     /** A variable's constraint (declared in `args`). */
     export type Constraint =
@@ -160,7 +160,7 @@ export namespace SignatureBuilder {
             }
         }
         // `$.defaulted(of, k)` sockets: record the disconnected-fallback kind for the solver (input side only).
-        const defaults: Record<string, string> = {};
+        const defaults: Record<string, string | ((payloadValue: string) => string)> = {};
         for (const [key, expr] of Object.entries(inMap)) {
             if (typeof expr === "object" && "$x" in expr && expr.$x === "defaulted") defaults[key] = expr.default;
         }
@@ -230,7 +230,10 @@ export namespace SignatureBuilder {
             : X extends { $x: "arg"; constraint: infer C }
               ? PossibilitiesOfConstraint<C>
               : never; // ctor / bus etc. -- no sensible scalar default
-    const defaulted = <X extends Expr, const K extends PossibilitiesOf<X> & DataTypes.AtomicKind>(of: X, def: K) => ({ $x: "defaulted", of, default: def }) as { $x: "defaulted"; of: X; default: K };
+    // The fallback kind is either a constant (compile-checked to be in X's domain) or a resolver that
+    // derives the kind from the socket's field payload (a "universal" field -- e.g. NumericKind.kindOf).
+    const defaulted = <X extends Expr>(of: X, def: (PossibilitiesOf<X> & DataTypes.AtomicKind) | ((payloadValue: string) => PossibilitiesOf<X> & DataTypes.AtomicKind)) =>
+        ({ $x: "defaulted", of, default: def }) as { $x: "defaulted"; of: X; default: DataTypes.AtomicKind | ((payloadValue: string) => DataTypes.AtomicKind) };
 
     const NUMERIC = oneOf("integer", "float", "length", "angle");
     const COLOR_OR_GRADIENT = oneOf("color", "gradient");

@@ -5,20 +5,21 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { extractPair, dominantKind, wrapResult } from "../../helpers/mathHelper";
+import { NumericKind } from "../../helpers/numericKind";
 import { SocketTypes } from "../../socketTypes";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ a: $.defaulted(T, "float"), b: $.defaulted(T, "float") }),
+    in: ({ T }) => ({ a: $.defaulted(T, NumericKind.kindOf), b: $.defaulted(T, NumericKind.kindOf) }),
     out: ({ T }) => ({ output: T }),
 });
 
@@ -26,8 +27,8 @@ export type AddDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: DataTypes.TypeOf<DataTypes.String>;
-        a: DataTypes.TypeOf<DataTypes.Float>;
-        b: DataTypes.TypeOf<DataTypes.Float>;
+        a: string;
+        b: string;
     }
 >;
 
@@ -67,10 +68,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefiniti
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"a"} label={"A"}>
-                <DecimalInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
+                <TextInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
             </SocketIn>
             <SocketIn node={node} socketId={"b"} label={"B"}>
-                <DecimalInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
+                <TextInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
             </SocketIn>
         </TypicalNode>
     );
@@ -87,9 +88,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<AddDefinition>, _inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<AddDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        // disconnected sockets fall back to their `$.defaulted` widget value (a float constant)
-        const aVal = context.resolve(node.id, "a") ?? { kind: "float", data: node.payload.a };
-        const bVal = context.resolve(node.id, "b") ?? { kind: "float", data: node.payload.b };
+        // disconnected sockets fall back to their universal field: the value parsed to its inferred kind
+        const aVal = context.resolve(node.id, "a") ?? { kind: NumericKind.kindOf(node.payload.a), data: node.payload.a };
+        const bVal = context.resolve(node.id, "b") ?? { kind: NumericKind.kindOf(node.payload.b), data: node.payload.b };
         const { a, b, unit } = extractPair(aVal.kind, aVal.data, bVal.kind, bVal.data);
         const outputKind = dominantKind(aVal.kind, bVal.kind);
         return wrapResult(a + b, outputKind, unit);
@@ -111,6 +112,7 @@ export const AddType: NodeTypes.Type<"add", AddDefinition> = {
     create,
     signature: def.instance,
     ...SignatureEngine.hooks,
+    onPayloadChange: SignatureEngine.onPayloadChange,
     canInterject: passthroughCanInterject(SocketTypes.NUMERIC, SocketTypes.NUMERIC),
     onInterject: passthroughInterject("a", "output"),
 };

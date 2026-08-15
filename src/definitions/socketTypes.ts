@@ -43,7 +43,7 @@ export namespace SocketTypes {
         sets?: Record<string, ReadonlySet<string>>;
         /** Input sockets with a `$.defaulted(...)` fallback kind — used when the socket is disconnected: it
          *  CONTRIBUTES this kind to output resolution but does NOT narrow its own accept type. */
-        defaults?: Record<string, string>;
+        defaults?: Record<string, string | ((payloadValue: string) => string)>;
     };
 
     // --- Constructors ---------------------------------------------------------------------------

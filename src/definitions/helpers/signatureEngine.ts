@@ -279,7 +279,8 @@ export namespace SignatureEngine {
                     joinDom[s] = d;
                 } else {
                     acceptDom[s] = new Set(members);
-                    const def = inst.defaults?.[s];
+                    const rule = inst.defaults?.[s];
+                    const def = rule !== undefined ? resolveDefault(rule, node.payload, s) : undefined;
                     joinDom[s] = def && members.has(def) ? new Set([def]) : new Set(members);
                 }
             }
@@ -326,9 +327,9 @@ export namespace SignatureEngine {
         // occurrences when the var is UNGROUNDED (no real connection pins it). Input accept is never narrowed
         // (it keeps its full domain above), so you can still connect anything to override the widget.
         const varDefaults: Record<string, string> = {};
-        for (const [sock, def] of Object.entries(inst.defaults ?? {})) {
+        for (const [sock, rule] of Object.entries(inst.defaults ?? {})) {
             const t = xin[sock];
-            if (t?.t === "var") varDefaults[t.id] = def;
+            if (t?.t === "var") varDefaults[t.id] = resolveDefault(rule, node.payload, sock);
         }
         for (const [sock, term] of Object.entries(xout)) {
             if (handledOut.has(sock)) continue;
@@ -368,8 +369,8 @@ export namespace SignatureEngine {
         if (side === "out" && inst.defaults && term.t === "var") {
             const v = term.id;
             const carriers = Object.keys(inst.in).filter((s) => isBareVar(inst.in[s], v));
-            if (carriers.length > 0 && carriers.every((s) => inst.defaults![s])) {
-                const defs = carriers.map((s) => inst.defaults![s]);
+            if (carriers.length > 0 && carriers.every((s) => inst.defaults![s] !== undefined)) {
+                const defs = carriers.map((s) => resolveDefault(inst.defaults![s], node.payload, s));
                 const lat = SocketTypes.LATTICES[inst.bounds[v]];
                 if (lat) {
                     const joined = achievableJoins(
@@ -396,10 +397,20 @@ export namespace SignatureEngine {
         commitSocketTypes(current, graphId, ctx, solve(current, graphId, ctx));
     };
 
+    // Resolve a `$.defaulted` fallback rule to a concrete kind: a static string as-is, or, for a
+    // "universal" field, by running the resolver over the socket's current payload value.
+    const resolveDefault = (rule: string | ((v: string) => string), payload: unknown, sock: string): string =>
+        typeof rule === "function" ? rule(String((payload as Record<string, unknown> | undefined)?.[sock] ?? "")) : rule;
+
     export const onConnect = (node: AnyNode, _linkId: string, _direction: "in" | "out", graphId: string, ctx: MethodContext): void => recompute(node, graphId, ctx);
     export const onDisconnect = (node: AnyNode, _link: unknown, _direction: "in" | "out", graphId: string, ctx: MethodContext): void => recompute(node, graphId, ctx);
     export const onRefreshRequest = (node: AnyNode, _socketId: string, _side: "in" | "out", _reason: NodeTypes.RefreshReason, graphId: string, ctx: MethodContext): void =>
         recompute(node, graphId, ctx);
+
+    // Opt-in (NOT part of `hooks`): a node whose OUTPUT type depends on a universal field's payload must
+    // re-solve when that field is edited. Add explicitly, AFTER `...SignatureEngine.hooks`, on such nodes.
+    // Kept out of `hooks` because several nodes (e.g. interface inputs) define their own onPayloadChange.
+    export const onPayloadChange = (node: AnyNode, _prev: unknown, graphId: string, ctx: MethodContext): void => recompute(node, graphId, ctx);
 
     /**
      * Spread onto a signature node's Type definition to wire the whole engine. The double-cast bridges
