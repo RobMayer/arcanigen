@@ -12,6 +12,7 @@ import { Shape } from "../../definitions/shapeTypes";
 import { ShapeElement } from "../shapeRenderer";
 import { Color } from "../../definitions/datatypes/color";
 import { Length } from "../../definitions/datatypes/length";
+import { Angle } from "../../definitions/datatypes/angle";
 import { EmptyOr } from "../../util/misc";
 
 const SlotBase = styled.div`
@@ -293,7 +294,7 @@ export const ValuePreview = ({ value: rawValue }: { value: DataTypes.AnyEval | n
         case "boolean":
             return <PreviewBase>{value.data ? "true" : "false"}</PreviewBase>;
         case "angle":
-            return <PreviewBase>{Number(Number(value.data).toFixed(6))}°</PreviewBase>;
+            return <PreviewBase>{parseAngle(value.data)}</PreviewBase>;
         case "integer":
         case "float":
             return <PreviewBase>{Number(Number(value.data).toFixed(6))}</PreviewBase>;
@@ -335,6 +336,15 @@ export const ValuePreview = ({ value: rawValue }: { value: DataTypes.AnyEval | n
 
 const parseLength = (l: EmptyOr<Length.Type>): string => {
     const c = Length.Emptyable.parse(l);
+    if (c === null) {
+        return "« none »";
+    }
+    const [v, u] = c;
+    return `${Number(v.toFixed(6))}${u}`;
+};
+
+const parseAngle = (a: EmptyOr<Angle.Type>): string => {
+    const c = Angle.Emptyable.parse(a);
     if (c === null) {
         return "« none »";
     }

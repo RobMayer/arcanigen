@@ -83,7 +83,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArccosDefinition>, socket: "outp
         const { value } = extractSingle(val.kind, val.data);
         const clamped = Math.max(-1, Math.min(1, value));
         const degrees = (Math.acos(clamped) * 180) / Math.PI;
-        return { kind: "angle", data: `${degrees}` };
+        return { kind: "angle", data: `${degrees}deg` };
     }
     return null;
 };

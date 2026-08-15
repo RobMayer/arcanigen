@@ -82,7 +82,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArctanDefinition>, socket: "outp
         const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
         const { value } = extractSingle(val.kind, val.data);
         const degrees = (Math.atan(value) * 180) / Math.PI;
-        return { kind: "angle", data: `${degrees}` };
+        return { kind: "angle", data: `${degrees}deg` };
     }
     return null;
 };

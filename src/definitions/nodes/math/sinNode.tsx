@@ -13,6 +13,7 @@ import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { extractSingle } from "../../helpers/mathHelper";
+import { Angle } from "../../datatypes/angle";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
@@ -81,7 +82,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SinDefinition>, socket: "output"
     if (socket === "output") {
         const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
         const { value } = extractSingle(val.kind, val.data);
-        const radians = val.kind === "angle" ? (value * Math.PI) / 180 : value;
+        const radians = val.kind === "angle" ? Angle.asRadians(val.data as Angle.Type) : value;
         return { kind: "float", data: `${Math.sin(radians)}` };
     }
     return null;

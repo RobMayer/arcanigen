@@ -14,66 +14,64 @@ export const dominantKind = (a: string, b: string): string => {
     return (PRIORITY[a] ?? 0) >= (PRIORITY[b] ?? 0) ? a : b;
 };
 
-export const extractPair = (aKind: string, aData: unknown, bKind: string, bData: unknown): { a: number; b: number; unit: Length.Unit | null } => {
-    const aIsLength = aKind === "length";
-    const bIsLength = bKind === "length";
-
-    if (!aIsLength && !bIsLength) {
-        // Both are dimensionless (float, integer, angle)
-        return {
-            a: asScalar(aKind, aData),
-            b: asScalar(bKind, bData),
-            unit: null,
-        };
+// A dimensional value (length OR angle) as a number in its NATIVE unit; null for dimensionless kinds
+// (float/integer). Angle is dimensional the same way length is -- its native unit (deg/rad/turn) is kept
+// rather than collapsed to canonical degrees, so `0.25turn` stays a turn.
+const parseDim = (kind: string, data: unknown): { num: number; unit: string } | null => {
+    if (kind === "length") {
+        const p = Length.parse(data as string);
+        return p ? { num: p[0], unit: p[1] } : { num: 0, unit: "px" };
     }
-
-    if (aIsLength && !bIsLength) {
-        const parsed = Length.parse(aData as string);
-        return {
-            a: parsed ? parsed[0] : 0,
-            b: asScalar(bKind, bData),
-            unit: parsed ? parsed[1] : "px",
-        };
+    if (kind === "angle") {
+        const p = Angle.parse(data as string);
+        return p ? { num: p[0], unit: p[1] } : { num: 0, unit: "deg" };
     }
-
-    if (!aIsLength && bIsLength) {
-        const parsed = Length.parse(bData as string);
-        return {
-            a: asScalar(aKind, aData),
-            b: parsed ? parsed[0] : 0,
-            unit: parsed ? parsed[1] : "px",
-        };
-    }
-
-    // Both are length — convert B to A's unit
-    const parsedA = Length.parse(aData as string);
-    const parsedB = Length.parse(bData as string);
-    if (!parsedA || !parsedB) {
-        return { a: 0, b: 0, unit: "px" };
-    }
-    const unit = parsedA[1];
-    const bConverted = Length.parse(Length.convert(bData as Length.Type, unit));
-    return {
-        a: parsedA[0],
-        b: bConverted ? bConverted[0] : 0,
-        unit,
-    };
+    return null;
 };
 
-export const extractSingle = (kind: string, data: unknown): { value: number; unit: Length.Unit | null } => {
-    if (kind === "length") {
-        const parsed = Length.parse(data as string);
-        return { value: parsed ? parsed[0] : 0, unit: parsed ? parsed[1] : "px" };
+export const extractPair = (aKind: string, aData: unknown, bKind: string, bData: unknown): { a: number; b: number; unit: string | null } => {
+    const aDim = parseDim(aKind, aData);
+    const bDim = parseDim(bKind, bData);
+
+    // Both dimensionless (float/integer).
+    if (!aDim && !bDim) {
+        return { a: asScalar(aKind, aData), b: asScalar(bKind, bData), unit: null };
     }
+
+    // Exactly one dimensional: the plain operand is taken as a raw number IN the dimensional operand's
+    // unit, and that unit is preserved (so `0.25turn` + `0.5` = `0.75turn`, mirroring length + float).
+    if (aDim && !bDim) {
+        return { a: aDim.num, b: asScalar(bKind, bData), unit: aDim.unit };
+    }
+    if (!aDim && bDim) {
+        return { a: asScalar(aKind, aData), b: bDim.num, unit: bDim.unit };
+    }
+
+    // Both dimensional. Same dimension -> convert B into A's unit. Cross-dimension (length vs angle) is
+    // forbidden by the NUMERIC_ADDABLE lattice so it never reaches here; fall back safely if it does.
+    if (aKind === bKind) {
+        if (aKind === "length") {
+            const bConv = Length.parse(Length.convert(bData as Length.Type, aDim!.unit as Length.Unit));
+            return { a: aDim!.num, b: bConv ? bConv[0] : 0, unit: aDim!.unit };
+        }
+        const bConv = Angle.parse(Angle.convert(bData as Angle.Type, aDim!.unit as Angle.Unit));
+        return { a: aDim!.num, b: bConv ? bConv[0] : 0, unit: aDim!.unit };
+    }
+    return { a: aDim!.num, b: 0, unit: aDim!.unit };
+};
+
+export const extractSingle = (kind: string, data: unknown): { value: number; unit: string | null } => {
+    const dim = parseDim(kind, data);
+    if (dim) return { value: dim.num, unit: dim.unit };
     return { value: asScalar(kind, data), unit: null };
 };
 
-export const wrapResult = (value: number, outputKind: string, unit: Length.Unit | null): DataTypes.AnyEval => {
+export const wrapResult = (value: number, outputKind: string, unit: string | null): DataTypes.AnyEval => {
     switch (outputKind) {
         case "integer":
             return { kind: "integer", data: `${Math.trunc(value)}` };
         case "angle":
-            return { kind: "angle", data: `${value}deg` };
+            return { kind: "angle", data: `${value}${unit ?? "deg"}` };
         case "length":
             return { kind: "length", data: `${value}${unit ?? "px"}` };
         case "float":
