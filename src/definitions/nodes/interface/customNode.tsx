@@ -480,6 +480,8 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
     arrayColorOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.COLOR)),
     arrayBooleanInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.BOOLEAN)),
     arrayBooleanOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.BOOLEAN)),
+    arrayPointInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.POINT)),
+    arrayPointOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.POINT)),
     stopIntegerInput: SocketTypes.of(DataTypes.STOP_INTEGER),
     stopIntegerOutput: SocketTypes.of(DataTypes.STOP_INTEGER),
     arrayStopIntegerInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STOP_INTEGER)),
