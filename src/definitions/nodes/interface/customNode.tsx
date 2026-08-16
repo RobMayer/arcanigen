@@ -51,6 +51,7 @@ import { RadioBox } from "../../../components/buttons/RadioBox";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
 import { flattenSockets, parseInterface, interfaceMemberLabel, InterfaceMember } from "../../../state/project/types";
+import { buildInputSocketPatch } from "../../helpers/interfaceHelper";
 import { ShapePreview } from "../../../features/nodeview/slots";
 import { Color } from "../../datatypes/color";
 import { Angle } from "../../datatypes/angle";
@@ -345,28 +346,9 @@ const onCreate = (node: NodeDefinitions.NodeFor<CustomDefinition>, graphId: stri
     for (const entry of interfaceSockets) {
         const parsed = parseInterface(entry);
         if (parsed.direction === "in") {
-            const inputNode = subgraphNodes[parsed.nodeId];
-            if (inputNode?.type === "arrayLayerInput") {
-                // Create supersocket + initial layer group for array<layer> input
-                const socketId = `layer_${nanoid()}`;
-                inSockets[parsed.nodeId] = null;
-                inSockets[socketId] = null;
-                initialValues[`layers_${parsed.nodeId}`] = [{ socket: socketId, enabled: true, blend: Enum.Common.blendMode.NORMAL.value }];
-            } else if (inputNode?.type === "arrayPathOpInput") {
-                // Create supersocket + initial path-op group for array<pathOp> input
-                const socketId = `pathop_${nanoid()}`;
-                inSockets[parsed.nodeId] = null;
-                inSockets[socketId] = null;
-                initialValues[`pathOps_${parsed.nodeId}`] = [{ socket: socketId, enabled: true, op: Enum.Common.pathOp.UNIFY.value }];
-            } else {
-                const socketed = (inputNode?.payload as { socketed?: boolean })?.socketed !== false;
-                if (socketed) {
-                    inSockets[parsed.nodeId] = null;
-                }
-                if (inputNode && "initialValue" in inputNode.payload) {
-                    initialValues[`value_${parsed.nodeId}`] = inputNode.payload.initialValue;
-                }
-            }
+            const patch = buildInputSocketPatch(subgraphNodes[parsed.nodeId], parsed.nodeId);
+            Object.assign(inSockets, patch.in);
+            Object.assign(initialValues, patch.payload);
         } else {
             outSockets[parsed.nodeId] = [];
         }
@@ -1064,7 +1046,9 @@ const InputSlotPoint = ({ host, source, handleValue }: InputWidgetProps<PointInp
     const socketed = source.payload.socketed !== false;
     const label = interfaceMemberLabel(source);
     const disabled = host.in[source.id] != null;
-    const current = host.payload[`value_${source.id}`] as PointInput.Value;
+    // Fall back to the source input's initialValue if the host somehow lacks a stored value (e.g. a save from
+    // before value-seeding was added) -- PointInput hard-dereferences value.mode and would otherwise crash.
+    const current = (host.payload[`value_${source.id}`] as PointInput.Value | undefined) ?? source.payload.initialValue;
 
     switch (source.payload.widget) {
         case Enum.Common.typicalInputWidget.NONE.value: {

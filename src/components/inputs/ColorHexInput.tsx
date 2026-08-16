@@ -74,7 +74,7 @@ type ColorHexInputProps = {
 
 export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, required, alpha, disabled, flavour, className }: ColorHexInputProps) => {
     const [hexCache, setHexCache] = useState<string>(() => {
-        if (value === null) return "";
+        if (value == null) return "";
         const hex = Color.toHex(value);
         return alpha ? hex : hex.slice(0, 7);
     });
@@ -84,11 +84,11 @@ export const ColorHexInput = ({ value, onValue, onCommit, onConfirm, required, a
     const onConfirmRef = useStable(onConfirm);
 
     const styleValue = useMemo(() => {
-        return { "--value": value === null ? "transparent" : Color.toHex(value) } as CSSProperties;
+        return { "--value": value == null ? "transparent" : Color.toHex(value) } as CSSProperties;
     }, [value]);
 
     useEffect(() => {
-        if (value === null) {
+        if (value == null) {
             setHexCache("");
         } else {
             const hex = Color.toHex(value);
