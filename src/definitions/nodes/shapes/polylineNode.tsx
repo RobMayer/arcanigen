@@ -236,22 +236,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolylineDefinition>, socket: key
     const tension = Math.max(0, Math.min(100, smoothnessRaw)) / 100;
     const d = tension <= 0 ? buildStraightPath(points, closed) : buildSmoothPath(points, closed, tension);
 
-    let minX = Infinity,
-        minY = Infinity,
-        maxX = -Infinity,
-        maxY = -Infinity;
-    for (const p of points) {
-        minX = Math.min(minX, p.x);
-        minY = Math.min(minY, p.y);
-        maxX = Math.max(maxX, p.x);
-        maxY = Math.max(maxY, p.y);
-    }
-
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
-    const preview = { x: minX + translateX, y: minY + translateY, w: maxX - minX, h: maxY - minY };
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
-        return { kind: "path", data: { d, transform: transforms.join(" "), preview } };
+        return { kind: "path", data: { d, transform: transforms.join(" ") } };
     }
 
     if (socket === "output") {
@@ -280,7 +268,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolylineDefinition>, socket: key
                 paint,
                 markers,
                 transform: transforms.join(" "),
-                preview,
             },
         };
     }

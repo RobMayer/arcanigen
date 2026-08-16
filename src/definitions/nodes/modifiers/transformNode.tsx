@@ -181,12 +181,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<TransformDefinition>, socket: ke
         const inputShape = context.resolve<DataTypes.Shape>(node.id, "shape")?.data;
         if (!inputShape) return null;
 
-        const { css, translateX, translateY } = resolveTransform(node, context);
+        const { css } = resolveTransform(node, context);
         const newTransform = [css, inputShape.transform].filter(Boolean).join(" ");
         const shape: Shape = {
             ...inputShape,
             transform: newTransform,
-            preview: { ...inputShape.preview, x: inputShape.preview.x + translateX, y: inputShape.preview.y + translateY },
         };
         return { kind: "shape", data: shape };
     }
@@ -195,12 +194,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<TransformDefinition>, socket: ke
         const inputPath = context.resolve<DataTypes.Path>(node.id, "path")?.data;
         if (!inputPath) return null;
 
-        const { css, translateX, translateY } = resolveTransform(node, context);
+        const { css } = resolveTransform(node, context);
         const newTransform = [css, inputPath.transform].filter(Boolean).join(" ");
         const path: SVGPath = {
             ...inputPath,
             transform: newTransform,
-            preview: { ...inputPath.preview, x: inputPath.preview.x + translateX, y: inputPath.preview.y + translateY },
         };
         return { kind: "path", data: path };
     }

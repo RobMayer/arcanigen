@@ -122,7 +122,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PenEffectDefinition>, socket: "o
             content: inputShape,
             filter,
             transform: "",
-            preview: inputShape.preview,
         },
     };
 };

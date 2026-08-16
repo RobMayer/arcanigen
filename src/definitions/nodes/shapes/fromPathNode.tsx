@@ -117,8 +117,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<FromPathDefinition>, socket: key
     const pathVal = context.resolve<DataTypes.Path>(node.id, "path");
     if (!pathVal) return null;
 
-    const { d, transform: inputTransform, preview } = pathVal.data;
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const { d, transform: inputTransform } = pathVal.data;
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     // Combine input path's transform with this node's transforms
     const allTransforms = [inputTransform, ...transforms].filter(Boolean).join(" ");
@@ -130,7 +130,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<FromPathDefinition>, socket: key
             d,
             paint: StylingPrefab.evaluate(node, context),
             transform: allTransforms,
-            preview: { x: preview.x + translateX, y: preview.y + translateY, w: preview.w, h: preview.h },
         },
     };
 };

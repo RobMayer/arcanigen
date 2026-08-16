@@ -28,7 +28,6 @@ export namespace PaperHelper {
             data: {
                 d: result.pathData,
                 transform: "",
-                preview: { x: result.bounds.x, y: result.bounds.y, w: result.bounds.width, h: result.bounds.height },
             },
         };
         result.remove();
@@ -404,7 +403,6 @@ export namespace PaperHelper {
                 .map((c) => ({
                     d: c.pathData,
                     transform: "",
-                    preview: { x: c.bounds.x, y: c.bounds.y, w: c.bounds.width, h: c.bounds.height },
                 }));
             item.remove();
             return out;

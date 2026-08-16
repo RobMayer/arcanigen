@@ -211,7 +211,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<AlongPathDefinition>, socket: ke
                 rotate: { auto: memberAlign, degrees: memberRotation },
             },
             transform: pathData.transform,
-            preview: pathData.preview,
         },
     };
 };

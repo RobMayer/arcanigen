@@ -377,7 +377,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
                 rotate,
             },
             transform: pathData.transform ?? "",
-            preview: pathData.preview,
         });
     }
 
@@ -385,7 +384,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         type: "group",
         children,
         transform: "",
-        preview: pathData.preview,
     };
 
     return { kind: "shape", data: group };

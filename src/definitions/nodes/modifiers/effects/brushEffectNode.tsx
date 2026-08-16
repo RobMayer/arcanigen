@@ -144,7 +144,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<BrushEffectDefinition>, socket: 
             content: inputShape,
             filter,
             transform: "",
-            preview: inputShape.preview,
         },
     };
 };

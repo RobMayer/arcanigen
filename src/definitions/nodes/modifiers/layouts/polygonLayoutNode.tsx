@@ -229,7 +229,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
         const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
         const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
-        const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+        const [groupTransforms] = TransformPrefab.evaluate(node, context);
 
         const children = [];
         for (let i = 0; i < count; i++) {
@@ -263,7 +263,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
             type: "group",
             children,
             transform: groupTransforms.join(" "),
-            preview: { x: -trueRadius + translateX, y: -trueRadius + translateY, w: 2 * trueRadius, h: 2 * trueRadius },
         };
 
         return { kind: "shape", data: group };

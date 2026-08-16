@@ -519,12 +519,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         }
 
         const [d, hasCut] = buildStarPath(vertices, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape);
-        const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+        const [transforms] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {
             return {
                 kind: "path",
-                data: { d, transform: transforms.join(" "), preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO } },
+                data: { d, transform: transforms.join(" ") },
             };
         }
 
@@ -545,7 +545,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
                       }
                     : undefined,
                 transform: transforms.join(" "),
-                preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO },
             },
         };
     }

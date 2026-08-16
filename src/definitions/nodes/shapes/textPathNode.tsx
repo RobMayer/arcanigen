@@ -328,7 +328,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextPathDefinition>, socket: key
             paint,
             textPath: { d: pathD, startOffset },
             transform: pathData.transform,
-            preview: pathData.preview,
         },
     };
 };

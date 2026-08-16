@@ -257,7 +257,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
     const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
     const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
 
-    const [groupTransforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [groupTransforms] = TransformPrefab.evaluate(node, context);
 
     const denominator = thetaInclusive ? Math.max(1, count - 1) : count;
 
@@ -292,7 +292,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
         type: "group",
         children,
         transform: groupTransforms.join(" "),
-        preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
     };
 
     return { kind: "shape", data: group };

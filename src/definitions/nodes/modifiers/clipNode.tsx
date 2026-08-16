@@ -95,14 +95,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<ClipDefinition>, socket: keyof C
         const showClip = context.resolve<DataTypes.Boolean>(node.id, "showClip")?.data ?? node.payload.showClip;
 
         if (showClip) {
-            const preview: PathShape = {
+            const clipOutline: PathShape = {
                 type: "path",
                 d: clipPath.d,
                 paint: { fill: null, stroke: { color: "#ff00ff", width: 1, cap: "butt", join: "miter" } },
                 transform: clipPath.transform,
-                preview: clipPath.preview,
             };
-            return { kind: "shape", data: preview };
+            return { kind: "shape", data: clipOutline };
         }
 
         const clipped: ClippedShape = {
@@ -110,7 +109,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ClipDefinition>, socket: keyof C
             content: contentShape,
             clipPath: clipPath.d,
             transform: "",
-            preview: contentShape.preview,
         };
 
         return { kind: "shape", data: clipped };

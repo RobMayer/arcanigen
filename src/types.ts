@@ -8,5 +8,4 @@ export type DivProps = Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HT
 export type SVGPath = {
     d: string;
     transform: string;
-    preview: { x: number; y: number; w: number; h: number };
 };

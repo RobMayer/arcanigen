@@ -189,7 +189,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const viewH = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "viewH")?.data ?? node.payload.viewH) ?? 512;
     if (viewW === 0 || viewH === 0) return null;
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     // The old <symbol> did a viewBox->width/height fit (xMidYMid meet) inside a <use> box centered on
     // the origin. That fit is affine — a uniform scale plus a translate — so we bake it as a matrix
@@ -199,10 +199,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
     const fitX = (width - scale * viewW) / 2 - viewX * scale - width / 2;
     const fitY = (height - scale * viewH) / 2 - viewY * scale - height / 2;
     const transform = [...transforms, `matrix(${scale}, 0, 0, ${scale}, ${fitX}, ${fitY})`].join(" ");
-    const preview = { x: -width / 2 + translateX, y: -height / 2 + translateY, w: width, h: height };
 
     if (socket === "path") {
-        return { kind: "path", data: { d: pathD, transform, preview } };
+        return { kind: "path", data: { d: pathD, transform } };
     }
 
     if (socket === "output") {
@@ -214,7 +213,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlyphDefinition>, socket: keyof 
                 paint: StylingPrefab.evaluate(node, context),
                 vectorEffect: "non-scaling-stroke",
                 transform,
-                preview,
             },
         };
     }

@@ -238,18 +238,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof T
 
     const paint = StylingPrefab.evaluate(node, context);
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
-
-    // The text has no geometric path, so approximate its bounds for layout/preview
-    // purposes from font metrics: ~0.6em advance per character, one em tall per line.
-    const lines = text.split("\n");
-    const longest = Math.max(...lines.map((l) => l.length));
-    const approxWidth = longest * size * 0.6 + Math.max(0, longest - 1) * spacing;
-    const blockHeight = lines.length * lineHeight;
-    const offsetX = textAnchorValue === "middle" ? -approxWidth / 2 : textAnchorValue === "end" ? -approxWidth : 0;
-    // Match the renderer's vertical block anchoring (see TextElement).
-    const offsetY = dominantBaseline === "central" ? -blockHeight / 2 : dominantBaseline === "auto" ? -blockHeight : 0;
-    const preview = { x: translateX + offsetX, y: translateY + offsetY, w: approxWidth, h: blockHeight };
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     return {
         kind: "shape",
@@ -265,7 +254,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<TextDefinition>, socket: keyof T
             rotate: letterRotation !== 0 ? letterRotation : undefined,
             paint,
             transform: transforms.join(" "),
-            preview,
         },
     };
 };

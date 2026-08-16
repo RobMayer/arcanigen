@@ -344,15 +344,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpirographDefinition>, socket: k
 
     const points = SpirographHelper.sample({ ringRadius: R, wheelRadius: r, penDistance: d, inside, turns, samples, closed });
     const dPath = SpirographHelper.toPath(points, closed);
-    const maxR = SpirographHelper.maxRadius({ ringRadius: R, wheelRadius: r, penDistance: d, inside });
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
-    const preview = { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR };
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d: dPath, transform: transforms.join(" "), preview },
+            data: { d: dPath, transform: transforms.join(" ") },
         };
     }
 
@@ -379,7 +377,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpirographDefinition>, socket: k
                 paint,
                 markers,
                 transform: transforms.join(" "),
-                preview,
             },
         };
     }

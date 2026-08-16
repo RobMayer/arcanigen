@@ -427,15 +427,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiroringDefinition>, socket: ke
         dPath = PaperHelper.healD(dPath) ?? dPath;
     }
 
-    const maxR = SpirographHelper.maxRadius({ ringRadius: R, wheelRadius: r, penDistance: d, inside }) + Math.max(Math.abs(outerDelta), Math.abs(innerDelta));
-
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
-    const preview = { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR };
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d: dPath, transform: transforms.join(" "), preview },
+            data: { d: dPath, transform: transforms.join(" ") },
         };
     }
 
@@ -447,7 +444,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiroringDefinition>, socket: ke
                 d: dPath,
                 paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
-                preview,
             },
         };
     }

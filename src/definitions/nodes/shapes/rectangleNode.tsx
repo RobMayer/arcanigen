@@ -237,22 +237,18 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
         d = `M ${-hw},${-hh + r} ${tlCorner} L ${hw - r},${-hh} ${trCorner} L ${hw},${hh - r} ${brCorner} L ${-hw + r},${hh} ${blCorner} ${close}`;
     }
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
-        const diag = Math.sqrt(width * width + height * height);
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
     if (socket === "output") {
         const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
-
-        const diag = Math.sqrt(width * width + height * height);
-        const pathPreview = { x: -diag / 2 + translateX, y: -diag / 2 + translateY, w: diag, h: diag };
 
         const paint = StylingPrefab.evaluate(node, context);
         if (hasCut) paint.fill = null;
@@ -271,7 +267,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RectangleDefinition>, socket: ke
                       }
                     : undefined,
                 transform: transforms.join(" "),
-                preview: pathPreview,
             },
         };
     }

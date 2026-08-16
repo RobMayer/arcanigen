@@ -1,4 +1,4 @@
-import { CSSProperties, ReactNode, Ref, useCallback, useMemo } from "react";
+import { CSSProperties, ReactNode, Ref, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Socket } from "./socket";
 import { Icon, ICONS } from "../../components/Icon";
@@ -8,7 +8,7 @@ import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions } from "../../definitions/nodeTypes";
 import { DataTypes } from "../../definitions/dataTypes";
 import { Flavour } from "../../components/types";
-import { Shape } from "../../definitions/shapeTypes";
+import { BBox, Shape } from "../../definitions/shapeTypes";
 import { ShapeElement } from "../shapeRenderer";
 import { Color } from "../../definitions/datatypes/color";
 import { Length } from "../../definitions/datatypes/length";
@@ -55,18 +55,38 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: Shape 
         [color],
     );
 
+    // Bounds are no longer carried on the shape payload; measure the rendered geometry
+    // directly. The svg is always mounted so getBBox has something to read; the viewBox
+    // is applied on the next commit from a layout effect, so there's no visible flash.
+    const svgRef = useRef<SVGSVGElement>(null);
+    const [box, setBox] = useState<BBox | null>(null);
+
+    useLayoutEffect(() => {
+        if (!shape || !svgRef.current) {
+            setBox(null);
+            return;
+        }
+        // getBBox throws in some browsers when there's no rendered geometry (empty group, hidden node).
+        let b: DOMRect;
+        try {
+            b = svgRef.current.getBBox();
+        } catch {
+            setBox(null);
+            return;
+        }
+        setBox((prev) => (prev && prev.x === b.x && prev.y === b.y && prev.w === b.width && prev.h === b.height ? prev : { x: b.x, y: b.y, w: b.width, h: b.height }));
+    }, [shape]);
+
     if (!shape) return <div className={className} />;
 
-    const { x, y, w, h } = shape.preview;
-    const pad = Math.max(w, h) * 0.05;
+    const pad = box ? Math.max(box.w, box.h) * 0.05 : 0;
+    const viewBox = box ? `${box.x - pad} ${box.y - pad} ${box.w + pad * 2} ${box.h + pad * 2}` : undefined;
 
     return (
         <div className={className} style={style}>
-            {pad === 0 ? null : (
-                <svg viewBox={`${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}`}>
-                    <ShapeElement shape={shape} />
-                </svg>
-            )}
+            <svg ref={svgRef} viewBox={viewBox}>
+                <ShapeElement shape={shape} />
+            </svg>
         </div>
     );
 })`
@@ -80,6 +100,8 @@ export const ShapePreview = styled(({ shape, className, color }: { shape: Shape 
     & > svg {
         position: absolute;
         inset: 0;
+        width: 100%;
+        height: 100%;
     }
 `;
 

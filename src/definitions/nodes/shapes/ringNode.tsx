@@ -250,12 +250,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
     }
 
     const d = `M ${rO},0 A ${rO},${rO} 0 0,0 ${-rO},0 A ${rO},${rO} 0 0,0 ${rO},0 z M ${rI},0 A ${rI},${rI} 0 0,1 ${-rI},0 A ${rI},${rI} 0 0,1 ${rI},0 z`;
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
@@ -267,7 +267,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<RingDefinition>, socket: keyof R
                 d,
                 paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
-                preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
         };
     }

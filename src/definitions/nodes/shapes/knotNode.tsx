@@ -654,12 +654,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         if (removeCrossings) {
             d = PaperHelper.healD(d) ?? d;
         }
-        const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+        const [transforms] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {
             return {
                 kind: "path",
-                data: { d, transform: transforms.join(" "), preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO } },
+                data: { d, transform: transforms.join(" ") },
             };
         }
 
@@ -681,7 +681,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
                       }
                     : undefined,
                 transform: transforms.join(" "),
-                preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO },
             },
         };
     }

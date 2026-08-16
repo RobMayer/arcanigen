@@ -126,7 +126,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<MaskDefinition>, socket: keyof M
                 mode,
             },
             transform: "",
-            preview: contentShape.preview,
         };
 
         return { kind: "shape", data: masked };

@@ -357,13 +357,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });
     }
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         const d = lineCoords.map((l) => `M ${l.x1},${l.y1} L ${l.x2},${l.y2}`).join(" ");
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
@@ -390,7 +390,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
             paint,
             markers,
             transform: "",
-            preview: { x: Math.min(l.x1, l.x2), y: Math.min(l.y1, l.y2), w: Math.abs(l.x2 - l.x1), h: Math.abs(l.y2 - l.y1) },
         }));
 
         return {
@@ -399,7 +398,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
                 type: "group",
                 transform: transforms.join(" "),
                 children,
-                preview: { x: -rO + translateX, y: -rO + translateY, w: 2 * rO, h: 2 * rO },
             },
         };
     }

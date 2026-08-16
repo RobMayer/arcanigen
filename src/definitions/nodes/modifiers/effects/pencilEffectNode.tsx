@@ -97,7 +97,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PencilEffectDefinition>, socket:
             content: inputShape,
             filter,
             transform: "",
-            preview: inputShape.preview,
         },
     };
 };

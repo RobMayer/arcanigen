@@ -586,12 +586,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
 
         const hasCut = outerCut || innerCut;
         const d = innerPath ? `${outerPath} ${innerPath}` : outerPath;
-        const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+        const [transforms] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {
             return {
                 kind: "path",
-                data: { d, transform: transforms.join(" "), preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO } },
+                data: { d, transform: transforms.join(" ") },
             };
         }
 
@@ -612,7 +612,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolyringDefinition>, socket: key
                       }
                     : undefined,
                 transform: transforms.join(" "),
-                preview: { x: -tO + translateX, y: -tO + translateY, w: 2 * tO, h: 2 * tO },
             },
         };
     }

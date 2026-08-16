@@ -192,7 +192,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<GlowEffectDefinition>, socket: "
             content: inputShape,
             filter,
             transform: "",
-            preview: inputShape.preview,
         },
     };
 };

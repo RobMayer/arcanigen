@@ -106,9 +106,7 @@ export type PathShape = {
     markers?: Markers;
     vectorEffect?: string; // e.g. "non-scaling-stroke"
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A straight line segment: <line x1 y1 x2 y2> */
 export type LineShape = {
@@ -120,9 +118,7 @@ export type LineShape = {
     paint: Paint;
     markers?: Markers;
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A rectangle: <rect x y width height rx ry> */
 export type RectShape = {
@@ -135,9 +131,7 @@ export type RectShape = {
     ry?: string;
     paint: Paint;
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A text element, optionally following a path */
 export type TextShape = {
@@ -153,9 +147,7 @@ export type TextShape = {
     paint: Paint;
     textPath?: TextPathDef;
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A group of child shapes */
 export type GroupShape = {
@@ -164,9 +156,7 @@ export type GroupShape = {
     blendMode?: string; // CSS mix-blend-mode value
     isolation?: boolean; // CSS isolation: isolate
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A shape positioned along a path via CSS offset-path */
 export type OffsetPathShape = {
@@ -174,18 +164,14 @@ export type OffsetPathShape = {
     shape: Shape; // the shape being positioned
     path: OffsetPathDef;
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A symbol with one or more <use> instances */
 export type SymbolShape = {
     type: "symbol";
     symbol: SymbolDef;
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 /** A shape masked by another shape via SVG <mask> */
 export type MaskedShape = {
@@ -193,9 +179,7 @@ export type MaskedShape = {
     content: Shape;
     mask: MaskDef;
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 export type MaskDef = {
     shape: Shape;
@@ -214,9 +198,7 @@ export type ClippedShape = {
     content: Shape;
     clipPath: string; // SVG path d attribute
     transform: string;
-    signals?: string[];
-    preview: BBox;
-};
+    signals?: string[];};
 
 /** A shape with an SVG filter applied */
 export type FilteredShape = {
@@ -224,9 +206,7 @@ export type FilteredShape = {
     content: Shape;
     filter: FilterPrimitive[];
     signals?: string[];
-    transform: string;
-    preview: BBox;
-};
+    transform: string;};
 
 // ─── Union ───────────────────────────────────────────────────────────────────
 

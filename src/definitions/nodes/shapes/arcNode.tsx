@@ -282,12 +282,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
         }
     }
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
@@ -320,7 +320,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ArcDefinition>, socket: keyof Ar
                 paint,
                 markers,
                 transform: transforms.join(" "),
-                preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
             },
         };
     }

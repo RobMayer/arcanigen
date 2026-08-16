@@ -126,24 +126,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
         children.push(shape);
     }
 
-    // Preview is the union of the children's bounds.
-    let minX = Infinity,
-        minY = Infinity,
-        maxX = -Infinity,
-        maxY = -Infinity;
-    for (const child of children) {
-        minX = Math.min(minX, child.preview.x);
-        minY = Math.min(minY, child.preview.y);
-        maxX = Math.max(maxX, child.preview.x + child.preview.w);
-        maxY = Math.max(maxY, child.preview.y + child.preview.h);
-    }
-    const preview = isFinite(minX) ? { x: minX, y: minY, w: maxX - minX, h: maxY - minY } : { x: 0, y: 0, w: 0, h: 0 };
-
     const group: GroupShape = {
         type: "group",
         children,
         transform: groupTransforms.join(" "),
-        preview,
     };
 
     return { kind: "shape", data: group };

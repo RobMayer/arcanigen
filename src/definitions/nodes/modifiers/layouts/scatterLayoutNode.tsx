@@ -92,10 +92,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
     if (!points || points.length === 0) return null;
 
     const children: GroupShape[] = [];
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
 
     for (let i = 0; i < points.length; i++) {
         // Sequence-resolve the member so upstream iterators can vary it per index.
@@ -103,14 +99,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
         if (shape === null) continue;
 
         const { x, y } = points[i];
-        children.push({ type: "group", children: [shape], transform: `translate(${x}, ${y})`, preview: shape.preview });
-
-        // Union the member's (translated) bounds for the group preview.
-        const pv = shape.preview;
-        minX = Math.min(minX, x + pv.x);
-        minY = Math.min(minY, y + pv.y);
-        maxX = Math.max(maxX, x + pv.x + pv.w);
-        maxY = Math.max(maxY, y + pv.y + pv.h);
+        children.push({ type: "group", children: [shape], transform: `translate(${x}, ${y})` });
     }
 
     if (children.length === 0) return null;
@@ -119,7 +108,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
         type: "group",
         children,
         transform: "",
-        preview: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
     };
 
     return { kind: "shape", data: group };

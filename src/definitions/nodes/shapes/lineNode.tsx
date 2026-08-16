@@ -164,16 +164,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
     }
 
     const d = `M ${sx},${sy} L ${ex},${ey}`;
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
-        const minX = Math.min(sx, ex);
-        const minY = Math.min(sy, ey);
-        const maxX = Math.max(sx, ex);
-        const maxY = Math.max(sy, ey);
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: minX + translateX, y: minY + translateY, w: maxX - minX, h: maxY - minY } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
@@ -193,11 +189,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
                   }
                 : undefined;
 
-        const minX = Math.min(sx, ex);
-        const minY = Math.min(sy, ey);
-        const maxX = Math.max(sx, ex);
-        const maxY = Math.max(sy, ey);
-
         return {
             kind: "shape",
             data: {
@@ -206,7 +197,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<LineDefinition>, socket: keyof L
                 paint,
                 markers,
                 transform: transforms.join(" "),
-                preview: { x: minX + translateX, y: minY + translateY, w: maxX - minX, h: maxY - minY },
             },
         };
     }

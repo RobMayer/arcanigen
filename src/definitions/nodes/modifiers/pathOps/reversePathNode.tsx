@@ -75,10 +75,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<ReversePathDefinition>, socket: 
     const reversed = PaperHelper.reverseD(pathData.d);
     if (reversed === null) return null;
 
-    // Reversing only flips winding direction — transform and bounds are unchanged, so preserve them.
+    // Reversing only flips winding direction — the transform is unchanged, so preserve it.
     return {
         kind: "path",
-        data: { d: reversed, transform: pathData.transform, preview: pathData.preview },
+        data: { d: reversed, transform: pathData.transform },
     };
 };
 

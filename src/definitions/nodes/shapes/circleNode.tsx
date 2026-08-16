@@ -127,12 +127,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
     }
 
     const d = `M 0,${-1 * radius} A ${radius},${radius} 0 0 1 0,${radius} A ${radius},${radius} 0 0 1 0,${radius * -1} z`;
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
@@ -144,7 +144,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<CircleDefinition>, socket: keyof
                 d,
                 paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
-                preview: { x: -radius + translateX, y: -radius + translateY, w: 2 * radius, h: 2 * radius },
             },
         };
     }

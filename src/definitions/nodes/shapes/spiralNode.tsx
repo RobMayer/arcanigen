@@ -334,13 +334,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
         d += ` ${bezierCommand(points, i)}`;
     }
 
-    const [transforms, { translateX, translateY }] = TransformPrefab.evaluate(node, context);
+    const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (socket === "path") {
-        const maxR = Math.max(Math.abs(rI), Math.abs(rO));
         return {
             kind: "path",
-            data: { d, transform: transforms.join(" "), preview: { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR } },
+            data: { d, transform: transforms.join(" ") },
         };
     }
 
@@ -359,8 +358,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
                   }
                 : undefined;
 
-        const maxR = Math.max(Math.abs(rI), Math.abs(rO));
-
         return {
             kind: "shape",
             data: {
@@ -369,7 +366,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
                 paint,
                 markers,
                 transform: transforms.join(" "),
-                preview: { x: -maxR + translateX, y: -maxR + translateY, w: 2 * maxR, h: 2 * maxR },
             },
         };
     }
