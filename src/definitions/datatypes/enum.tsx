@@ -283,6 +283,11 @@ export namespace Enum {
             INPUT: { value: 1, label: "Input" },
         } as const;
 
+        export const arrayInputWidget = {
+            NONE: { value: 0, label: "None" },
+            DYNAMIC_LIST: { value: 1, label: "Dynamic List" },
+        } as const;
+
         export const typicalOutputWidget = {
             NONE: { value: 0, label: "None" },
             PREVIEW: { value: 1, label: "Preview" },

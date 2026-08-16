@@ -766,7 +766,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 11;
+        export const CURRENT = 12;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1322,6 +1322,41 @@ export namespace Project {
                     }
                 }
                 input.version = 11;
+            }
+            if (input.version === 11) {
+                // Array input interface nodes gained orthogonal `socketed` + `widget` options (like value inputs).
+                // Backfill existing instances to their prior behavior: the group inputs (layer/path-op) were always
+                // a socketed dynamic list; the other array inputs were a plain socket with no inline authoring.
+                // widget values mirror Enum.Common.arrayInputWidget: 0 = None, 1 = Dynamic List.
+                const GROUP_ARRAY_INPUTS = new Set(["arrayLayerInput", "arrayPathOpInput"]);
+                const OTHER_ARRAY_INPUTS = new Set([
+                    "arrayFloatInput",
+                    "arrayIntegerInput",
+                    "arrayAngleInput",
+                    "arrayLengthInput",
+                    "arrayColorInput",
+                    "arrayBooleanInput",
+                    "arrayPointInput",
+                    "arrayStopColorInput",
+                    "arrayStopFloatInput",
+                    "arrayStopAngleInput",
+                    "arrayStopIntegerInput",
+                    "arrayStopLengthInput",
+                ]);
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (!node.payload) continue;
+                        if (GROUP_ARRAY_INPUTS.has(node.type)) {
+                            node.payload.socketed = node.payload.socketed ?? true;
+                            node.payload.widget = node.payload.widget ?? 1;
+                        } else if (OTHER_ARRAY_INPUTS.has(node.type)) {
+                            node.payload.socketed = node.payload.socketed ?? true;
+                            node.payload.widget = node.payload.widget ?? 0;
+                        }
+                    }
+                }
+                input.version = 12;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

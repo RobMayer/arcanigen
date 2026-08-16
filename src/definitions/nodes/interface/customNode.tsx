@@ -51,7 +51,7 @@ import { RadioBox } from "../../../components/buttons/RadioBox";
 import { useGraphId } from "../../../state/graphId";
 import styled from "styled-components";
 import { flattenSockets, parseInterface, interfaceMemberLabel, InterfaceMember } from "../../../state/project/types";
-import { buildInputSocketPatch } from "../../helpers/interfaceHelper";
+import { buildInputSocketPatch, arrayGroupKey, makeArrayGroupEntry, ArrayGroupEntry as ArrayGroupEntryData, ARRAY_GROUP_PAYLOAD_PREFIXES } from "../../helpers/interfaceHelper";
 import { ShapePreview } from "../../../features/nodeview/slots";
 import { Color } from "../../datatypes/color";
 import { Angle } from "../../datatypes/angle";
@@ -152,12 +152,12 @@ const dependsOn = (node: NodeDefinitions.NodeFor<CustomDefinition>, outSocket: s
     const outKey: InterfaceKey = `out:${outSocket}`;
     const rawDeps = subgraphDeps[outKey] ?? [];
 
-    // Expand layer groups: replace inputNodeId with supersocket + all layer socket names from that group
+    // Expand Dynamic List groups: replace the input node id with the supersocket + all its element socket names.
     const expanded: string[] = [];
     for (const dep of rawDeps) {
-        const layersKey = `layers_${dep}`;
-        if (layersKey in node.payload) {
-            const entries = (node.payload as Record<string, unknown>)[layersKey] as { socket: string }[];
+        const groupKey = ARRAY_GROUP_PAYLOAD_PREFIXES.map((p) => `${p}${dep}`).find((k) => k in node.payload);
+        if (groupKey) {
+            const entries = (node.payload as Record<string, unknown>)[groupKey] as { socket: string }[];
             expanded.push(dep); // supersocket
             expanded.push(...entries.map((e) => e.socket));
         } else {
@@ -177,13 +177,13 @@ const contributesTo = (node: NodeDefinitions.NodeFor<CustomDefinition>, inSocket
         return Object.keys(node.out);
     }
 
-    // Check if inSocket belongs to a layer group
+    // Check if inSocket is an element socket of a Dynamic List group; if so, defer to its owning input node.
     for (const key of Object.keys(node.payload)) {
-        if (!key.startsWith("layers_")) continue;
-        const inputNodeId = key.slice(7);
+        const prefix = ARRAY_GROUP_PAYLOAD_PREFIXES.find((p) => key.startsWith(p));
+        if (!prefix) continue;
         const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
         if (entries.some((e) => e.socket === inSocket)) {
-            const inKey: InterfaceKey = `in:${inputNodeId}`;
+            const inKey: InterfaceKey = `in:${key.slice(prefix.length)}`;
             return subgraphDeps[inKey] ?? [];
         }
     }
@@ -304,6 +304,25 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
             return { kind: "array<pathOp>", data: pathOpData };
         }
 
+        // Dynamic List handling for scalar/stop/point array inputs (mirrors their array constructor fold).
+        const elementsKey = `elements_${inputNodeId}`;
+        if (elementsKey in node.payload) {
+            const inputNode = context.getNode(graphId, inputNodeId);
+            const view = inputNode ? ARRAY_ELEMENT_VIEWS[inputNode.type] : undefined;
+            if (view) {
+                // Supersocket override: a connected array<T> wins over the element rows.
+                const supersocketEval = context.resolve(node.id, inputNodeId, outerCursorData);
+                if (supersocketEval) return supersocketEval;
+
+                const entries = (node.payload as Record<string, unknown>)[elementsKey] as ArrayGroupEntryData[];
+                const data = entries.map((entry) => view.fold(entry, context.resolve(node.id, entry.socket, outerCursorData)));
+                if (view.sortByPosition) {
+                    data.sort((a, b) => (a as { position: number }).position - (b as { position: number }).position);
+                }
+                return { kind: view.outputKind, data } as DataTypes.AnyEval;
+            }
+        }
+
         // Regular socket: resolve in parent graph with translated cursorData
         const resolved = context.resolve(node.id, inputNodeId, outerCursorData);
         if (resolved) return resolved;
@@ -381,10 +400,12 @@ const onConnect = (node: NodeDefinitions.BuiltNodeOf<"custom", CustomDefinition>
     const link = ctx.getLink(graphId, linkId);
     if (!link) return;
 
-    // Check if the connected socket is a supersocket for a layer or path-op group
+    // Check if the connected socket is a supersocket for a Dynamic List group (layer/path-op or element group);
+    // if so, connecting the whole array clears the now-hidden element sockets (mirrors the array constructors).
     const layersKey = `layers_${link.toSocket}`;
     const pathOpsKey = `pathOps_${link.toSocket}`;
-    const groupKey = layersKey in node.payload ? layersKey : pathOpsKey in node.payload ? pathOpsKey : null;
+    const elementsKey = `elements_${link.toSocket}`;
+    const groupKey = layersKey in node.payload ? layersKey : pathOpsKey in node.payload ? pathOpsKey : elementsKey in node.payload ? elementsKey : null;
     if (!groupKey) return;
 
     // Collect all link IDs from the group's item sockets
@@ -484,7 +505,7 @@ const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId
     const subgraphId = node.payload.graphId;
     if (!subgraphId) return SocketTypes.ANY;
 
-    // Check if this socket belongs to a layer or path-op group
+    // Check if this socket belongs to a Dynamic List group (layer/path-op, or a scalar/stop/point element group)
     for (const key of Object.keys(node.payload)) {
         if (key.startsWith("layers_")) {
             const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
@@ -492,6 +513,13 @@ const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId
         } else if (key.startsWith("pathOps_")) {
             const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
             if (entries.some((e) => e.socket === socketId)) return SocketTypes.PATHOP_OR_PATH;
+        } else if (key.startsWith("elements_")) {
+            const entries = (node.payload as Record<string, unknown>)[key] as { socket: string }[];
+            if (entries.some((e) => e.socket === socketId)) {
+                const inputNodeId = key.slice("elements_".length);
+                const inputNode = ctx.getNode(subgraphId, inputNodeId);
+                return (inputNode && ARRAY_ELEMENT_VIEWS[inputNode.type]?.elementSocketType) ?? SocketTypes.ANY;
+            }
         }
     }
 
@@ -603,6 +631,19 @@ const DynamicSlot = ({
             return <InputSlotPath host={hostNode} source={sourceNode} />;
         case "pathOutput":
             return <OutputSlotPath host={hostNode} source={sourceNode} />;
+        case "arrayFloatInput":
+        case "arrayIntegerInput":
+        case "arrayAngleInput":
+        case "arrayLengthInput":
+        case "arrayColorInput":
+        case "arrayBooleanInput":
+        case "arrayPointInput":
+        case "arrayStopColorInput":
+        case "arrayStopFloatInput":
+        case "arrayStopAngleInput":
+        case "arrayStopIntegerInput":
+        case "arrayStopLengthInput":
+            return <InputSlotArrayGroup host={hostNode} source={sourceNode} />;
         case "layerInput":
         case "pathOpInput":
         case "stopColorInput":
@@ -610,18 +651,6 @@ const DynamicSlot = ({
         case "stopAngleInput":
         case "stopIntegerInput":
         case "stopLengthInput":
-        case "arrayStopColorInput":
-        case "arrayStopFloatInput":
-        case "arrayStopAngleInput":
-        case "arrayStopIntegerInput":
-        case "arrayStopLengthInput":
-        case "arrayAngleInput":
-        case "arrayIntegerInput":
-        case "arrayFloatInput":
-        case "arrayPointInput":
-        case "arrayLengthInput":
-        case "arrayColorInput":
-        case "arrayBooleanInput":
             return <InputSlotPassthrough host={hostNode} source={sourceNode} />;
         case "layerOutput":
         case "pathOpOutput":
@@ -1391,7 +1420,10 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
     const { alterNode, removeLinks } = Project.useMethods();
     const label = ((source.payload as { label?: string }).label ?? "") === "" ? "Layers" : (source.payload as { label?: string }).label;
     const layerEntries = ((host.payload as Record<string, unknown>)[`layers_${source.id}`] ?? []) as { socket: string; enabled: boolean; blend: number }[];
-    const supersocketConnected = host.in[source.id] !== null;
+    const socketed = (source.payload as { socketed?: boolean }).socketed !== false;
+    const isDynamic = (source.payload as { widget?: number }).widget !== Enum.Common.arrayInputWidget.NONE.value;
+    const supersocketConnected = socketed && host.in[source.id] != null;
+    const showRows = isDynamic && !supersocketConnected;
 
     const handleAddLayer = useCallback(() => {
         const socketId = `layer_${nanoid()}`;
@@ -1465,10 +1497,10 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
 
     return (
         <>
-            <SocketIn node={host} socketId={source.id}>
+            <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id}>
                 {label}
-            </SocketIn>
-            {supersocketConnected ? null : (
+            </InputSocketOrSlot>
+            {showRows ? (
                 <>
                     <ActionButton onClick={handleAddLayer} flavour={"accent"}>
                         Add Layer
@@ -1485,7 +1517,7 @@ const InputSlotLayerGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
                         />
                     ))}
                 </>
-            )}
+            ) : null}
         </>
     );
 };
@@ -1633,7 +1665,10 @@ const InputSlotPathOpGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<
     const { alterNode, removeLinks } = Project.useMethods();
     const label = ((source.payload as { label?: string }).label ?? "") === "" ? "Path Ops" : (source.payload as { label?: string }).label;
     const pathOpEntries = ((host.payload as Record<string, unknown>)[`pathOps_${source.id}`] ?? []) as { socket: string; enabled: boolean; op: number }[];
-    const supersocketConnected = host.in[source.id] !== null;
+    const socketed = (source.payload as { socketed?: boolean }).socketed !== false;
+    const isDynamic = (source.payload as { widget?: number }).widget !== Enum.Common.arrayInputWidget.NONE.value;
+    const supersocketConnected = socketed && host.in[source.id] != null;
+    const showRows = isDynamic && !supersocketConnected;
 
     const handleAddPathOp = useCallback(() => {
         const socketId = `pathop_${nanoid()}`;
@@ -1707,10 +1742,10 @@ const InputSlotPathOpGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<
 
     return (
         <>
-            <SocketIn node={host} socketId={source.id}>
+            <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id}>
                 {label}
-            </SocketIn>
-            {supersocketConnected ? null : (
+            </InputSocketOrSlot>
+            {showRows ? (
                 <>
                     <ActionButton onClick={handleAddPathOp} flavour={"accent"}>
                         Add Path
@@ -1727,7 +1762,7 @@ const InputSlotPathOpGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<
                         />
                     ))}
                 </>
-            )}
+            ) : null}
         </>
     );
 };
@@ -1813,5 +1848,346 @@ const PathOpGroupEntry = ({
                 </ActionButton.Lite>
             </SocketIn>
         </LayerEntryWrapper>
+    );
+};
+
+// ---- Generic Dynamic List for the scalar/stop/point array inputs ------------------------------------------------
+// The layer/path-op groups above stay bespoke (dual-type sockets + enabled/blend|op metadata). Everything else
+// shares this one list-wrapper; only the per-element row editor and eval fold vary, via ARRAY_ELEMENT_VIEWS. Each
+// view mirrors that element type's array constructor sibling (floatArray, colorStopArray, ...).
+
+const ARRAY_ELEMENT_MIME = "application/x-custom-array-element";
+
+const ArrayRowWrap = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex: 1 1 0;
+    min-width: 0;
+
+    & > .valueField,
+    & > .stopValue,
+    & > .pointField {
+        flex: 1 1 0;
+        width: 0;
+        min-width: 0;
+    }
+    & > .stopPosition {
+        flex: 0 0 4.5em;
+    }
+`;
+
+type ArrayRowProps = { entry: ArrayGroupEntryData; connected: boolean; onUpdate: (u: Record<string, unknown>) => void };
+
+const scalarFold = (entry: ArrayGroupEntryData, connected: DataTypes.AnyEval | null): unknown => (connected ? connected.data : entry.value);
+
+const pointFold = (entry: ArrayGroupEntryData, connected: DataTypes.AnyEval | null): { x: number; y: number } => {
+    if (connected) {
+        const d = connected.data as { x: number; y: number };
+        return { x: d.x, y: d.y };
+    }
+    return PointHelper.fromAuthoring(entry as unknown as PointInput.Value);
+};
+
+// Stops fold to { value, position, enabled }, mirroring the *StopArray constructors: a connected element (a full
+// stop) overrides each field; otherwise the inline row is used. Output is sorted by position (sortByPosition).
+const stopFold = (entry: ArrayGroupEntryData, connected: DataTypes.AnyEval | null): { value: unknown; position: number; enabled: boolean } => {
+    const rowPos = NumericString.Emptyable.asNumber(entry.position as NumericString.Type) ?? 0;
+    if (connected) {
+        const d = connected.data as { value?: unknown; position?: number; enabled?: boolean };
+        return { value: d.value ?? entry.value, position: d.position ?? rowPos, enabled: d.enabled ?? (entry.enabled as boolean) };
+    }
+    return { value: entry.value, position: rowPos, enabled: entry.enabled as boolean };
+};
+
+const StopRow = ({ entry, connected, onUpdate, children }: ArrayRowProps & { children: ReactNode }) => (
+    <>
+        <CheckBox checked={entry.enabled as boolean} onToggle={(enabled) => onUpdate({ enabled })} disabled={connected} />
+        {children}
+        <DecimalInput className={"stopPosition"} value={entry.position as NumericString.Type} onCommit={(position) => onUpdate({ position })} disabled={connected} min={"0"} max={"100"} />
+    </>
+);
+
+type ArrayElementView = {
+    defaultLabel: string;
+    addLabel: string;
+    elementSocketType: SocketTypes.Term;
+    outputKind: DataTypes.AnyEval["kind"];
+    sortByPosition?: boolean;
+    Row: (props: ArrayRowProps) => ReactNode;
+    fold: (entry: ArrayGroupEntryData, connected: DataTypes.AnyEval | null) => unknown;
+};
+
+const ARRAY_ELEMENT_VIEWS: Record<string, ArrayElementView> = {
+    arrayFloatInput: {
+        defaultLabel: "Floats",
+        addLabel: "Add Float",
+        elementSocketType: SocketTypes.of(DataTypes.FLOAT),
+        outputKind: "array<float>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <DecimalInput className={"valueField"} value={entry.value as NumericString.Type} onCommit={(value) => onUpdate({ value })} disabled={connected} />,
+    },
+    arrayIntegerInput: {
+        defaultLabel: "Integers",
+        addLabel: "Add Integer",
+        elementSocketType: SocketTypes.of(DataTypes.INTEGER),
+        outputKind: "array<integer>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <IntegerInput className={"valueField"} value={entry.value as NumericString.Type} onCommit={(value) => onUpdate({ value })} disabled={connected} />,
+    },
+    arrayAngleInput: {
+        defaultLabel: "Angles",
+        addLabel: "Add Angle",
+        elementSocketType: SocketTypes.of(DataTypes.ANGLE),
+        outputKind: "array<angle>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <AngleInput className={"valueField"} value={entry.value as Angle.Type} onCommit={(value) => onUpdate({ value })} disabled={connected} />,
+    },
+    arrayLengthInput: {
+        defaultLabel: "Lengths",
+        addLabel: "Add Length",
+        elementSocketType: SocketTypes.of(DataTypes.LENGTH),
+        outputKind: "array<length>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <LengthInput className={"valueField"} value={entry.value as Length.Type} onCommit={(value) => onUpdate({ value })} disabled={connected} required />,
+    },
+    arrayColorInput: {
+        defaultLabel: "Colors",
+        addLabel: "Add Color",
+        elementSocketType: SocketTypes.of(DataTypes.COLOR),
+        outputKind: "array<color>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <ColorHexInput className={"valueField"} value={entry.value as Color.Type} onCommit={(value) => onUpdate({ value })} disabled={connected} alpha />,
+    },
+    arrayBooleanInput: {
+        defaultLabel: "Booleans",
+        addLabel: "Add Boolean",
+        elementSocketType: SocketTypes.of(DataTypes.BOOLEAN),
+        outputKind: "array<boolean>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => (
+            <CheckBox className={"valueField"} checked={entry.value as boolean} onToggle={(value) => onUpdate({ value })} disabled={connected}>
+                {(entry.value as boolean) ? "True" : "False"}
+            </CheckBox>
+        ),
+    },
+    arrayPointInput: {
+        defaultLabel: "Points",
+        addLabel: "Add Point",
+        elementSocketType: SocketTypes.of(DataTypes.POINT),
+        outputKind: "array<point>",
+        fold: pointFold,
+        Row: ({ entry, connected, onUpdate }) => <PointInput value={entry as unknown as PointInput.Value} onChange={(v) => onUpdate(v)} disabled={connected} />,
+    },
+    arrayStopColorInput: {
+        defaultLabel: "Color Stops",
+        addLabel: "Add Stop",
+        elementSocketType: SocketTypes.of(DataTypes.STOP_COLOR),
+        outputKind: "array<stop:color>",
+        sortByPosition: true,
+        fold: stopFold,
+        Row: (p) => (
+            <StopRow {...p}>
+                <ColorHexInput className={"stopValue"} value={p.entry.value as Color.Type} onCommit={(value) => p.onUpdate({ value })} disabled={p.connected} alpha />
+            </StopRow>
+        ),
+    },
+    arrayStopFloatInput: {
+        defaultLabel: "Float Stops",
+        addLabel: "Add Stop",
+        elementSocketType: SocketTypes.of(DataTypes.STOP_FLOAT),
+        outputKind: "array<stop:float>",
+        sortByPosition: true,
+        fold: stopFold,
+        Row: (p) => (
+            <StopRow {...p}>
+                <DecimalInput className={"stopValue"} value={p.entry.value as NumericString.Type} onCommit={(value) => p.onUpdate({ value })} disabled={p.connected} />
+            </StopRow>
+        ),
+    },
+    arrayStopAngleInput: {
+        defaultLabel: "Angle Stops",
+        addLabel: "Add Stop",
+        elementSocketType: SocketTypes.of(DataTypes.STOP_ANGLE),
+        outputKind: "array<stop:angle>",
+        sortByPosition: true,
+        fold: stopFold,
+        Row: (p) => (
+            <StopRow {...p}>
+                <AngleInput className={"stopValue"} value={p.entry.value as Angle.Type} onCommit={(value) => p.onUpdate({ value })} disabled={p.connected} unbound />
+            </StopRow>
+        ),
+    },
+    arrayStopIntegerInput: {
+        defaultLabel: "Integer Stops",
+        addLabel: "Add Stop",
+        elementSocketType: SocketTypes.of(DataTypes.STOP_INTEGER),
+        outputKind: "array<stop:integer>",
+        sortByPosition: true,
+        fold: stopFold,
+        Row: (p) => (
+            <StopRow {...p}>
+                <IntegerInput className={"stopValue"} value={p.entry.value as NumericString.Type} onCommit={(value) => p.onUpdate({ value })} disabled={p.connected} />
+            </StopRow>
+        ),
+    },
+    arrayStopLengthInput: {
+        defaultLabel: "Length Stops",
+        addLabel: "Add Stop",
+        elementSocketType: SocketTypes.of(DataTypes.STOP_LENGTH),
+        outputKind: "array<stop:length>",
+        sortByPosition: true,
+        fold: stopFold,
+        Row: (p) => (
+            <StopRow {...p}>
+                <LengthInput className={"stopValue"} value={p.entry.value as Length.Type} onCommit={(value) => p.onUpdate({ value })} disabled={p.connected} />
+            </StopRow>
+        ),
+    },
+};
+
+const ArrayGroupEntry = ({
+    host,
+    entry,
+    index,
+    onRemove,
+    onReorder,
+    children,
+}: {
+    host: NodeDefinitions.NodeFor<CustomDefinition>;
+    entry: ArrayGroupEntryData;
+    index: number;
+    onRemove: (socket: string) => void;
+    onReorder: (socket: string, toIndex: number) => void;
+    children: ReactNode;
+}) => {
+    const [dropSide, setDropSide] = useState<"above" | "below" | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const handleDragStart = useCallback(
+        (e: DragEvent) => {
+            e.dataTransfer.setDragImage(ref.current as Element, 0, 0);
+            e.dataTransfer.setData(ARRAY_ELEMENT_MIME, entry.socket);
+            e.dataTransfer.effectAllowed = "move";
+        },
+        [entry.socket],
+    );
+
+    const handleDragOver = useCallback((e: DragEvent) => {
+        if (!e.dataTransfer.types.includes(ARRAY_ELEMENT_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        const rect = ref.current?.getBoundingClientRect();
+        if (rect) setDropSide(e.clientY < rect.top + rect.height / 2 ? "above" : "below");
+    }, []);
+
+    const handleDragLeave = useCallback(() => setDropSide(null), []);
+
+    const handleDrop = useCallback(
+        (e: DragEvent) => {
+            const socket = e.dataTransfer.getData(ARRAY_ELEMENT_MIME);
+            if (socket) {
+                e.preventDefault();
+                onReorder(socket, dropSide === "below" ? index + 1 : index);
+            }
+            setDropSide(null);
+        },
+        [onReorder, index, dropSide],
+    );
+
+    const handleDragEnd = useCallback(() => setDropSide(null), []);
+
+    return (
+        <LayerEntryWrapper ref={ref} data-state={dropSide ? `drop-${dropSide}` : undefined} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onDragEnd={handleDragEnd}>
+            <SocketIn node={host} socketId={entry.socket}>
+                <ArrayRowWrap>{children}</ArrayRowWrap>
+                <DragGrip draggable onDragStart={handleDragStart}>
+                    <Icon shape={ICONS.Caret.Vertical} />
+                </DragGrip>
+                <ActionButton.Lite onClick={() => onRemove(entry.socket)} flavour={"danger"}>
+                    <Icon shape={ICONS.Close} />
+                </ActionButton.Lite>
+            </SocketIn>
+        </LayerEntryWrapper>
+    );
+};
+
+const InputSlotArrayGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<CustomDefinition>; source: NodeDefinitions.NodeFor<NodeDefinitions.Any> }) => {
+    const { alterNode, removeLinks } = Project.useMethods();
+    const view = ARRAY_ELEMENT_VIEWS[source.type];
+    const groupKey = arrayGroupKey(source.type, source.id);
+    const entries = ((host.payload as Record<string, unknown>)[groupKey] ?? []) as ArrayGroupEntryData[];
+    const socketed = (source.payload as { socketed?: boolean }).socketed !== false;
+    const isDynamic = (source.payload as { widget?: number }).widget !== Enum.Common.arrayInputWidget.NONE.value;
+    const supersocketConnected = socketed && host.in[source.id] != null;
+    const showRows = isDynamic && !supersocketConnected;
+    const label = ((source.payload as { label?: string }).label ?? "") === "" ? (view?.defaultLabel ?? "Items") : (source.payload as { label?: string }).label;
+
+    const handleAdd = useCallback(() => {
+        const entry = makeArrayGroupEntry(source.type);
+        alterNode(host.id, (n) => ({
+            ...n,
+            in: { ...n.in, [entry.socket]: null },
+            payload: { ...n.payload, [groupKey]: [...(((n.payload as Record<string, unknown>)[groupKey] ?? []) as ArrayGroupEntryData[]), entry] },
+        }));
+    }, [alterNode, host.id, source.type, groupKey]);
+
+    const handleRemove = useCallback(
+        (socket: string) => {
+            const linkId = host.in[socket];
+            if (linkId) removeLinks(linkId);
+            alterNode(host.id, (n) => {
+                const { [socket]: _, ...restIn } = n.in;
+                return { ...n, in: restIn, payload: { ...n.payload, [groupKey]: (((n.payload as Record<string, unknown>)[groupKey] ?? []) as ArrayGroupEntryData[]).filter((e) => e.socket !== socket) } };
+            });
+        },
+        [alterNode, removeLinks, host.id, host.in, groupKey],
+    );
+
+    const handleUpdate = useCallback(
+        (socket: string, update: Record<string, unknown>) => {
+            alterNode(host.id, (n) => ({
+                ...n,
+                payload: { ...n.payload, [groupKey]: (((n.payload as Record<string, unknown>)[groupKey] ?? []) as ArrayGroupEntryData[]).map((e) => (e.socket === socket ? { ...e, ...update } : e)) },
+            }));
+        },
+        [alterNode, host.id, groupKey],
+    );
+
+    const handleReorder = useCallback(
+        (socket: string, toIndex: number) => {
+            alterNode(host.id, (n) => {
+                const list = [...(((n.payload as Record<string, unknown>)[groupKey] ?? []) as ArrayGroupEntryData[])];
+                const fromIndex = list.findIndex((e) => e.socket === socket);
+                if (fromIndex === -1 || fromIndex === toIndex) return n;
+                const [moved] = list.splice(fromIndex, 1);
+                list.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, moved);
+                return { ...n, payload: { ...n.payload, [groupKey]: list } };
+            });
+        },
+        [alterNode, host.id, groupKey],
+    );
+
+    if (!view) return null;
+
+    const Row = view.Row;
+    return (
+        <>
+            <InputSocketOrSlot socketed={socketed} node={host} socketId={source.id}>
+                {label}
+            </InputSocketOrSlot>
+            {showRows ? (
+                <>
+                    <ActionButton onClick={handleAdd} flavour={"accent"}>
+                        {view.addLabel}
+                    </ActionButton>
+                    {entries.map((entry, idx) => (
+                        <ArrayGroupEntry key={entry.socket} host={host} entry={entry} index={idx} onRemove={handleRemove} onReorder={handleReorder}>
+                            <Row entry={entry} connected={host.in[entry.socket] != null} onUpdate={(u) => handleUpdate(entry.socket, u)} />
+                        </ArrayGroupEntry>
+                    ))}
+                </>
+            ) : null}
+        </>
     );
 };

@@ -4,11 +4,14 @@ import { Resolver } from "../../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
-import { SocketOut } from "../../../../features/nodeview/slots";
+import { Slot, SocketOut } from "../../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
 import { DataTypes } from "../../../dataTypes";
-import { addInterface, removeInterface } from "../../../helpers/interfaceHelper";
+import { addInterface, removeInterface, handleArrayInputPayloadChange } from "../../../helpers/interfaceHelper";
 import { TextInput } from "../../../../components/inputs/TextInput";
+import { CheckBox } from "../../../../components/buttons/CheckBox";
+import { Dropdown } from "../../../../components/inputs/Dropdown";
+import { Enum } from "../../../datatypes/enum";
 import { Project } from "../../../../state/project";
 import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../../helpers/signatureEngine";
@@ -22,6 +25,8 @@ export type ArrayStopFloatInputDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: DataTypes.TypeOf<DataTypes.String>;
+        socketed: boolean;
+        widget: DataTypes.TypeOf<DataTypes.Enum>;
     }
 >;
 
@@ -37,6 +42,8 @@ const create = (
         },
         payload: {
             label: "",
+            socketed: true,
+            widget: Enum.Common.arrayInputWidget.DYNAMIC_LIST.value,
         },
         type: "arrayStopFloatInput",
     };
@@ -55,6 +62,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArrayStopFl
             <SocketOut node={node} socketId={"output"}>
                 <TextInput value={node.payload.label} onCommit={(label) => handleUpdate({ label })} placeholder="Input name" />
             </SocketOut>
+            <Slot>
+                <CheckBox checked={node.payload.socketed} onToggle={(socketed) => handleUpdate({ socketed })}>
+                    Socketed
+                </CheckBox>
+            </Slot>
+            <Slot label={"Widget"}>
+                <Dropdown value={String(node.payload.widget)} onValue={(w) => handleUpdate({ widget: Number(w) })}>
+                    {Enum.options(Enum.Common.arrayInputWidget).map((each) => (
+                        <option value={each.value} key={each.value}>
+                            {each.label}
+                        </option>
+                    ))}
+                </Dropdown>
+            </Slot>
         </TypicalNode>
     );
 };
@@ -102,6 +123,7 @@ export const ArrayStopFloatInputType: NodeTypes.Type<"arrayStopFloatInput", Arra
     create,
     onCreate,
     onDelete,
+    onPayloadChange: handleArrayInputPayloadChange,
     signature: def.instance,
     ...SignatureEngine.hooks,
 };
