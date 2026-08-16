@@ -15,6 +15,16 @@ to {
 }
 `;
 
+const keyframesThrum = keyframes`
+
+    0%, 100% {
+    filter: drop-shadow(0 0 2px #f00) drop-shadow(0 0 4px #f00);
+  }
+  50% {
+    filter: drop-shadow(0 0 6px #f00) drop-shadow(0 0 16px #f00);
+  }
+`;
+
 export const GraphLink = styled(({ className, linkId }: { linkId: string; className?: string }) => {
     const link = Project.useLink(linkId);
     const { removeLinks, interjectNode } = Project.useMethods();
@@ -237,11 +247,11 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
             &[data-part="display"] {
                 stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
-                stroke-width: 2px;
+                stroke-width: 3px;
             }
             &[data-part="effect"] {
                 stroke: none;
-                stroke-width: 0;
+                stroke-width: 2px;
             }
             &[data-part="target"] {
                 stroke: transparent;
@@ -263,7 +273,6 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         stroke-width: 6px;
     }
 
-    /* loopFor pipeline: marching ants -- BLACK ants on the colored wire (the treatment shape used to have). */
     &[data-linktype*=" loopFor<"] > svg > g > path {
         &[data-part="display"] {
             stroke-width: 6px;
@@ -322,5 +331,18 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     &[data-linktype~="shape"],
     &[data-linktype~="layer"] {
         --flavour: var(--flavour-confirm);
+    }
+
+    &[data-linktype~="invalid"] {
+        --flavour: #c00;
+    }
+    &[data-linktype~="invalid"] > svg > g > path {
+        &[data-part="display"] {
+            stroke: #f00;
+            animation: ${keyframesThrum} 1.6s ease-in-out infinite;
+        }
+        &[data-part="effect"] {
+            stroke: #fcc;
+        }
     }
 `;

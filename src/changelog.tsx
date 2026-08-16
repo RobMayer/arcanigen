@@ -4,6 +4,10 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-16"} version={"3.5.1"}>
+                <Improvement>Math and Comparison nodes can handle typed-in length/angle values</Improvement>
+                <Improvement>Invalid links and connections are now visible and flashing</Improvement>
+            </Build>
             <Build date={"2026-08-16"} version={"3.5.0"}>
                 <Improvement>shape "Array" nodes are now known as "Layout" nodes.</Improvement>
                 <Improvement>several math nodes now come with an additional input field.</Improvement>

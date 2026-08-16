@@ -20,7 +20,8 @@ export namespace SocketTypes {
         | { t: "var"; id: string; bound?: string } // unification variable; bound = lattice name
         | { t: "any" } // top / gradual wildcard
         | { t: "union"; members: Term[] } // "A | B" -- an "either" output (condition/switch)
-        | { t: "set"; mode: "and" | "or"; members: Term[] }; // a concrete multi-kind rule ("or" disjunctive / "and" conjunctive)
+        | { t: "set"; mode: "and" | "or"; members: Term[] } // a concrete multi-kind rule ("or" disjunctive / "and" conjunctive)
+        | { t: "invalid" }; // forbidding bottom: a resolved TYPE CONFLICT (e.g. length*length). Flows nowhere, accepts nothing. Solver-produced only.
 
     export type CtorName = "array" | "loopFor";
     const CTOR_NAMES = new Set<string>(["array", "loopFor"]);
@@ -54,6 +55,7 @@ export namespace SocketTypes {
     export const any = (): Term => ({ t: "any" });
     export const union = (...members: Term[]): Term => ({ t: "union", members });
     export const set = (mode: "and" | "or", ...members: Term[]): Term => ({ t: "set", mode, members });
+    export const invalid = (): Term => ({ t: "invalid" });
 
     // --- Coercion lattices (bounded-variable join) ----------------------------------------------
 
@@ -149,6 +151,8 @@ export namespace SocketTypes {
                 return term.members.map(serialize).join(" | ");
             case "set":
                 return term.members.map(serialize).join(term.mode === "or" ? " | " : " & ");
+            case "invalid":
+                return "invalid"; // one-way: solver-produced, never re-parsed
         }
     };
 
@@ -171,6 +175,7 @@ export namespace SocketTypes {
                 return t.members.flatMap((m) => project(m, subst));
             case "var":
             case "any":
+            case "invalid":
                 return [];
         }
     };
@@ -191,6 +196,7 @@ export namespace SocketTypes {
             case "atom":
                 return a.kind === (b as Extract<Term, { t: "atom" }>).kind;
             case "any":
+            case "invalid":
                 return true;
             case "var":
                 return a.id === (b as Extract<Term, { t: "var" }>).id;
@@ -324,6 +330,9 @@ export namespace SocketTypes {
     export const subsumes = (out: Term, in_: Term, subst: Subst): Subst | null => {
         const ro = resolve(out, subst);
         const ri = resolve(in_, subst);
+        // A resolved conflict flows nowhere and accepts nothing -- checked before `any`, so an invalid OUT
+        // is forbidden even into an `any` IN (that is what flags the wire off a conflicted output).
+        if (ro.t === "invalid" || ri.t === "invalid") return null;
         // Bounded variables join by identity (raw `out`/`in_`) before `resolve` collapses them.
         if (out.t === "var" && out.bound && ri.t === "atom") return joinBoundInto(out, ri.kind, subst);
         if (in_.t === "var" && in_.bound && ro.t === "atom") return joinBoundInto(in_, ro.kind, subst);
@@ -396,6 +405,12 @@ export namespace SocketTypes {
      *  `toRepresentation` renders it as the token "any". */
     export const ANY: Term = any();
 
+    /** Forbidding bottom -- a resolved TYPE CONFLICT (e.g. multiplying two lengths). Unlike NONE (the
+     *  permissive "no type yet" that flows anywhere), `invalid` flows NOWHERE and accepts nothing, so any
+     *  wire off it fails `canFlow` and the socket/field can style off the "invalid" attr. Solver-produced. */
+    export const INVALID: Term = invalid();
+    export const isInvalid = (t: Term): boolean => t.t === "invalid";
+
     /** Build a Term from a kind TOKEN. Recurses structurally over ANY constructor token (`arrayOf(LAYER)` ->
      *  `ctor("array", atom("layer"))`, `loopFor(COLOR)` -> `ctor("loopFor", atom("color"))`) so a Token becomes
      *  a Term with no stringify-then-parse at the bridge. */
@@ -424,6 +439,8 @@ export namespace SocketTypes {
             case "any":
             case "var": // materialized terms are var-free; defensive
                 return "any";
+            case "invalid":
+                return "invalid";
             case "ctor": {
                 const inner = attrOf(t.args[0]);
                 return t.args[0].t === "ctor" ? `${t.name}<${inner}>` : `${t.name}< ${inner} >`;
@@ -442,6 +459,8 @@ export namespace SocketTypes {
             case "any":
             case "var":
                 return "any";
+            case "invalid":
+                return "invalid";
             case "ctor":
                 return `${t.name}<${t.args.map((a) => titleOf(a, side)).join(", ")}>`;
             case "set":
@@ -462,6 +481,7 @@ export namespace SocketTypes {
         const attr = toCSS(rule);
         let title = titleOf(rule, side);
         if (rule.t === "any") title = "« any »";
+        else if (rule.t === "invalid") title = "« invalid »";
         else if ((rule.t === "set" || rule.t === "union") && rule.members.length === 0) title = "« unknown »";
         return { attr, title };
     };
@@ -471,7 +491,15 @@ export namespace SocketTypes {
      *  ctor's structural treatment). Prefers the producer (out); falls back to the consumer (in) when the
      *  producer is contentless (an ungrounded var / wildcard / empty set carries no concrete type yet). */
     const contentless = (t: Term): boolean => t.t === "any" || t.t === "var" || (t.t === "set" && t.members.length === 0);
-    export const linkRepresentation = (out: Term, inp: Term): string => toCSS(contentless(out) ? inp : out);
+    export const linkRepresentation = (out: Term, inp: Term): string => {
+        // Not-yet-resolved producer (var/wildcard/empty): show the consumer's expectation, no verdict.
+        if (contentless(out)) return toCSS(inp);
+        // A resolved producer that CAN'T flow into this consumer is a live conflict -- a field edit that
+        // flipped the output kind (e.g. angle -> length) out from under an existing wire, or an `invalid`
+        // output. Render the wire off the invalid attr so it flags without severing (permissive + signal).
+        if (!canFlow(out, inp)) return toCSS(INVALID);
+        return toCSS(out);
+    };
 
     /** Intersection of two rules' concrete kinds (mode from the first operand). `any` is the universe. */
     export const intersect = (a: Term, b: Term): Term => {

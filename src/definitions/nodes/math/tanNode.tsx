@@ -9,16 +9,17 @@ import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/sl
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { SocketTypes } from "../../socketTypes";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { extractSingle } from "../../helpers/mathHelper";
 import { Angle } from "../../datatypes/angle";
+import { NumericKind } from "../../helpers/numericKind";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
-    in: { input: $.defaulted($.oneOf("angle", "float", "integer"), "float") },
+    in: { input: $.defaulted($.oneOf("angle", "float", "integer"), NumericKind.angleKindOf) },
     out: { output: "float" },
 });
 
@@ -26,7 +27,7 @@ export type TanDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        input: DataTypes.TypeOf<DataTypes.Float>;
+        input: string;
     }
 >;
 
@@ -63,7 +64,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TanDefiniti
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"input"} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
+                <TextInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} pattern={NumericKind.ANGLE_PATTERN} />
             </SocketIn>
         </TypicalNode>
     );
@@ -80,7 +81,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<TanDefinition>, _inSocket:
 
 const evaluate = (node: NodeDefinitions.NodeFor<TanDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
+        const val = context.resolve(node.id, "input") ?? { kind: NumericKind.kindOf(node.payload.input), data: node.payload.input };
         const { value } = extractSingle(val.kind, val.data);
         const radians = val.kind === "angle" ? Angle.asRadians(val.data as Angle.Type) : value;
         return { kind: "float", data: `${Math.tan(radians)}` };

@@ -22,6 +22,7 @@ export namespace AbstractInput {
         onChange,
         onKeyDown,
         required = false,
+        invalid = false,
         normalize,
         tooltip,
         ...props
@@ -32,6 +33,7 @@ export namespace AbstractInput {
         const onFocusRef = useStable(onFocus);
         const normalizeRef = useStable(normalize);
 
+        const inputRef = useRef<HTMLInputElement>(null);
         const valueRef = useRef<T>(value);
         const lastValidRef = useRef<T>(value);
         const [cache, setCache] = useState<string>(value);
@@ -51,28 +53,24 @@ export namespace AbstractInput {
         const onCommitRef = useStable(onCommit);
         const onConfirmRef = useStable(onConfirm);
 
-        const validate = useCallback(
-            (el: HTMLInputElement, v: string): v is T => {
-                if (!required && v === "") {
-                    el.setCustomValidity("");
-                    return true;
-                }
-                if (required && v === "") {
-                    el.setCustomValidity("Value is required");
-                    return false;
-                }
-                if (pattern) {
-                    const regex = new RegExp(`^${pattern}$`);
-                    if (!regex.test(v)) {
-                        el.setCustomValidity("Value does not match required pattern");
-                        return false;
-                    }
-                }
-                el.setCustomValidity("");
+        // Pure text-validity predicate (governs whether a value commits). No side effects.
+        const isValid = useCallback(
+            (v: string): v is T => {
+                if (v === "") return !required;
+                if (pattern && !new RegExp(`^${pattern}$`).test(v)) return false;
                 return true;
             },
             [pattern, required],
         );
+
+        // Single source of truth for the native :invalid state -- the field's own text validity OR an
+        // EXTERNAL `invalid` (e.g. a resolved type conflict on the owning node). The commit handlers gate
+        // on `isValid` but no longer poke customValidity themselves.
+        useEffect(() => {
+            const el = inputRef.current;
+            if (!el) return;
+            el.setCustomValidity(!isValid(cache) ? (required && cache === "" ? "Value is required" : "Value does not match the required format") : invalid ? "Invalid in this context" : "");
+        }, [cache, invalid, isValid, required]);
 
         const handleChange = useCallback(
             (evt: ChangeEvent<HTMLInputElement>) => {
@@ -84,12 +82,12 @@ export namespace AbstractInput {
                 const v = evt.target.value;
                 setCache(v);
 
-                if (validate(evt.target, v)) {
+                if (isValid(v)) {
                     lastValidRef.current = v;
                     onValueRef.current?.(v);
                 }
             },
-            [validate],
+            [isValid],
         );
 
         const handleFocus = useCallback((evt: React.FocusEvent<HTMLInputElement>) => {
@@ -111,7 +109,6 @@ export namespace AbstractInput {
                 if (!required && v === "") {
                     const normalized = normalizeRef.current ? normalizeRef.current(v as T) : (v as T);
                     setCache(normalized);
-                    evt.currentTarget.setCustomValidity("");
                     lastValidRef.current = normalized;
                     if (normalized !== v) {
                         onValueRef.current?.(normalized);
@@ -120,25 +117,20 @@ export namespace AbstractInput {
                     return;
                 }
 
-                if (pattern) {
-                    const regex = new RegExp(`^${pattern}$`);
-                    if (!regex.test(v)) {
-                        setCache(lastValidRef.current);
-                        evt.currentTarget.setCustomValidity("");
-                        return;
-                    }
+                if (!isValid(v)) {
+                    setCache(lastValidRef.current);
+                    return;
                 }
 
                 const normalized = normalizeRef.current ? normalizeRef.current(v as T) : (v as T);
                 setCache(normalized);
-                evt.currentTarget.setCustomValidity("");
                 if (normalized !== v) {
                     onValueRef.current?.(normalized);
                 }
                 lastValidRef.current = normalized;
                 onCommitRef.current?.(normalized);
             },
-            [pattern, required],
+            [isValid, required],
         );
 
         const handleKeyDown = useCallback(
@@ -156,7 +148,6 @@ export namespace AbstractInput {
                 if (!required && v === "") {
                     const normalized = normalizeRef.current ? normalizeRef.current(v as T) : (v as T);
                     setCache(normalized);
-                    evt.currentTarget.setCustomValidity("");
                     if (normalized !== v) {
                         onValueRef.current?.(normalized);
                     }
@@ -168,19 +159,14 @@ export namespace AbstractInput {
                     return;
                 }
 
-                if (pattern) {
-                    const regex = new RegExp(`^${pattern}$`);
-                    if (!regex.test(v)) {
-                        setCache(lastValidRef.current);
-                        evt.currentTarget.setCustomValidity("");
-                        onConfirmRef.current?.(lastValidRef.current);
-                        return;
-                    }
+                if (!isValid(v)) {
+                    setCache(lastValidRef.current);
+                    onConfirmRef.current?.(lastValidRef.current);
+                    return;
                 }
 
                 const normalized = normalizeRef.current ? normalizeRef.current(v as T) : (v as T);
                 setCache(normalized);
-                evt.currentTarget.setCustomValidity("");
                 if (normalized !== v) {
                     onValueRef.current?.(normalized);
                 }
@@ -190,10 +176,10 @@ export namespace AbstractInput {
                 }
                 onConfirmRef.current?.(normalized);
             },
-            [pattern, required],
+            [isValid, required],
         );
 
-        return <input {...props} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} />;
+        return <input {...props} ref={inputRef} type={"text"} value={cache} onChange={handleChange} onKeyDown={handleKeyDown} onBlur={handleBlur} onFocus={handleFocus} title={tooltip} />;
     }
 
     export namespace Text {
@@ -203,6 +189,9 @@ export namespace AbstractInput {
             onCommit?: (v: T) => void;
             onConfirm?: (v: T) => void;
             normalize?: (v: T) => T;
+            /** Force the native :invalid state from OUTSIDE the field's own text (e.g. a resolved type
+             *  conflict on the owning node). Does NOT block committing -- editing may resolve the conflict. */
+            invalid?: boolean;
         } & InputProps;
     }
 

@@ -5,20 +5,21 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { dominantKind, wrapResult, extractSingle } from "../../helpers/mathHelper";
+import { NumericKind } from "../../helpers/numericKind";
 import { SocketTypes } from "../../socketTypes";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ input: $.defaulted(T, "float"), min: $.defaulted(T, "float"), max: $.defaulted(T, "float") }),
+    in: ({ T }) => ({ input: $.defaulted(T, NumericKind.kindOf), min: $.defaulted(T, NumericKind.kindOf), max: $.defaulted(T, NumericKind.kindOf) }),
     out: ({ T }) => ({ output: T }),
 });
 
@@ -26,9 +27,9 @@ export type ClampDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        input: DataTypes.TypeOf<DataTypes.Float>;
-        min: DataTypes.TypeOf<DataTypes.Float>;
-        max: DataTypes.TypeOf<DataTypes.Float>;
+        input: string;
+        min: string;
+        max: string;
     }
 >;
 
@@ -50,6 +51,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>,
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const conflict = SocketTypes.isInvalid(Project.useSocketType(graphId, node, "output", "out"));
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>) => {
             methods.update(v);
@@ -62,13 +64,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ClampDefini
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"input"} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
+                <TextInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"min"} label={"Min"}>
-                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} disabled={node.in.min !== null} />
+                <TextInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} disabled={node.in.min !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"max"} label={"Max"}>
-                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} disabled={node.in.max !== null} />
+                <TextInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} disabled={node.in.max !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
         </TypicalNode>
     );
@@ -85,9 +87,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<ClampDefinition>, _inSocke
 
 const evaluate = (node: NodeDefinitions.NodeFor<ClampDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const inputVal = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
-        const minVal = context.resolve(node.id, "min") ?? { kind: "float", data: node.payload.min };
-        const maxVal = context.resolve(node.id, "max") ?? { kind: "float", data: node.payload.max };
+        const inputVal = context.resolve(node.id, "input") ?? { kind: NumericKind.kindOf(node.payload.input), data: node.payload.input };
+        const minVal = context.resolve(node.id, "min") ?? { kind: NumericKind.kindOf(node.payload.min), data: node.payload.min };
+        const maxVal = context.resolve(node.id, "max") ?? { kind: NumericKind.kindOf(node.payload.max), data: node.payload.max };
 
         const { value, unit } = extractSingle(inputVal.kind, inputVal.data);
         const { value: lo } = extractSingle(minVal.kind, minVal.data);
@@ -113,6 +115,7 @@ export const ClampType: NodeTypes.Type<"clamp", ClampDefinition> = {
     create,
     signature: def.instance,
     ...SignatureEngine.hooks,
+    onPayloadChange: SignatureEngine.onPayloadChange,
     canInterject: passthroughCanInterject(SocketTypes.NUMERIC, SocketTypes.NUMERIC),
     onInterject: passthroughInterject("input", "output"),
 };

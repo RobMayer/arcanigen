@@ -5,20 +5,21 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { extractSingle, wrapResult } from "../../helpers/mathHelper";
+import { NumericKind } from "../../helpers/numericKind";
 import { SocketTypes } from "../../socketTypes";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { N: $.NUMERIC },
-    in: ({ N }) => ({ input: $.defaulted(N, "float") }),
+    in: ({ N }) => ({ input: $.defaulted(N, NumericKind.kindOf) }),
     out: ({ N }) => ({ output: N }),
 });
 
@@ -26,7 +27,7 @@ export type NegateDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        input: DataTypes.TypeOf<DataTypes.Float>;
+        input: string;
     }
 >;
 
@@ -60,7 +61,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NegateDefin
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"input"} label={"Input"}>
-                <DecimalInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} />
+                <TextInput value={node.payload.input} onCommit={(input) => handleUpdate({ input })} disabled={node.in.input !== null} pattern={NumericKind.PATTERN} />
             </SocketIn>
         </TypicalNode>
     );
@@ -77,7 +78,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<NegateDefinition>, _inSock
 
 const evaluate = (node: NodeDefinitions.NodeFor<NegateDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output") {
-        const val = context.resolve(node.id, "input") ?? { kind: "float", data: node.payload.input };
+        const val = context.resolve(node.id, "input") ?? { kind: NumericKind.kindOf(node.payload.input), data: node.payload.input };
         const { value, unit } = extractSingle(val.kind, val.data);
         return wrapResult(-value, val.kind, unit);
     }
@@ -98,6 +99,7 @@ export const NegateType: NodeTypes.Type<"negate", NegateDefinition> = {
     create,
     signature: def.instance,
     ...SignatureEngine.hooks,
+    onPayloadChange: SignatureEngine.onPayloadChange,
     canInterject: passthroughCanInterject(SocketTypes.NUMERIC, SocketTypes.NUMERIC),
     onInterject: passthroughInterject("input", "output"),
 };

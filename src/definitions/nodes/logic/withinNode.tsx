@@ -4,19 +4,21 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 import { extractPair } from "../../helpers/mathHelper";
+import { NumericKind } from "../../helpers/numericKind";
+import { numericConflict } from "../../helpers/numericConflict";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ value: $.defaulted(T, "float"), target: $.defaulted(T, "float"), tolerance: $.defaulted(T, "float") }),
+    in: ({ T }) => ({ value: $.defaulted(T, NumericKind.kindOf), target: $.defaulted(T, NumericKind.kindOf), tolerance: $.defaulted(T, NumericKind.kindOf) }),
     out: { output: "boolean" },
 });
 
@@ -24,9 +26,9 @@ export type WithinDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        value: DataTypes.TypeOf<DataTypes.Float>;
-        target: DataTypes.TypeOf<DataTypes.Float>;
-        tolerance: DataTypes.TypeOf<DataTypes.Float>;
+        value: string;
+        target: string;
+        tolerance: string;
     }
 >;
 
@@ -43,6 +45,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<WithinDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const in0 = Project.useInboundType(graphId, node, "value");
+    const in1 = Project.useInboundType(graphId, node, "target");
+    const in2 = Project.useInboundType(graphId, node, "tolerance");
+    const conflict = numericConflict(node, ["value", "target", "tolerance"], [in0, in1, in2]);
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>) => {
             methods.update(v);
@@ -55,13 +61,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<WithinDefin
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"value"} label={"Value"}>
-                <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
+                <TextInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"target"} label={"Target"}>
-                <DecimalInput value={node.payload.target} onCommit={(target) => handleUpdate({ target })} disabled={node.in.target !== null} />
+                <TextInput value={node.payload.target} onCommit={(target) => handleUpdate({ target })} disabled={node.in.target !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"tolerance"} label={"Tolerance"}>
-                <DecimalInput value={node.payload.tolerance} onCommit={(tolerance) => handleUpdate({ tolerance })} disabled={node.in.tolerance !== null} />
+                <TextInput value={node.payload.tolerance} onCommit={(tolerance) => handleUpdate({ tolerance })} disabled={node.in.tolerance !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
         </TypicalNode>
     );
@@ -79,9 +85,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<WithinDefinition>, _inSock
 const evaluate = (node: NodeDefinitions.NodeFor<WithinDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const valEval = context.resolve(node.id, "value") ?? { kind: "float", data: node.payload.value };
-    const tgtEval = context.resolve(node.id, "target") ?? { kind: "float", data: node.payload.target };
-    const tolEval = context.resolve(node.id, "tolerance") ?? { kind: "float", data: node.payload.tolerance };
+    const valEval = context.resolve(node.id, "value") ?? { kind: NumericKind.kindOf(node.payload.value), data: node.payload.value };
+    const tgtEval = context.resolve(node.id, "target") ?? { kind: NumericKind.kindOf(node.payload.target), data: node.payload.target };
+    const tolEval = context.resolve(node.id, "tolerance") ?? { kind: NumericKind.kindOf(node.payload.tolerance), data: node.payload.tolerance };
 
     // Extract value and target as a pair (handles length unit conversion)
     const { a: val, b: tgt } = extractPair(valEval.kind, valEval.data, tgtEval.kind, tgtEval.data);
@@ -105,4 +111,5 @@ export const WithinNodeType: NodeTypes.Type<"within", WithinDefinition> = {
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
+    onPayloadChange: SignatureEngine.onPayloadChange,
 };

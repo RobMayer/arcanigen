@@ -17,7 +17,7 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
-    args: { N: $.NUMERIC },
+    args: { N: $.oneOf("float", "integer") },
     in: ({ N }) => ({ input: $.defaulted(N, "float"), exponent: $.defaulted($.oneOf("float", "integer"), "float") }),
     out: ({ N }) => ({ output: N }),
 });

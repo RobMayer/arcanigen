@@ -240,6 +240,13 @@ export const Socket = styled(
         --br: var(--flavour-base);
     }
 
+    &[data-sockettype~="invalid"] {
+        --tl: #f00;
+        --br: #f00;
+        outline-color: #fcc;
+        box-shadow: 0px 0px 5px 3px #f00;
+    }
+
     background: linear-gradient(135deg, oklch(from var(--tl) calc(l * 0.5) calc(c * 0.5) h) 0 50%, oklch(from var(--br) calc(l * 0.5) calc(c * 0.5) h) 50% 100%);
     border-top-color: var(--tl);
     border-left-color: var(--tl);

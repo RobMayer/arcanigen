@@ -8,8 +8,22 @@ import { Angle } from "../datatypes/angle";
 export namespace NumericKind {
     export type Kind = "integer" | "float" | "length" | "angle";
 
-    // A plain, unit-less real number (optionally signed, decimal, or exponent form).
-    const PLAIN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    // Regex SOURCES (no anchors), shared so the field `pattern`, `infer`, and everything else agree.
+    // A plain, unit-less real number (optionally signed, decimal, or exponent form); or a number carrying
+    // one of the known length/angle units.
+    const PLAIN_SRC = "[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?";
+    const UNIT_SRC = `[+-]?\\d*\\.?\\d+(?:${[...Length.UNITS, ...Angle.UNITS].join("|")})`;
+    const PLAIN = new RegExp(`^${PLAIN_SRC}$`);
+
+    // Feed to a text input's native `pattern` so a universal field rejects arbitrary strings -- accepts
+    // exactly what `infer` calls valid (plain number, or number + length/angle unit). Stays in lock-step
+    // with `infer` because both derive from the same unit lists.
+    export const PATTERN = `(?:${PLAIN_SRC}|${UNIT_SRC})`;
+
+    // Restricted pattern for fields that accept an ANGLE or a bare number but NOT a length (e.g. sin/cos/tan
+    // inputs -- a bare number is radians, a "30deg" is an angle; "10mm" is meaningless). `kindOf` is safe as
+    // the resolver here since this pattern already rejects lengths, so it never returns "length".
+    export const ANGLE_PATTERN = `(?:${PLAIN_SRC}|[+-]?\\d*\\.?\\d+(?:${Angle.UNITS.join("|")}))`;
 
     // Infer the kind of a field string. `valid` is false for empty/garbage; kind then defaults to "float"
     // so callers have a safe fallback. A plain number is "float" when it carries a decimal point or
@@ -28,4 +42,13 @@ export namespace NumericKind {
     export const kindOf = (raw: string): Kind => infer(raw).kind;
 
     export const isValid = (raw: string): boolean => infer(raw).valid;
+
+    // Resolver for angle-domain fields (sin/cos/tan): infers only angle/float/integer, never length -- so it
+    // satisfies a `$.defaulted($.oneOf("angle","float","integer"), ...)` domain. Pair with ANGLE_PATTERN,
+    // which already rejects length input.
+    export const angleKindOf = (raw: string): "angle" | "float" | "integer" => {
+        const s = raw.trim();
+        if (Angle.is(s)) return "angle";
+        return /[.eE]/.test(s) ? "float" : "integer";
+    };
 }

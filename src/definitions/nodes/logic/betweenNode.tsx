@@ -4,19 +4,21 @@ import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
 import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
-import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { TextInput } from "../../../components/inputs/TextInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { useGraphId } from "../../../state/graphId";
 import { Resolver } from "../../../util/resolver";
 import { extractPair } from "../../helpers/mathHelper";
+import { NumericKind } from "../../helpers/numericKind";
+import { numericConflict } from "../../helpers/numericConflict";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ value: $.defaulted(T, "float"), min: $.defaulted(T, "float"), max: $.defaulted(T, "float") }),
+    in: ({ T }) => ({ value: $.defaulted(T, NumericKind.kindOf), min: $.defaulted(T, NumericKind.kindOf), max: $.defaulted(T, NumericKind.kindOf) }),
     out: { output: "boolean" },
 });
 
@@ -24,9 +26,9 @@ export type BetweenDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
-        value: DataTypes.TypeOf<DataTypes.Float>;
-        min: DataTypes.TypeOf<DataTypes.Float>;
-        max: DataTypes.TypeOf<DataTypes.Float>;
+        value: string;
+        min: string;
+        max: string;
     }
 >;
 
@@ -43,6 +45,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BetweenDefinition>
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BetweenDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    const in0 = Project.useInboundType(graphId, node, "value");
+    const in1 = Project.useInboundType(graphId, node, "min");
+    const in2 = Project.useInboundType(graphId, node, "max");
+    const conflict = numericConflict(node, ["value", "min", "max"], [in0, in1, in2]);
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<BetweenDefinition>>) => {
             methods.update(v);
@@ -55,13 +61,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BetweenDefi
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"value"} label={"Value"}>
-                <DecimalInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
+                <TextInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"min"} label={"Min"}>
-                <DecimalInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} disabled={node.in.min !== null} />
+                <TextInput value={node.payload.min} onCommit={(min) => handleUpdate({ min })} disabled={node.in.min !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"max"} label={"Max"}>
-                <DecimalInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} disabled={node.in.max !== null} />
+                <TextInput value={node.payload.max} onCommit={(max) => handleUpdate({ max })} disabled={node.in.max !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
         </TypicalNode>
     );
@@ -79,9 +85,9 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BetweenDefinition>, _inSoc
 const evaluate = (node: NodeDefinitions.NodeFor<BetweenDefinition>, socket: "output", context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket !== "output") return null;
 
-    const valEval = context.resolve(node.id, "value") ?? { kind: "float", data: node.payload.value };
-    const minEval = context.resolve(node.id, "min") ?? { kind: "float", data: node.payload.min };
-    const maxEval = context.resolve(node.id, "max") ?? { kind: "float", data: node.payload.max };
+    const valEval = context.resolve(node.id, "value") ?? { kind: NumericKind.kindOf(node.payload.value), data: node.payload.value };
+    const minEval = context.resolve(node.id, "min") ?? { kind: NumericKind.kindOf(node.payload.min), data: node.payload.min };
+    const maxEval = context.resolve(node.id, "max") ?? { kind: NumericKind.kindOf(node.payload.max), data: node.payload.max };
 
     // Extract value and min as a pair (handles length unit conversion)
     const { a: val, b: mn } = extractPair(valEval.kind, valEval.data, minEval.kind, minEval.data);
@@ -105,4 +111,5 @@ export const BetweenNodeType: NodeTypes.Type<"between", BetweenDefinition> = {
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
+    onPayloadChange: SignatureEngine.onPayloadChange,
 };

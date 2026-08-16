@@ -287,11 +287,25 @@ export namespace SignatureEngine {
             let dOut = new Set(members);
             for (const s of outOccs) if (outKinds[s]) dOut = intersectSet(dOut, outKinds[s]!);
 
-            // OUTPUT = join over the CONTRIBUTION domains (defaults applied) ∩ downstream.
-            const outResolved = intersectSet(achievableJoins(Object.values(joinDom), L) ?? new Set(members), dOut);
-            for (const s of outOccs) {
-                resOut[s] = orRule([...outResolved]);
-                handledOut.add(s);
+            // OUTPUT = join over the CONTRIBUTION domains (defaults applied). A join that yields NOTHING is a
+            // node-internal type CONFLICT (e.g. length*length) -> invalid.
+            const joined = achievableJoins(Object.values(joinDom), L);
+            if (!joined || joined.size === 0) {
+                for (const s of outOccs) {
+                    resOut[s] = SocketTypes.INVALID;
+                    handledOut.add(s);
+                }
+            } else {
+                // Downstream narrows a genuinely POLYMORPHIC output to what the consumer accepts. But if that
+                // narrowing is EMPTY, the node's output is a concrete kind the consumer just can't take -- keep
+                // the node's OWN type so the output reads honestly (`length`) and the WIRE flags via canFlow,
+                // instead of collapsing to NONE ("unknown"), which is contentless and HIDES the conflict.
+                const narrowed = intersectSet(joined, dOut);
+                const outResolved = narrowed.size > 0 ? narrowed : joined;
+                for (const s of outOccs) {
+                    resOut[s] = orRule([...outResolved]);
+                    handledOut.add(s);
+                }
             }
 
             // INPUT accept = each socket's advertised kinds (defaults ignored) -- unchanged from before.
@@ -378,6 +392,7 @@ export namespace SignatureEngine {
                         lat,
                     );
                     if (joined && joined.size > 0) dom[v] = joined;
+                    else return SocketTypes.INVALID; // pristine conflict (e.g. a fresh multiply with two length fields)
                 } else {
                     dom[v] = new Set(defs); // equality/sets var -- no lattice, use the fallback kind directly
                 }

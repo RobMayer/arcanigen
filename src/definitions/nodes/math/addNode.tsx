@@ -56,6 +56,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<AddDefinition>>, i
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const graphId = useGraphId();
     const preview = Project.useCachedOutput(graphId, node, "output");
+    // A resolved type conflict (mixing incompatible units) surfaces as the invalid Term on the output.
+    const conflict = SocketTypes.isInvalid(Project.useSocketType(graphId, node, "output", "out"));
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<AddDefinition>>) => {
             methods.update(v);
@@ -68,10 +70,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AddDefiniti
                 <ValuePreview value={preview} />
             </SocketOut>
             <SocketIn node={node} socketId={"a"} label={"A"}>
-                <TextInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} />
+                <TextInput value={node.payload.a} onCommit={(a) => handleUpdate({ a })} disabled={node.in.a !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
             <SocketIn node={node} socketId={"b"} label={"B"}>
-                <TextInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} />
+                <TextInput value={node.payload.b} onCommit={(b) => handleUpdate({ b })} disabled={node.in.b !== null} pattern={NumericKind.PATTERN} invalid={conflict} />
             </SocketIn>
         </TypicalNode>
     );
