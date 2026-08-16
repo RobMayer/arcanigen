@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-17"} version={"3.5.2"}>
+                <Bugfix>Some input nodes would cause a crash when adding them to a subgraph that was already used in another graph</Bugfix>
+            </Build>
             <Build date={"2026-08-16"} version={"3.5.1"}>
                 <Improvement>Math and Comparison nodes can handle typed-in length/angle values</Improvement>
                 <Improvement>Invalid links and connections are now visible and flashing</Improvement>
