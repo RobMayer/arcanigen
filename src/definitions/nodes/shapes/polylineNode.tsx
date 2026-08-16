@@ -12,6 +12,8 @@ import { Project } from "../../../state/project";
 import { StylingPrefab } from "../../helpers/stylingPrefab";
 import { TransformPrefab } from "../../helpers/transformPrefab";
 import { CheckBox } from "../../../components/buttons/CheckBox";
+import { DecimalInput } from "../../../components/inputs/DecimalInput";
+import { NumericString } from "../../datatypes/numericString";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
@@ -22,6 +24,7 @@ const def = signature({
     in: {
         points: $.arrayOf("point"),
         closed: "boolean",
+        smoothness: $.oneOf("float", "integer"),
         markerStartShape: "shape",
         markerMidShape: "shape",
         markerEndShape: "shape",
@@ -39,6 +42,7 @@ export type PolylineDefinition = SignatureBuilder.DefinitionFrom<
     {
         label: DataTypes.TypeOf<DataTypes.String>;
         closed: DataTypes.TypeOf<DataTypes.Boolean>;
+        smoothness: DataTypes.TypeOf<DataTypes.Float>;
         markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
@@ -50,6 +54,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PolylineDefinition
         in: {
             points: null,
             closed: null,
+            smoothness: null,
 
             markerStartShape: null,
             markerMidShape: null,
@@ -76,6 +81,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PolylineDefinition
         payload: {
             label: "",
             closed: false,
+            smoothness: "0",
             markerAlign: false,
             // stroke
             strokeWidth: "1px",
@@ -120,6 +126,18 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolylineDef
                     Close Path
                 </CheckBox>
             </SocketIn>
+            <SocketIn node={node} socketId={"smoothness"} label={"Smoothness"}>
+                <DecimalInput.SliderInput
+                    value={node.payload.smoothness}
+                    onCommit={(smoothness) => handleUpdate({ smoothness })}
+                    disabled={node.in.smoothness !== null}
+                    min={"0"}
+                    max={"100"}
+                    step={"0.1"}
+                    snap={"0.1"}
+                    required
+                />
+            </SocketIn>
             <NodeAccordion label={"Markers"} socketsIn={"markerStartShape|markerMidShape|markerEndShape|markerAlign"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"markerStartShape"}>
                     Start Marker
@@ -143,7 +161,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolylineDef
 };
 
 // Geometry drives both outputs; markers and styling only appear on the rendered shape, not the path.
-const GEOMETRY_INPUTS: (keyof PolylineDefinition["inputs"])[] = ["points", "closed", "position", "rotation"];
+const GEOMETRY_INPUTS: (keyof PolylineDefinition["inputs"])[] = ["points", "closed", "smoothness", "position", "rotation"];
 const MARKER_INPUTS: (keyof PolylineDefinition["inputs"])[] = ["markerStartShape", "markerMidShape", "markerEndShape", "markerAlign"];
 const STYLING_INPUTS: (keyof PolylineDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
@@ -161,6 +179,51 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<PolylineDefinition>, inSoc
     return ["output", "path"];
 };
 
+type Vertex = { x: number; y: number };
+
+// Straight polyline: "M x,y L x,y ... [Z]". The smoothness=0 baseline, kept byte-identical to the original.
+const buildStraightPath = (points: Vertex[], closed: boolean): string => {
+    const [first, ...rest] = points;
+    return `M ${first.x},${first.y} ${rest.map((p) => `L ${p.x},${p.y}`).join(" ")}${closed ? " Z" : ""}`;
+};
+
+// Centripetal Catmull-Rom (alpha=0.5), emitted as cubic beziers so the curve passes THROUGH every input
+// point. `tension` (0..1) scales the tangents: 0 collapses each segment to a straight line (== the polyline
+// baseline), 1 is full Catmull-Rom. Centripetal parameterization avoids cusps/self-intersection on sharp
+// turns and stays finite through coincident points (knot deltas are floored to EPS).
+const buildSmoothPath = (points: Vertex[], closed: boolean, tension: number): string => {
+    const ALPHA = 0.5;
+    const EPS = 1e-4;
+    const n = points.length;
+    const at = (i: number): Vertex => (closed ? points[((i % n) + n) % n] : points[Math.max(0, Math.min(n - 1, i))]);
+    const knot = (a: Vertex, b: Vertex): number => Math.max(EPS, Math.pow(Math.hypot(b.x - a.x, b.y - a.y), ALPHA));
+
+    let d = `M ${points[0].x},${points[0].y}`;
+    const segments = closed ? n : n - 1;
+    for (let i = 0; i < segments; i++) {
+        const p0 = at(i - 1),
+            p1 = at(i),
+            p2 = at(i + 1),
+            p3 = at(i + 2);
+        const t01 = knot(p0, p1),
+            t12 = knot(p1, p2),
+            t23 = knot(p2, p3);
+
+        // Non-uniform Catmull-Rom tangents at p1 and p2, scaled by tension.
+        const m1x = tension * (p2.x - p1.x + t12 * ((p1.x - p0.x) / t01 - (p2.x - p0.x) / (t01 + t12)));
+        const m1y = tension * (p2.y - p1.y + t12 * ((p1.y - p0.y) / t01 - (p2.y - p0.y) / (t01 + t12)));
+        const m2x = tension * (p2.x - p1.x + t12 * ((p3.x - p2.x) / t23 - (p3.x - p1.x) / (t12 + t23)));
+        const m2y = tension * (p2.y - p1.y + t12 * ((p3.y - p2.y) / t23 - (p3.y - p1.y) / (t12 + t23)));
+
+        const c1x = p1.x + m1x / 3,
+            c1y = p1.y + m1y / 3,
+            c2x = p2.x - m2x / 3,
+            c2y = p2.y - m2y / 3;
+        d += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`;
+    }
+    return `${d}${closed ? " Z" : ""}`;
+};
+
 const evaluate = (node: NodeDefinitions.NodeFor<PolylineDefinition>, socket: keyof PolylineDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const points = context.resolve<DataTypes.ArrayOf<DataTypes.Point>>(node.id, "points")?.data ?? null;
     if (!points || points.length < 2) {
@@ -169,8 +232,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolylineDefinition>, socket: key
 
     const closed = context.resolve<DataTypes.Boolean>(node.id, "closed")?.data ?? node.payload.closed ?? false;
 
-    const [first, ...rest] = points;
-    const d = `M ${first.x},${first.y} ${rest.map((p) => `L ${p.x},${p.y}`).join(" ")}${closed ? " Z" : ""}`;
+    const smoothnessRaw = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Float | DataTypes.Integer>(node.id, "smoothness")?.data ?? node.payload.smoothness) ?? 0;
+    const tension = Math.max(0, Math.min(100, smoothnessRaw)) / 100;
+    const d = tension <= 0 ? buildStraightPath(points, closed) : buildSmoothPath(points, closed, tension);
 
     let minX = Infinity,
         minY = Infinity,

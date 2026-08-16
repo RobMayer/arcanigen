@@ -200,6 +200,7 @@ import { FloatArrayDefinition, FloatArrayNodeType } from "./nodes/values/floatAr
 import { LengthArrayDefinition, LengthArrayNodeType } from "./nodes/values/lengthArrayNode";
 import { ColorArrayDefinition, ColorArrayNodeType } from "./nodes/values/colorArrayNode";
 import { BooleanArrayDefinition, BooleanArrayNodeType } from "./nodes/values/booleanArrayNode";
+import { ArrayDefinition, ArrayNodeType } from "./nodes/values/arrayNode";
 import { FromCrossingsDefinition, FromCrossingsNodeType } from "./nodes/values/fromCrossingsNode";
 import { PointOnPathDefinition, PointOnPathNodeType } from "./nodes/values/pointOnPathNode";
 import { PointsOnPathDefinition, PointsOnPathNodeType } from "./nodes/values/pointsOnPathNode";
@@ -450,6 +451,7 @@ export namespace Registries {
         lengthArray: LengthArrayDefinition;
         colorArray: ColorArrayDefinition;
         booleanArray: BooleanArrayDefinition;
+        array: ArrayDefinition;
         fromCrossings: FromCrossingsDefinition;
         pointOnPath: PointOnPathDefinition;
         pointsOnPath: PointsOnPathDefinition;
@@ -569,6 +571,7 @@ export namespace Registries {
         lengthArray: LengthArrayNodeType,
         colorArray: ColorArrayNodeType,
         booleanArray: BooleanArrayNodeType,
+        array: ArrayNodeType,
         fromCrossings: FromCrossingsNodeType,
         pointOnPath: PointOnPathNodeType,
         pointsOnPath: PointsOnPathNodeType,

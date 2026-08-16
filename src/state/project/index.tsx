@@ -766,7 +766,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 12;
+        export const CURRENT = 13;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1357,6 +1357,19 @@ export namespace Project {
                     }
                 }
                 input.version = 12;
+            }
+            if (input.version === 12) {
+                // Polyline gained a `smoothness` percent input (Catmull-Rom curving through the points).
+                // Backfill existing polylines to their prior straight-segment behavior: smoothness 0.
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type !== "polyline" || !node.payload) continue;
+                        node.payload.smoothness = node.payload.smoothness ?? "0";
+                        node.in.smoothness = node.in.smoothness ?? null;
+                    }
+                }
+                input.version = 13;
             }
             // next version alterations go here...
             return input as Project.SavedProject;
