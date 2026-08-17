@@ -413,3 +413,10 @@ const BaseSwatch = styled.span`
         background-color: var(--value);
     }
 `;
+
+export const NodeHeading = styled.span`
+    text-align: center;
+    font-size: 1.2em;
+    font-variant: small-caps;
+    line-height: 1em;
+`;

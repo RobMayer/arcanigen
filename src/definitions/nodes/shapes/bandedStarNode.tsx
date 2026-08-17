@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, NodeHeading, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
@@ -334,43 +334,27 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedStarD
                 />
             </SocketIn>
             <hr />
-
-            {/* Spread band mode: one base star + a thickness. */}
-            <StarRadiusControls
-                node={node}
-                handleUpdate={handleUpdate}
-                disabled={!isSpread}
-                modeSocket={"radiusMode"}
-                majorSocket={"majorRadius"}
-                minorSocket={"minorRadius"}
-                radiusSocket={"radius"}
-                amplitudeSocket={"amplitude"}
-                alignSocket={"amplitudeAlign"}
-            />
-            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
-                <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || !isSpread} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
-                <RadioButton.Group
-                    options={ALIGN_OPTIONS}
-                    value={`${node.payload.spreadAlign}`}
-                    onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.spreadAlign !== null || !isSpread}
+            <NodeAccordion
+                label={"Inner/Outer"}
+                socketsIn={
+                    "outerRadiusMode|outerMajorRadius|outerMinorRadius|outerRadius|outerAmplitude|outerAmplitudeAlign|innerRadiusMode|innerMajorRadius|innerMinorRadius|innerRadius|innerAmplitude|innerAmplitudeAlign"
+                }
+                nodeId={node.id}
+            >
+                <NodeHeading>Inner</NodeHeading>
+                <StarRadiusControls
+                    node={node}
+                    handleUpdate={handleUpdate}
+                    disabled={!isInOut}
+                    modeSocket={"innerRadiusMode"}
+                    majorSocket={"innerMajorRadius"}
+                    minorSocket={"innerMinorRadius"}
+                    radiusSocket={"innerRadius"}
+                    amplitudeSocket={"innerAmplitude"}
+                    alignSocket={"innerAmplitudeAlign"}
                 />
-            </SocketIn>
-            <SocketIn node={node} socketId={"expandMode"} label={"Expand Mode"}>
-                <RadioButton.Group
-                    options={EXPAND_MODE_OPTIONS}
-                    value={`${node.payload.expandMode}`}
-                    onValue={(v) => handleUpdate({ expandMode: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.expandMode !== null || !isSpread}
-                />
-            </SocketIn>
-
-            {/* Inner/Outer band mode: two independent boundary stars. */}
-            <NodeAccordion label={"Outer Star"} socketsIn={"outerRadiusMode|outerMajorRadius|outerMinorRadius|outerRadius|outerAmplitude|outerAmplitudeAlign"} nodeId={node.id}>
+                <hr />
+                <NodeHeading>Outer</NodeHeading>
                 <StarRadiusControls
                     node={node}
                     handleUpdate={handleUpdate}
@@ -383,18 +367,39 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedStarD
                     alignSocket={"outerAmplitudeAlign"}
                 />
             </NodeAccordion>
-            <NodeAccordion label={"Inner Star"} socketsIn={"innerRadiusMode|innerMajorRadius|innerMinorRadius|innerRadius|innerAmplitude|innerAmplitudeAlign"} nodeId={node.id}>
+            <NodeAccordion label={"Spread"} socketsIn={"radiusMode|majorRadius|minorRadius|radius|amplitude|amplitudeAlign"} nodeId={node.id}>
                 <StarRadiusControls
                     node={node}
                     handleUpdate={handleUpdate}
-                    disabled={!isInOut}
-                    modeSocket={"innerRadiusMode"}
-                    majorSocket={"innerMajorRadius"}
-                    minorSocket={"innerMinorRadius"}
-                    radiusSocket={"innerRadius"}
-                    amplitudeSocket={"innerAmplitude"}
-                    alignSocket={"innerAmplitudeAlign"}
+                    disabled={!isSpread}
+                    modeSocket={"radiusMode"}
+                    majorSocket={"majorRadius"}
+                    minorSocket={"minorRadius"}
+                    radiusSocket={"radius"}
+                    amplitudeSocket={"amplitude"}
+                    alignSocket={"amplitudeAlign"}
                 />
+                <SocketIn node={node} socketId={"spread"} label={"Spread"}>
+                    <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || !isSpread} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
+                    <RadioButton.Group
+                        options={ALIGN_OPTIONS}
+                        value={`${node.payload.spreadAlign}`}
+                        onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.spreadAlign !== null || !isSpread}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"expandMode"} label={"Expand Mode"}>
+                    <RadioButton.Group
+                        options={EXPAND_MODE_OPTIONS}
+                        value={`${node.payload.expandMode}`}
+                        onValue={(v) => handleUpdate({ expandMode: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.expandMode !== null || !isSpread}
+                    />
+                </SocketIn>
             </NodeAccordion>
 
             <NodeAccordion label={"More"} socketsIn={"rScribe|majorScribe|minorScribe|majorCornerRadius|majorCornerShape|minorCornerRadius|minorCornerShape|pointDistro"} nodeId={node.id}>

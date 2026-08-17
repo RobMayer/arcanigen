@@ -179,11 +179,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedArcDe
                 />
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
-                <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
             <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
+                <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
