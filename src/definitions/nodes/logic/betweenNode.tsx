@@ -16,21 +16,20 @@ import { numericConflict } from "../../helpers/numericConflict";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+type PayloadType = {
+    label: string;
+    value: string;
+    min: string;
+    max: string;
+};
+
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ value: $.defaulted(T, NumericKind.kindOf), min: $.defaulted(T, NumericKind.kindOf), max: $.defaulted(T, NumericKind.kindOf) }),
+    in: ({ T }) => ({ value: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.value)), min: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.min)), max: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.max)) }),
     out: { output: "boolean" },
 });
 
-export type BetweenDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: string;
-        value: string;
-        min: string;
-        max: string;
-    }
->;
+export type BetweenDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BetweenDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"between", BetweenDefinition> => {
     return {

@@ -17,20 +17,19 @@ import { SocketTypes } from "../../socketTypes";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 
+type PayloadType = {
+    label: DataTypes.TypeOf<DataTypes.String>;
+    a: string;
+    b: string;
+};
+
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ a: $.defaulted(T, NumericKind.kindOf), b: $.defaulted(T, NumericKind.kindOf) }),
+    in: ({ T }) => ({ a: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.a)), b: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.b)) }),
     out: ({ T }) => ({ output: T }),
 });
 
-export type AddDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: DataTypes.TypeOf<DataTypes.String>;
-        a: string;
-        b: string;
-    }
->;
+export type AddDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 type AddNode = NodeDefinitions.BuiltNodeOf<"add", AddDefinition>;
 

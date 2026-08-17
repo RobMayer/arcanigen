@@ -16,21 +16,20 @@ import { numericConflict } from "../../helpers/numericConflict";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+type PayloadType = {
+    label: string;
+    value: string;
+    target: string;
+    tolerance: string;
+};
+
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ value: $.defaulted(T, NumericKind.kindOf), target: $.defaulted(T, NumericKind.kindOf), tolerance: $.defaulted(T, NumericKind.kindOf) }),
+    in: ({ T }) => ({ value: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.value)), target: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.target)), tolerance: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.tolerance)) }),
     out: { output: "boolean" },
 });
 
-export type WithinDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: string;
-        value: string;
-        target: string;
-        tolerance: string;
-    }
->;
+export type WithinDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<WithinDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"within", WithinDefinition> => {
     return {

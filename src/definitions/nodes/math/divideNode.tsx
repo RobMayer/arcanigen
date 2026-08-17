@@ -17,20 +17,19 @@ import { SocketTypes } from "../../socketTypes";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+type PayloadType = {
+    label: string;
+    a: string;
+    b: string;
+};
+
 const def = signature({
     args: { T: $.combine.NUMERIC_SCALABLE },
-    in: ({ T }) => ({ a: $.defaulted(T, NumericKind.kindOf), b: $.defaulted(T, NumericKind.kindOf) }),
+    in: ({ T }) => ({ a: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.a)), b: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.b)) }),
     out: ({ T }) => ({ output: T }),
 });
 
-export type DivideDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: string;
-        a: string;
-        b: string;
-    }
->;
+export type DivideDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<DivideDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"divide", DivideDefinition> => {
     return {

@@ -18,18 +18,17 @@ import { NumericKind } from "../../helpers/numericKind";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+type PayloadType = {
+    label: string;
+    input: string;
+};
+
 const def = signature({
-    in: { input: $.defaulted($.oneOf("angle", "float", "integer"), NumericKind.angleKindOf) },
+    in: { input: $.defaulted($.oneOf("angle", "float", "integer"), (p: PayloadType) => NumericKind.angleKindOf(p.input)) },
     out: { output: "float" },
 });
 
-export type TanDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: string;
-        input: string;
-    }
->;
+export type TanDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 // interject-only rules (mirror the def's socket types)
 const TRIG_IN: SocketTypes.Term = SocketTypes.or(DataTypes.ANGLE, DataTypes.FLOAT, DataTypes.INTEGER);

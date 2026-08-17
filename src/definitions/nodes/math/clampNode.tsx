@@ -17,21 +17,20 @@ import { SocketTypes } from "../../socketTypes";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+type PayloadType = {
+    label: string;
+    input: string;
+    min: string;
+    max: string;
+};
+
 const def = signature({
     args: { T: $.combine.NUMERIC_ADDABLE },
-    in: ({ T }) => ({ input: $.defaulted(T, NumericKind.kindOf), min: $.defaulted(T, NumericKind.kindOf), max: $.defaulted(T, NumericKind.kindOf) }),
+    in: ({ T }) => ({ input: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.input)), min: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.min)), max: $.defaulted(T, (p: PayloadType) => NumericKind.kindOf(p.max)) }),
     out: ({ T }) => ({ output: T }),
 });
 
-export type ClampDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: string;
-        input: string;
-        min: string;
-        max: string;
-    }
->;
+export type ClampDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<ClampDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"clamp", ClampDefinition> => {
     return {

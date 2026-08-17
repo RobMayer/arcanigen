@@ -17,19 +17,18 @@ import { SocketTypes } from "../../socketTypes";
 import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+type PayloadType = {
+    label: string;
+    input: string;
+};
+
 const def = signature({
     args: { N: $.NUMERIC },
-    in: ({ N }) => ({ input: $.defaulted(N, NumericKind.kindOf) }),
+    in: ({ N }) => ({ input: $.defaulted(N, (p: PayloadType) => NumericKind.kindOf(p.input)) }),
     out: ({ N }) => ({ output: N }),
 });
 
-export type NegateDefinition = SignatureBuilder.DefinitionFrom<
-    typeof def,
-    {
-        label: string;
-        input: string;
-    }
->;
+export type NegateDefinition = SignatureBuilder.DefinitionFrom<typeof def, PayloadType>;
 
 type NegateNode = NodeDefinitions.BuiltNodeOf<"negate", NegateDefinition>;
 
