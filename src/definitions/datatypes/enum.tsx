@@ -142,6 +142,23 @@ export namespace Enum {
             FROM_TO: { value: 1, label: "From / To" },
         } as const;
 
+        // Banded shapes: how a band's two side edges (the "legs") attach to the end circles.
+        // Tangent = legs are the common external tangents to the two end circles (smooth, cap-friendly);
+        // Offset = legs attach at the plain perpendicular offsets (exact widths at the endpoints).
+        export const bandMode = {
+            TANGENT: { value: 0, label: "Tangent" },
+            OFFSET: { value: 1, label: "Offset" },
+        } as const;
+
+        // Banded shapes: how a band's end is closed off. Distinct from strokeCap (an SVG stroke property):
+        // these are actual geometry built around the end circle. Point has no strokeCap analogue.
+        export const bandCap = {
+            BUTT: { value: 0, label: "Butt" },
+            ROUND: { value: 1, label: "Round" },
+            SQUARE: { value: 2, label: "Square" },
+            POINT: { value: 3, label: "Point" },
+        } as const;
+
         // Spirograph: which side the rolling wheel travels on the fixed ring.
         // Inside = hypotrochoid, Outside = epitrochoid.
         export const spiroMode = {
@@ -378,6 +395,8 @@ export namespace Enum {
         { label: "Overflow Mode", options: Common.overflowMode },
         { label: "Sequencer Mode", options: Common.sequencerMode },
         { label: "Arc Mode", options: Common.arcMode },
+        { label: "Band Mode", options: Common.bandMode },
+        { label: "Band Cap", options: Common.bandCap },
         { label: "Spiro Mode", options: Common.spiroMode },
         { label: "Spiro Param", options: Common.spiroParam },
         { label: "Spiro Radius", options: Common.spiroRadiusMode },

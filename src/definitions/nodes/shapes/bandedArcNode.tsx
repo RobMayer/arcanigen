@@ -7,97 +7,93 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
-import { IntegerInput } from "../../../components/inputs/IntegerInput";
-import { NumericString } from "../../datatypes/numericString";
-import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
 import { StylingPrefab } from "../../helpers/stylingPrefab";
 import { TransformPrefab } from "../../helpers/transformPrefab";
-import { CheckBox } from "../../../components/buttons/CheckBox";
+import { BandHelper } from "../../helpers/bandHelper";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+// The "banded" counterpart to Arc (as Ring is to Circle): a thick arc / annular sector. The band spans
+// inner->outer radius (Ring's radial vocab) over a sweep (Arc's angular vocab), with a bandCap at each
+// angular end -- reusing BandHelper.capCommands (cap circle radius = half the band thickness, centered
+// on the mid-radius endpoint, bulging tangentially). innerRadius 0 gives a filled sector; a full sweep
+// gives a full ring.
 const def = signature({
     in: {
-        spurCount: "integer",
         radius: "length",
         spread: "length",
         innerRadius: "length",
         outerRadius: "length",
         spanMode: "enum",
         spreadAlign: "enum",
+        startCap: "enum",
+        endCap: "enum",
         arcMode: "enum",
         thetaStart: "angle",
         sweep: "angle",
         thetaFrom: "angle",
         thetaTo: "angle",
-        thetaInclusive: "boolean",
-        thetaCurve: "distribution",
-        markerStart: "shape",
-        markerEnd: "shape",
-        markerAlign: "boolean",
         ...TransformPrefab.SIG_IN,
         ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
     },
-    out: { output: "shape", path: "path" },
+    out: { output: "shape", path: "path", centerline: "path" },
 });
 
-export type BurstDefinition = SignatureBuilder.DefinitionFrom<
+export type BandedArcDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: DataTypes.TypeOf<DataTypes.String>;
-        spurCount: DataTypes.TypeOf<DataTypes.Integer>;
-        spanMode: DataTypes.TypeOf<DataTypes.Enum>;
-        spreadAlign: DataTypes.TypeOf<DataTypes.Enum>;
         radius: DataTypes.TypeOf<DataTypes.Length>;
         spread: DataTypes.TypeOf<DataTypes.Length>;
         innerRadius: DataTypes.TypeOf<DataTypes.Length>;
         outerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        spanMode: DataTypes.TypeOf<DataTypes.Enum>;
+        spreadAlign: DataTypes.TypeOf<DataTypes.Enum>;
+        startCap: DataTypes.TypeOf<DataTypes.Enum>;
+        endCap: DataTypes.TypeOf<DataTypes.Enum>;
         arcMode: DataTypes.TypeOf<DataTypes.Enum>;
         thetaStart: DataTypes.TypeOf<DataTypes.Angle>;
         sweep: DataTypes.TypeOf<DataTypes.Angle>;
         thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
         thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
-        thetaInclusive: DataTypes.TypeOf<DataTypes.Boolean>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"burst", BurstDefinition> => {
+const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BandedArcDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"bandedArc", BandedArcDefinition> => {
     return {
         id,
         in: {
-            spurCount: null,
             radius: null,
             spread: null,
             innerRadius: null,
             outerRadius: null,
             spanMode: null,
             spreadAlign: null,
+            startCap: null,
+            endCap: null,
             arcMode: null,
             thetaStart: null,
             sweep: null,
             thetaFrom: null,
             thetaTo: null,
-            thetaInclusive: null,
-            thetaCurve: null,
-
-            markerStart: null,
-            markerEnd: null,
-            markerAlign: null,
 
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
             strokeDashOffset: null,
             strokeCap: null,
+            strokeJoin: null,
+            fillColor: null,
             paintOrder: null,
             opacity: null,
             // transforms
@@ -107,46 +103,50 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
         out: {
             output: [],
             path: [],
+            centerline: [],
         },
         payload: {
             label: "",
-            spurCount: "5",
+            radius: "100px",
+            spread: "20px",
+            innerRadius: "90px",
+            outerRadius: "110px",
             spanMode: Enum.Common.spanMode.INNER_OUTER.value,
             spreadAlign: 0,
-            radius: "150px",
-            spread: "20px",
-            innerRadius: "140px",
-            outerRadius: "160px",
+            startCap: Enum.Common.bandCap.BUTT.value,
+            endCap: Enum.Common.bandCap.BUTT.value,
             arcMode: Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: "0deg",
             sweep: "90deg",
             thetaFrom: "0deg",
             thetaTo: "90deg",
-            thetaInclusive: false,
-            markerAlign: true,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.BUTT.value,
+            strokeJoin: Enum.Common.strokeJoin.MITER.value,
+            // fill
+            fillColor: { r: 0, g: 0, b: 0, a: 1 },
             paintOrder: 0,
             opacity: "100",
             // transforms
             position: { ...TransformPrefab.POSITION_DEFAULT },
             rotation: "0deg",
         },
-        type: "burst",
+        type: "bandedArc",
     };
 };
 
 const SPAN_MODE_OPTIONS = Enum.options(Enum.Common.spanMode);
-const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 const SPREAD_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
+const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
+const BAND_CAP_OPTIONS = Enum.options(Enum.Common.bandCap);
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedArcDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<BandedArcDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -165,9 +165,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
             <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
-            <SocketIn node={node} socketId={"spurCount"} label={"Spurs"}>
-                <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null} min={"0"} required />
-            </SocketIn>
+            <SocketOut node={node} socketId={"centerline"}>
+                Centerline
+            </SocketOut>
 
             <SocketIn node={node} socketId={"spanMode"} label={"Radial Mode"}>
                 <RadioButton.Group
@@ -179,11 +179,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 />
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
             <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
+                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
@@ -202,6 +202,25 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 />
             </SocketIn>
             <hr />
+            <SocketIn node={node} socketId={"startCap"} label={"Start Cap"}>
+                <RadioButton.Group
+                    options={BAND_CAP_OPTIONS}
+                    value={`${node.payload.startCap}`}
+                    onValue={(v) => handleUpdate({ startCap: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.startCap !== null}
+                />
+            </SocketIn>
+            <SocketIn node={node} socketId={"endCap"} label={"End Cap"}>
+                <RadioButton.Group
+                    options={BAND_CAP_OPTIONS}
+                    value={`${node.payload.endCap}`}
+                    onValue={(v) => handleUpdate({ endCap: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.endCap !== null}
+                />
+            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
@@ -211,7 +230,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                     disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
-
             <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
                 <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} unbound />
             </SocketIn>
@@ -226,36 +244,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"thetaInclusive"}>
-                <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null}>
-                    Inclusive End
-                </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaCurve"}>
-                Angular Distribution
-            </SocketIn>
-
-            <NodeAccordion label={"More"} socketsIn={"markerStart|markerEnd|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"markerStart"}>
-                    Marker Start
-                </SocketIn>
-                <SocketIn node={node} socketId={"markerEnd"}>
-                    Marker End
-                </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"}>
-                    <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
-                        Align Markers
-                    </CheckBox>
-                </SocketIn>
-            </NodeAccordion>
-            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
 
-const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
-    "spurCount",
+// The mid-radius arc (centerline) depends on the radial + angular layout, but NOT the end caps.
+const CENTERLINE_INPUTS: (keyof BandedArcDefinition["inputs"])[] = [
     "radius",
     "spread",
     "innerRadius",
@@ -267,65 +263,77 @@ const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
     "sweep",
     "thetaFrom",
     "thetaTo",
-    "thetaInclusive",
-    "thetaCurve",
-    "markerStart",
-    "markerEnd",
-    "markerAlign",
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder", "opacity"];
+const CAP_INPUTS: (keyof BandedArcDefinition["inputs"])[] = ["startCap", "endCap"];
+const GEOMETRY_INPUTS: (keyof BandedArcDefinition["inputs"])[] = [...CENTERLINE_INPUTS, ...CAP_INPUTS];
+const STYLING_INPUTS: (keyof BandedArcDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<BandedArcDefinition>, outSocket: keyof BandedArcDefinition["outputs"], _deps: AllDeps): (keyof BandedArcDefinition["inputs"])[] => {
+    if (outSocket === "centerline") {
+        return CENTERLINE_INPUTS;
+    }
     if (outSocket === "path") {
         return GEOMETRY_INPUTS;
     }
     return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<BurstDefinition>, inSocket: keyof BurstDefinition["inputs"], _deps: AllDeps): (keyof BurstDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<BandedArcDefinition>, inSocket: keyof BandedArcDefinition["inputs"], _deps: AllDeps): (keyof BandedArcDefinition["outputs"])[] => {
     if (STYLING_INPUTS.includes(inSocket)) {
         return ["output"];
     }
-    return ["output", "path"];
+    if (CAP_INPUTS.includes(inSocket)) {
+        return ["output", "path"];
+    }
+    return ["output", "path", "centerline"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof BurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
-    if (!isFinite(spurCount) || spurCount <= 0) return null;
+/** Our angle convention (0deg = top, CW positive) to radians. */
+const toRad = (deg: number): number => ((deg - 90) * Math.PI) / 180;
+const polar = (r: number, thetaRad: number): BandHelper.Vec => ({ x: r * Math.cos(thetaRad), y: r * Math.sin(thetaRad) });
+// Unit tangent in the direction of increasing theta.
+const tangent = (thetaRad: number): BandHelper.Vec => ({ x: -Math.sin(thetaRad), y: Math.cos(thetaRad) });
+const scaleVec = (v: BandHelper.Vec, s: number): BandHelper.Vec => ({ x: v.x * s, y: v.y * s });
 
-    const N = spurCount;
+const fullRing = (rI: number, rO: number): string => {
+    let d = `M ${rO},0 A ${rO},${rO} 0 0,0 ${-rO},0 A ${rO},${rO} 0 0,0 ${rO},0 z`;
+    if (rI > BandHelper.EPS) {
+        d += ` M ${rI},0 A ${rI},${rI} 0 0,1 ${-rI},0 A ${rI},${rI} 0 0,1 ${rI},0 z`;
+    }
+    return d;
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<BandedArcDefinition>, socket: keyof BandedArcDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const spanMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
     let rI: number;
     let rO: number;
-
     if (spanMode === Enum.Common.spanMode.INNER_OUTER.value) {
         rI = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
         rO = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
     } else {
         const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
         const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
-        if (!radius) return null;
-
         const spreadAlign = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
-
-        const tIMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.INWARD.value ? spread : 0;
-        const tOMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.OUTWARD.value ? spread : 0;
-
-        rI = radius - tIMod;
-        rO = radius + tOMod;
+        if (spreadAlign === Enum.Common.spreadAlign.INWARD.value) {
+            rO = radius;
+            rI = radius - spread;
+        } else if (spreadAlign === Enum.Common.spreadAlign.OUTWARD.value) {
+            rO = radius + spread;
+            rI = radius;
+        } else {
+            rO = radius + spread / 2;
+            rI = radius - spread / 2;
+        }
     }
-
-    if (rO <= 0) return null;
     rI = Math.max(0, rI);
+    rO = Math.max(0, rO);
 
     const arcMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
-
     let effectiveStart: number;
     let effectiveSweep: number;
-
     if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
         const from = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
         const to = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
@@ -335,73 +343,71 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
         effectiveStart = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStart")?.data ?? node.payload.thetaStart) ?? 0;
         effectiveSweep = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
+    effectiveSweep = Math.max(-360, Math.min(360, effectiveSweep));
+    if (effectiveSweep === 0) return null;
 
-    const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
-
-    const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? {
-        func: Enum.Common.distroFunctions.LINEAR.value,
-        easing: Enum.Common.distroEasing.IN.value,
-        intensity: "1",
-    };
-    const distroLerper = distroInterpolator(
-        Enum.keyOf(Enum.Common.distroFunctions, distro.func),
-        Enum.keyOf(Enum.Common.distroEasing, distro.easing),
-        NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
-    );
-
-    const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
-
-    // Compute line endpoints for both output and path
-    const lineCoords: { x1: number; y1: number; x2: number; y2: number }[] = [];
-    for (let i = 0; i < N; i++) {
-        const coeff = delerp(i, 0, denominator);
-        const angle = lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
-        const c = Math.cos(deg2rad(angle - 90));
-        const s = Math.sin(deg2rad(angle - 90));
-        lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });
-    }
+    const absSweep = Math.abs(effectiveSweep);
+    const sweepFlag = effectiveSweep > 0 ? 1 : 0;
+    const largeArc = absSweep > 180 ? 1 : 0;
+    const th0 = toRad(effectiveStart);
+    const th1 = toRad(effectiveStart + effectiveSweep);
 
     const [transforms] = TransformPrefab.evaluate(node, context);
 
+    if (socket === "centerline") {
+        const rM = (rI + rO) / 2;
+        if (rM < BandHelper.EPS) return null;
+        const d =
+            absSweep >= 360
+                ? `M ${rM},0 A ${rM},${rM} 0 0,0 ${-rM},0 A ${rM},${rM} 0 0,0 ${rM},0`
+                : `M ${BandHelper.pt(polar(rM, th0))} A ${rM} ${rM} 0 ${largeArc} ${sweepFlag} ${BandHelper.pt(polar(rM, th1))}`;
+        return { kind: "path", data: { d, transform: transforms.join(" ") } };
+    }
+
+    const thickness = rO - rI;
+    if (thickness <= BandHelper.EPS) return null;
+
+    let d: string;
+    if (absSweep >= 360) {
+        d = fullRing(rI, rO);
+    } else {
+        const startCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "startCap")?.data, Enum.Common.bandCap) ?? node.payload.startCap ?? 0;
+        const endCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "endCap")?.data, Enum.Common.bandCap) ?? node.payload.endCap ?? 0;
+
+        const capR = thickness / 2;
+        const sign = effectiveSweep > 0 ? 1 : -1;
+
+        const oStart = polar(rO, th0);
+        const oEnd = polar(rO, th1);
+        const iStart = polar(rI, th0);
+        const iEnd = polar(rI, th1);
+        const mid0 = polar((rI + rO) / 2, th0);
+        const mid1 = polar((rI + rO) / 2, th1);
+
+        // Outward (tangential, away from the sweep) at each angular end.
+        const uEnd = scaleVec(tangent(th1), sign);
+        const uStart = scaleVec(tangent(th0), -sign);
+
+        const endCapCmds = BandHelper.capCommands(endCap, mid1, capR, uEnd, oEnd, iEnd, uEnd, uEnd);
+        const startCapCmds = BandHelper.capCommands(startCap, mid0, capR, uStart, iStart, oStart, uStart, uStart);
+
+        d =
+            `M ${BandHelper.pt(oStart)} A ${rO} ${rO} 0 ${largeArc} ${sweepFlag} ${BandHelper.pt(oEnd)} ` +
+            `${endCapCmds} A ${rI} ${rI} 0 ${largeArc} ${1 - sweepFlag} ${BandHelper.pt(iStart)} ${startCapCmds} Z`;
+    }
+
     if (socket === "path") {
-        const d = lineCoords.map((l) => `M ${l.x1},${l.y1} L ${l.x2},${l.y2}`).join(" ");
-        return {
-            kind: "path",
-            data: { d, transform: transforms.join(" ") },
-        };
+        return { kind: "path", data: { d, transform: transforms.join(" ") } };
     }
 
     if (socket === "output") {
-        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStart")?.data;
-        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEnd")?.data;
-        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
-
-        const paint = StylingPrefab.evaluate(node, context);
-        const markers =
-            markerStartShape || markerEndShape
-                ? {
-                      start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                      end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                  }
-                : undefined;
-
-        const children = lineCoords.map((l) => ({
-            type: "line" as const,
-            x1: l.x1,
-            y1: l.y1,
-            x2: l.x2,
-            y2: l.y2,
-            paint,
-            markers,
-            transform: "",
-        }));
-
         return {
             kind: "shape",
             data: {
-                type: "group",
+                type: "path",
+                d,
+                paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
-                children,
             },
         };
     }
@@ -409,11 +415,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     return null;
 };
 
-export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
-    type: "burst",
-    displayName: "Burst",
-    defaultLabel: "Burst",
-    iconNode: <NodeIcon shape={NODE_ICONS.shapeBurst} />,
+export const BandedArcNodeType: NodeTypes.Type<"bandedArc", BandedArcDefinition> = {
+    type: "bandedArc",
+    displayName: "Banded Arc",
+    defaultLabel: "Banded Arc",
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} />,
     flavour: "confirm",
     category: "Shapes",
     create,

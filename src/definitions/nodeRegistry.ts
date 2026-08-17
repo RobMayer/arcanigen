@@ -159,6 +159,9 @@ import { SpiralDefinition, SpiralNodeType } from "./nodes/shapes/spiralNode";
 import { SpirographDefinition, SpirographNodeType } from "./nodes/shapes/spirographNode";
 import { SpiroringDefinition, SpiroringNodeType } from "./nodes/shapes/spiroringNode";
 import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
+import { BandedLineDefinition, BandedLineNodeType } from "./nodes/shapes/bandedLineNode";
+import { BandedBurstDefinition, BandedBurstNodeType } from "./nodes/shapes/bandedBurstNode";
+import { BandedArcDefinition, BandedArcNodeType } from "./nodes/shapes/bandedArcNode";
 import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textPathNode";
 import { TextDefinition, TextNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/modifiers/alongPathNode";
@@ -262,6 +265,9 @@ export namespace Registries {
         spirograph: SpirographDefinition;
         spiroring: SpiroringDefinition;
         line: LineDefinition;
+        bandedLine: BandedLineDefinition;
+        bandedBurst: BandedBurstDefinition;
+        bandedArc: BandedArcDefinition;
         textPath: TextPathDefinition;
         text: TextDefinition;
         alongPath: AlongPathDefinition;
@@ -523,6 +529,9 @@ export namespace Registries {
         spirograph: SpirographNodeType,
         spiroring: SpiroringNodeType,
         line: LineNodeType,
+        bandedLine: BandedLineNodeType,
+        bandedBurst: BandedBurstNodeType,
+        bandedArc: BandedArcNodeType,
         textPath: TextPathNodeType,
         text: TextNodeType,
         alongPath: AlongPathNodeType,

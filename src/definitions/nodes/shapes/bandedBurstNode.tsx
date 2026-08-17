@@ -7,7 +7,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
@@ -18,11 +18,15 @@ import { NumericString } from "../../datatypes/numericString";
 import { deg2rad, delerp, distroInterpolator, lerp } from "../../../util/misc";
 import { StylingPrefab } from "../../helpers/stylingPrefab";
 import { TransformPrefab } from "../../helpers/transformPrefab";
+import { BandHelper } from "../../helpers/bandHelper";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
+// The "banded" counterpart to Burst (as Ring is to Circle): each radial spur, instead of a bare line
+// from the inner radius to the outer radius, becomes a filled band via BandHelper -- given a width at
+// its inner and outer ends (taper) and a cap at each end. All spurs are emitted as one compound path.
 const def = signature({
     in: {
         spurCount: "integer",
@@ -32,6 +36,11 @@ const def = signature({
         outerRadius: "length",
         spanMode: "enum",
         spreadAlign: "enum",
+        innerWidth: "length",
+        outerWidth: "length",
+        bandMode: "enum",
+        innerCap: "enum",
+        outerCap: "enum",
         arcMode: "enum",
         thetaStart: "angle",
         sweep: "angle",
@@ -39,16 +48,15 @@ const def = signature({
         thetaTo: "angle",
         thetaInclusive: "boolean",
         thetaCurve: "distribution",
-        markerStart: "shape",
-        markerEnd: "shape",
-        markerAlign: "boolean",
         ...TransformPrefab.SIG_IN,
         ...StylingPrefab.SIG_IN,
+        ...StylingPrefab.SIG_FILL,
+        ...StylingPrefab.SIG_JOIN,
     },
-    out: { output: "shape", path: "path" },
+    out: { output: "shape", path: "path", centerline: "path" },
 });
 
-export type BurstDefinition = SignatureBuilder.DefinitionFrom<
+export type BandedBurstDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: DataTypes.TypeOf<DataTypes.String>;
@@ -59,18 +67,22 @@ export type BurstDefinition = SignatureBuilder.DefinitionFrom<
         spread: DataTypes.TypeOf<DataTypes.Length>;
         innerRadius: DataTypes.TypeOf<DataTypes.Length>;
         outerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        innerWidth: DataTypes.TypeOf<DataTypes.Length>;
+        outerWidth: DataTypes.TypeOf<DataTypes.Length>;
+        bandMode: DataTypes.TypeOf<DataTypes.Enum>;
+        innerCap: DataTypes.TypeOf<DataTypes.Enum>;
+        outerCap: DataTypes.TypeOf<DataTypes.Enum>;
         arcMode: DataTypes.TypeOf<DataTypes.Enum>;
         thetaStart: DataTypes.TypeOf<DataTypes.Angle>;
         sweep: DataTypes.TypeOf<DataTypes.Angle>;
         thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
         thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
         thetaInclusive: DataTypes.TypeOf<DataTypes.Boolean>;
-        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
 
-const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"burst", BurstDefinition> => {
+const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BandedBurstDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"bandedBurst", BandedBurstDefinition> => {
     return {
         id,
         in: {
@@ -81,6 +93,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             outerRadius: null,
             spanMode: null,
             spreadAlign: null,
+            innerWidth: null,
+            outerWidth: null,
+            bandMode: null,
+            innerCap: null,
+            outerCap: null,
             arcMode: null,
             thetaStart: null,
             sweep: null,
@@ -89,15 +106,13 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             thetaInclusive: null,
             thetaCurve: null,
 
-            markerStart: null,
-            markerEnd: null,
-            markerAlign: null,
-
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
             strokeDashOffset: null,
             strokeCap: null,
+            strokeJoin: null,
+            fillColor: null,
             paintOrder: null,
             opacity: null,
             // transforms
@@ -107,6 +122,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
         out: {
             output: [],
             path: [],
+            centerline: [],
         },
         payload: {
             label: "",
@@ -117,36 +133,45 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>, 
             spread: "20px",
             innerRadius: "140px",
             outerRadius: "160px",
+            innerWidth: "20px",
+            outerWidth: "20px",
+            bandMode: Enum.Common.bandMode.TANGENT.value,
+            innerCap: Enum.Common.bandCap.BUTT.value,
+            outerCap: Enum.Common.bandCap.BUTT.value,
             arcMode: Enum.Common.arcMode.START_SWEEP.value,
             thetaStart: "0deg",
             sweep: "90deg",
             thetaFrom: "0deg",
             thetaTo: "90deg",
             thetaInclusive: false,
-            markerAlign: true,
             // stroke
             strokeWidth: "1px",
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeDashOffset: "0px",
             strokeCap: Enum.Common.strokeCap.BUTT.value,
+            strokeJoin: Enum.Common.strokeJoin.MITER.value,
+            // fill
+            fillColor: { r: 0, g: 0, b: 0, a: 1 },
             paintOrder: 0,
             opacity: "100",
             // transforms
             position: { ...TransformPrefab.POSITION_DEFAULT },
             rotation: "0deg",
         },
-        type: "burst",
+        type: "bandedBurst",
     };
 };
 
 const SPAN_MODE_OPTIONS = Enum.options(Enum.Common.spanMode);
 const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 const SPREAD_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
+const BAND_MODE_OPTIONS = Enum.options(Enum.Common.bandMode);
+const BAND_CAP_OPTIONS = Enum.options(Enum.Common.bandCap);
 
-const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBurstDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
-        (v: Partial<NodeDefinitions.PayloadTypeOf<BurstDefinition>>) => {
+        (v: Partial<NodeDefinitions.PayloadTypeOf<BandedBurstDefinition>>) => {
             methods.update(v);
         },
         [methods],
@@ -164,6 +189,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
             </SocketOut>
             <SocketOut node={node} socketId={"path"}>
                 Path
+            </SocketOut>
+            <SocketOut node={node} socketId={"centerline"}>
+                Centerline
             </SocketOut>
             <SocketIn node={node} socketId={"spurCount"} label={"Spurs"}>
                 <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null} min={"0"} required />
@@ -202,6 +230,40 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 />
             </SocketIn>
             <hr />
+            <SocketIn node={node} socketId={"innerWidth"} label={"Inner Width"}>
+                <LengthInput value={node.payload.innerWidth} onCommit={(innerWidth) => handleUpdate({ innerWidth })} disabled={node.in.innerWidth !== null} min={"0px"} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"outerWidth"} label={"Outer Width"}>
+                <LengthInput value={node.payload.outerWidth} onCommit={(outerWidth) => handleUpdate({ outerWidth })} disabled={node.in.outerWidth !== null} min={"0px"} required />
+            </SocketIn>
+            <SocketIn node={node} socketId={"bandMode"} label={"Band Mode"}>
+                <RadioButton.Group
+                    options={BAND_MODE_OPTIONS}
+                    value={`${node.payload.bandMode}`}
+                    onValue={(v) => handleUpdate({ bandMode: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.bandMode !== null}
+                />
+            </SocketIn>
+            <SocketIn node={node} socketId={"outerCap"} label={"Outer Cap"}>
+                <RadioButton.Group
+                    options={BAND_CAP_OPTIONS}
+                    value={`${node.payload.outerCap}`}
+                    onValue={(v) => handleUpdate({ outerCap: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.outerCap !== null}
+                />
+            </SocketIn>
+            <SocketIn node={node} socketId={"innerCap"} label={"Inner Cap"}>
+                <RadioButton.Group
+                    options={BAND_CAP_OPTIONS}
+                    value={`${node.payload.innerCap}`}
+                    onValue={(v) => handleUpdate({ innerCap: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.innerCap !== null}
+                />
+            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
@@ -235,26 +297,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BurstDefini
                 Angular Distribution
             </SocketIn>
 
-            <NodeAccordion label={"More"} socketsIn={"markerStart|markerEnd|markerAlign"} nodeId={node.id}>
-                <SocketIn node={node} socketId={"markerStart"}>
-                    Marker Start
-                </SocketIn>
-                <SocketIn node={node} socketId={"markerEnd"}>
-                    Marker End
-                </SocketIn>
-                <SocketIn node={node} socketId={"markerAlign"}>
-                    <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
-                        Align Markers
-                    </CheckBox>
-                </SocketIn>
-            </NodeAccordion>
-            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
+            <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
 
-const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
+// The spur centerlines depend on the radial/arc/distribution layout, but NOT on the per-spur band
+// width/mode/caps -- so `centerline` gets a tighter dependency set than the filled `path`/`output`.
+const CENTERLINE_INPUTS: (keyof BandedBurstDefinition["inputs"])[] = [
     "spurCount",
     "radius",
     "spread",
@@ -269,29 +320,34 @@ const GEOMETRY_INPUTS: (keyof BurstDefinition["inputs"])[] = [
     "thetaTo",
     "thetaInclusive",
     "thetaCurve",
-    "markerStart",
-    "markerEnd",
-    "markerAlign",
     "position",
     "rotation",
 ];
-const STYLING_INPUTS: (keyof BurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "paintOrder", "opacity"];
+const BAND_INPUTS: (keyof BandedBurstDefinition["inputs"])[] = ["innerWidth", "outerWidth", "bandMode", "innerCap", "outerCap"];
+const GEOMETRY_INPUTS: (keyof BandedBurstDefinition["inputs"])[] = [...CENTERLINE_INPUTS, ...BAND_INPUTS];
+const STYLING_INPUTS: (keyof BandedBurstDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeJoin", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
-const dependsOn = (_node: NodeDefinitions.NodeFor<BurstDefinition>, outSocket: keyof BurstDefinition["outputs"], _deps: AllDeps): (keyof BurstDefinition["inputs"])[] => {
+const dependsOn = (_node: NodeDefinitions.NodeFor<BandedBurstDefinition>, outSocket: keyof BandedBurstDefinition["outputs"], _deps: AllDeps): (keyof BandedBurstDefinition["inputs"])[] => {
+    if (outSocket === "centerline") {
+        return CENTERLINE_INPUTS;
+    }
     if (outSocket === "path") {
         return GEOMETRY_INPUTS;
     }
     return [...GEOMETRY_INPUTS, ...STYLING_INPUTS];
 };
 
-const contributesTo = (_node: NodeDefinitions.NodeFor<BurstDefinition>, inSocket: keyof BurstDefinition["inputs"], _deps: AllDeps): (keyof BurstDefinition["outputs"])[] => {
+const contributesTo = (_node: NodeDefinitions.NodeFor<BandedBurstDefinition>, inSocket: keyof BandedBurstDefinition["inputs"], _deps: AllDeps): (keyof BandedBurstDefinition["outputs"])[] => {
     if (STYLING_INPUTS.includes(inSocket)) {
         return ["output"];
     }
-    return ["output", "path"];
+    if (BAND_INPUTS.includes(inSocket)) {
+        return ["output", "path"];
+    }
+    return ["output", "path", "centerline"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof BurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+const evaluate = (node: NodeDefinitions.NodeFor<BandedBurstDefinition>, socket: keyof BandedBurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
     if (!isFinite(spurCount) || spurCount <= 0) return null;
 
@@ -351,20 +407,40 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
 
     const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
 
-    // Compute line endpoints for both output and path
-    const lineCoords: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    // Spur endpoints (inner -> outer) shared by both the filled bands and the centerline.
+    const spurs: { inner: BandHelper.Vec; outer: BandHelper.Vec }[] = [];
     for (let i = 0; i < N; i++) {
         const coeff = delerp(i, 0, denominator);
         const angle = lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
         const c = Math.cos(deg2rad(angle - 90));
         const s = Math.sin(deg2rad(angle - 90));
-        lineCoords.push({ x1: rI * c, y1: rI * s, x2: rO * c, y2: rO * s });
+        spurs.push({ inner: { x: rI * c, y: rI * s }, outer: { x: rO * c, y: rO * s } });
     }
 
     const [transforms] = TransformPrefab.evaluate(node, context);
 
+    if (socket === "centerline") {
+        const lines = spurs.filter((sp) => sp.inner.x !== sp.outer.x || sp.inner.y !== sp.outer.y).map((sp) => `M ${sp.inner.x},${sp.inner.y} L ${sp.outer.x},${sp.outer.y}`);
+        if (lines.length === 0) return null;
+        return {
+            kind: "path",
+            data: { d: lines.join(" "), transform: transforms.join(" ") },
+        };
+    }
+
+    const innerWidth = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerWidth")?.data ?? node.payload.innerWidth, "0px")) ?? 0;
+    const outerWidth = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerWidth")?.data ?? node.payload.outerWidth, "0px")) ?? 0;
+    const bandMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "bandMode")?.data, Enum.Common.bandMode) ?? node.payload.bandMode ?? 0;
+    const innerCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "innerCap")?.data, Enum.Common.bandCap) ?? node.payload.innerCap ?? 0;
+    const outerCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "outerCap")?.data, Enum.Common.bandCap) ?? node.payload.outerCap ?? 0;
+
+    // One band per spur, concatenated into a single filled path.
+    const subpaths = spurs.map((sp) => BandHelper.buildPath(sp.inner, sp.outer, innerWidth, outerWidth, bandMode, innerCap, outerCap)).filter((d): d is string => d !== null);
+
+    if (subpaths.length === 0) return null;
+    const d = subpaths.join(" ");
+
     if (socket === "path") {
-        const d = lineCoords.map((l) => `M ${l.x1},${l.y1} L ${l.x2},${l.y2}`).join(" ");
         return {
             kind: "path",
             data: { d, transform: transforms.join(" ") },
@@ -372,36 +448,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     }
 
     if (socket === "output") {
-        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStart")?.data;
-        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEnd")?.data;
-        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
-
-        const paint = StylingPrefab.evaluate(node, context);
-        const markers =
-            markerStartShape || markerEndShape
-                ? {
-                      start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                      end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
-                  }
-                : undefined;
-
-        const children = lineCoords.map((l) => ({
-            type: "line" as const,
-            x1: l.x1,
-            y1: l.y1,
-            x2: l.x2,
-            y2: l.y2,
-            paint,
-            markers,
-            transform: "",
-        }));
-
         return {
             kind: "shape",
             data: {
-                type: "group",
+                type: "path",
+                d,
+                paint: StylingPrefab.evaluate(node, context),
                 transform: transforms.join(" "),
-                children,
             },
         };
     }
@@ -409,11 +462,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<BurstDefinition>, socket: keyof 
     return null;
 };
 
-export const BurstNodeType: NodeTypes.Type<"burst", BurstDefinition> = {
-    type: "burst",
-    displayName: "Burst",
-    defaultLabel: "Burst",
-    iconNode: <NodeIcon shape={NODE_ICONS.shapeBurst} />,
+export const BandedBurstNodeType: NodeTypes.Type<"bandedBurst", BandedBurstDefinition> = {
+    type: "bandedBurst",
+    displayName: "Banded Burst",
+    defaultLabel: "Banded Burst",
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeThickBurst} />,
     flavour: "confirm",
     category: "Shapes",
     create,
