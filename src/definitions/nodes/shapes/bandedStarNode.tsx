@@ -684,19 +684,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedStarDefinition>, socket: k
         const midMinor = (tOMinor + tIMinor) / 2;
         if (midMajor <= 1e-6 && midMinor <= 1e-6) return null;
         const midVerts = StarHelper.outlineVertices(N, midMajor, midMinor, majorCornerR, majorCornerShape, minorCornerR, minorCornerShape, distroLerper);
-        const [midD] = StarHelper.buildOutline(midVerts, false);
+        const [midD] = StarHelper.buildOutline(midVerts);
         return { kind: "path", data: { d: midD, transform: transforms.join(" ") } };
     }
 
     const outerVerts = StarHelper.outlineVertices(N, tOMajor, tOMinor, majorCornerR, majorCornerShape, minorCornerR, minorCornerShape, distroLerper);
-    const [outerD, outerCut] = StarHelper.buildOutline(outerVerts, false);
+    const [outerD, outerCut] = StarHelper.buildOutline(outerVerts);
 
     const hasInner = tIMajor > 1e-6 || tIMinor > 1e-6;
     let innerD = "";
     let innerCut = false;
     if (hasInner) {
         const innerVerts = StarHelper.outlineVertices(N, tIMajor, tIMinor, majorCornerR, majorCornerShape, minorCornerR, minorCornerShape, distroLerper);
-        [innerD, innerCut] = StarHelper.buildOutline([...innerVerts].reverse(), true);
+        [innerD, innerCut] = StarHelper.buildOutline([...innerVerts].reverse());
     }
 
     const d = hasInner ? `${outerD} ${innerD}` : outerD;

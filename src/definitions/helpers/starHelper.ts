@@ -2,8 +2,9 @@ import { deg2rad, delerp, lerp } from "../../util/misc";
 
 // Shared geometry for star outlines (Star, Banded Star, ...). A star outline is an interleaved ring of
 // tip (major) and valley (minor) vertices, each carrying its own corner radius/shape. `buildOutline`
-// emits one closed rounded subpath and takes a `reversed` flag (flips round/scoop arc sweeps) so a
-// hole-cutting inner outline can be wound opposite the outer one -- the nonzero-fill trick Ring/Knot use.
+// emits one closed rounded subpath. Round/Scoop pick their arc sweep from each vertex's turn direction
+// (the edge cross product), so convex tips and reflex valleys fillet the correct way -- and that also
+// subsumes winding, so a reverse-wound hole-cutting inner outline just works with no extra flag.
 export namespace StarHelper {
     export type Vertex = { x: number; y: number; cornerR: number; cornerShape: number };
 
@@ -31,8 +32,8 @@ export namespace StarHelper {
     };
 
     // Build a closed star subpath with per-vertex corner params. Returns [d, hasCut]; a "Cut" corner
-    // opens the outline (the caller drops fill). `reversed` flips round/scoop sweeps for hole cutting.
-    export const buildOutline = (vertices: Vertex[], reversed: boolean): [string, boolean] => {
+    // opens the outline (the caller drops fill).
+    export const buildOutline = (vertices: Vertex[]): [string, boolean] => {
         const N = vertices.length;
 
         if (vertices.every((v) => v.cornerR <= 0)) {
@@ -99,6 +100,10 @@ export namespace StarHelper {
             const curr = vertices[i];
             const t = r / Math.tan(halfAlpha);
 
+            // Turn direction (cross of incoming x outgoing edge): >0 at convex vertices, <0 at reflex.
+            // Drives the fillet sweep so Round/Scoop bulge correctly at both, regardless of winding.
+            const turnCross = ay * bx - ax * by;
+
             const apX = curr.x + (ax / lenA) * t;
             const apY = curr.y + (ay / lenA) * t;
             const lpX = curr.x + (bx / lenB) * t;
@@ -113,10 +118,10 @@ export namespace StarHelper {
 
             switch (cornerShape) {
                 case 0: // Round
-                    parts.push(`A ${r},${r} 0 ${reversed ? "0,0" : "0,1"} ${lpX},${lpY}`);
+                    parts.push(`A ${r},${r} 0 0,${turnCross > 0 ? 1 : 0} ${lpX},${lpY}`);
                     break;
                 case 2: // Scoop
-                    parts.push(`A ${r},${r} 0 ${reversed ? "0,1" : "0,0"} ${lpX},${lpY}`);
+                    parts.push(`A ${r},${r} 0 0,${turnCross > 0 ? 0 : 1} ${lpX},${lpY}`);
                     break;
                 case 3: {
                     // Notch

@@ -396,7 +396,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         );
 
         const vertices = StarHelper.outlineVertices(N, tO, tI, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape, distroLerper);
-        const [d, hasCut] = StarHelper.buildOutline(vertices, false);
+        const [d, hasCut] = StarHelper.buildOutline(vertices);
         const [transforms] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {
