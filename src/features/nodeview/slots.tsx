@@ -324,35 +324,19 @@ export const ValuePreview = ({ value: rawValue }: { value: DataTypes.AnyEval | n
             return <PreviewBase>{value.data}</PreviewBase>;
         case "color":
             return <PreviewColor value={value.data} />;
-        case "path":
-        case "enum":
-        case "gradient":
-        case "distribution":
-        case "shape":
-        case "layer":
-        case "array<layer>":
-        case "pathOp":
-        case "array<pathOp>":
-        case "point":
-        case "array<point>":
-        case "array<angle>":
-        case "array<integer>":
-        case "array<float>":
-        case "array<length>":
-        case "array<color>":
-        case "array<boolean>":
-        case "sequence":
-        case "stop:float":
-        case "array<stop:float>":
-        case "stop:color":
-        case "array<stop:color>":
-        case "stop:angle":
-        case "array<stop:angle>":
-        case "stop:integer":
-        case "array<stop:integer>":
-        case "stop:length":
-        case "array<stop:length>":
+        // Everything else (compound kinds, arrays, sequence/loopFor buses, and any kind not enumerated
+        // above -- the value is a barrier cast, so its runtime kind may not be in ConcreteKind at all) gets
+        // a structural tag rather than rendering blank: array<...> and count-bearing buses show their size.
+        default: {
+            const data: unknown = (value as { data?: unknown }).data;
+            if (Array.isArray(data)) {
+                return <PreviewBase>{`« ${value.kind} · ${data.length} »`}</PreviewBase>;
+            }
+            if (data !== null && typeof data === "object" && "count" in data && typeof (data as { count: unknown }).count === "number") {
+                return <PreviewBase>{`« ${value.kind} · ${(data as { count: number }).count} »`}</PreviewBase>;
+            }
             return <PreviewBase>{`« ${value.kind} »`}</PreviewBase>;
+        }
     }
 };
 
