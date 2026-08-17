@@ -417,9 +417,9 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedArcDefinition>, socket: ke
 
 export const BandedArcNodeType: NodeTypes.Type<"bandedArc", BandedArcDefinition> = {
     type: "bandedArc",
-    displayName: "Banded Arc",
-    defaultLabel: "Banded Arc",
-    iconNode: <NodeIcon shape={NODE_ICONS.shapeArc} />,
+    displayName: "Arc (Banded)",
+    defaultLabel: "Arc (Banded)",
+    iconNode: <NodeIcon shape={NODE_ICONS.shapeBandedArc} />,
     flavour: "confirm",
     category: "Shapes",
     create,

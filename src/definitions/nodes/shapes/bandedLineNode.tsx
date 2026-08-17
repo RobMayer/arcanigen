@@ -265,8 +265,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedLineDefinition>, socket: k
 
 export const BandedLineNodeType: NodeTypes.Type<"bandedLine", BandedLineDefinition> = {
     type: "bandedLine",
-    displayName: "Banded Line",
-    defaultLabel: "Banded Line",
+    displayName: "Line (Banded)",
+    defaultLabel: "Line (Banded)",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeBandedLine} />,
     flavour: "confirm",
     category: "Shapes",

@@ -464,8 +464,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedBurstDefinition>, socket: 
 
 export const BandedBurstNodeType: NodeTypes.Type<"bandedBurst", BandedBurstDefinition> = {
     type: "bandedBurst",
-    displayName: "Banded Burst",
-    defaultLabel: "Banded Burst",
+    displayName: "Burst (Banded)",
+    defaultLabel: "Burst (Banded)",
     iconNode: <NodeIcon shape={NODE_ICONS.shapeThickBurst} />,
     flavour: "confirm",
     category: "Shapes",
