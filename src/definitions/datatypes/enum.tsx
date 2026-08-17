@@ -137,6 +137,14 @@ export namespace Enum {
             OUTWARD: { value: 2, label: "Outward" },
         } as const;
 
+        // Star: how a star's two radii are stated. Major/Minor = give the tip (major) and valley
+        // (minor) radii directly; Amplitude = give a base radius + how far the tips swing from it.
+        // Values match the old spanMode (Inner/Outer=0, Spread=1) so no save-value remap is needed.
+        export const starRadiusMode = {
+            MAJOR_MINOR: { value: 0, label: "Major / Minor" },
+            AMPLITUDE: { value: 1, label: "Amplitude" },
+        } as const;
+
         export const arcMode = {
             START_SWEEP: { value: 0, label: "Start / Sweep" },
             FROM_TO: { value: 1, label: "From / To" },
@@ -382,6 +390,7 @@ export namespace Enum {
         { label: "Distro Easing", options: Common.distroEasing },
         { label: "Span Mode", options: Common.spanMode },
         { label: "Spread Align", options: Common.spreadAlign },
+        { label: "Star Radius Mode", options: Common.starRadiusMode },
         { label: "Paint Order", options: Common.paintOrder },
         { label: "Corner Shape", options: Common.cornerShape },
         { label: "Linear Alignment", options: Common.linearAlign },

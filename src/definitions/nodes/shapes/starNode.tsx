@@ -14,9 +14,10 @@ import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { NumericString } from "../../datatypes/numericString";
-import { deg2rad, delerp, distroInterpolator, getTrueRadius, lerp } from "../../../util/misc";
+import { distroInterpolator, getTrueRadius } from "../../../util/misc";
 import { StylingPrefab } from "../../helpers/stylingPrefab";
 import { TransformPrefab } from "../../helpers/transformPrefab";
+import { StarHelper } from "../../helpers/starHelper";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
@@ -25,19 +26,19 @@ const def = signature({
     in: {
         pointCount: "integer",
         radius: "length",
-        spread: "length",
-        innerRadius: "length",
-        outerRadius: "length",
-        spanMode: "enum",
-        spreadAlign: "enum",
+        amplitude: "length",
+        minorRadius: "length",
+        majorRadius: "length",
+        radiusMode: "enum",
+        amplitudeAlign: "enum",
         rScribe: "enum",
-        iScribe: "enum",
-        oScribe: "enum",
+        minorScribe: "enum",
+        majorScribe: "enum",
         pointDistro: "distribution",
-        outerCornerRadius: "length",
-        outerCornerShape: "enum",
-        innerCornerRadius: "length",
-        innerCornerShape: "enum",
+        majorCornerRadius: "length",
+        majorCornerShape: "enum",
+        minorCornerRadius: "length",
+        minorCornerShape: "enum",
         markerShape: "shape",
         markerAlign: "boolean",
         ...TransformPrefab.SIG_IN,
@@ -54,18 +55,18 @@ export type StarDefinition = SignatureBuilder.DefinitionFrom<
         label: DataTypes.TypeOf<DataTypes.String>;
         pointCount: DataTypes.TypeOf<DataTypes.Integer>;
         rScribe: DataTypes.TypeOf<DataTypes.Enum>;
-        iScribe: DataTypes.TypeOf<DataTypes.Enum>;
-        oScribe: DataTypes.TypeOf<DataTypes.Enum>;
+        minorScribe: DataTypes.TypeOf<DataTypes.Enum>;
+        majorScribe: DataTypes.TypeOf<DataTypes.Enum>;
         radius: DataTypes.TypeOf<DataTypes.Length>;
-        spread: DataTypes.TypeOf<DataTypes.Length>;
-        innerRadius: DataTypes.TypeOf<DataTypes.Length>;
-        outerRadius: DataTypes.TypeOf<DataTypes.Length>;
-        spanMode: DataTypes.TypeOf<DataTypes.Enum>;
-        spreadAlign: DataTypes.TypeOf<DataTypes.Enum>;
-        outerCornerRadius: DataTypes.TypeOf<DataTypes.Length>;
-        outerCornerShape: DataTypes.TypeOf<DataTypes.Enum>;
-        innerCornerRadius: DataTypes.TypeOf<DataTypes.Length>;
-        innerCornerShape: DataTypes.TypeOf<DataTypes.Enum>;
+        amplitude: DataTypes.TypeOf<DataTypes.Length>;
+        minorRadius: DataTypes.TypeOf<DataTypes.Length>;
+        majorRadius: DataTypes.TypeOf<DataTypes.Length>;
+        radiusMode: DataTypes.TypeOf<DataTypes.Enum>;
+        amplitudeAlign: DataTypes.TypeOf<DataTypes.Enum>;
+        majorCornerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        majorCornerShape: DataTypes.TypeOf<DataTypes.Enum>;
+        minorCornerRadius: DataTypes.TypeOf<DataTypes.Length>;
+        minorCornerShape: DataTypes.TypeOf<DataTypes.Enum>;
         markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
@@ -78,18 +79,18 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StarDefinition>>, i
             pointCount: null,
             pointDistro: null,
             rScribe: null,
-            iScribe: null,
-            oScribe: null,
+            minorScribe: null,
+            majorScribe: null,
             radius: null,
-            spread: null,
-            innerRadius: null,
-            outerRadius: null,
-            spanMode: null,
-            spreadAlign: null,
-            outerCornerRadius: null,
-            outerCornerShape: null,
-            innerCornerRadius: null,
-            innerCornerShape: null,
+            amplitude: null,
+            minorRadius: null,
+            majorRadius: null,
+            radiusMode: null,
+            amplitudeAlign: null,
+            majorCornerRadius: null,
+            majorCornerShape: null,
+            minorCornerRadius: null,
+            minorCornerShape: null,
 
             markerShape: null,
             markerAlign: null,
@@ -115,19 +116,19 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StarDefinition>>, i
             label: "",
             pointCount: "5",
             rScribe: Enum.Common.scribeMode.INSCRIBE.value,
-            iScribe: Enum.Common.scribeMode.INSCRIBE.value,
-            oScribe: Enum.Common.scribeMode.INSCRIBE.value,
+            minorScribe: Enum.Common.scribeMode.INSCRIBE.value,
+            majorScribe: Enum.Common.scribeMode.INSCRIBE.value,
             radius: "100px",
 
-            spread: "50px",
-            innerRadius: "50px",
-            outerRadius: "100px",
-            spanMode: 0,
-            spreadAlign: 0,
-            outerCornerRadius: "0px",
-            outerCornerShape: 0,
-            innerCornerRadius: "0px",
-            innerCornerShape: 0,
+            amplitude: "50px",
+            minorRadius: "50px",
+            majorRadius: "100px",
+            radiusMode: Enum.Common.starRadiusMode.MAJOR_MINOR.value,
+            amplitudeAlign: 0,
+            majorCornerRadius: "0px",
+            majorCornerShape: 0,
+            minorCornerRadius: "0px",
+            minorCornerShape: 0,
 
             markerAlign: false,
             // stroke
@@ -149,10 +150,10 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<StarDefinition>>, i
     };
 };
 
-const SPAN_MODE_OPTIONS = Enum.options(Enum.Common.spanMode);
+const RADIUS_MODE_OPTIONS = Enum.options(Enum.Common.starRadiusMode);
 const SCRIBE_MODE_OPTIONS = Enum.options(Enum.Common.scribeMode);
 const CORNER_SHAPE_OPTIONS = Enum.options(Enum.Common.cornerShape);
-const SPREAD_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
+const AMPLITUDE_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -162,8 +163,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
         [methods],
     );
 
-    const isInOut = node.payload.spanMode === 0 && node.in.spanMode === null;
-    const isSpread = node.payload.spanMode === 1 && node.in.spanMode === null;
+    const isMajorMinor = node.payload.radiusMode === Enum.Common.starRadiusMode.MAJOR_MINOR.value && node.in.radiusMode === null;
+    const isAmplitude = node.payload.radiusMode === Enum.Common.starRadiusMode.AMPLITUDE.value && node.in.radiusMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -184,104 +185,104 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                 />
             </SocketIn>
 
-            <SocketIn node={node} socketId={"spanMode"} label={"Span Mode"}>
+            <SocketIn node={node} socketId={"radiusMode"} label={"Radius Mode"}>
                 <RadioButton.Group
-                    options={SPAN_MODE_OPTIONS}
-                    value={`${node.payload.spanMode}`}
-                    onValue={(v) => handleUpdate({ spanMode: Number(v) })}
+                    options={RADIUS_MODE_OPTIONS}
+                    value={`${node.payload.radiusMode}`}
+                    onValue={(v) => handleUpdate({ radiusMode: Number(v) })}
                     orientation={"horizontal"}
-                    disabled={node.in.spanMode !== null}
+                    disabled={node.in.radiusMode !== null}
                 />
             </SocketIn>
             <hr />
-            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
-                <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
+            <SocketIn node={node} socketId={"majorRadius"} label={"Major Radius"}>
+                <LengthInput value={node.payload.majorRadius} onCommit={(majorRadius) => handleUpdate({ majorRadius })} disabled={node.in.majorRadius !== null || isAmplitude} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"oScribe"} label={"Outer Scribe Mode"}>
+            <SocketIn node={node} socketId={"majorScribe"} label={"Major Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
-                    value={`${node.payload.oScribe}`}
-                    onValue={(v) => handleUpdate({ oScribe: Number(v) })}
-                    disabled={node.in.oScribe !== null || isSpread}
+                    value={`${node.payload.majorScribe}`}
+                    onValue={(v) => handleUpdate({ majorScribe: Number(v) })}
+                    disabled={node.in.majorScribe !== null || isAmplitude}
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+            <SocketIn node={node} socketId={"minorRadius"} label={"Minor Radius"}>
+                <LengthInput value={node.payload.minorRadius} onCommit={(minorRadius) => handleUpdate({ minorRadius })} disabled={node.in.minorRadius !== null || isAmplitude} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
+            <SocketIn node={node} socketId={"minorScribe"} label={"Minor Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
-                    value={`${node.payload.iScribe}`}
-                    onValue={(v) => handleUpdate({ iScribe: Number(v) })}
-                    disabled={node.in.iScribe !== null || isSpread}
+                    value={`${node.payload.minorScribe}`}
+                    onValue={(v) => handleUpdate({ minorScribe: Number(v) })}
+                    disabled={node.in.minorScribe !== null || isAmplitude}
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
-                <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
+                <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isMajorMinor} min={"0px"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"rScribe"} label={"Scribe Mode"}>
                 <RadioButton.Group
                     orientation={"horizontal"}
                     value={`${node.payload.rScribe}`}
                     onValue={(v) => handleUpdate({ rScribe: Number(v) })}
-                    disabled={node.in.rScribe !== null || isInOut}
+                    disabled={node.in.rScribe !== null || isMajorMinor}
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
-                <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
+            <SocketIn node={node} socketId={"amplitude"} label={"Amplitude"}>
+                <LengthInput value={node.payload.amplitude} onCommit={(amplitude) => handleUpdate({ amplitude })} disabled={node.in.amplitude !== null || isMajorMinor} min={"0px"} required />
             </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
+            <SocketIn node={node} socketId={"amplitudeAlign"} label={"Amplitude Align"}>
                 <RadioButton.Group
-                    options={SPREAD_ALIGN_OPTIONS}
-                    value={`${node.payload.spreadAlign}`}
-                    onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
+                    options={AMPLITUDE_ALIGN_OPTIONS}
+                    value={`${node.payload.amplitudeAlign}`}
+                    onValue={(v) => handleUpdate({ amplitudeAlign: Number(v) })}
                     orientation={"horizontal"}
-                    disabled={node.in.spreadAlign !== null || isInOut}
+                    disabled={node.in.amplitudeAlign !== null || isMajorMinor}
                 />
             </SocketIn>
 
-            <NodeAccordion label={"More"} socketsIn={"outerCornerRadius|outerCornerShape|innerCornerRadius|innerCornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
+            <NodeAccordion label={"More"} socketsIn={"majorCornerRadius|majorCornerShape|minorCornerRadius|minorCornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
                 </SocketIn>
-                <SocketIn node={node} socketId={"outerCornerRadius"} label={"Outer Corner Radius"}>
+                <SocketIn node={node} socketId={"majorCornerRadius"} label={"Major Corner Radius"}>
                     <LengthInput
-                        value={node.payload.outerCornerRadius}
-                        onCommit={(outerCornerRadius) => handleUpdate({ outerCornerRadius })}
-                        disabled={node.in.outerCornerRadius !== null}
+                        value={node.payload.majorCornerRadius}
+                        onCommit={(majorCornerRadius) => handleUpdate({ majorCornerRadius })}
+                        disabled={node.in.majorCornerRadius !== null}
                         min={"0px"}
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"outerCornerShape"} label={"Outer Corner Shape"}>
+                <SocketIn node={node} socketId={"majorCornerShape"} label={"Major Corner Shape"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
-                        value={`${node.payload.outerCornerShape}`}
+                        value={`${node.payload.majorCornerShape}`}
                         options={CORNER_SHAPE_OPTIONS}
-                        onValue={(v) => handleUpdate({ outerCornerShape: Number(v) })}
-                        disabled={node.in.outerCornerShape !== null}
+                        onValue={(v) => handleUpdate({ majorCornerShape: Number(v) })}
+                        disabled={node.in.majorCornerShape !== null}
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"innerCornerRadius"} label={"Inner Corner Radius"}>
+                <SocketIn node={node} socketId={"minorCornerRadius"} label={"Minor Corner Radius"}>
                     <LengthInput
-                        value={node.payload.innerCornerRadius}
-                        onCommit={(innerCornerRadius) => handleUpdate({ innerCornerRadius })}
-                        disabled={node.in.innerCornerRadius !== null}
+                        value={node.payload.minorCornerRadius}
+                        onCommit={(minorCornerRadius) => handleUpdate({ minorCornerRadius })}
+                        disabled={node.in.minorCornerRadius !== null}
                         min={"0px"}
                         required
                     />
                 </SocketIn>
-                <SocketIn node={node} socketId={"innerCornerShape"} label={"Inner Corner Shape"}>
+                <SocketIn node={node} socketId={"minorCornerShape"} label={"Minor Corner Shape"}>
                     <RadioButton.Group
                         orientation={"horizontal"}
-                        value={`${node.payload.innerCornerShape}`}
+                        value={`${node.payload.minorCornerShape}`}
                         options={CORNER_SHAPE_OPTIONS}
-                        onValue={(v) => handleUpdate({ innerCornerShape: Number(v) })}
-                        disabled={node.in.innerCornerShape !== null}
+                        onValue={(v) => handleUpdate({ minorCornerShape: Number(v) })}
+                        disabled={node.in.minorCornerShape !== null}
                     />
                 </SocketIn>
                 <SocketIn node={node} socketId={"markerShape"}>
@@ -303,18 +304,18 @@ const GEOMETRY_INPUTS: (keyof StarDefinition["inputs"])[] = [
     "pointCount",
     "pointDistro",
     "radius",
-    "spread",
-    "innerRadius",
-    "outerRadius",
-    "spanMode",
-    "spreadAlign",
+    "amplitude",
+    "minorRadius",
+    "majorRadius",
+    "radiusMode",
+    "amplitudeAlign",
     "rScribe",
-    "iScribe",
-    "oScribe",
-    "outerCornerRadius",
-    "outerCornerShape",
-    "innerCornerRadius",
-    "innerCornerShape",
+    "minorScribe",
+    "majorScribe",
+    "majorCornerRadius",
+    "majorCornerShape",
+    "minorCornerRadius",
+    "minorCornerShape",
     "markerShape",
     "markerAlign",
     "position",
@@ -336,151 +337,40 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<StarDefinition>, inSocket:
     return ["output", "path"];
 };
 
-/** Build a star path with per-vertex corner params (alternating outer tips and inner valleys) */
-const buildStarPath = (vertices: (readonly [number, number])[], outerCornerR: number, outerCornerShape: number, innerCornerR: number, innerCornerShape: number): [string, boolean] => {
-    const N = vertices.length; // 2 * pointCount
-
-    if (outerCornerR <= 0 && innerCornerR <= 0) {
-        return [
-            `M ${vertices[0][0]},${vertices[0][1]} ${vertices
-                .slice(1)
-                .map(([x, y]) => `L ${x},${y}`)
-                .join(" ")} Z`,
-            false,
-        ];
-    }
-
-    const edgeLengths = vertices.map((v, i) => {
-        const next = vertices[(i + 1) % N];
-        return Math.hypot(next[0] - v[0], next[1] - v[1]);
-    });
-
-    const vertexData = vertices.map((curr, i) => {
-        const prev = vertices[(i - 1 + N) % N];
-        const next = vertices[(i + 1) % N];
-        const ax = prev[0] - curr[0],
-            ay = prev[1] - curr[1];
-        const bx = next[0] - curr[0],
-            by = next[1] - curr[1];
-        const lenA = edgeLengths[(i - 1 + N) % N];
-        const lenB = edgeLengths[i];
-        const cosAlpha = Math.max(-1, Math.min(1, (ax * bx + ay * by) / (lenA * lenB)));
-        const halfAlpha = Math.acos(cosAlpha) / 2;
-        return { ax, ay, bx, by, lenA, lenB, halfAlpha };
-    });
-
-    // Per-vertex clamped radius: clamp each to half adjacent edge lengths
-    const clampedR = vertices.map((_, i) => {
-        const r = i % 2 === 0 ? outerCornerR : innerCornerR;
-        if (r <= 0) return 0;
-        const { halfAlpha } = vertexData[i];
-        const tanHalf = Math.tan(halfAlpha);
-        if (tanHalf <= 1e-10) return 0;
-        const halfPrev = edgeLengths[(i - 1 + N) % N] / 2;
-        const halfNext = edgeLengths[i] / 2;
-        return Math.min(r, Math.min(halfPrev, halfNext) * tanHalf);
-    });
-
-    const parts: string[] = [];
-    let hasCut = false;
-    let firstApX = 0,
-        firstApY = 0;
-    let firstSet = false;
-    for (let i = 0; i < N; i++) {
-        const r = clampedR[i];
-        const cornerShape = i % 2 === 0 ? outerCornerShape : innerCornerShape;
-
-        if (r <= 0) {
-            if (!firstSet) {
-                firstApX = vertices[i][0];
-                firstApY = vertices[i][1];
-                firstSet = true;
-            }
-            parts.push(i === 0 ? `M ${vertices[i][0]},${vertices[i][1]}` : `L ${vertices[i][0]},${vertices[i][1]}`);
-            continue;
-        }
-
-        const { ax, ay, bx, by, lenA, lenB, halfAlpha } = vertexData[i];
-        const curr = vertices[i];
-        const t = r / Math.tan(halfAlpha);
-
-        const apX = curr[0] + (ax / lenA) * t;
-        const apY = curr[1] + (ay / lenA) * t;
-        const lpX = curr[0] + (bx / lenB) * t;
-        const lpY = curr[1] + (by / lenB) * t;
-
-        if (!firstSet) {
-            firstApX = apX;
-            firstApY = apY;
-            firstSet = true;
-        }
-        parts.push(i === 0 ? `M ${apX},${apY}` : `L ${apX},${apY}`);
-
-        switch (cornerShape) {
-            case 0: // Round
-                parts.push(`A ${r},${r} 0 0,1 ${lpX},${lpY}`);
-                break;
-            case 2: // Scoop
-                parts.push(`A ${r},${r} 0 0,0 ${lpX},${lpY}`);
-                break;
-            case 3: {
-                // Notch
-                const nX = apX + (bx / lenB) * t;
-                const nY = apY + (by / lenB) * t;
-                parts.push(`L ${nX},${nY} L ${lpX},${lpY}`);
-                break;
-            }
-            case 4: // Cut
-                parts.push(`M ${lpX},${lpY}`);
-                hasCut = true;
-                break;
-            default: // Bevel
-                parts.push(`L ${lpX},${lpY}`);
-                break;
-        }
-    }
-    if (hasCut) {
-        parts.push(`L ${firstApX},${firstApY}`);
-    } else {
-        parts.push("Z");
-    }
-    return [parts.join(" "), hasCut];
-};
-
 const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof StarDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "output" || socket === "path") {
         const pointCount = Math.round(Math.max(3, Math.min(64, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "pointCount")?.data ?? node.payload.pointCount) ?? NaN)));
         if (!isFinite(pointCount)) return null;
 
         const N = pointCount;
-        const spanMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
+        const radiusMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "radiusMode")?.data, Enum.Common.starRadiusMode) ?? node.payload.radiusMode ?? 0;
 
         let tI: number;
         let tO: number;
 
-        if (spanMode === Enum.Common.spanMode.INNER_OUTER.value) {
-            const innerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerRadius")?.data ?? node.payload.innerRadius, "0px")) ?? 0;
-            const outerRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerRadius")?.data ?? node.payload.outerRadius, "0px")) ?? 0;
-            if (!outerRadius) return null;
+        if (radiusMode === Enum.Common.starRadiusMode.MAJOR_MINOR.value) {
+            const minorRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "minorRadius")?.data ?? node.payload.minorRadius, "0px")) ?? 0;
+            const majorRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "majorRadius")?.data ?? node.payload.majorRadius, "0px")) ?? 0;
+            if (!majorRadius) return null;
 
-            const iScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "iScribe")?.data ?? node.payload.iScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
-            const oScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "oScribe")?.data ?? node.payload.oScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+            const minorScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "minorScribe")?.data ?? node.payload.minorScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+            const majorScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "majorScribe")?.data ?? node.payload.majorScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
 
-            tI = getTrueRadius(innerRadius, iScribeMode, N);
-            tO = getTrueRadius(outerRadius, oScribeMode, N);
+            tI = getTrueRadius(minorRadius, minorScribeMode, N);
+            tO = getTrueRadius(majorRadius, majorScribeMode, N);
         } else {
-            // Spread mode
+            // Amplitude mode
             const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-            const spread = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "spread")?.data ?? node.payload.spread, "0px")) ?? 0;
-            if (!radius || !spread) return null;
+            const amplitude = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "amplitude")?.data ?? node.payload.amplitude, "0px")) ?? 0;
+            if (!radius || !amplitude) return null;
 
             const rScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "rScribe")?.data ?? node.payload.rScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
-            const spreadAlign = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spreadAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.spreadAlign ?? 0;
+            const amplitudeAlign = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "amplitudeAlign")?.data, Enum.Common.spreadAlign) ?? node.payload.amplitudeAlign ?? 0;
 
             const base = getTrueRadius(radius, rScribeMode, N);
 
-            const tIMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.INWARD.value ? spread : 0;
-            const tOMod = spreadAlign === Enum.Common.spreadAlign.CENTER.value ? spread / 2 : spreadAlign === Enum.Common.spreadAlign.OUTWARD.value ? spread : 0;
+            const tIMod = amplitudeAlign === Enum.Common.spreadAlign.CENTER.value ? amplitude / 2 : amplitudeAlign === Enum.Common.spreadAlign.INWARD.value ? amplitude : 0;
+            const tOMod = amplitudeAlign === Enum.Common.spreadAlign.CENTER.value ? amplitude / 2 : amplitudeAlign === Enum.Common.spreadAlign.OUTWARD.value ? amplitude : 0;
 
             tI = base - tIMod;
             tO = base + tOMod;
@@ -490,10 +380,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         tI = Math.max(0, tI);
 
         // Corner parameters
-        const outerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "outerCornerRadius")?.data ?? node.payload.outerCornerRadius, "0px")) ?? 0;
-        const outerCornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "outerCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.outerCornerShape ?? 0;
-        const innerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "innerCornerRadius")?.data ?? node.payload.innerCornerRadius, "0px")) ?? 0;
-        const innerCornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "innerCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.innerCornerShape ?? 0;
+        const outerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "majorCornerRadius")?.data ?? node.payload.majorCornerRadius, "0px")) ?? 0;
+        const outerCornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "majorCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.majorCornerShape ?? 0;
+        const innerCornerR = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "minorCornerRadius")?.data ?? node.payload.minorCornerRadius, "0px")) ?? 0;
+        const innerCornerShape = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "minorCornerShape")?.data, Enum.Common.cornerShape) ?? node.payload.minorCornerShape ?? 0;
 
         const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
@@ -505,20 +395,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
             NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
         );
 
-        // Generate interleaved outer/inner vertices
-        // Outer at i/N, inner at (i+0.5)/N
-        const vertices: (readonly [number, number])[] = [];
-        for (let i = 0; i < N; i++) {
-            const outerCoeff = lerp(delerp(i, 0, N), 0, 360, distroLerper);
-            const outerAngle = deg2rad(outerCoeff - 90);
-            vertices.push([tO * Math.cos(outerAngle), tO * Math.sin(outerAngle)] as const);
-
-            const innerCoeff = lerp(delerp(i + 0.5, 0, N), 0, 360, distroLerper);
-            const innerAngle = deg2rad(innerCoeff - 90);
-            vertices.push([tI * Math.cos(innerAngle), tI * Math.sin(innerAngle)] as const);
-        }
-
-        const [d, hasCut] = buildStarPath(vertices, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape);
+        const vertices = StarHelper.outlineVertices(N, tO, tI, outerCornerR, outerCornerShape, innerCornerR, innerCornerShape, distroLerper);
+        const [d, hasCut] = StarHelper.buildOutline(vertices, false);
         const [transforms] = TransformPrefab.evaluate(node, context);
 
         if (socket === "path") {

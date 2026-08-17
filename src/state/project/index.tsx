@@ -766,7 +766,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 13;
+        export const CURRENT = 14;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1370,6 +1370,50 @@ export namespace Project {
                     }
                 }
                 input.version = 13;
+            }
+            if (input.version === 13) {
+                // Star's radial terms were "inner/outer/spread" (which really belong to banded shapes).
+                // Rename them to the star's own vocabulary: major/minor tips-and-valleys + amplitude.
+                // Enum VALUES are unchanged (old spanMode Inner/Outer=0/Spread=1 -> new radiusMode
+                // Major/Minor=0/Amplitude=1), so only socket ids + payload keys move. Connected links
+                // are retargeted by rewriting each link's toSocket.
+                const STAR_RENAMES: [string, string][] = [
+                    ["outerRadius", "majorRadius"],
+                    ["innerRadius", "minorRadius"],
+                    ["spread", "amplitude"],
+                    ["spanMode", "radiusMode"],
+                    ["spreadAlign", "amplitudeAlign"],
+                    ["oScribe", "majorScribe"],
+                    ["iScribe", "minorScribe"],
+                    ["outerCornerRadius", "majorCornerRadius"],
+                    ["outerCornerShape", "majorCornerShape"],
+                    ["innerCornerRadius", "minorCornerRadius"],
+                    ["innerCornerShape", "minorCornerShape"],
+                ];
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type !== "star") continue;
+                        for (const [oldKey, newKey] of STAR_RENAMES) {
+                            if (node.payload && oldKey in node.payload) {
+                                node.payload[newKey] = node.payload[oldKey];
+                                delete node.payload[oldKey];
+                            }
+                            if (node.in && oldKey in node.in) {
+                                const theLink = node.in[oldKey];
+                                node.in[newKey] = theLink ?? null;
+                                delete node.in[oldKey];
+                                if (theLink) {
+                                    const link = input.links?.[graphId]?.[theLink];
+                                    if (link) {
+                                        link.toSocket = newKey;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                input.version = 14;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

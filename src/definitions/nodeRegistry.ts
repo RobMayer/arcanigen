@@ -162,6 +162,7 @@ import { LineDefinition, LineNodeType } from "./nodes/shapes/lineNode";
 import { BandedLineDefinition, BandedLineNodeType } from "./nodes/shapes/bandedLineNode";
 import { BandedBurstDefinition, BandedBurstNodeType } from "./nodes/shapes/bandedBurstNode";
 import { BandedArcDefinition, BandedArcNodeType } from "./nodes/shapes/bandedArcNode";
+import { BandedStarDefinition, BandedStarNodeType } from "./nodes/shapes/bandedStarNode";
 import { TextPathDefinition, TextPathNodeType } from "./nodes/shapes/textPathNode";
 import { TextDefinition, TextNodeType } from "./nodes/shapes/textNode";
 import { AlongPathDefinition, AlongPathNodeType } from "./nodes/modifiers/alongPathNode";
@@ -268,6 +269,7 @@ export namespace Registries {
         bandedLine: BandedLineDefinition;
         bandedBurst: BandedBurstDefinition;
         bandedArc: BandedArcDefinition;
+        bandedStar: BandedStarDefinition;
         textPath: TextPathDefinition;
         text: TextDefinition;
         alongPath: AlongPathDefinition;
@@ -532,6 +534,7 @@ export namespace Registries {
         bandedLine: BandedLineNodeType,
         bandedBurst: BandedBurstNodeType,
         bandedArc: BandedArcNodeType,
+        bandedStar: BandedStarNodeType,
         textPath: TextPathNodeType,
         text: TextNodeType,
         alongPath: AlongPathNodeType,
