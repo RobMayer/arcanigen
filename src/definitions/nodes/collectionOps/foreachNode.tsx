@@ -13,7 +13,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 // ForEach is the loop START: a passive source. It emits the `pipeline` bus (a loopFor cursor substrate,
 // like `sequence`) plus the current element + index. It does NOT drive the loop -- the downstream End
-// (Map/Filter) is the driver: it injects `cursorData[thisNodeId] = i` and re-resolves per iteration, so
+// (Map/Filter) is the driver: it injects `cursorData[cursorKey(bus)] = i` and re-resolves per iteration, so
 // `each`/`index` read whatever index the driver currently has us on.
 const def = signature({
     args: { N: $.ANY },
@@ -91,10 +91,10 @@ const evaluate = (node: NodeDefinitions.NodeFor<ForEachDefinition>, socket: keyo
     const element = inputEval ? unwrapArray(inputEval.kind) : "any";
 
     if (socket === "pipeline") {
-        return { kind: `loopFor<${element}>`, data: { senderId: node.id, count: items?.length ?? 0 } };
+        return { kind: `loopFor<${element}>`, data: { senderId: node.id, outputSocket: "pipeline", count: items?.length ?? 0 } };
     }
 
-    const iter = context.cursorData[node.id] ?? 0;
+    const iter = context.cursorData[Resolver.cursorKey({ senderId: node.id, outputSocket: "pipeline" })] ?? 0;
 
     if (socket === "index") {
         return { kind: "integer", data: `${iter}` };

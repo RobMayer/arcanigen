@@ -13,7 +13,7 @@ import { SignatureEngine } from "../../helpers/signatureEngine";
 
 // Map is a loop END, and the DRIVER: because eval is pull-based, Map is pulled from downstream, so it owns
 // the `for` loop. It reads the `pipeline` bus to learn the START (senderId) + iteration count, then for each
-// i injects `cursorData[senderId] = i` and re-resolves its `result` body -- collecting one value per
+// i injects `cursorData[cursorKey(bus)] = i` and re-resolves its `result` body -- collecting one value per
 // iteration into an `array<R>`. The paired ForEach just reads whatever index we've injected.
 const def = signature({
     args: { R: $.ANY },
@@ -87,14 +87,15 @@ const evaluate = (node: NodeDefinitions.NodeFor<MapDefinition>, socket: keyof Ma
 
     const pipeline = context.resolve<DataTypes.LoopFor<DataTypes.AnyKind>>(node.id, "pipeline");
     if (!pipeline) return null;
-    const { senderId, count } = pipeline.data;
+    const { count } = pipeline.data;
+    const cursorKey = Resolver.cursorKey(pipeline.data);
 
     const items: unknown[] = [];
     let element = "any"; // element kind of the collected results (overwritten by the first real one)
 
     for (let i = 0; i < count; i++) {
         // Drive the paired ForEach onto index i, then pull this iteration's transformed value.
-        const r = context.resolve<DataTypes.AnyKind>(node.id, "result", { ...context.cursorData, [senderId]: i });
+        const r = context.resolve<DataTypes.AnyKind>(node.id, "result", { ...context.cursorData, [cursorKey]: i });
         if (!r) continue;
         element = r.kind;
         items.push(r.data);

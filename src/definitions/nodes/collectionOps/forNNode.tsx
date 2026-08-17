@@ -83,11 +83,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<ForNDefinition>, socket: keyof F
     const n = Math.max(0, Math.trunc(raw));
 
     if (socket === "pipeline") {
-        return { kind: "loopFor<integer>", data: { senderId: node.id, count: n } };
+        return { kind: "loopFor<integer>", data: { senderId: node.id, outputSocket: "pipeline", count: n } };
     }
 
     if (socket === "each") {
-        const iter = context.cursorData[node.id] ?? 0;
+        const iter = context.cursorData[Resolver.cursorKey({ senderId: node.id, outputSocket: "pipeline" })] ?? 0;
         if (iter < 0 || iter >= n) return null;
         return { kind: "integer", data: `${iter}` };
     }

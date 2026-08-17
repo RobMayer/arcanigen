@@ -197,7 +197,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
     if (!isFinite(count)) return null;
 
     if (socket === "sequence") {
-        return { kind: "sequence", data: { senderId: node.id, count } };
+        return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count } };
     }
 
     const radiusStr = context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius;
@@ -233,7 +233,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
 
         const children = [];
         for (let i = 0; i < count; i++) {
-            const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+            const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [Resolver.cursorKey({ senderId: node.id, outputSocket: "sequence" })]: i })?.data ?? null;
             if (shape === null) continue;
 
             // Vertex angle with distribution applied, starting at top (-90°)

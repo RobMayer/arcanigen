@@ -85,7 +85,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
     const points = context.resolve<DataTypes.ArrayOf<DataTypes.Point>>(node.id, "points")?.data ?? null;
 
     if (socket === "sequence") {
-        return { kind: "sequence", data: { senderId: node.id, count: points?.length ?? 0 } };
+        return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count: points?.length ?? 0 } };
     }
 
     if (socket !== "output") return null;
@@ -95,7 +95,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<ScatterLayoutDefinition>, socket
 
     for (let i = 0; i < points.length; i++) {
         // Sequence-resolve the member so upstream iterators can vary it per index.
-        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [Resolver.cursorKey({ senderId: node.id, outputSocket: "sequence" })]: i })?.data ?? null;
         if (shape === null) continue;
 
         const { x, y } = points[i];

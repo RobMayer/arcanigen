@@ -112,7 +112,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
     if (!isFinite(count)) return null;
 
     if (socket === "sequence") {
-        return { kind: "sequence", data: { senderId: node.id, count } };
+        return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count } };
     }
 
     if (socket !== "output") return null;
@@ -121,7 +121,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<RepeatedLayoutDefinition>, socke
 
     const children = [];
     for (let i = 0; i < count; i++) {
-        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [Resolver.cursorKey({ senderId: node.id, outputSocket: "sequence" })]: i })?.data ?? null;
         if (shape === null) continue;
         children.push(shape);
     }

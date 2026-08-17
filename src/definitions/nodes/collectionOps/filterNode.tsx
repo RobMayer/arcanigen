@@ -12,7 +12,7 @@ import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 // Filter is a loop END + DRIVER (like Map): pulled from downstream, it owns the `for` loop. For each index
-// it injects `cursorData[senderId] = i` and re-resolves `keep` (a boolean predicate over the current
+// it injects `cursorData[cursorKey(bus)] = i` and re-resolves `keep` (a boolean predicate over the current
 // element). Surviving elements are SUMMONED from the paired ForEach's `each` output by the bus's senderId
 // -- there is no wire from ForEach.each to Filter, so it uses `context.resolveOutput`. `keptIndices` exposes
 // the surviving positions (feed them + any co-indexed side-channel into a Gather to keep alignment).
@@ -111,12 +111,13 @@ const evaluate = (node: NodeDefinitions.NodeFor<FilterDefinition>, socket: keyof
     const pipeline = context.resolve<DataTypes.LoopFor<DataTypes.AnyKind>>(node.id, "pipeline");
     if (!pipeline) return null;
     const { senderId, count } = pipeline.data;
+    const cursorKey = Resolver.cursorKey(pipeline.data);
 
     // Partition every index: `keep === true` -> kept, everything else (false / unresolved) -> rejected.
     const kept: number[] = [];
     const rejected: number[] = [];
     for (let i = 0; i < count; i++) {
-        const keepEval = context.resolve<DataTypes.Boolean>(node.id, "keep", { ...context.cursorData, [senderId]: i });
+        const keepEval = context.resolve<DataTypes.Boolean>(node.id, "keep", { ...context.cursorData, [cursorKey]: i });
         if (keepEval?.data === true) kept.push(i);
         else rejected.push(i);
     }
@@ -133,7 +134,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<FilterDefinition>, socket: keyof
         const items: unknown[] = [];
         let element = "any"; // element kind of the members (overwritten by the first real one)
         for (const i of indices) {
-            const el = context.resolveOutput<DataTypes.AnyKind>(senderId, "each", { ...context.cursorData, [senderId]: i });
+            const el = context.resolveOutput<DataTypes.AnyKind>(senderId, "each", { ...context.cursorData, [cursorKey]: i });
             if (!el) continue;
             element = el.kind;
             items.push(el.data);

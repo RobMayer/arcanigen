@@ -101,7 +101,7 @@ export namespace SignatureBuilder {
                 ? C extends "array"
                     ? ArrayOfK<EvalExpr<O, A>> // array<inner> — recurse (covers concrete AND var inner)
                     : C extends "loopFor"
-                      ? LoopForK<EvalExpr<O, A>> // loopFor<inner> — recurse (phantom element; rep is {senderId,count})
+                      ? LoopForK<EvalExpr<O, A>> // loopFor<inner> — recurse (phantom element; rep is {senderId,outputSocket,count})
                       : DataTypes.AnyKind // bus — lands with Rung-8 (portal/bus)
                 : DataTypes.AnyKind;
 

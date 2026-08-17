@@ -39,7 +39,7 @@ export namespace IterationPrefab {
         const sequenceEval = context.resolve<DataTypes.Sequence>(node.id, "sequence");
         if (!sequenceEval) return null;
 
-        const { senderId, count } = sequenceEval.data;
+        const { count } = sequenceEval.data;
         if (count <= 0) return null;
 
         const reverseSequence = context.resolve<DataTypes.Boolean>(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
@@ -50,7 +50,7 @@ export namespace IterationPrefab {
         const modeEnum = context.resolve<DataTypes.Enum>(node.id, "mode")?.data ?? node.payload.mode;
         const modeKey = Enum.keyOf(Enum.Common.sequencerMode, modeEnum);
 
-        let iter = context.cursorData[senderId] ?? 0;
+        let iter = context.cursorData[Resolver.cursorKey(sequenceEval.data)] ?? 0;
 
         if (reverseSequence) {
             iter = count - 1 - iter;

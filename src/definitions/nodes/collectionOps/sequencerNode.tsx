@@ -188,13 +188,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     const sequenceEval = context.resolve<DataTypes.Sequence>(node.id, "sequence");
     if (!sequenceEval) return null;
 
-    const { senderId, count } = sequenceEval.data;
+    const { count } = sequenceEval.data;
     if (count <= 0) return null;
 
     const socketCount = node.payload.steps.length;
     if (socketCount === 0) return null;
 
-    const iter = context.cursorData[senderId] ?? 0;
+    const cursorKey = Resolver.cursorKey(sequenceEval.data);
+    const iter = context.cursorData[cursorKey] ?? 0;
 
     const reverseSequence = context.resolve<DataTypes.Boolean>(node.id, "reverseSequence")?.data ?? node.payload.reverseSequence;
     const reverseSteps = context.resolve<DataTypes.Boolean>(node.id, "reverseSteps")?.data ?? node.payload.reverseSteps;
@@ -243,7 +244,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequencerDefinition>, socket: ke
     const stepSocket = node.payload.steps[stepIdx]?.socket;
     if (!stepSocket) return null;
 
-    const { [senderId]: _, ...restCursorData } = context.cursorData;
+    const { [cursorKey]: _, ...restCursorData } = context.cursorData;
     return context.resolve(node.id, stepSocket, restCursorData);
 };
 

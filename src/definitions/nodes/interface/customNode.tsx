@@ -342,10 +342,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<CustomDefinition>, socket: strin
     // Evaluate just the requested output from the subgraph
     const raw = context.subgraph(graphId, socket, resolveInput, innerCursorData);
 
-    // Remap sequence token senderIds on output
+    // Remap sequence token senderIds on output. senderId gets the `${node.id}/` namespace prefix so
+    // distinct inner buses stay distinct outside; outputSocket rides along untouched (it's orthogonal to
+    // the `/`-prefix logic in translateInward/translateOutward), so multiple inner sequences compose.
     if (raw?.kind === "sequence") {
-        const { senderId, count } = raw.data as DataTypes.TypeOf<DataTypes.Sequence>;
-        return { kind: "sequence", data: { senderId: `${node.id}/${senderId}`, count } };
+        const { senderId, outputSocket, count } = raw.data as DataTypes.TypeOf<DataTypes.Sequence>;
+        return { kind: "sequence", data: { senderId: `${node.id}/${senderId}`, outputSocket, count } };
     }
     return raw;
 };

@@ -75,7 +75,7 @@ export namespace DataTypes {
         layer: { shape: ShapeRep | null; enabled: boolean | null; blend: number | null };
         pathOp: { path: SVGPath | null; enabled: boolean | null; op: number | null };
         point: { x: number; y: number };
-        sequence: { senderId: string; count: number };
+        sequence: { senderId: string; outputSocket: string; count: number };
         "tokens:length": string;
         "stop:float": { value: number | null; position: number | null; enabled: boolean | null };
         "stop:color": { value: ColorRep.Type; position: number | null; enabled: boolean | null };
@@ -110,7 +110,7 @@ export namespace DataTypes {
 
     /** Constructors -- parameterized by an inner kind; recursion via instantiation, not string parsing. */
     export type ArrayOf<X extends AnyKind> = { [KIND]: `array<${X[typeof KIND]}>`; [TYPE]: X[typeof TYPE][] };
-    export type LoopFor<X extends AnyKind> = { [KIND]: `loopFor<${X[typeof KIND]}>`; [TYPE]: { senderId: string; count: number } };
+    export type LoopFor<X extends AnyKind> = { [KIND]: `loopFor<${X[typeof KIND]}>`; [TYPE]: { senderId: string; outputSocket: string; count: number } };
 
     /** A datatype identity: anything satisfying the base constructor shape. */
     export type Kind = AnyKind;

@@ -32,21 +32,27 @@ export namespace Resolver {
     }
 
     /**
-     * Cursor position (current index) per active iterating sender, keyed by senderId.
+     * Cursor position (current index) per active iterating bus, keyed by `cursorKey` (below).
      * The shared iteration substrate for index-driven buses (sequence, loopFor) — the
      * concept distinction lives at the datatype layer, not here. Buses whose injection
      * is not an index (e.g. a future portal carrying a family's values) get their own channel.
      *
-     * ASSUMES each node emits at most ONE iteration bus (one sequence OR one loopFor). The key
-     * is a bare senderId (a node's id), so two buses from the same node would collide on it.
-     * True for the whole corpus today. If a multi-emitter node ever appears, the likely fix is a
-     * compound key (e.g. `${nodeId}:${outputSocket}`). senderId is already a free-form string --
-     * customNode compounds it at the subgraph boundary (`${node.id}/${innerSenderId}`) -- BUT that
-     * only shows a compound key works within one namespace. A per-output compound key would have to
-     * survive translateInward/translateOutward's `${customNodeId}/` prefixing across subgraph
-     * boundaries, and that composition is UNPROVEN -- prove it before relying on this escape hatch.
+     * The key is `${senderId}:${outputSocket}`, NOT a bare senderId -- so a single node can emit
+     * MULTIPLE concurrent buses (e.g. a Grid layout's per-slot / per-row / per-column sequences)
+     * without them colliding. `senderId` stays a real node id (Filter still summons a loop-start's
+     * `each` via `resolveOutput(senderId, ...)`); `outputSocket` is the disambiguator. The two
+     * components are orthogonal to translateInward/translateOutward's `${customNodeId}/` prefixing:
+     * customNode prefixes the senderId (`${node.id}/${innerSenderId}`), the translators strip/re-add
+     * that `/` prefix, and the `:outputSocket` suffix rides along untouched -- so the key composes
+     * cleanly across subgraph boundaries. Keys are opaque (never parsed back apart); senderId (a
+     * nanoid, `/`-compounded) can't contain `:`, and socket ids are plain identifiers, so the key
+     * is injective.
      */
     export type CursorData = Readonly<Record<string, number>>;
+
+    /** The `CursorData` key for an iteration bus (sequence / loopFor). Distinct output sockets on the
+     *  SAME node get distinct keys, letting one node emit multiple concurrent buses without collision. */
+    export const cursorKey = (bus: { senderId: string; outputSocket: string }): string => `${bus.senderId}:${bus.outputSocket}`;
 
     /** Strip `{customNodeId}/` prefix from matching cursorData keys when entering a subgraph. */
     export const translateInward = (parentCursorData: CursorData, customNodeId: string): { innerCursorData: CursorData; strippedKeys: Set<string> } => {

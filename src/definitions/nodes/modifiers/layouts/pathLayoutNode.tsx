@@ -288,7 +288,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
     if (!isFinite(count)) return null;
 
     if (socket === "sequence") {
-        return { kind: "sequence", data: { senderId: node.id, count } };
+        return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count } };
     }
 
     if (socket !== "output") return null;
@@ -337,7 +337,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         if (skipFirst && i === 0) continue;
         if (skipLast && i === count - 1) continue;
 
-        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [node.id]: i })?.data ?? null;
+        const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [Resolver.cursorKey({ senderId: node.id, outputSocket: "sequence" })]: i })?.data ?? null;
         if (shape === null) continue;
 
         let spacing: { percent: number; px: number };

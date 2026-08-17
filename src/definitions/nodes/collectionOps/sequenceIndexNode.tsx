@@ -75,7 +75,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, socket
     const sequenceEval = context.resolve<DataTypes.Sequence>(node.id, "sequence");
     if (!sequenceEval) return null;
 
-    const { senderId, count } = sequenceEval.data;
+    const { count } = sequenceEval.data;
     if (count <= 0) return null;
 
     if (socket === "count") {
@@ -83,7 +83,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<SequenceIndexDefinition>, socket
     }
 
     if (socket === "index") {
-        const iter = context.cursorData[senderId] ?? 0;
+        const iter = context.cursorData[Resolver.cursorKey(sequenceEval.data)] ?? 0;
         return { kind: "integer", data: `${iter}` };
     }
 
