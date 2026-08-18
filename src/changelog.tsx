@@ -4,10 +4,14 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-18"} version={"3.5.5"}>
+                <Feature>added Path Group node</Feature>
+                <Improvement>cleaned up some node layouts</Improvement>
+            </Build>
             <Build date={"2026-08-18"} version={"3.5.4"}>
-                <Improvement>added Cartesian Layout node</Improvement>
-                <Improvement>added Polar Layout node</Improvement>
-                <Improvement>added Point Split node</Improvement>
+                <Feature>added Cartesian Layout node</Feature>
+                <Feature>added Polar Layout node</Feature>
+                <Feature>added Point Split node</Feature>
             </Build>
             <Build date={"2026-08-17"} version={"3.5.3"}>
                 <Feature>new general-purpose Array Node</Feature>
