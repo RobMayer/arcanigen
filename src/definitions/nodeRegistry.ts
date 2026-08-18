@@ -213,6 +213,7 @@ import { PointOnPathDefinition, PointOnPathNodeType } from "./nodes/values/point
 import { PointsOnPathDefinition, PointsOnPathNodeType } from "./nodes/values/pointsOnPathNode";
 import { DecompoundPathDefinition, DecompoundPathNodeType } from "./nodes/values/decompoundPathNode";
 import { ShapeGroupDefinition, ShapeGroupNodeType } from "./nodes/modifiers/shapeGroupNode";
+import { PathGroupDefinition, PathGroupNodeType } from "./nodes/modifiers/pathGroupNode";
 import { IntegerStopArrayDefinition, IntegerStopArrayNodeType } from "./nodes/values/integerStopArrayNode";
 import { LengthStopArrayDefinition, LengthStopArrayNodeType } from "./nodes/values/lengthStopArrayNode";
 import { RestyleDefinition, RestyleNodeType } from "./nodes/modifiers/restyleNode";
@@ -471,6 +472,7 @@ export namespace Registries {
         pointsOnPath: PointsOnPathDefinition;
         decompoundPath: DecompoundPathDefinition;
         shapeGroup: ShapeGroupDefinition;
+        pathGroup: PathGroupDefinition;
         integerStopArray: IntegerStopArrayDefinition;
         lengthStopArray: LengthStopArrayDefinition;
         floatIterator: FloatIteratorDefinition;
@@ -597,6 +599,7 @@ export namespace Registries {
         pointsOnPath: PointsOnPathNodeType,
         decompoundPath: DecompoundPathNodeType,
         shapeGroup: ShapeGroupNodeType,
+        pathGroup: PathGroupNodeType,
         integerStopArray: IntegerStopArrayNodeType,
         lengthStopArray: LengthStopArrayNodeType,
         floatIterator: FloatIteratorNodeType,

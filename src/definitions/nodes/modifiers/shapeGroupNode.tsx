@@ -106,7 +106,7 @@ export const ShapeGroupNodeType: NodeTypes.Type<"shapeGroup", ShapeGroupDefiniti
     type: "shapeGroup",
     displayName: "Shape Group",
     defaultLabel: "Shape Group",
-    iconNode: <NodeIcon shape={NODE_ICONS.group} />,
+    iconNode: <NodeIcon shape={NODE_ICONS.group} modifierIcon={NODE_ICONS.shape} />,
     flavour: "emphasis",
     category: "Modifiers",
     create,
