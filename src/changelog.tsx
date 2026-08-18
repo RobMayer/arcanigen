@@ -4,6 +4,11 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-18"} version={"3.5.4"}>
+                <Improvement>added Cartesian Layout node</Improvement>
+                <Improvement>added Polar Layout node</Improvement>
+                <Improvement>added Point Split node</Improvement>
+            </Build>
             <Build date={"2026-08-17"} version={"3.5.3"}>
                 <Feature>new general-purpose Array Node</Feature>
                 <Improvement>added a Smoothness slider to PolyLine</Improvement>
