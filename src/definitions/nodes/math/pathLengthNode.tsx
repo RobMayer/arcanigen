@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -55,12 +55,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLengthD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"path"}>
-                Path
-            </SocketIn>
+            <SocketPair node={node} socketInId={"path"} socketOutId={"output"}>
+                <span>Input</span>
+                <span>Output</span>
+            </SocketPair>
+
             <SocketIn node={node} socketId={"sampleAt"} label={"Sample At (%)"}>
                 <DecimalInput.SliderInput
                     value={node.payload.sampleAt}

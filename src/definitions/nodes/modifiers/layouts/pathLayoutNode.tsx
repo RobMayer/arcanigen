@@ -142,15 +142,15 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketOut node={node} socketId={"sequence"}>
-                Sequence
-            </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
             <SocketIn node={node} socketId={"path"}>
                 Path
             </SocketIn>
+            <SocketIn node={node} socketId={"input"}>
+                Shape
+            </SocketIn>
+            <SocketOut node={node} socketId={"sequence"}>
+                Sequence
+            </SocketOut>
             <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>
@@ -320,7 +320,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
     }
 
     // Distribution (only for Even mode)
-    const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+    const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? {
+        func: Enum.Common.distroFunctions.LINEAR.value,
+        easing: Enum.Common.distroEasing.IN.value,
+        intensity: "1",
+    };
     const distroLerper = distroInterpolator(
         Enum.keyOf(Enum.Common.distroFunctions, distro.func),
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),

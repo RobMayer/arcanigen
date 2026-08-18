@@ -4,7 +4,7 @@ import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../../features/nodeview/slots";
 import { LengthInput } from "../../../../components/inputs/LengthInput";
 import { PointInput } from "../../../../components/inputs/PointInput";
 import { SliderInput } from "../../../../components/inputs/SliderInput";
@@ -91,12 +91,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GlowEffectD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
+            <SocketPair node={node} socketInId={"input"} socketOutId={"output"}>
+                <span>Input</span>
+                <span>Output</span>
+            </SocketPair>
             <SocketIn node={node} socketId={"color"} label={"Color"}>
                 <ColorHexInput value={node.payload.color} onCommit={(color) => handleUpdate({ color })} required alpha disabled={node.in.color !== null} />
             </SocketIn>

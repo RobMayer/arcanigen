@@ -4,7 +4,7 @@ import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../../features/nodeview/slots";
 import { IntegerInput } from "../../../../components/inputs/IntegerInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
 import { DataTypes } from "../../../dataTypes";
@@ -52,12 +52,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PencilEffec
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
+            <SocketPair node={node} socketInId={"input"} socketOutId={"output"}>
+                <span>Input</span>
+                <span>Output</span>
+            </SocketPair>
             <SocketIn node={node} socketId={"seed"} label={"Random Seed"}>
                 <IntegerInput value={node.payload.seed} onCommit={(seed) => handleUpdate({ seed })} disabled={node.in.seed !== null} min={"0"} />
             </SocketIn>

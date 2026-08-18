@@ -5,7 +5,7 @@ import { DataTypes } from "../../../dataTypes";
 import { SocketTypes } from "../../../socketTypes";
 import { ReactNode } from "react";
 import { TypicalNode } from "../../../../features/nodeview/node";
-import { SocketOut, SocketIn } from "../../../../features/nodeview/slots";
+import { SocketOut, SocketIn, SocketPair } from "../../../../features/nodeview/slots";
 import { Project } from "../../../../state/project";
 import { Resolver } from "../../../../util/resolver";
 import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
@@ -48,12 +48,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<PathHealNodeDefini
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathHealNodeDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"path"}>
-                Input
-            </SocketIn>
+            <SocketPair node={node} socketInId={"path"} socketOutId={"output"}>
+                <span>Input</span>
+                <span>Output</span>
+            </SocketPair>
         </TypicalNode>
     );
 };

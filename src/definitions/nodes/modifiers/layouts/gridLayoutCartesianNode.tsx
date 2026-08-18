@@ -200,6 +200,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutC
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketIn node={node} socketId={"input"}>
+                Shape
+            </SocketIn>
+            <hr />
             <SocketOut node={node} socketId={"cellSequence"}>
                 Cell Sequence
             </SocketOut>
@@ -209,9 +213,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutC
             <SocketOut node={node} socketId={"columnSequence"}>
                 Column Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"columnFit"} label={"Column Auto Mode"}>
                 <RadioButton.Group

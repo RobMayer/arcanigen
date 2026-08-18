@@ -3,7 +3,7 @@ import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -63,12 +63,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ColorStopBr
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Stop
-            </SocketOut>
-            <SocketIn node={node} socketId={"value"} label={"Color"}>
+            <SocketPair node={node} socketInId={"value"} socketOutId={"output"} label={"Value"}>
                 <ColorHexInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} alpha />
-            </SocketIn>
+            </SocketPair>
+
             <SocketIn node={node} socketId={"enabled"}>
                 <CheckBox checked={node.payload.enabled} onToggle={(enabled) => handleUpdate({ enabled })} disabled={node.in.enabled !== null}>
                     Enabled

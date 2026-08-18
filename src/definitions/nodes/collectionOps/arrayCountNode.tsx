@@ -3,7 +3,7 @@ import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -42,13 +42,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ArrayCountD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"count"} label={"Count"}>
+            <SocketPair node={node} socketInId={"source"} socketOutId={"count"}>
                 <ValuePreview value={countPreview} />
-            </SocketOut>
-            <hr />
-            <SocketIn node={node} socketId={"source"}>
-                Source
-            </SocketIn>
+            </SocketPair>
         </TypicalNode>
     );
 };

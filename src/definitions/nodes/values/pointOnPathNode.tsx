@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -87,15 +87,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PointOnPath
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"point"}>
-                Point
-            </SocketOut>
+            <SocketPair node={node} socketInId={"path"} socketOutId={"point"}>
+                <span>Path</span>
+                <span>Point</span>
+            </SocketPair>
             <SocketOut node={node} socketId={"angle"}>
                 Angle
             </SocketOut>
-            <SocketIn node={node} socketId={"path"}>
-                Path
-            </SocketIn>
             <SocketIn node={node} socketId={"overflowMode"} label={"Overflow"}>
                 <RadioButton.Group
                     orientation={"horizontal"}

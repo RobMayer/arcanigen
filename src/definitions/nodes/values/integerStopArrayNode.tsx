@@ -4,7 +4,7 @@ import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -130,12 +130,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IntegerStop
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Stops
-            </SocketOut>
-            <SocketIn node={node} socketId={"stops"}>
-                Stops Input
-            </SocketIn>
+            <SocketPair node={node} socketInId={"stops"} socketOutId={"output"}>
+                <span>Input</span>
+                <span>Output</span>
+            </SocketPair>
             {supersocketConnected ? null : (
                 <>
                     <ActionButton onClick={handleAddStop} flavour={"accent"}>

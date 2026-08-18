@@ -224,6 +224,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutP
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketIn node={node} socketId={"input"}>
+                Shape
+            </SocketIn>
+            <hr />
             <SocketOut node={node} socketId={"cellSequence"}>
                 Cell Sequence
             </SocketOut>
@@ -233,9 +237,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutP
             <SocketOut node={node} socketId={"annularSequence"}>
                 Annular Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
             <hr />
             <SocketIn node={node} socketId={"radialFit"} label={"Radial Auto Mode"}>
                 <RadioButton.Group

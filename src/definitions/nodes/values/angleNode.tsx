@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AngleInput } from "../../../components/inputs/AngleInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -61,12 +61,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AngleDefini
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"value"} label={"Value"}>
+            <SocketPair node={node} socketInId={"value"} socketOutId={"output"} label={"Value"}>
                 <AngleInput.SliderInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} unbound={!wraps} />
-            </SocketIn>
+            </SocketPair>
             <SocketIn node={node} socketId={"wraps"} label={"Wraps"}>
                 <CheckBox checked={node.payload.wraps} onToggle={(wraps) => handleUpdate({ wraps })} disabled={node.in.wraps !== null}>
                     Wraps value between 0-360

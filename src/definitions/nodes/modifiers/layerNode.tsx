@@ -5,7 +5,7 @@ import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
@@ -143,9 +143,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"layers"}>
-                Layers
-            </SocketIn>
             {supersocketConnected ? null : (
                 <>
                     <hr />
@@ -166,10 +163,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
                 </>
             )}
             <hr />
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layerArray|layerCount|enabledCount" socketsIn={"isolate"}>
-                <SocketOut node={node} socketId={"layerArray"}>
-                    Layer Array
-                </SocketOut>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layers|layerArray|layerCount|enabledCount" socketsIn={"isolate"}>
+                <SocketPair node={node} socketInId={"layers"} socketOutId={"layerArray"} align={"center"}>
+                    <span>Layer Array</span>
+                </SocketPair>
                 <SocketOut node={node} socketId={"layerCount"}>
                     Layer Count
                 </SocketOut>

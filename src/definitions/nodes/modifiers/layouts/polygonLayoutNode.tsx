@@ -106,12 +106,13 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonLayo
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketIn node={node} socketId={"input"}>
+                Shape
+            </SocketIn>
             <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
+
             <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"3"} max={"64"} required />
             </SocketIn>
@@ -153,17 +154,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PolygonLayo
     );
 };
 
-const GEOMETRY_INPUTS: (keyof PolygonLayoutDefinition["inputs"])[] = [
-    "input",
-    "count",
-    "radius",
-    "scribeMode",
-    "pointDistro",
-    "memberAlign",
-    "memberRotation",
-    "position",
-    "rotation",
-];
+const GEOMETRY_INPUTS: (keyof PolygonLayoutDefinition["inputs"])[] = ["input", "count", "radius", "scribeMode", "pointDistro", "memberAlign", "memberRotation", "position", "rotation"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, outSocket: keyof PolygonLayoutDefinition["outputs"], _deps: AllDeps): (keyof PolygonLayoutDefinition["inputs"])[] => {
     if (outSocket === "output") {
@@ -219,7 +210,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<PolygonLayoutDefinition>, socket
     }
 
     if (socket === "output") {
-        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? {
+            func: Enum.Common.distroFunctions.LINEAR.value,
+            easing: Enum.Common.distroEasing.IN.value,
+            intensity: "1",
+        };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
             Enum.keyOf(Enum.Common.distroEasing, distro.easing),

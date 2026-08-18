@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { SocketTypes } from "../../socketTypes";
@@ -229,12 +229,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RestyleDefi
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"shape"}>
-                Shape
-            </SocketIn>
+            <SocketPair node={node} socketInId={"shape"} socketOutId={"output"}>
+                <span>Shape</span>
+                <span>Output</span>
+            </SocketPair>
             <hr />
             <SocketIn node={node} socketId={"overrideStrokeColor"}>
                 <CheckBox checked={strokeColorActive} onToggle={(overrideStrokeColor) => handleUpdate({ overrideStrokeColor })} disabled={node.in.overrideStrokeColor !== null}>

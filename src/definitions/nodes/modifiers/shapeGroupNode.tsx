@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -63,12 +63,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ShapeGroupD
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Shapes
-            </SocketIn>
+            <SocketPair node={node} socketInId={"input"} socketOutId={"output"}>
+                <span>Shapes</span>
+                <span>Output</span>
+            </SocketPair>
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );

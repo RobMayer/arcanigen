@@ -5,7 +5,7 @@ import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { CheckBox } from "../../../components/buttons/CheckBox";
 import { Dropdown } from "../../../components/inputs/Dropdown";
 import { ActionButton } from "../../../components/buttons/ActionButton";
@@ -138,9 +138,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"pathOps"}>
-                Path Ops
-            </SocketIn>
             {supersocketConnected ? null : (
                 <>
                     <hr />
@@ -162,7 +159,10 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
                 </>
             )}
             <hr />
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pathOpArray|operationCount|enabledCount">
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pathOpspathOpArray|operationCount|enabledCount">
+                <SocketPair node={node} socketInId={"pathOps"} socketOutId={"pathOpArray"}>
+                    <span>Path Ops Array</span>
+                </SocketPair>
                 <SocketOut node={node} socketId={"pathOpArray"}>
                     Path Op Array
                 </SocketOut>

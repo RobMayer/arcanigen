@@ -3,7 +3,7 @@ import { NodeIcon, NODE_ICONS, ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -38,12 +38,10 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<ReverseDefinition>>
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ReverseDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"source"}>
-                Source
-            </SocketIn>
+            <SocketPair node={node} socketInId={"source"} socketOutId={"output"}>
+                <span>Source</span>
+                <span>Output</span>
+            </SocketPair>
             <hr />
             <SocketOut node={node} socketId={"count"}>
                 Count

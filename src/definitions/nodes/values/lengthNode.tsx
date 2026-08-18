@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { SocketTypes } from "../../socketTypes";
@@ -76,12 +76,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthDefin
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"value"} label={"Value"}>
+            <SocketPair node={node} socketInId={"value"} socketOutId={"output"} label={"Value"}>
                 <LengthInput value={node.payload.value} onCommit={(value) => handleUpdate({ value })} disabled={node.in.value !== null} />
-            </SocketIn>
+            </SocketPair>
             <NodeAccordion label={"Conversion"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"unit"} label={"Unit"}>
                     <RadioButton.Group

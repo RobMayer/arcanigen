@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -47,12 +47,10 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<DecompoundPathDefi
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<DecompoundPathDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Paths
-            </SocketOut>
-            <SocketIn node={node} socketId={"path"}>
-                Path
-            </SocketIn>
+            <SocketPair node={node} socketInId={"path"} socketOutId={"output"}>
+                <span>Path</span>
+                <span>Paths</span>
+            </SocketPair>
             <SocketOut node={node} socketId={"pathCount"}>
                 Path Count
             </SocketOut>

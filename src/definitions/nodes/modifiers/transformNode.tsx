@@ -3,7 +3,7 @@ import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { SocketTypes } from "../../socketTypes";
@@ -81,7 +81,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinitio
     };
 };
 
-const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
+const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
         (v: Partial<NodeDefinitions.PayloadTypeOf<TransformDefinition>>) => {
             methods.update(v);
@@ -93,19 +93,15 @@ const Controls =({ node, methods }: { node: NodeDefinitions.NodeFor<TransformDef
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Shape
-            </SocketOut>
-            <SocketIn node={node} socketId={"shape"}>
-                Shape
-            </SocketIn>
+            <SocketPair node={node} socketInId={"shape"} socketOutId={"output"}>
+                <span>Shape</span>
+                <span>Transformed</span>
+            </SocketPair>
             <hr />
-            <SocketOut node={node} socketId={"pathOutput"}>
-                Path
-            </SocketOut>
-            <SocketIn node={node} socketId={"path"}>
-                Path
-            </SocketIn>
+            <SocketPair node={node} socketInId={"path"} socketOutId={"pathOutput"}>
+                <span>Path</span>
+                <span>Transformed</span>
+            </SocketPair>
             <hr />
             <SocketIn node={node} socketId={"position"} label={"Position"}>
                 <PointInput value={node.payload.position} onChange={(v) => handleUpdate({ position: { ...node.payload.position, ...v } })} disabled={positionConnected} />

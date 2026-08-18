@@ -100,11 +100,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<AlongPathDe
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <SocketIn node={node} socketId={"shape"}>
-                Shape
-            </SocketIn>
             <SocketIn node={node} socketId={"path"}>
                 Path
+            </SocketIn>
+            <SocketIn node={node} socketId={"shape"}>
+                Shape
             </SocketIn>
             <SocketIn node={node} socketId={"memberAlign"}>
                 <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>

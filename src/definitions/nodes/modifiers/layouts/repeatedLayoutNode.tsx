@@ -2,7 +2,6 @@ import { nanoid } from "nanoid";
 import { passthroughCanInterject, passthroughInterject } from "../../../helpers/nodeHelper";
 import { NodeIcon, NODE_ICONS } from "../../../../components/Icon";
 import { Resolver } from "../../../../util/resolver";
-import { Enum } from "../../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
@@ -73,12 +72,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RepeatedLay
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
+            <SocketIn node={node} socketId={"input"}>
+                Shape
+            </SocketIn>
             <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
             <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>

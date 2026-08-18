@@ -3,7 +3,7 @@ import { NodeIcon, NODE_ICONS } from "../../../components/Icon";
 import { ReactNode } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair, ValuePreview } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -39,12 +39,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<IsNullishDe
     const preview = Project.useCachedOutput(graphId, node, "output");
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"} label={"Output"}>
+            <SocketPair node={node} socketInId={"input"} socketOutId={"output"} label={"Value"}>
                 <ValuePreview value={preview} />
-            </SocketOut>
-            <SocketIn node={node} socketId={"input"}>
-                Input
-            </SocketIn>
+            </SocketPair>
         </TypicalNode>
     );
 };

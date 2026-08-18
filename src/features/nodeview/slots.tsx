@@ -140,24 +140,34 @@ export const Slot = ({ children, label }: { children?: ReactNode; label?: ReactN
 // left and an "out" socket on the far right, with arbitrary controls (grip, remove) between.
 // The two halves may share a socket id: anchor names are keyed by nodeId+socketId+side, so
 // the in and out anchors stay distinct.
-export const SocketPair = <D extends NodeDefinitions.Generic>({
+export const SocketPair = <D extends NodeDefinitions.Generic, I extends keyof D["inputs"] & string, O extends keyof D["outputs"] & string>({
     node,
     socketInId,
     socketOutId,
     children,
     ref,
+    label,
+    align,
 }: {
     children?: ReactNode;
     node: NodeDefinitions.NodeFor<D>;
-    socketInId: string;
-    socketOutId: string;
+    socketInId: I;
+    socketOutId: O;
     ref?: Ref<HTMLDivElement>;
+    label?: ReactNode;
+    align?: "left" | "right" | "center" | "spread";
 }) => {
     const anyNode = node as NodeDefinitions.NodeFor<NodeDefinitions.Any>;
     return (
         <PairBase ref={ref}>
             <Socket side={"in"} socketId={socketInId} nodeId={node.id} node={anyNode} connected={anyNode.in[socketInId] != null} />
-            <div data-part={"middle"}>{children}</div>
+            {label ? (
+                <LabelSmall label={label} align={"left"}>
+                    {children}
+                </LabelSmall>
+            ) : (
+                <LabelBig align={align}>{children}</LabelBig>
+            )}
             <Socket side={"out"} socketId={socketOutId} nodeId={node.id} node={anyNode} connected={(anyNode.out[socketOutId]?.length ?? 0) > 0} />
         </PairBase>
     );
@@ -261,7 +271,7 @@ export const NodeAccordion = styled(
     }
 `;
 
-const LabelBig = styled(({ className, align = "left", children }: { className?: string; children?: ReactNode; align?: "right" | "left" }) => {
+const LabelBig = styled(({ className, align = "left", children }: { className?: string; children?: ReactNode; align?: "right" | "left" | "spread" | "center" }) => {
     return <div className={`${className ?? ""} align_${align}`}>{children}</div>;
 })`
     flex: 1 1 auto;
@@ -271,6 +281,12 @@ const LabelBig = styled(({ className, align = "left", children }: { className?: 
     justify-content: space-between;
     &.align_right {
         justify-content: right;
+    }
+    &.align_spread {
+        justify-items: space-between;
+    }
+    &.align_center {
+        justify-content: center;
     }
 `;
 

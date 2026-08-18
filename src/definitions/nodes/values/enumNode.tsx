@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, Slot, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, Slot, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Dropdown } from "../../../components/inputs/Dropdown";
@@ -87,10 +87,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumDefinit
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"value"} label={"Value"}>
+            <SocketPair node={node} socketInId={"value"} socketOutId={"output"} label={"Value"}>
                 <Dropdown value={`${node.payload.value}`} onValue={(v) => handleUpdate({ value: Number(v) })} disabled={node.in.value !== null}>
                     {node.payload.options.map((opt, i) => (
                         <option value={i} key={i}>
@@ -98,7 +95,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<EnumDefinit
                         </option>
                     ))}
                 </Dropdown>
-            </SocketIn>
+            </SocketPair>
             <NodeAccordion label={"Options"} nodeId={node.id}>
                 <ActionButton onClick={handleAddOption} flavour={"accent"}>
                     Add Option

@@ -4,7 +4,7 @@ import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
@@ -127,19 +127,25 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LengthArray
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Lengths
-            </SocketOut>
-            <SocketIn node={node} socketId={"values"}>
-                Lengths Input
-            </SocketIn>
+            <SocketPair node={node} socketInId={"values"} socketOutId={"output"}>
+                <span>Input</span>
+                <span>Output</span>
+            </SocketPair>
             {supersocketConnected ? null : (
                 <>
                     <ActionButton onClick={handleAddValue} flavour={"accent"}>
                         Add Length
                     </ActionButton>
                     {node.payload.values.map((entry, idx) => (
-                        <ValueEntry key={entry.socket} entry={entry} node={node} index={idx} handleValueUpdate={handleValueUpdate} handleRemoveValue={handleRemoveValue} handleReorderValue={handleReorderValue} />
+                        <ValueEntry
+                            key={entry.socket}
+                            entry={entry}
+                            node={node}
+                            index={idx}
+                            handleValueUpdate={handleValueUpdate}
+                            handleRemoveValue={handleRemoveValue}
+                            handleReorderValue={handleReorderValue}
+                        />
                     ))}
                 </>
             )}

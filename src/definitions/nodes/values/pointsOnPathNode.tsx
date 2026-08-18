@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
@@ -125,15 +125,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PointsOnPat
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"points"}>
-                Points
-            </SocketOut>
+            <SocketPair node={node} socketInId={"path"} socketOutId={"points"}>
+                <span>Path</span>
+                <span>Points</span>
+            </SocketPair>
+
             <SocketOut node={node} socketId={"angles"}>
                 Angles
             </SocketOut>
-            <SocketIn node={node} socketId={"path"}>
-                Path
-            </SocketIn>
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pointCount">
                 <SocketOut node={node} socketId={"pointCount"}>
                     Point Count

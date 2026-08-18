@@ -4,7 +4,7 @@ import { Resolver } from "../../../util/resolver";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { SocketIn, SocketOut, SocketPair } from "../../../features/nodeview/slots";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { CheckBox } from "../../../components/buttons/CheckBox";
@@ -52,14 +52,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BooleanDefi
 
     return (
         <TypicalNode node={node} methods={methods}>
-            <SocketOut node={node} socketId={"output"}>
-                Output
-            </SocketOut>
-            <SocketIn node={node} socketId={"value"} label={"Value"}>
+            <SocketPair node={node} socketInId={"value"} socketOutId={"output"}>
                 <CheckBox checked={node.payload.value} onToggle={(value) => handleUpdate({ value })} disabled={node.in.value !== null}>
                     Value
                 </CheckBox>
-            </SocketIn>
+            </SocketPair>
         </TypicalNode>
     );
 };
