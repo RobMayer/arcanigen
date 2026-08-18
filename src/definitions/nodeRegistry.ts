@@ -63,6 +63,7 @@ import { PointDotDefinition, PointDotType } from "./nodes/math/pointDotNode";
 import { PointWedgeDefinition, PointWedgeType } from "./nodes/math/pointWedgeNode";
 import { PointLerpDefinition, PointLerpType } from "./nodes/math/pointLerpNode";
 import { PointDistanceDefinition, PointDistanceType } from "./nodes/math/pointDistanceNode";
+import { PointSplitDefinition, PointSplitType } from "./nodes/math/pointSplitNode";
 import { IntegerInputDefinition, IntegerInputType } from "./nodes/interface/inputs/integerInputNode";
 import { IntegerOutputDefinition, IntegerOutputType } from "./nodes/interface/outputs/integerOutputNode";
 import { AngleInputDefinition, AngleInputType } from "./nodes/interface/inputs/angleInputNode";
@@ -172,6 +173,8 @@ import { ClipDefinition, ClipNodeType } from "./nodes/modifiers/clipNode";
 import { SequencerDefinition, SequencerNodeType } from "./nodes/collectionOps/sequencerNode";
 import { PolygonLayoutDefinition, PolygonLayoutNodeType } from "./nodes/modifiers/layouts/polygonLayoutNode";
 import { RadialLayoutDefinition, RadialLayoutNodeType } from "./nodes/modifiers/layouts/radialLayoutNode";
+import { GridLayoutCartesianDefinition, GridLayoutCartesianNodeType } from "./nodes/modifiers/layouts/gridLayoutCartesianNode";
+import { GridLayoutPolarDefinition, GridLayoutPolarNodeType } from "./nodes/modifiers/layouts/gridLayoutPolarNode";
 import { RepeatedLayoutDefinition, RepeatedLayoutNodeType } from "./nodes/modifiers/layouts/repeatedLayoutNode";
 import { SequenceIndexDefinition, SequenceIndexNodeType } from "./nodes/collectionOps/sequenceIndexNode";
 import { PathLayoutDefinition, PathLayoutNodeType } from "./nodes/modifiers/layouts/pathLayoutNode";
@@ -416,6 +419,7 @@ export namespace Registries {
         pointWedge: PointWedgeDefinition;
         pointLerp: PointLerpDefinition;
         pointDistance: PointDistanceDefinition;
+        pointSplit: PointSplitDefinition;
 
         // collections
         layerCompose: LayerComposeDefinition;
@@ -427,6 +431,8 @@ export namespace Registries {
         sequencer: SequencerDefinition;
         polygonLayout: PolygonLayoutDefinition;
         radialLayout: RadialLayoutDefinition;
+        gridLayoutCartesian: GridLayoutCartesianDefinition;
+        gridLayoutPolar: GridLayoutPolarDefinition;
         repeatedLayout: RepeatedLayoutDefinition;
         sequenceIndex: SequenceIndexDefinition;
         pathLayout: PathLayoutDefinition;
@@ -551,6 +557,8 @@ export namespace Registries {
         sequencer: SequencerNodeType,
         polygonLayout: PolygonLayoutNodeType,
         radialLayout: RadialLayoutNodeType,
+        gridLayoutCartesian: GridLayoutCartesianNodeType,
+        gridLayoutPolar: GridLayoutPolarNodeType,
         repeatedLayout: RepeatedLayoutNodeType,
         sequenceIndex: SequenceIndexNodeType,
         pathLayout: PathLayoutNodeType,
@@ -734,6 +742,7 @@ export namespace Registries {
         pointWedge: PointWedgeType,
         pointLerp: PointLerpType,
         pointDistance: PointDistanceType,
+        pointSplit: PointSplitType,
         switchCase: SwitchCaseNodeType,
         condition: ConditionNodeType,
         logicalNot: LogicalNotNodeType,

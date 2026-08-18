@@ -150,6 +150,50 @@ export namespace Enum {
             FROM_TO: { value: 1, label: "From / To" },
         } as const;
 
+        // Grid Layout: per-axis solve mode -- the NAMED quantity is the one derived from the other two.
+        // Total = give Count+Spacing; Spacing = give Count+Total; Count = give Spacing+Total.
+        export const fitCalcMode = {
+            TOTAL: { value: 0, label: "Total" },
+            SPACING: { value: 1, label: "Spacing" },
+            COUNT: { value: 2, label: "Count" },
+        } as const;
+
+        // Grid Layout: where the leftover slack lands when Count is derived (Spacing+Total). Start/Center/End
+        // keep Spacing exact and place the slack; Fill dissolves it by stretching spacing (Spacing becomes a minimum).
+        export const gridJustify = {
+            START: { value: 0, label: "Start" },
+            CENTER: { value: 1, label: "Center" },
+            END: { value: 2, label: "End" },
+            FILL: { value: 3, label: "Fill" },
+        } as const;
+
+        // Grid Layout: how the 2D grid linearizes into the single Cell Sequence.
+        export const gridSequenceOrder = {
+            ROW_MAJOR: { value: 0, label: "Row-Major" },
+            COLUMN_MAJOR: { value: 1, label: "Column-Major" },
+        } as const;
+
+        // Polar Layout radial axis: which way the rings extend from the reference radius (= Anchor). Value 0
+        // grows positive, 1 grows negative, 2 splits both ways -- shared numbering with gridDirectionAnnular.
+        export const gridDirectionRadial = {
+            OUTWARD: { value: 0, label: "Outward" },
+            INWARD: { value: 1, label: "Inward" },
+            CENTER: { value: 2, label: "Center" },
+        } as const;
+
+        // Polar Layout annular axis: which way the sweep extends from the reference angle (= Anchor).
+        export const gridDirectionAnnular = {
+            CLOCKWISE: { value: 0, label: "CW" },
+            COUNTERCLOCKWISE: { value: 1, label: "CCW" },
+            CENTER: { value: 2, label: "Center" },
+        } as const;
+
+        // Polar Layout: how the ring x angular grid linearizes into the single Cell Sequence.
+        export const polarSequenceOrder = {
+            RADIAL_MAJOR: { value: 0, label: "Radial-Major" },
+            ANNULAR_MAJOR: { value: 1, label: "Annular-Major" },
+        } as const;
+
         // Banded shapes: how a band's two side edges (the "legs") attach to the end circles.
         // Tangent = legs are the common external tangents to the two end circles (smooth, cap-friendly);
         // Offset = legs attach at the plain perpendicular offsets (exact widths at the endpoints).
