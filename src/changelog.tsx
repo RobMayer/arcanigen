@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-20"} version={"3.5.7"}>
+                <Improvement>Changed design of node context menus.</Improvement>
+            </Build>
             <Build date={"2026-08-20"} version={"3.5.6"}>
                 <Improvement>Aded "Clone Selection", "Copy Selected to new Custom Node", "Move Selected to new Custom Node", and "Delete Selected" to node right-click menu.</Improvement>
             </Build>
