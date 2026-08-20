@@ -397,6 +397,81 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("cache");
     }
 
+    // Clone a set of nodes as a group: each is cloned (result nodes are skipped), links whose BOTH endpoints
+    // are within the set are recreated between the clones, and the old->new id mapping is returned so callers
+    // can retarget selection onto the clones. Links crossing the set boundary are intentionally dropped.
+    cloneManyNodes(graphId: string, nodeIds: string[]): { original: string; clone: string }[] {
+        const nodesRef = this.refs.nodes.ref.current[graphId];
+        if (!nodesRef) return [];
+
+        const idMap = new Map<string, string>();
+        const cloneList: { node: NodeDefinitions.NodeFor<NodeDefinitions.Any>; cloned: NodeDefinitions.NodeFor<NodeDefinitions.Any>; nodeType: NodeTypes.Any }[] = [];
+
+        for (const nodeId of nodeIds) {
+            const node = nodesRef[nodeId];
+            if (!node) continue;
+            if (node.type === "result") continue;
+
+            const nodeType = NodeTypes.get(node.type);
+            const cloneFn = (nodeType as NodeTypes.Any).clone as ((node: NodeDefinitions.NodeFor<NodeDefinitions.Any>) => NodeDefinitions.NodeFor<NodeDefinitions.Any>) | undefined;
+            let cloned: NodeDefinitions.NodeFor<NodeDefinitions.Any>;
+            if (cloneFn) {
+                cloned = cloneFn(node);
+            } else {
+                cloned = structuredClone(node);
+                cloned.id = nanoid();
+                for (const key of Object.keys(cloned.in)) {
+                    cloned.in[key] = null;
+                }
+                for (const key of Object.keys(cloned.out)) {
+                    cloned.out[key] = [];
+                }
+            }
+            idMap.set(node.id, cloned.id);
+            cloneList.push({ node, cloned, nodeType: nodeType as NodeTypes.Any });
+        }
+
+        if (cloneList.length === 0) return [];
+
+        const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
+        const { nodes } = ArcaneGraph.importNodes(
+            oldGraph,
+            cloneList.map(({ cloned }) => cloned),
+        );
+        this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [graphId]: nodes };
+        this.dirty.add("nodes");
+        this.dirtyNodeGraphs.add(graphId);
+
+        for (const { cloned, nodeType } of cloneList) {
+            if (nodeType.onCreate) {
+                const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                onCreate(cloned, graphId, this);
+            }
+        }
+
+        const positions = { ...this.refs.positions.ref.current[graphId] };
+        for (const { node, cloned } of cloneList) {
+            const origPos = this.refs.positions.ref.current[graphId]?.[node.id] ?? { x: 0, y: 0 };
+            positions[cloned.id] = { x: origPos.x + 40, y: origPos.y + 40 };
+        }
+        this.refs.positions.ref.current = { ...this.refs.positions.ref.current, [graphId]: positions };
+        this.dirty.add("positions");
+
+        // Recreate internal links (both endpoints cloned). Snapshot the link list first since connect() mutates it.
+        const internalLinks = Object.values(this.refs.links.ref.current[graphId] ?? {}).filter((link) => idMap.has(link.fromNode) && idMap.has(link.toNode));
+        for (const link of internalLinks) {
+            this.connect(graphId, idMap.get(link.fromNode)!, idMap.get(link.toNode)!, link.fromSocket, link.toSocket);
+        }
+
+        // connect() rebuilds cache for connected clones; ensure isolated clones are rebuilt too.
+        for (const { cloned } of cloneList) {
+            this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, cloned.id);
+        }
+        this.dirty.add("cache");
+
+        return cloneList.map(({ node, cloned }) => ({ original: node.id, clone: cloned.id }));
+    }
+
     addNodeByType(graphId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): void {
         const newNode = nodeType.create(params as Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Any>>);
         const oldGraph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };

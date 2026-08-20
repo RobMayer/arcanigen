@@ -39,7 +39,7 @@ export const TypicalNode = styled(
     }) => {
         const nodeId = node.id;
         const { update: updateNode, remove: removeNode } = methods;
-        const { cloneNode } = Project.useMethods();
+        const { cloneNode, cloneManyNodes, removeManyNodes } = Project.useMethods();
         const graphId = useGraphId();
         const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
         const handleRef = useRef<HTMLDivElement>(null);
@@ -98,6 +98,20 @@ export const TypicalNode = styled(
             cloneNode(nodeId);
         }, [cloneNode, nodeId]);
 
+        const handleCloneSelected = useCallback(() => {
+            const selectedIds = [...selectionRef.current].filter((key) => key.startsWith("node_")).map((key) => key.substring(5));
+            const mapping = cloneManyNodes(selectedIds);
+            if (mapping.length > 0) {
+                selectMethods.set(mapping.map(({ clone }) => `node_${clone}`));
+            }
+        }, [selectionRef, cloneManyNodes, selectMethods]);
+
+        const handleDeleteSelected = useCallback(() => {
+            const selectedIds = [...selectionRef.current].filter((key) => key.startsWith("node_")).map((key) => key.substring(5));
+            removeManyNodes(...selectedIds);
+            selectMethods.clear();
+        }, [selectionRef, removeManyNodes, selectMethods]);
+
         const style = useMemo(() => {
             return { "--node": `--node_${nodeId}` } as CSSProperties;
         }, [nodeId]);
@@ -113,6 +127,8 @@ export const TypicalNode = styled(
                         setLabel={setLabel}
                         onDelete={removeNode}
                         onClone={handleClone}
+                        onCloneSelected={handleCloneSelected}
+                        onDeleteSelected={handleDeleteSelected}
                         flavour={flavour}
                         iconNode={iconNode}
                     />
@@ -170,6 +186,8 @@ const NodeTitle = styled(
         setLabel,
         onDelete,
         onClone,
+        onCloneSelected,
+        onDeleteSelected,
         flavour: flavourOverride,
         iconNode: iconNodeOverride,
     }: {
@@ -181,6 +199,8 @@ const NodeTitle = styled(
         setLabel: (v: string) => void;
         onDelete: () => void;
         onClone: () => void;
+        onCloneSelected: () => void;
+        onDeleteSelected: () => void;
         flavour?: Flavour;
         iconNode?: ReactNode;
     }) => {
@@ -247,6 +267,18 @@ const NodeTitle = styled(
             contextControls.close();
         }, [onDelete, contextControls]);
 
+        // Close BEFORE mutating selection: closing the popup restores focus to the right-clicked node, which
+        // fires its onFocus -> self-select. Doing our selection change afterwards lets it win that race.
+        const handleCloneSelectedAndClose = useCallback(() => {
+            contextControls.close();
+            onCloneSelected();
+        }, [onCloneSelected, contextControls]);
+
+        const handleDeleteSelectedAndClose = useCallback(() => {
+            contextControls.close();
+            onDeleteSelected();
+        }, [onDeleteSelected, contextControls]);
+
         return (
             <div className={className} data-nodecategory={nodeType.category} data-flavour={flavour}>
                 <NodeFallback nodeId={node.id} side={"in"} />
@@ -269,8 +301,12 @@ const NodeTitle = styled(
                 <NodeFallback nodeId={node.id} side={"out"} />
                 <ContextPopup controls={contextControls}>
                     <ActionButton.Option onClick={handleCloneAndClose}>Clone</ActionButton.Option>
+                    <ActionButton.Option onClick={handleCloneSelectedAndClose}>Clone Selected</ActionButton.Option>
                     <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
                         Delete
+                    </ActionButton.Option>
+                    <ActionButton.Option flavour={"danger"} onClick={handleDeleteSelectedAndClose}>
+                        Delete Selected
                     </ActionButton.Option>
                 </ContextPopup>
             </div>
