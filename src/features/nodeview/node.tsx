@@ -11,6 +11,8 @@ import { useGraphId } from "../../state/graphId";
 import { NodeDefinitions, NodeTypes } from "../../definitions/nodeTypes";
 import { ContextPopup } from "../../components/popups/ContextPopup";
 import { useDragPaneInternal } from "../../components/wrappers/DragPane";
+import { useSubgraphEditor } from "../subgraph";
+import { nanoid } from "nanoid";
 
 export const GraphNode = ({ nodeId }: { nodeId: string }) => {
     const graphId = useGraphId();
@@ -39,7 +41,8 @@ export const TypicalNode = styled(
     }) => {
         const nodeId = node.id;
         const { update: updateNode, remove: removeNode } = methods;
-        const { cloneNode, cloneManyNodes, removeManyNodes } = Project.useMethods();
+        const { cloneNode, cloneManyNodes, removeManyNodes, makeSubgraphFromSelection } = Project.useMethods();
+        const subgraphEditor = useSubgraphEditor();
         const graphId = useGraphId();
         const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
         const handleRef = useRef<HTMLDivElement>(null);
@@ -112,6 +115,21 @@ export const TypicalNode = styled(
             selectMethods.clear();
         }, [selectionRef, removeManyNodes, selectMethods]);
 
+        const extractToSubgraph = useCallback(
+            (copy: boolean) => {
+                const selectedIds = [...selectionRef.current].filter((key) => key.startsWith("node_")).map((key) => key.substring(5));
+                const subgraphId = nanoid();
+                if (makeSubgraphFromSelection(subgraphId, "Untitled", selectedIds, copy)) {
+                    selectMethods.clear();
+                    subgraphEditor.open(subgraphId);
+                }
+            },
+            [selectionRef, makeSubgraphFromSelection, selectMethods, subgraphEditor],
+        );
+
+        const handleMoveToSubgraph = useCallback(() => extractToSubgraph(false), [extractToSubgraph]);
+        const handleCopyToSubgraph = useCallback(() => extractToSubgraph(true), [extractToSubgraph]);
+
         const style = useMemo(() => {
             return { "--node": `--node_${nodeId}` } as CSSProperties;
         }, [nodeId]);
@@ -129,6 +147,8 @@ export const TypicalNode = styled(
                         onClone={handleClone}
                         onCloneSelected={handleCloneSelected}
                         onDeleteSelected={handleDeleteSelected}
+                        onMoveToSubgraph={handleMoveToSubgraph}
+                        onCopyToSubgraph={handleCopyToSubgraph}
                         flavour={flavour}
                         iconNode={iconNode}
                     />
@@ -188,6 +208,8 @@ const NodeTitle = styled(
         onClone,
         onCloneSelected,
         onDeleteSelected,
+        onMoveToSubgraph,
+        onCopyToSubgraph,
         flavour: flavourOverride,
         iconNode: iconNodeOverride,
     }: {
@@ -201,6 +223,8 @@ const NodeTitle = styled(
         onClone: () => void;
         onCloneSelected: () => void;
         onDeleteSelected: () => void;
+        onMoveToSubgraph: () => void;
+        onCopyToSubgraph: () => void;
         flavour?: Flavour;
         iconNode?: ReactNode;
     }) => {
@@ -279,6 +303,16 @@ const NodeTitle = styled(
             onDeleteSelected();
         }, [onDeleteSelected, contextControls]);
 
+        const handleMoveToSubgraphAndClose = useCallback(() => {
+            contextControls.close();
+            onMoveToSubgraph();
+        }, [onMoveToSubgraph, contextControls]);
+
+        const handleCopyToSubgraphAndClose = useCallback(() => {
+            contextControls.close();
+            onCopyToSubgraph();
+        }, [onCopyToSubgraph, contextControls]);
+
         return (
             <div className={className} data-nodecategory={nodeType.category} data-flavour={flavour}>
                 <NodeFallback nodeId={node.id} side={"in"} />
@@ -302,6 +336,8 @@ const NodeTitle = styled(
                 <ContextPopup controls={contextControls}>
                     <ActionButton.Option onClick={handleCloneAndClose}>Clone</ActionButton.Option>
                     <ActionButton.Option onClick={handleCloneSelectedAndClose}>Clone Selected</ActionButton.Option>
+                    <ActionButton.Option onClick={handleMoveToSubgraphAndClose}>Move Selection to new Subgraph</ActionButton.Option>
+                    <ActionButton.Option onClick={handleCopyToSubgraphAndClose}>Copy Selection to new Subgraph</ActionButton.Option>
                     <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
                         Delete
                     </ActionButton.Option>

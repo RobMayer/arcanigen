@@ -236,6 +236,13 @@ export namespace Project {
                             ctx.mc.removeNode(graphId, id);
                         }
                     }),
+                makeSubgraphFromSelection: (subgraphId: string, name: string, nodeIds: string[], copy: boolean) => {
+                    let result = false;
+                    ctx.mc.run(() => {
+                        result = ctx.mc.makeSubgraphFromSelection(graphId, subgraphId, name, nodeIds, copy);
+                    });
+                    return result;
+                },
                 interjectNode: (linkId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) => {
                     let result = false;
                     ctx.mc.run(() => {

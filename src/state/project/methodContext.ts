@@ -5,6 +5,7 @@ import { SocketTypes } from "../../definitions/socketTypes";
 import { ArcaneGraph } from "../../util/structs/arcaneGraph";
 import { computeSubgraphDeps } from "../../util/cycleDetection";
 import { rebuildDownstream, invalidateDownstream } from "./cache";
+import { makeSubgraphMeta } from "./types";
 import type { GraphId, NodesType, LinksType, CacheType, InterfacesType, DepsType, UsersType, MetaType, XY, InterfaceMember, SocketTypeCacheType, SocketTypeCacheEntry } from "./types";
 
 export type StateRefs = {
@@ -470,6 +471,89 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("cache");
 
         return cloneList.map(({ node, cloned }) => ({ original: node.id, clone: cloned.id }));
+    }
+
+    // Extract a selection of nodes into a freshly-created subgraph `subgraphId`. Internal links (both endpoints
+    // in the selection) are recreated inside the subgraph; boundary links are dropped (we do NOT infer interface
+    // sockets). The Result node is never included. No Custom node is placed in the parent -- the user drops one
+    // in themselves after adjusting the subgraph. When `copy` is false the originals are removed from the parent
+    // (move); when true they are left intact and the subgraph gets fresh-id duplicates. Returns true on success.
+    makeSubgraphFromSelection(parentGraphId: string, subgraphId: string, name: string, nodeIds: string[], copy: boolean): boolean {
+        const parentNodes = this.refs.nodes.ref.current[parentGraphId];
+        if (!parentNodes) return false;
+
+        const moving = nodeIds.filter((id) => parentNodes[id] && parentNodes[id].type !== "result");
+        if (moving.length === 0) return false;
+        const movingSet = new Set(moving);
+
+        // Snapshot everything we need BEFORE mutating: node objects (sockets cleared, links recreated below),
+        // the internal links, and positions. On copy the duplicates get fresh ids so they never collide with the
+        // still-present originals; idMap threads old ids to the ids used inside the subgraph for both modes.
+        const idMap = new Map<string, string>();
+        const cloned = moving.map((id) => {
+            const node = structuredClone(parentNodes[id]);
+            if (copy) node.id = nanoid();
+            for (const key of Object.keys(node.in)) node.in[key] = null;
+            for (const key of Object.keys(node.out)) node.out[key] = [];
+            idMap.set(id, node.id);
+            return node;
+        });
+        const parentLinks = this.refs.links.ref.current[parentGraphId] ?? {};
+        const internalLinks = Object.values(parentLinks).filter((link) => movingSet.has(link.fromNode) && movingSet.has(link.toNode));
+        const parentPositions = this.refs.positions.ref.current[parentGraphId] ?? {};
+        const movedPositions: { [id: string]: XY } = {};
+        for (const id of moving) {
+            movedPositions[idMap.get(id)!] = parentPositions[id] ?? { x: 0, y: 0 };
+        }
+
+        // Initialize the empty subgraph (mirrors useSubgraphMethods.create; nodeList/linkList are rebuilt on flush).
+        this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [subgraphId]: {} };
+        this.refs.links.ref.current = { ...this.refs.links.ref.current, [subgraphId]: {} };
+        this.refs.positions.ref.current = { ...this.refs.positions.ref.current, [subgraphId]: {} };
+        this.refs.users.ref.current = { ...this.refs.users.ref.current, [subgraphId]: [] };
+        this.refs.interfaces.ref.current = { ...this.refs.interfaces.ref.current, [subgraphId]: [] };
+        this.refs.cache.ref.current = { ...this.refs.cache.ref.current, [subgraphId]: {} };
+        this.refs.meta.ref.current = { ...this.refs.meta.ref.current, [subgraphId]: makeSubgraphMeta(name) };
+        this.dirty.add("nodes").add("links").add("positions").add("users").add("interfaces").add("cache").add("meta");
+        this.dirtyNodeGraphs.add(subgraphId);
+        this.dirtyLinkGraphs.add(subgraphId);
+
+        // Move mode: remove the originals from the parent (fires onDelete, severs their links including boundary
+        // ones). Copy mode leaves the parent untouched.
+        if (!copy) {
+            for (const id of moving) {
+                this.removeNode(parentGraphId, id);
+            }
+        }
+
+        // Import the moved nodes into the subgraph with their positions preserved.
+        const subGraph = { nodes: this.refs.nodes.ref.current[subgraphId], links: this.refs.links.ref.current[subgraphId] };
+        this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [subgraphId]: ArcaneGraph.importNodes(subGraph, cloned).nodes };
+        this.refs.positions.ref.current = {
+            ...this.refs.positions.ref.current,
+            [subgraphId]: { ...this.refs.positions.ref.current[subgraphId], ...movedPositions },
+        };
+        this.dirtyNodeGraphs.add(subgraphId);
+
+        // Fire onCreate in the new scope so e.g. nested Custom nodes re-register as users of their subgraphs.
+        for (const node of cloned) {
+            const nodeType = NodeTypes.get(node.type);
+            if (nodeType.onCreate) {
+                const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                onCreate(node, subgraphId, this);
+            }
+        }
+
+        // Recreate the internal links inside the subgraph (endpoints remapped through idMap for copy mode).
+        for (const link of internalLinks) {
+            this.connect(subgraphId, idMap.get(link.fromNode)!, idMap.get(link.toNode)!, link.fromSocket, link.toSocket);
+        }
+        for (const node of cloned) {
+            this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, subgraphId, node.id);
+        }
+        this.dirty.add("cache");
+
+        return true;
     }
 
     addNodeByType(graphId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): void {
