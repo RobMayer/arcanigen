@@ -242,7 +242,7 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
                     <Links />
                 </GraphConnectionProvider>
                 <Bounds ref={boundsRef} nodeList={nodes} />
-                <PaneContextMenu controls={paneMenuControls} hasSelection={paneMenuFlags.hasSelection} hasClipboard={paneMenuFlags.hasClipboard} onPaste={handlePasteAndClose} />
+                <PaneContextMenu controls={paneMenuControls} hasClipboard={paneMenuFlags.hasClipboard} onPaste={handlePasteAndClose} />
             </GraphViewPane>
             <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
         </>
