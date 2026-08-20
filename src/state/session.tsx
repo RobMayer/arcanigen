@@ -17,7 +17,7 @@ export namespace Session {
 
     export const Provider = ({ children }: { children?: ReactNode }) => {
         const selection = useFastContextMember<Set<string>>(new Set<string>());
-        const marqueeMode = useFastContextMember<MarqueeMode>("contain");
+        const marqueeMode = useFastContextMember<MarqueeMode>("intersect");
         const exportDpi = useFastContextMember<EmptyOr<NumericString.Type>>("96");
         const uiState = useFastContextMember<{ [key: string]: unknown }>({});
 
