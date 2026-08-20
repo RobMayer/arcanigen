@@ -149,10 +149,19 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
         const onClipboardKey = (evt: KeyboardEvent) => {
             if (!(evt.ctrlKey || evt.metaKey)) return;
             const key = evt.key.toLowerCase();
-            if (key !== "c" && key !== "x" && key !== "v") return;
+            if (key !== "c" && key !== "x" && key !== "v" && key !== "a") return;
             const active = document.activeElement;
             if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || (active as HTMLElement).isContentEditable)) return;
             if (!isTopmostPane()) return;
+
+            if (key === "a") {
+                // Select all nodes in THIS graph only (the topmost-pane guard keeps a subgraph editor from
+                // reaching the root graph's nodes).
+                evt.preventDefault();
+                const allIds = Object.keys(nodesRef.current[graphId] ?? {});
+                if (allIds.length > 0) selectMethods.set(allIds.map((id) => `node_${id}`));
+                return;
+            }
 
             if (key === "v") {
                 evt.preventDefault();

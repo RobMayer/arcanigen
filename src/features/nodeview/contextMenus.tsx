@@ -28,6 +28,12 @@ const useHasSelectableSelection = () => {
     });
 };
 
+// Collapse/expand accept ANY selected node (Result included), so they only need something -- anything -- selected.
+const useHasSelection = () => {
+    const selectionRef = Session.useSelectionRef();
+    return [...selectionRef.current].some((key) => key.startsWith("node_"));
+};
+
 // Shared LOGIC only (not layout) for the selection-wide context-menu actions. Each returned handler is a ready
 // onClick that: snapshots the selection, closes the popup, then runs -- capturing BEFORE close matters because
 // closing restores focus to whatever was focused when the menu opened, which can self-select a node and shrink
@@ -37,6 +43,8 @@ export const useSelectionActions = (close: () => void) => {
     const selectionRef = Session.useSelectionRef();
     const selectMethods = Session.useSelectionMethods();
     const subgraphEditor = useSubgraphEditor();
+    const { setMany } = Project.useUiStateMethods();
+    const graphId = useGraphId();
 
     return useMemo(() => {
         const getSelectedIds = () => [...selectionRef.current].filter((key) => key.startsWith("node_")).map((key) => key.substring(5));
@@ -72,14 +80,27 @@ export const useSelectionActions = (close: () => void) => {
             }),
             moveToSubgraph: make((ids) => extractToSubgraph(ids, false)),
             copyToSubgraph: make((ids) => extractToSubgraph(ids, true)),
+            collapseSelected: make((ids) =>
+                setMany(
+                    ids.map((id) => `node_accordion[${graphId}][${id}]`),
+                    true,
+                ),
+            ),
+            expandSelected: make((ids) =>
+                setMany(
+                    ids.map((id) => `node_accordion[${graphId}][${id}]`),
+                    undefined,
+                ),
+            ),
         };
-    }, [close, cloneManyNodes, removeManyNodes, makeSubgraphFromSelection, copySelection, cutSelection, selectionRef, selectMethods, subgraphEditor]);
+    }, [close, cloneManyNodes, removeManyNodes, makeSubgraphFromSelection, copySelection, cutSelection, selectionRef, selectMethods, subgraphEditor, setMany, graphId]);
 };
 
 // The per-node menu. Author its options freely here -- order and formatting are entirely local to this component.
 export const NodeContextMenu = ({ controls, onClone, onDelete }: { controls: ContextControls; onClone: () => void; onDelete: () => void }) => {
     const sel = useSelectionActions(controls.close);
     const hasSelectable = useHasSelectableSelection();
+    const hasSelection = useHasSelection();
     const cloneAndClose = () => {
         onClone();
         controls.close();
@@ -102,6 +123,12 @@ export const NodeContextMenu = ({ controls, onClone, onDelete }: { controls: Con
             </Row>
             <Titlebar data-flavour={"accent"}>Selected Nodes</Titlebar>
             <Row>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.collapseSelected} tooltip={"Collapse"}>
+                    <Icon shape={ICONS.Collapse} />
+                </ActionButton.Option>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.expandSelected} tooltip={"Expand"}>
+                    <Icon shape={ICONS.Expand} />
+                </ActionButton.Option>
                 <ActionButton.Option disabled={!hasSelectable} onClick={sel.cloneSelected} tooltip={"Clone"}>
                     <Icon shape={ICONS.Clone} />
                 </ActionButton.Option>
@@ -129,6 +156,7 @@ export const NodeContextMenu = ({ controls, onClone, onDelete }: { controls: Con
 export const PaneContextMenu = ({ controls, hasClipboard, onPaste }: { controls: ContextControls; hasClipboard: boolean; onPaste: () => void }) => {
     const sel = useSelectionActions(controls.close);
     const hasSelectable = useHasSelectableSelection();
+    const hasSelection = useHasSelection();
 
     return (
         <ContextPopup controls={controls}>
@@ -139,6 +167,12 @@ export const PaneContextMenu = ({ controls, hasClipboard, onPaste }: { controls:
             </Row>
             <Titlebar data-flavour={"accent"}>Selected Nodes</Titlebar>
             <Row>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.collapseSelected} tooltip={"Collapse"}>
+                    <Icon shape={ICONS.Collapse} />
+                </ActionButton.Option>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.expandSelected} tooltip={"Expand"}>
+                    <Icon shape={ICONS.Expand} />
+                </ActionButton.Option>
                 <ActionButton.Option disabled={!hasSelectable} onClick={sel.cloneSelected} tooltip={"Clone"}>
                     <Icon shape={ICONS.Clone} />
                 </ActionButton.Option>
@@ -181,6 +215,7 @@ export const ContainerContextMenu = ({
 
     const sel = useSelectionActions(controls.close);
     const hasSelectable = useHasSelectableSelection();
+    const hasSelection = useHasSelection();
     const cloneAndClose = () => {
         onClone();
         controls.close();
@@ -211,6 +246,12 @@ export const ContainerContextMenu = ({
             </Row>
             <Titlebar data-flavour={"accent"}>Selected Nodes</Titlebar>
             <Row>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.collapseSelected} tooltip={"Collapse"}>
+                    <Icon shape={ICONS.Collapse} />
+                </ActionButton.Option>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.expandSelected} tooltip={"Expand"}>
+                    <Icon shape={ICONS.Expand} />
+                </ActionButton.Option>
                 <ActionButton.Option disabled={!hasSelectable} onClick={sel.cloneSelected} tooltip={"Clone"}>
                     <Icon shape={ICONS.Clone} />
                 </ActionButton.Option>
@@ -238,11 +279,18 @@ export const ContainerContextMenu = ({
 export const ResultNodeContextMenu = ({ controls }: { controls: ContextControls }) => {
     const sel = useSelectionActions(controls.close);
     const hasSelectable = useHasSelectableSelection();
+    const hasSelection = useHasSelection();
 
     return (
         <ContextPopup controls={controls}>
             <Titlebar data-flavour={"accent"}>Selected Nodes</Titlebar>
             <Row>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.collapseSelected} tooltip={"Collapse"}>
+                    <Icon shape={ICONS.Collapse} />
+                </ActionButton.Option>
+                <ActionButton.Option disabled={!hasSelection} onClick={sel.expandSelected} tooltip={"Expand"}>
+                    <Icon shape={ICONS.Expand} />
+                </ActionButton.Option>
                 <ActionButton.Option disabled={!hasSelectable} onClick={sel.cloneSelected} tooltip={"Clone"}>
                     <Icon shape={ICONS.Clone} />
                 </ActionButton.Option>

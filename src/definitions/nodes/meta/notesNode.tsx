@@ -155,6 +155,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
         cloneNode(nodeId);
     }, [cloneNode, nodeId]);
 
+    const [isClosed, setIsClosed] = Project.useUiState<boolean>(`node_accordion[${graphId}][${nodeId}]`);
+    const toggle = useCallback(() => {
+        setIsClosed((p) => (p ? undefined : true));
+    }, [setIsClosed]);
+
     const style = useMemo(() => {
         return { "--node": `--node_${nodeId}` } as CSSProperties;
     }, [nodeId]);
@@ -165,6 +170,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
         <NoteWrapper position={localPosition} data-moveable={`node_${nodeId}`} onFocus={handleFocus}>
             <div data-part={"body"} style={style} data-node={`--node_${nodeId}`} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
                 <NoteTitle>
+                    <ActionButton.Lite onClick={toggle}>
+                        <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
+                    </ActionButton.Lite>
                     <Icon shape={NODE_ICONS.note} />
                     <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit} onContextMenu={handleContextMenu}>
                         {isEditing ? <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Note"} /> : <span>{displayLabel}</span>}
@@ -173,9 +181,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
                         <Icon shape={ICONS.Close} />
                     </ActionButton.Lite>
                 </NoteTitle>
-                <NoteBody>
-                    <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
-                </NoteBody>
+                {isClosed ? null : (
+                    <NoteBody>
+                        <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
+                    </NoteBody>
+                )}
                 <NodeContextMenu controls={contextControls} onClone={handleClone} onDelete={removeNode} />
             </div>
         </NoteWrapper>

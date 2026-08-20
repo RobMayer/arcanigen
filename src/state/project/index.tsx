@@ -578,6 +578,26 @@ export namespace Project {
         return [useSyncExternalStore(ctx.uiState.subscribe, selector), set] as [T | undefined, typeof set];
     };
 
+    // Set many UI-state keys at once (undefined value deletes the key). One notify for the whole batch.
+    export const useUiStateMethods = () => {
+        const ctx = useContext(CTX)!;
+        return useMemo(
+            () => ({
+                setMany: (keys: string[], value: unknown) => {
+                    for (const key of keys) {
+                        if (value === undefined) {
+                            delete ctx.uiState.ref.current[key];
+                        } else {
+                            ctx.uiState.ref.current[key] = value;
+                        }
+                    }
+                    ctx.uiState.notify();
+                },
+            }),
+            [ctx],
+        );
+    };
+
     export type SavedProject = {
         version: number;
         nodes: NodesType;
