@@ -243,6 +243,16 @@ export namespace Project {
                     });
                     return result;
                 },
+                copySelection: (nodeIds: string[]) => ctx.mc.copySelection(graphId, nodeIds),
+                cutSelection: (nodeIds: string[]) => ctx.mc.run(() => ctx.mc.cutSelection(graphId, nodeIds)),
+                pasteFromClipboard: (position: { x: number; y: number }) => {
+                    let result: string[] = [];
+                    ctx.mc.run(() => {
+                        result = ctx.mc.pasteFromClipboard(graphId, position);
+                    });
+                    return result;
+                },
+                hasClipboard: () => ctx.mc.hasClipboard(),
                 interjectNode: (linkId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: { x: number; y: number }) => {
                     let result = false;
                     ctx.mc.run(() => {

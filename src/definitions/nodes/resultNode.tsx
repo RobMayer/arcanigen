@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { NodeIcon, Icon, ICONS, NODE_ICONS } from "../../components/Icon";
 import { Resolver } from "../../util/resolver";
-import { CSSProperties, FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { CSSProperties, FocusEvent, KeyboardEvent, ReactNode, useCallback, useMemo, useRef, useState, MouseEvent } from "react";
 import styled from "styled-components";
 
 import { DragMove } from "../../components/wrappers/DragMove";
@@ -18,6 +18,8 @@ import { TextInput } from "../../components/inputs/TextInput";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { signature, SignatureBuilder } from "../helpers/signatureBuilder";
 import { SignatureEngine } from "../helpers/signatureEngine";
+import { ContextPopup } from "../../components/popups/ContextPopup";
+import { ResultNodeContextMenu } from "../../features/nodeview/contextMenus";
 
 const def = signature({
     in: { input: "shape", w: "length", h: "length", x: "length", y: "length", color: "color" },
@@ -160,6 +162,24 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
         return { "--node": `--node_${nodeId}` } as CSSProperties;
     }, [nodeId]);
 
+    const contextControls = ContextPopup.useControls();
+
+    const [, nodePaneControls] = useDragPaneInternal();
+    const handleContextMenu = useCallback(
+        (evt: MouseEvent<HTMLDivElement>) => {
+            const paneElement = nodePaneControls.paneRef().current;
+            if (paneElement) {
+                evt.preventDefault();
+                const rect = paneElement.getBoundingClientRect();
+                const { x: panX, y: panY, z } = nodePaneControls.get();
+                const offsetX = rect.left + rect.width / 2 + panX * z;
+                const offsetY = rect.top + rect.height / 2 + panY * z;
+                contextControls.openAt((evt.clientX - offsetX) / z, (evt.clientY - offsetY) / z);
+            }
+        },
+        [contextControls, nodePaneControls],
+    );
+
     return (
         <ResultWrapper position={localPosition} data-moveable={`node_${nodeId}`} onFocus={handleFocus}>
             <div data-part={"body"} style={style} data-state={isSelected ? "selected" : undefined} data-selectable={`node_${nodeId}`}>
@@ -168,7 +188,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
                     <ActionButton.Lite onClick={toggle} flavour={"inherit"}>
                         <Icon shape={isClosed ? ICONS.Caret.Right : ICONS.Caret.Down} />
                     </ActionButton.Lite>
-                    <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit}>
+                    <div data-part={"handle"} ref={handleRef} onDoubleClick={startEdit} onContextMenu={handleContextMenu}>
                         <NodeIcon shape={NODE_ICONS.result} />
                         {isEditing ? (
                             <TextInput value={node.payload.label} onCommit={finishEdit} onKeyDown={onKeyPress} onBlur={onBlur} autoFocus placeholder={"Result"} />
@@ -205,6 +225,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ResultDefin
                     </ResultSlots>
                 )}
             </div>
+            <ResultNodeContextMenu controls={contextControls} />
         </ResultWrapper>
     );
 };

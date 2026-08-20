@@ -14,7 +14,8 @@ import { Project } from "../../../state/project";
 import { Session } from "../../../state/session";
 import { Resolver } from "../../../util/resolver";
 import { useGraphId } from "../../../state/graphId";
-import { Flavour, FLAVOUR_LABELS } from "../../../components/types";
+import { Flavour } from "../../../components/types";
+import { ContainerContextMenu } from "../../../features/nodeview/contextMenus";
 import { useDragPaneInternal } from "../../../components/wrappers/DragPane";
 import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
@@ -145,12 +146,16 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
     const nodeId = node.id;
     const { update: updateNode, remove: removeNode } = methods;
     const graphId = useGraphId();
+    const { cloneNode } = Project.useMethods();
     const [storedPosition, setPosition] = Project.usePositionOf(graphId, nodeId);
     const handleRef = useRef<HTMLDivElement>(null);
     const selectionRef = Session.useSelectionRef();
     const positionsRef = Project.usePositionsRef();
     const positionMethods = Project.usePositionMethods();
     const selectMethods = Session.useSelectionMethods();
+    const handleClone = useCallback(() => {
+        cloneNode(nodeId);
+    }, [cloneNode, nodeId]);
 
     const bodyRef = useRef<HTMLDivElement>(null);
     const containedNodesRef = useRef<Set<string> | null>(null);
@@ -268,15 +273,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
     const handleSetFlavour = useCallback(
         (flavour: ContainerDefinition["payload"]["flavour"]) => {
             handleUpdate({ flavour });
-            contextControls.close();
         },
-        [handleUpdate, contextControls],
+        [handleUpdate],
     );
-
-    const handleDeleteAndClose = useCallback(() => {
-        removeNode();
-        contextControls.close();
-    }, [removeNode, contextControls]);
 
     const startEdit = useCallback(() => {
         setIsEditing(true);
@@ -333,17 +332,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<ContainerDe
                                 </ActionButton.Lite>
                             </div>
                         </ContainerTitle>
-                        <ContextPopup controls={contextControls}>
-                            {(Object.entries(FLAVOUR_LABELS) as [ContainerDefinition["payload"]["flavour"], string][]).map(([key, name]) => (
-                                <ActionButton.Option key={key} flavour={key === "base" ? undefined : key} onClick={() => handleSetFlavour(key)}>
-                                    {name}
-                                </ActionButton.Option>
-                            ))}
-                            <hr />
-                            <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
-                                Delete
-                            </ActionButton.Option>
-                        </ContextPopup>
+                        <ContainerContextMenu controls={contextControls} onSetFlavour={handleSetFlavour} onDelete={removeNode} onClone={handleClone} />
                     </ContainerContent>
                     <EdgeHandle data-resize="cr" />
                     <EdgeHandle data-resize="bl" />

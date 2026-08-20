@@ -1,4 +1,4 @@
-import { CSSProperties, StrictMode, useCallback, useMemo, useRef, useState } from "react";
+import { CSSProperties, StrictMode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Project } from "./state/project";
 import { GraphView } from "./features/primary";
@@ -49,6 +49,18 @@ const Primary = () => {
     }, []);
 
     const graphPaneControls = useDragPane();
+
+    // Suppress the native browser context menu app-wide so our own menus own right-click -- except on editable
+    // fields, where the native menu (spellcheck, copy/paste) is still wanted.
+    useEffect(() => {
+        const onContextMenu = (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement | null;
+            if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+            evt.preventDefault();
+        };
+        document.addEventListener("contextmenu", onContextMenu);
+        return () => document.removeEventListener("contextmenu", onContextMenu);
+    }, []);
 
     return (
         <Layout ref={layoutRef} style={style} data-state={isDrawerOpen ? "drawer-open" : undefined}>

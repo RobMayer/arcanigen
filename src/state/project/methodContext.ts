@@ -24,11 +24,22 @@ export type StateRefs = {
 
 type DirtyKey = "nodes" | "nodeList" | "links" | "linkList" | "positions" | "users" | "interfaces" | "cache" | "deps" | "meta" | "socketTypes";
 
+// In-memory clipboard for cut/copy/paste. Node objects are snapshots (sockets cleared); links are the internal
+// links (both endpoints in the copied set), referencing the ORIGINAL node ids; positions are absolute at copy
+// time. Deliberately NOT serialized to the system clipboard -- referenced subgraphs wouldn't survive a paste
+// into a different project/window.
+type ClipboardData = {
+    nodes: NodeDefinitions.NodeFor<NodeDefinitions.Any>[];
+    links: { fromNode: string; toNode: string; fromSocket: string; toSocket: string }[];
+    positions: { [nodeId: string]: XY };
+};
+
 export class MethodContextImpl implements NodeTypes.MethodContext {
     private dirty = new Set<DirtyKey>();
     private dirtyNodeGraphs = new Set<string>();
     private dirtyLinkGraphs = new Set<string>();
     private depth = 0;
+    private clipboard: ClipboardData | null = null;
 
     constructor(private refs: StateRefs) {}
 
@@ -554,6 +565,115 @@ export class MethodContextImpl implements NodeTypes.MethodContext {
         this.dirty.add("cache");
 
         return true;
+    }
+
+    hasClipboard(): boolean {
+        return this.clipboard !== null && this.clipboard.nodes.length > 0;
+    }
+
+    // Snapshot the eligible nodes (Result excluded) plus their internal links and positions into the clipboard.
+    // Returns the ids actually captured (so cutSelection removes exactly those).
+    copySelection(graphId: string, nodeIds: string[]): string[] {
+        const nodes = this.refs.nodes.ref.current[graphId];
+        if (!nodes) return [];
+
+        const eligible = nodeIds.filter((id) => nodes[id] && nodes[id].type !== "result");
+        if (eligible.length === 0) return [];
+        const eligibleSet = new Set(eligible);
+
+        const cloned = eligible.map((id) => {
+            const copy = structuredClone(nodes[id]);
+            for (const key of Object.keys(copy.in)) copy.in[key] = null;
+            for (const key of Object.keys(copy.out)) copy.out[key] = [];
+            return copy;
+        });
+        const links = this.refs.links.ref.current[graphId] ?? {};
+        const internal = Object.values(links)
+            .filter((link) => eligibleSet.has(link.fromNode) && eligibleSet.has(link.toNode))
+            .map(({ fromNode, toNode, fromSocket, toSocket }) => ({ fromNode, toNode, fromSocket, toSocket }));
+        const positionsRef = this.refs.positions.ref.current[graphId] ?? {};
+        const positions: { [id: string]: XY } = {};
+        for (const id of eligible) positions[id] = positionsRef[id] ?? { x: 0, y: 0 };
+
+        this.clipboard = { nodes: cloned, links: internal, positions };
+        return eligible;
+    }
+
+    cutSelection(graphId: string, nodeIds: string[]): void {
+        const captured = this.copySelection(graphId, nodeIds);
+        for (const id of captured) {
+            this.removeNode(graphId, id);
+        }
+    }
+
+    // Paste the clipboard into `graphId`, centered on `position`. Fresh ids everywhere; internal links recreated.
+    // When pasting onto the root graph, rootRestricted nodes (Input/Output interface nodes) are skipped, along
+    // with any link touching them. Returns the new node ids.
+    pasteFromClipboard(graphId: string, position: XY): string[] {
+        const cb = this.clipboard;
+        if (!cb || cb.nodes.length === 0) return [];
+
+        const toRoot = graphId === "root";
+        const surviving = cb.nodes.filter((node) => !(toRoot && NodeTypes.get(node.type).rootRestricted));
+        if (surviving.length === 0) return [];
+
+        const idMap = new Map<string, string>();
+        const fresh = surviving.map((node) => {
+            const copy = structuredClone(node);
+            copy.id = nanoid();
+            for (const key of Object.keys(copy.in)) copy.in[key] = null;
+            for (const key of Object.keys(copy.out)) copy.out[key] = [];
+            idMap.set(node.id, copy.id);
+            return copy;
+        });
+
+        // Center the group on `position`, preserving relative layout.
+        let cx = 0;
+        let cy = 0;
+        for (const node of surviving) {
+            const p = cb.positions[node.id] ?? { x: 0, y: 0 };
+            cx += p.x;
+            cy += p.y;
+        }
+        cx /= surviving.length;
+        cy /= surviving.length;
+        const newPositions: { [id: string]: XY } = {};
+        for (const node of surviving) {
+            const p = cb.positions[node.id] ?? { x: 0, y: 0 };
+            newPositions[idMap.get(node.id)!] = { x: position.x + (p.x - cx), y: position.y + (p.y - cy) };
+        }
+
+        const graph = { nodes: this.refs.nodes.ref.current[graphId], links: this.refs.links.ref.current[graphId] };
+        this.refs.nodes.ref.current = { ...this.refs.nodes.ref.current, [graphId]: ArcaneGraph.importNodes(graph, fresh).nodes };
+        this.dirty.add("nodes");
+        this.dirtyNodeGraphs.add(graphId);
+        this.refs.positions.ref.current = {
+            ...this.refs.positions.ref.current,
+            [graphId]: { ...this.refs.positions.ref.current[graphId], ...newPositions },
+        };
+        this.dirty.add("positions");
+
+        for (const node of fresh) {
+            const nodeType = NodeTypes.get(node.type);
+            if (nodeType.onCreate) {
+                const onCreate = nodeType.onCreate as (node: NodeDefinitions.NodeFor<NodeDefinitions.Any>, graphId: string, ctx: NodeTypes.MethodContext) => void;
+                onCreate(node, graphId, this);
+            }
+        }
+
+        // Recreate internal links (endpoints remapped); links touching a skipped node are dropped automatically.
+        for (const link of cb.links) {
+            const from = idMap.get(link.fromNode);
+            const to = idMap.get(link.toNode);
+            if (from && to) this.connect(graphId, from, to, link.fromSocket, link.toSocket);
+        }
+
+        for (const node of fresh) {
+            this.refs.cache.ref.current = rebuildDownstream(this.refs.cache.ref.current, this.refs.nodes.ref.current, this.refs.links.ref.current, this.refs.interfaces.ref.current, graphId, node.id);
+        }
+        this.dirty.add("cache");
+
+        return fresh.map((node) => node.id);
     }
 
     addNodeByType(graphId: string, nodeType: NodeTypes.Any, params: Partial<NodeDefinitions.PayloadTypeOf<NodeDefinitions.Generic>>, position?: XY): void {

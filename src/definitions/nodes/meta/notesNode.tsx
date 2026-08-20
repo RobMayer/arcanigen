@@ -10,6 +10,7 @@ import { AbstractInput } from "../../../components/abstract/Inputs";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { ContextPopup } from "../../../components/popups/ContextPopup";
+import { NodeContextMenu } from "../../../features/nodeview/contextMenus";
 import { Project } from "../../../state/project";
 import { Session } from "../../../state/session";
 import { Resolver } from "../../../util/resolver";
@@ -152,13 +153,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
 
     const handleClone = useCallback(() => {
         cloneNode(nodeId);
-        contextControls.close();
-    }, [cloneNode, nodeId, contextControls]);
-
-    const handleDeleteAndClose = useCallback(() => {
-        removeNode();
-        contextControls.close();
-    }, [removeNode, contextControls]);
+    }, [cloneNode, nodeId]);
 
     const style = useMemo(() => {
         return { "--node": `--node_${nodeId}` } as CSSProperties;
@@ -181,12 +176,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<NotesDefini
                 <NoteBody>
                     <NoteTextArea value={node.payload.text} onCommit={(text) => handleUpdate({ text })} />
                 </NoteBody>
-                <ContextPopup controls={contextControls}>
-                    <ActionButton.Option onClick={handleClone}>Clone</ActionButton.Option>
-                    <ActionButton.Option flavour={"danger"} onClick={handleDeleteAndClose}>
-                        Delete
-                    </ActionButton.Option>
-                </ContextPopup>
+                <NodeContextMenu controls={contextControls} onClone={handleClone} onDelete={removeNode} />
             </div>
         </NoteWrapper>
     );

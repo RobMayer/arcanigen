@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { Project } from "../state/project";
-import { DragEvent as ReactDragEvent, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DragPane, DragPaneControls } from "../components/wrappers/DragPane";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
@@ -11,6 +11,27 @@ import { GraphIdContext } from "../state/graphId";
 import { GraphLink } from "./nodeview/link";
 import { NODE_DRAG_MIME } from "./nodedrawer";
 import { NodeTypes } from "../definitions/nodeTypes";
+import { ContextPopup } from "../components/popups/ContextPopup";
+import { PaneContextMenu } from "./nodeview/contextMenus";
+
+// Multiple GraphViews can be mounted at once (root + an open subgraph modal), and each attaches document-level
+// keyboard handlers. This stack tracks mount order so only the topmost (most-recently-mounted, still-mounted)
+// pane responds -- otherwise the hidden root pane would also act on Delete/Cut/Paste against the shared selection.
+const panePositionStack: object[] = [];
+
+const useIsTopmostPane = () => {
+    const tokenRef = useRef<object | null>(null);
+    if (!tokenRef.current) tokenRef.current = {};
+    useEffect(() => {
+        const token = tokenRef.current!;
+        panePositionStack.push(token);
+        return () => {
+            const idx = panePositionStack.indexOf(token);
+            if (idx !== -1) panePositionStack.splice(idx, 1);
+        };
+    }, []);
+    return useCallback(() => panePositionStack[panePositionStack.length - 1] === tokenRef.current, []);
+};
 
 export const GraphView = ({ graphId, paneControls }: { graphId: string; paneControls?: DragPaneControls }) => {
     return (
@@ -55,15 +76,54 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
 
     const [selectionAction, setSelectionAction] = useState<SelectionAction>("set");
 
-    const { addNodeByType, removeNode } = Project.useMethods();
+    const { addNodeByType, removeNode, copySelection, cutSelection, pasteFromClipboard, hasClipboard } = Project.useMethods();
     const selectionRef = Session.useSelectionRef();
+    const selectMethods = Session.useSelectionMethods();
     const nodesRef = Project.useNodesRef();
+    const isTopmostPane = useIsTopmostPane();
+
+    const paneMenuControls = ContextPopup.useControls();
+    const pastePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [paneMenuFlags, setPaneMenuFlags] = useState({ hasSelection: false, hasClipboard: false });
+
+    const handlePaneContextMenu = useCallback(
+        (evt: ReactMouseEvent<HTMLElement>) => {
+            // Only for empty space -- on a node, let that node's own handle menu (or nothing) handle it.
+            if ((evt.target as HTMLElement).closest("[data-selectable]")) return;
+            const paneEl = paneRef.current;
+            if (!paneEl || !paneControls) return;
+
+            let hasSelection = false;
+            for (const sel of selectionRef.current) {
+                if (sel.startsWith("node_") && nodesRef.current[graphId]?.[sel.substring(5)]) {
+                    hasSelection = true;
+                    break;
+                }
+            }
+            evt.preventDefault();
+            const rect = paneEl.getBoundingClientRect();
+            const { x: panX, y: panY, z: zoom } = paneControls.get();
+            const graphX = (evt.clientX - rect.left - rect.width / 2) / zoom - panX;
+            const graphY = (evt.clientY - rect.top - rect.height / 2) / zoom - panY;
+            pastePositionRef.current = { x: graphX, y: graphY };
+            setPaneMenuFlags({ hasSelection, hasClipboard: hasClipboard() });
+            paneMenuControls.openAt(graphX, graphY);
+        },
+        [paneControls, selectionRef, nodesRef, graphId, hasClipboard, paneMenuControls],
+    );
+
+    const handlePasteAndClose = useCallback(() => {
+        paneMenuControls.close();
+        const pasted = pasteFromClipboard(pastePositionRef.current);
+        if (pasted.length > 0) selectMethods.set(pasted.map((id) => `node_${id}`));
+    }, [paneMenuControls, pasteFromClipboard, selectMethods]);
 
     useEffect(() => {
         const onDeleteKey = (evt: KeyboardEvent) => {
             if (evt.key !== "Delete") return;
             const active = document.activeElement;
             if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || (active as HTMLElement).isContentEditable)) return;
+            if (!isTopmostPane()) return;
 
             const toDelete: string[] = [];
             for (const id of selectionRef.current) {
@@ -83,7 +143,46 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
 
         document.addEventListener("keydown", onDeleteKey);
         return () => document.removeEventListener("keydown", onDeleteKey);
-    }, [removeNode, selectionRef, nodesRef, graphId]);
+    }, [removeNode, selectionRef, nodesRef, graphId, isTopmostPane]);
+
+    useEffect(() => {
+        const onClipboardKey = (evt: KeyboardEvent) => {
+            if (!(evt.ctrlKey || evt.metaKey)) return;
+            const key = evt.key.toLowerCase();
+            if (key !== "c" && key !== "x" && key !== "v") return;
+            const active = document.activeElement;
+            if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || (active as HTMLElement).isContentEditable)) return;
+            if (!isTopmostPane()) return;
+
+            if (key === "v") {
+                evt.preventDefault();
+                const pan = paneControls?.get();
+                const position = pan ? { x: -pan.x, y: -pan.y } : { x: 0, y: 0 };
+                const pasted = pasteFromClipboard(position);
+                if (pasted.length > 0) selectMethods.set(pasted.map((id) => `node_${id}`));
+                return;
+            }
+
+            // Copy / Cut: gather the selected nodes that live in this graph (Result is filtered by the methods).
+            const ids: string[] = [];
+            for (const sel of selectionRef.current) {
+                if (!sel.startsWith("node_")) continue;
+                const nodeId = sel.substring(5);
+                if (nodesRef.current[graphId]?.[nodeId]) ids.push(nodeId);
+            }
+            if (ids.length === 0) return;
+            evt.preventDefault();
+            if (key === "c") {
+                copySelection(ids);
+            } else {
+                cutSelection(ids);
+                selectMethods.clear();
+            }
+        };
+
+        document.addEventListener("keydown", onClipboardKey);
+        return () => document.removeEventListener("keydown", onClipboardKey);
+    }, [copySelection, cutSelection, pasteFromClipboard, selectionRef, selectMethods, nodesRef, graphId, paneControls, isTopmostPane]);
 
     const handleDragOver = useCallback((e: ReactDragEvent) => {
         if (!e.dataTransfer.types.includes(NODE_DRAG_MIME)) return;
@@ -130,6 +229,7 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
                 controls={paneControls}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                onContextMenu={handlePaneContextMenu}
             >
                 <GraphConnectionProvider graphId={graphId}>
                     <NodeWrapper>
@@ -142,6 +242,7 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
                     <Links />
                 </GraphConnectionProvider>
                 <Bounds ref={boundsRef} nodeList={nodes} />
+                <PaneContextMenu controls={paneMenuControls} hasSelection={paneMenuFlags.hasSelection} hasClipboard={paneMenuFlags.hasClipboard} onPaste={handlePasteAndClose} />
             </GraphViewPane>
             <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
         </>
