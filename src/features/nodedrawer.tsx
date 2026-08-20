@@ -172,12 +172,19 @@ export const NodeDrawer = ({ graphId, paneControls, isOpen, onOpenToggle }: { gr
         [toggleCategory],
     );
 
+    const handleClearSearch = useCallback(() => {
+        setSearchFilter("");
+    }, []);
+
     return (
         <GraphIdContext value={graphId}>
             <LocalAccordion title={"Add Nodes"} isOpen={isOpen} onOpenChange={onOpenToggle} iconClosed={ICONS.Caret.Up}>
                 <Pane>
                     <SearchBar>
-                        <TextInput value={searchFilter} onValue={setSearchFilter} placeholder="Search..." />
+                        <TextInput className={"input"} value={searchFilter} onValue={setSearchFilter} placeholder="Search..." />
+                        <ActionButton.Lite className={"clear"} onClick={handleClearSearch} disabled={searchFilter === ""} flavour={"danger"}>
+                            <Icon shape={ICONS.Close} />
+                        </ActionButton.Lite>
                     </SearchBar>
                     <SortOptions>
                         <RadioButton target={"groupAscending"} value={sort} onValue={setSort} tooltip={"by Category (Ascending)"}>
@@ -244,7 +251,19 @@ const CreateRow = styled.div`
 
 const SearchBar = styled.div`
     grid-area: filter;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
+
+    & > .input {
+        grid-column: 1 / span 2;
+        grid-row: 1;
+    }
+
+    & > .clear {
+        grid-column: 2;
+        grid-row: 1;
+        margin-inline: 0.5em;
+    }
 `;
 
 const SortOptions = styled.div`
