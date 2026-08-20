@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-08-20"} version={"3.5.6"}>
+                <Improvement>Aded "Clone Selection", "Copy Selected to new Custom Node", "Move Selected to new Custom Node", and "Delete Selected" to node right-click menu.</Improvement>
+            </Build>
             <Build date={"2026-08-18"} version={"3.5.5"}>
                 <Feature>added Path Group node</Feature>
                 <Improvement>cleaned up some node layouts</Improvement>
