@@ -10,7 +10,7 @@ import { NODE_DRAG_MIME, NODE_TYPE_MIME_PREFIX } from "../nodedrawer";
 import { useGraphId } from "../../state/graphId";
 import { useDragPaneInternal } from "../../components/wrappers/DragPane";
 
-// Grab-to-reconnect: pressing the wire within this graph-space radius of a socket detaches that end.
+// Grab-to-reconnect: length (screen px, along the wire) of each socket end's dashed grab handle.
 const GRAB_RADIUS = 45;
 // How far the pointer must travel (screen px) before an armed grab commits, so a plain click still focuses.
 const GRAB_DRAG_THRESHOLD = 4;
@@ -59,6 +59,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const toMarkerRef = useRef<HTMLDivElement>(null);
     const pathContainer = useRef<SVGPathElement>(null);
     const targetPathRef = useRef<SVGPathElement>(null);
+    const leadingPathRef = useRef<SVGPathElement>(null);
+    const trailingPathRef = useRef<SVGPathElement>(null);
 
     const onResize = useCallback(
         (entry: ResizeObserverEntry) => {
@@ -87,36 +89,21 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         removeLinks(linkId);
     }, [removeLinks, linkId]);
 
-    // Grab-to-reconnect: press the wire near one of its socket ends and drag -> that end detaches and a
-    // pending connection starts from the OTHER socket, following the cursor onto a new target. A plain
-    // click (no drag), or a press away from either end, falls through to the normal focus/delete behavior.
+    // Grab-to-reconnect: each socket end has a short dashed "handle" whose invisible, wider target-* twin
+    // (GRAB_RADIUS px long, hit-tested by the browser via pointer-events:stroke on the dash) is the grab
+    // region. Pressing a handle and dragging detaches THAT end and starts a pending connection from the
+    // OTHER socket, which then follows the cursor. A press without a drag focuses the link (delete button).
     useEffect(() => {
-        const path = targetPathRef.current;
-        if (!path || !link) {
+        const fromHandle = leadingPathRef.current; // hugs the FROM socket (--theD)
+        const toHandle = trailingPathRef.current; // hugs the TO socket (--theDR)
+        if (!fromHandle || !toHandle || !link) {
             return;
         }
-        const onPointerDown = (evt: globalThis.PointerEvent) => {
+        // The grabbed handle detaches its own end; the pending connection anchors at the FAR socket.
+        const arm = (anchor: { node: string; socket: string; side: "in" | "out" }) => (evt: globalThis.PointerEvent) => {
             if (evt.button !== 0 || evt.handled) {
                 return;
             }
-            const fromEl = fromMarkerRef.current;
-            const toEl = toMarkerRef.current;
-            if (!fromEl || !toEl) {
-                return;
-            }
-            const zoom = paneControls.get().z;
-            const fr = fromEl.getBoundingClientRect();
-            const tr = toEl.getBoundingClientRect();
-            const dFrom = Math.hypot(evt.clientX - fr.left, evt.clientY - fr.top);
-            const dTo = Math.hypot(evt.clientX - tr.left, evt.clientY - tr.top);
-            if (Math.min(dFrom, dTo) > GRAB_RADIUS * zoom) {
-                return; // not near an end -> let the click focus the link (delete button)
-            }
-
-            // Anchor the pending connection at the FAR end; the near end is the one being detached.
-            const anchor: { node: string; socket: string; side: "in" | "out" } =
-                dFrom <= dTo ? { node: link.toNode, socket: link.toSocket, side: "in" } : { node: link.fromNode, socket: link.fromSocket, side: "out" };
-
             evt.handled = "active"; // suppress the pane's marquee/pan on this press
             evt.preventDefault();
             const startX = evt.clientX;
@@ -140,15 +127,39 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             const onUp = () => {
                 cleanup();
                 if (!grabbed) {
-                    ref.current?.focus(); // click-without-drag near an end still exposes the delete button
+                    ref.current?.focus(); // press-without-drag still exposes the delete button
                 }
             };
             document.addEventListener("pointermove", onMove);
             document.addEventListener("pointerup", onUp);
         };
-        path.addEventListener("pointerdown", onPointerDown);
-        return () => path.removeEventListener("pointerdown", onPointerDown);
-    }, [link, linkId, removeLinks, connectionContext, paneControls]);
+
+        const onFromDown = arm({ node: link.toNode, socket: link.toSocket, side: "in" });
+        const onToDown = arm({ node: link.fromNode, socket: link.fromSocket, side: "out" });
+        fromHandle.addEventListener("pointerdown", onFromDown);
+        toHandle.addEventListener("pointerdown", onToDown);
+        return () => {
+            fromHandle.removeEventListener("pointerdown", onFromDown);
+            toHandle.removeEventListener("pointerdown", onToDown);
+        };
+    }, [link, linkId, removeLinks, connectionContext]);
+
+    // Mid-wire press (past both grab handles) selects the link so its delete button shows.
+    useEffect(() => {
+        const target = targetPathRef.current;
+        if (!target || !link) {
+            return;
+        }
+        const onPointerDown = (evt: globalThis.PointerEvent) => {
+            if (evt.button !== 0 || evt.handled) {
+                return;
+            }
+            evt.handled = "active";
+            ref.current?.focus();
+        };
+        target.addEventListener("pointerdown", onPointerDown);
+        return () => target.removeEventListener("pointerdown", onPointerDown);
+    }, [link]);
 
     const handleKeyDown = useCallback(
         (evt: KeyboardEvent<unknown>) => {
@@ -243,11 +254,12 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             >
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
-                        <path data-part={"target"} d="" ref={targetPathRef} />
-                        <path data-part={"select"} d="" />
-                        <path data-part={"display"} d="" />
-                        <path data-part={"leading"} d="" />
-                        <path data-part={"trailing"} d="" />
+                        <path data-part={"target-wire"} d="" ref={targetPathRef} />
+                        <path data-part={"target-leading"} d="" ref={leadingPathRef} />
+                        <path data-part={"target-trailing"} d="" ref={trailingPathRef} />
+                        <path data-part={"display-wire"} d="" />
+                        <path data-part={"display-leading"} d="" />
+                        <path data-part={"display-trailing"} d="" />
                         <path data-part={"effect"} d="" />
                     </g>
                 </svg>
@@ -306,6 +318,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     }
 
     overflow: visible;
+    --width: 3px;
     & > svg {
         z-index: 0;
         position: absolute;
@@ -317,77 +330,72 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             d: var(--theD);
             vector-effect: non-scaling-stroke;
             fill: none;
+            stroke: none;
             pointer-events: none;
 
-            &[data-part="display"] {
-                stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
-                stroke-width: 3px;
-            }
-            &[data-part="leading"] {
-                stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
-                stroke-width: 6px;
-                stroke-dasharray: ${GRAB_RADIUS}px calc(infinity * 1px);
-                stroke-linecap: round;
-            }
-            &[data-part="trailing"] {
+            /* trailing halves run end -> start so their dash hugs the TO socket */
+            &[data-part$="-trailing"] {
                 d: var(--theDR);
+            }
+
+            /* display-* are the visible strokes; target-* are their invisible, wider, grabbable twins */
+            &[data-part^="display-"] {
                 stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
-                stroke-width: 6px;
-                stroke-dasharray: ${GRAB_RADIUS}px calc(infinity * 1px);
-                stroke-linecap: round;
             }
-            &[data-part="effect"] {
-                stroke: none;
-                stroke-width: 2px;
-            }
-            &[data-part="target"] {
+            &[data-part^="target-"] {
                 stroke: transparent;
-                stroke-width: 9px;
                 pointer-events: stroke;
+            }
+
+            &[data-part="display-wire"] {
+                stroke-width: var(--width);
+            }
+            &[data-part="target-wire"] {
+                stroke-width: calc(var(--width) + 6px);
                 cursor: pointer;
             }
-            &[data-part="select"] {
-                stroke: #000;
-                stroke-width: 5px;
+
+            /* end handles: a single GRAB_RADIUS-long dash hugging each socket */
+            &[data-part$="-leading"],
+            &[data-part$="-trailing"] {
+                stroke-dasharray: ${GRAB_RADIUS}px calc(infinity * 1px);
+                stroke-linecap: round;
+                cursor: col-resize;
+            }
+            &[data-part="display-leading"],
+            &[data-part="display-trailing"] {
+                stroke-width: calc((var(--width) + 3px));
+            }
+            &[data-part="target-leading"],
+            &[data-part="target-trailing"] {
+                stroke-width: calc((var(--width) + 9px));
+            }
+
+            &[data-part="effect"] {
+                stroke-width: calc(var(--width) - 4px);
             }
         }
     }
 
-    &[data-linktype*=" array<"] > svg > g > path[data-part="display"] {
-        stroke-width: 4px;
-    }
-    &[data-linktype*=" array<"] > svg > g > path[data-part="select"] {
-        stroke-width: 6px;
-    }
-    &[data-linktype*=" array<"] > svg > g > path[data-part="trailing"],
-    &[data-linktype*=" array<"] > svg > g > path[data-part="leading"] {
-        stroke-width: 6px;
+    &[data-linktype*=" array<"] {
+        --width: 6px;
     }
 
-    &[data-linktype*=" loopFor<"] > svg > g > path {
-        &[data-part="display"] {
-            stroke-width: 6px;
-        }
-        &[data-part="effect"] {
-            --animMarch: 12px;
-            animation: ${keyframesMarch} 0.2s linear infinite reverse;
-            stroke: black;
-            stroke-linecap: round;
-            stroke-dasharray: 4px 8px;
-            stroke-dashoffset: 0px;
-            stroke-width: 4px;
-        }
-        &[data-part="trailing"],
-        &[data-part="leading"] {
-            stroke-width: 8x;
-        }
-        &[data-part="select"] {
-            stroke-width: 8px;
-        }
+    &[data-linktype*=" loopFor<"] {
+        --width: 8px;
     }
 
-    &[data-state~="dropping"] > svg > g > path[data-part="select"],
-    &:focus-within > svg > g > path[data-part="select"] {
+    &[data-linktype*=" loopFor<"] > svg > g > path[data-part="effect"] {
+        --animMarch: 12px;
+        animation: ${keyframesMarch} 0.2s linear infinite reverse;
+        stroke: black;
+        stroke-linecap: round;
+        stroke-dasharray: 4px 8px;
+        stroke-dashoffset: 0px;
+    }
+
+    &[data-state~="dropping"] > svg > g > path[data-part^="display-"],
+    &:focus-within > svg > g > path[data-part^="display-"] {
         stroke: #fff;
     }
 
@@ -432,7 +440,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         --flavour: #c00;
     }
     &[data-linktype~="invalid"] > svg > g > path {
-        &[data-part="display"] {
+        &[data-part="display-wire"] {
             stroke: #f00;
             animation: ${keyframesThrum} 1.6s ease-in-out infinite;
         }
