@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Project } from "../state/project";
 import { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, Ref, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DragPane, DragPaneControls } from "../components/wrappers/DragPane";
+import { DragPaneToolbar } from "../components/wrappers/DragPaneToolbar";
 import { DragMove } from "../components/wrappers/DragMove";
 import { Session } from "../state/session";
 import { useStable } from "../util/hooks/useStable";
@@ -226,6 +227,51 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
         [addNodeByType, paneControls],
     );
 
+    // Screen-space union of the currently-selected nodes' DOM rects, or null when nothing (real) is selected.
+    const computeSelectionRect = useCallback(() => {
+        const paneEl = paneRef.current;
+        if (!paneEl) return null;
+        let left = Infinity;
+        let top = Infinity;
+        let right = -Infinity;
+        let bottom = -Infinity;
+        let found = false;
+        for (const sel of selectionRef.current) {
+            if (!sel.startsWith("node_")) continue;
+            if (!nodesRef.current[graphId]?.[sel.substring(5)]) continue;
+            const el = paneEl.querySelector(`[data-selectable="${sel}"]`);
+            if (!el) continue;
+            const rc = el.getBoundingClientRect();
+            left = Math.min(left, rc.left);
+            top = Math.min(top, rc.top);
+            right = Math.max(right, rc.right);
+            bottom = Math.max(bottom, rc.bottom);
+            found = true;
+        }
+        return found ? { left, top, width: right - left, height: bottom - top } : null;
+    }, [selectionRef, nodesRef, graphId]);
+
+    // The pane's extent/pan helpers take an element; give them a throwaway fixed-position stand-in matching the
+    // selection's on-screen box so we can reuse encompass()/panFor() without a persistent anchored element.
+    const withSelectionElement = useCallback(
+        (fn: (el: HTMLElement) => void) => {
+            const rect = computeSelectionRect();
+            if (!rect) return;
+            const el = document.createElement("div");
+            el.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;visibility:hidden;`;
+            document.body.appendChild(el);
+            try {
+                fn(el);
+            } finally {
+                el.remove();
+            }
+        },
+        [computeSelectionRect],
+    );
+
+    const handleZoomSelected = useCallback(() => withSelectionElement((el) => paneControls?.encompass(el)), [withSelectionElement, paneControls]);
+    const handlePanSelected = useCallback(() => withSelectionElement((el) => paneControls?.panFor(el)), [withSelectionElement, paneControls]);
+
     return (
         <>
             <GraphViewPane
@@ -253,9 +299,24 @@ const GraphMain = ({ paneControls, graphId }: { paneControls?: DragPaneControls;
                 <Bounds ref={boundsRef} nodeList={nodes} />
                 <PaneContextMenu controls={paneMenuControls} hasClipboard={paneMenuFlags.hasClipboard} onPaste={handlePasteAndClose} />
             </GraphViewPane>
+            {paneControls && <GraphPaneToolbar controls={paneControls} graphId={graphId} onZoomSelected={handleZoomSelected} onPanSelected={handlePanSelected} />}
             <MarqueeSelection scopeRef={paneRef} selectionAction={selectionAction} />
         </>
     );
+};
+
+// Isolates the reactive selection subscription to a leaf so a selection change only re-renders the toolbar,
+// not GraphMain and its whole node list. "Selected" actions are disabled unless a node in THIS graph is selected.
+const GraphPaneToolbar = ({ controls, graphId, onZoomSelected, onPanSelected }: { controls: DragPaneControls; graphId: string; onZoomSelected: () => void; onPanSelected: () => void }) => {
+    const nodesRef = Project.useNodesRef();
+    const selection = Session.useSelection();
+    const hasSelection = useMemo(() => {
+        for (const sel of selection) {
+            if (sel.startsWith("node_") && nodesRef.current[graphId]?.[sel.substring(5)]) return true;
+        }
+        return false;
+    }, [selection, nodesRef, graphId]);
+    return <DragPaneToolbar controls={controls} onZoomSelected={onZoomSelected} onPanSelected={onPanSelected} selectedDisabled={!hasSelection} />;
 };
 
 const GraphViewPane = styled(DragPane)`

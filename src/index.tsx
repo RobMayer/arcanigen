@@ -6,6 +6,7 @@ import { Session } from "./state/session";
 import styled from "styled-components";
 import { NodeDrawer } from "./features/nodedrawer";
 import { useDragPane } from "./components/wrappers/DragPane";
+import { DragPaneToolbar } from "./components/wrappers/DragPaneToolbar";
 import { SvgCanvas } from "./features/svgcanvas";
 import { ResizeHandle } from "./components/containers/ResizeHandle";
 import { SubgraphEditorProvider } from "./features/subgraph";
@@ -49,6 +50,7 @@ const Primary = () => {
     }, []);
 
     const graphPaneControls = useDragPane();
+    const canvasPaneControls = useDragPane();
 
     // Suppress the native browser context menu app-wide so our own menus own right-click -- except on editable
     // fields, where the native menu (spellcheck, copy/paste) is still wanted.
@@ -91,7 +93,8 @@ const Primary = () => {
                 <NodeDrawer graphId={"root"} paneControls={graphPaneControls} isOpen={isDrawerOpen} onOpenToggle={setIsDrawerOpen} />
             </div>
             <div data-gridarea={"canvas"}>
-                <SvgCanvas />
+                <SvgCanvas paneControls={canvasPaneControls} />
+                <DragPaneToolbar controls={canvasPaneControls} />
             </div>
         </Layout>
     );

@@ -55,6 +55,14 @@ export namespace Session {
 
     export const useSelectionRef = () => useContext(CTX)!.selection.ref;
 
+    // Reactive snapshot of the whole selection Set. Mutations replace the Set (never mutate in place), so
+    // reference equality is enough to drive re-renders. Scope this to a small leaf -- it fires on every selection change.
+    export const useSelection = () => {
+        const ctx = useContext(CTX)!;
+        const get = useCallback(() => ctx.selection.get(), [ctx]);
+        return useSyncExternalStore(ctx.selection.subscribe, get);
+    };
+
     export const useMarqueeMode = () => useFastContextState(useContext(CTX)!.marqueeMode);
     export const useExportDpi = () => useFastContextState(useContext(CTX)!.exportDpi);
 
