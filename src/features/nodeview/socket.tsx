@@ -14,7 +14,7 @@ type GraphConnectionControls = {
     clear: () => void;
 };
 
-const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
+export const GraphViewConnectionCTX = createContext<GraphConnectionControls>({ start: () => {}, finish: () => {}, clear: () => {} });
 
 export const GraphConnectionProvider = ({ children, graphId }: { children?: ReactNode; graphId: string }) => {
     const [pendingConnection, setPendingConnection] = Project.usePendingConnection();

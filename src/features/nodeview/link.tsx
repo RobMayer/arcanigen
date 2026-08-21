@@ -1,6 +1,7 @@
-import { useMemo, CSSProperties, useRef, useCallback, KeyboardEvent, useState, DragEvent } from "react";
+import { useMemo, CSSProperties, useRef, useCallback, KeyboardEvent, useState, DragEvent, useContext, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { Project } from "../../state/project";
+import { GraphViewConnectionCTX } from "./socket";
 import { useResizeObserver } from "../../util/hooks/useResizeObserver";
 import { ActionButton } from "../../components/buttons/ActionButton";
 import { Icon, ICONS } from "../../components/Icon";
@@ -8,6 +9,11 @@ import { NodeTypes } from "../../definitions/nodeTypes";
 import { NODE_DRAG_MIME, NODE_TYPE_MIME_PREFIX } from "../nodedrawer";
 import { useGraphId } from "../../state/graphId";
 import { useDragPaneInternal } from "../../components/wrappers/DragPane";
+
+// Grab-to-reconnect: pressing the wire within this graph-space radius of a socket detaches that end.
+const GRAB_RADIUS = 45;
+// How far the pointer must travel (screen px) before an armed grab commits, so a plain click still focuses.
+const GRAB_DRAG_THRESHOLD = 4;
 
 const keyframesMarch = keyframes`
 to {
@@ -32,6 +38,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const mc = Project.useMC();
     const linkType = Project.useLinkType(graphId, link);
     const [, paneControls] = useDragPaneInternal();
+    const connectionContext = useContext(GraphViewConnectionCTX);
 
     const style = useMemo(() => {
         if (!link) {
@@ -51,6 +58,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const fromMarkerRef = useRef<HTMLDivElement>(null);
     const toMarkerRef = useRef<HTMLDivElement>(null);
     const pathContainer = useRef<SVGPathElement>(null);
+    const targetPathRef = useRef<SVGPathElement>(null);
 
     const onResize = useCallback(
         (entry: ResizeObserverEntry) => {
@@ -77,6 +85,69 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
     const deleteMe = useCallback(() => {
         removeLinks(linkId);
     }, [removeLinks, linkId]);
+
+    // Grab-to-reconnect: press the wire near one of its socket ends and drag -> that end detaches and a
+    // pending connection starts from the OTHER socket, following the cursor onto a new target. A plain
+    // click (no drag), or a press away from either end, falls through to the normal focus/delete behavior.
+    useEffect(() => {
+        const path = targetPathRef.current;
+        if (!path || !link) {
+            return;
+        }
+        const onPointerDown = (evt: globalThis.PointerEvent) => {
+            if (evt.button !== 0 || evt.handled) {
+                return;
+            }
+            const fromEl = fromMarkerRef.current;
+            const toEl = toMarkerRef.current;
+            if (!fromEl || !toEl) {
+                return;
+            }
+            const zoom = paneControls.get().z;
+            const fr = fromEl.getBoundingClientRect();
+            const tr = toEl.getBoundingClientRect();
+            const dFrom = Math.hypot(evt.clientX - fr.left, evt.clientY - fr.top);
+            const dTo = Math.hypot(evt.clientX - tr.left, evt.clientY - tr.top);
+            if (Math.min(dFrom, dTo) > GRAB_RADIUS * zoom) {
+                return; // not near an end -> let the click focus the link (delete button)
+            }
+
+            // Anchor the pending connection at the FAR end; the near end is the one being detached.
+            const anchor: { node: string; socket: string; side: "in" | "out" } =
+                dFrom <= dTo ? { node: link.toNode, socket: link.toSocket, side: "in" } : { node: link.fromNode, socket: link.fromSocket, side: "out" };
+
+            evt.handled = "active"; // suppress the pane's marquee/pan on this press
+            evt.preventDefault();
+            const startX = evt.clientX;
+            const startY = evt.clientY;
+            let grabbed = false;
+
+            const cleanup = () => {
+                document.removeEventListener("pointermove", onMove);
+                document.removeEventListener("pointerup", onUp);
+            };
+            const onMove = (e: globalThis.PointerEvent) => {
+                if (grabbed || Math.hypot(e.clientX - startX, e.clientY - startY) < GRAB_DRAG_THRESHOLD) {
+                    return;
+                }
+                grabbed = true;
+                cleanup();
+                // Remove first so cycle-detection recomputes without the stale link (the store is synchronous).
+                removeLinks(linkId);
+                connectionContext.start(anchor.node, anchor.socket, anchor.side);
+            };
+            const onUp = () => {
+                cleanup();
+                if (!grabbed) {
+                    ref.current?.focus(); // click-without-drag near an end still exposes the delete button
+                }
+            };
+            document.addEventListener("pointermove", onMove);
+            document.addEventListener("pointerup", onUp);
+        };
+        path.addEventListener("pointerdown", onPointerDown);
+        return () => path.removeEventListener("pointerdown", onPointerDown);
+    }, [link, linkId, removeLinks, connectionContext, paneControls]);
 
     const handleKeyDown = useCallback(
         (evt: KeyboardEvent<unknown>) => {
@@ -171,7 +242,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             >
                 <svg preserveAspectRatio="none">
                     <g ref={pathContainer}>
-                        <path data-part={"target"} d="" />
+                        <path data-part={"target"} d="" ref={targetPathRef} />
                         <path data-part={"select"} d="" />
                         <path data-part={"display"} d="" />
                         <path data-part={"effect"} d="" />
