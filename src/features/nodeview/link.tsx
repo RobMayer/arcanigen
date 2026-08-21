@@ -326,6 +326,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         height: 100%;
         overflow: visible;
         pointer-events: none;
+
         & > g > path {
             d: var(--theD);
             vector-effect: non-scaling-stroke;
@@ -375,6 +376,12 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 stroke-width: calc(var(--width) - 4px);
             }
         }
+    }
+
+    & > svg > g:has([data-part="target-wire"]:hover) > [data-part="display-wire"],
+    & > svg > g:has([data-part="target-leading"]:hover) > [data-part="display-leading"],
+    & > svg > g:has([data-part="target-trailing"]:hover) > [data-part="display-trailing"] {
+        stroke: #fff;
     }
 
     &[data-linktype*=" array<"] {
