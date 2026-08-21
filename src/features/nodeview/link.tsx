@@ -75,6 +75,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
 
                 const dx = Math.max(150, Math.abs(x2 - x1) * 0.5);
                 pathContainer.current.style.setProperty("--theD", `path("M ${x1},${y1} C ${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}")`);
+                pathContainer.current.style.setProperty("--theDR", `path("M ${x2},${y2} C ${x2 - dx},${y2} ${x1 + dx},${y1} ${x1},${y1}")`);
             }
         },
         [paneControls],
@@ -245,6 +246,8 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                         <path data-part={"target"} d="" ref={targetPathRef} />
                         <path data-part={"select"} d="" />
                         <path data-part={"display"} d="" />
+                        <path data-part={"leading"} d="" />
+                        <path data-part={"trailing"} d="" />
                         <path data-part={"effect"} d="" />
                     </g>
                 </svg>
@@ -320,6 +323,19 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
                 stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
                 stroke-width: 3px;
             }
+            &[data-part="leading"] {
+                stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
+                stroke-width: 6px;
+                stroke-dasharray: ${GRAB_RADIUS}px calc(infinity * 1px);
+                stroke-linecap: round;
+            }
+            &[data-part="trailing"] {
+                d: var(--theDR);
+                stroke: oklch(from var(--flavour) calc(l + 0.2) c h);
+                stroke-width: 6px;
+                stroke-dasharray: ${GRAB_RADIUS}px calc(infinity * 1px);
+                stroke-linecap: round;
+            }
             &[data-part="effect"] {
                 stroke: none;
                 stroke-width: 2px;
@@ -332,7 +348,7 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             }
             &[data-part="select"] {
                 stroke: #000;
-                stroke-width: 4px;
+                stroke-width: 5px;
             }
         }
     }
@@ -341,6 +357,10 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
         stroke-width: 4px;
     }
     &[data-linktype*=" array<"] > svg > g > path[data-part="select"] {
+        stroke-width: 6px;
+    }
+    &[data-linktype*=" array<"] > svg > g > path[data-part="trailing"],
+    &[data-linktype*=" array<"] > svg > g > path[data-part="leading"] {
         stroke-width: 6px;
     }
 
@@ -356,6 +376,10 @@ export const GraphLink = styled(({ className, linkId }: { linkId: string; classN
             stroke-dasharray: 4px 8px;
             stroke-dashoffset: 0px;
             stroke-width: 4px;
+        }
+        &[data-part="trailing"],
+        &[data-part="leading"] {
+            stroke-width: 8x;
         }
         &[data-part="select"] {
             stroke-width: 8px;
