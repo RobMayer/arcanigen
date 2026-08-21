@@ -1,4 +1,4 @@
-import { CSSProperties, DetailedHTMLProps, HTMLAttributes, PointerEvent, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState, WheelEvent } from "react";
+import { CSSProperties, DetailedHTMLProps, HTMLAttributes, PointerEvent, RefObject, SetStateAction, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, WheelEvent } from "react";
 import styled from "styled-components";
 import { useCombinedRef } from "../../util/hooks/useCombinedRef";
 import { useStable } from "../../util/hooks/useStable";
@@ -322,6 +322,13 @@ const DragPaneBase = styled(
 
         useResizeObserver(viewportRef, checkBreaches);
         useResizeObserver(boundsRef, checkBreaches);
+
+        // Non-passive changes (toolbar buttons, external set) update position via React state, so the
+        // DOM transform isn't live until commit. Re-measure breaches after commit. Passive drags bypass
+        // React state (they mutate the DOM directly and check inline), so this won't double-fire on them.
+        useLayoutEffect(() => {
+            checkBreaches();
+        }, [x, y, z, checkBreaches]);
 
         // wheel zoom
         useEffect(() => {
