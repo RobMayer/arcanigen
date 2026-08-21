@@ -5,6 +5,7 @@ export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
             <Build date={"2026-08-20"} version={"3.5.8"}>
+                <Improvement>Reroute links by click-and-dragging on a link near a socket.</Improvement>
                 <Improvement>Added viewport controls.</Improvement>
             </Build>
             <Build date={"2026-08-20"} version={"3.5.7"}>
