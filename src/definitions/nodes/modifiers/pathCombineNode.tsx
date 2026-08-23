@@ -140,7 +140,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
             </SocketOut>
             {supersocketConnected ? null : (
                 <>
-                    <hr />
                     <ActionButton onClick={handleAddPath} flavour={"accent"}>
                         Add Path
                     </ActionButton>
@@ -158,7 +157,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathCombine
                     ))}
                 </>
             )}
-            <hr />
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pathOpspathOpArray|operationCount|enabledCount">
                 <SocketPair node={node} socketInId={"pathOps"} socketOutId={"pathOpArray"}>
                     <span>Path Ops Array</span>

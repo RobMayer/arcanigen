@@ -145,7 +145,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
             </SocketOut>
             {supersocketConnected ? null : (
                 <>
-                    <hr />
                     <ActionButton onClick={handleAddLayer} flavour={"accent"}>
                         Add Layer
                     </ActionButton>
@@ -162,7 +161,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<LayerDefini
                     ))}
                 </>
             )}
-            <hr />
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="layers|layerArray|layerCount|enabledCount" socketsIn={"isolate"}>
                 <SocketPair node={node} socketInId={"layers"} socketOutId={"layerArray"} align={"center"}>
                     <span>Layer Array</span>

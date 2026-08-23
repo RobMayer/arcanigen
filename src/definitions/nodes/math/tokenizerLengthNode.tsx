@@ -11,11 +11,11 @@ import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
 import { DataTypes } from "../../dataTypes";
 import { Project } from "../../../state/project";
 import { Resolver } from "../../../util/resolver";
-import { signature, SignatureBuilder } from "../../helpers/signatureBuilder";
+import { signature, $, SignatureBuilder } from "../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../helpers/signatureEngine";
 
 const def = signature({
-    in: { "token_*": "length" },
+    in: { tokens: $.arrayOf("length"), "token_*": "length" },
     out: { output: "tokens:length", tokenCount: "integer", nonNullishCount: "integer" },
 });
 
@@ -32,6 +32,7 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<TokenizerLengthDefi
     return {
         id,
         in: {
+            tokens: null,
             [socketId]: null,
         },
         out: {
@@ -108,27 +109,34 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<TokenizerLe
         [methods, node.payload.tokens],
     );
 
+    const supersocketConnected = node.in.tokens != null;
+
     return (
         <TypicalNode node={node} methods={methods}>
             <SocketOut node={node} socketId={"output"}>
                 Output
             </SocketOut>
-            <hr />
-            <ActionButton onClick={handleAddToken} flavour={"accent"}>
-                Add Token
-            </ActionButton>
-            {node.payload.tokens.map((entry, idx) => (
-                <TokenEntry
-                    entry={entry}
-                    node={node}
-                    key={entry.socket}
-                    index={idx}
-                    handleRemoveToken={handleRemoveToken}
-                    handleTokenUpdate={handleTokenUpdate}
-                    handleReorderToken={handleReorderToken}
-                />
-            ))}
-            <hr />
+            <SocketIn node={node} socketId={"tokens"}>
+                Tokens
+            </SocketIn>
+            {supersocketConnected ? null : (
+                <>
+                    <ActionButton onClick={handleAddToken} flavour={"accent"}>
+                        Add Token
+                    </ActionButton>
+                    {node.payload.tokens.map((entry, idx) => (
+                        <TokenEntry
+                            entry={entry}
+                            node={node}
+                            key={entry.socket}
+                            index={idx}
+                            handleRemoveToken={handleRemoveToken}
+                            handleTokenUpdate={handleTokenUpdate}
+                            handleReorderToken={handleReorderToken}
+                        />
+                    ))}
+                </>
+            )}
             <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="tokenCount|nonNullishCount">
                 <SocketOut node={node} socketId={"tokenCount"}>
                     Token Count
@@ -258,12 +266,25 @@ const DragGrip = styled.div`
     }
 `;
 
+// Resolve the effective tokens: the supersocket (an array<length>) overrides everything; otherwise
+// fold each per-token socket (a connected length) over its inline authoring field. May include empties.
+const resolveTokens = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, context: Resolver.Context): DataTypes.TypeOf<DataTypes.Length>[] => {
+    const supersocketEval = context.resolve<DataTypes.ArrayOf<DataTypes.Length>>(node.id, "tokens");
+    if (supersocketEval) {
+        return supersocketEval.data;
+    }
+    return node.payload.tokens.map((row) => {
+        const linkId = node.in[row.socket];
+        return linkId != null ? (context.resolve<DataTypes.Length>(node.id, row.socket)?.data ?? "") : row.value;
+    });
+};
+
 const dependsOn = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, outSocket: keyof TokenizerLengthDefinition["outputs"], _deps: AllDeps): (keyof TokenizerLengthDefinition["inputs"])[] => {
     if (outSocket === "output" || outSocket === "nonNullishCount") {
-        return node.payload.tokens.map((t) => t.socket) as `token_${string}`[];
+        return ["tokens", ...(node.payload.tokens.map((t) => t.socket) as `token_${string}`[])];
     }
-    // tokenCount is structural (row count), no input dependency.
-    return [];
+    // tokenCount is the row count when authored inline, or the supersocket array length when connected.
+    return ["tokens"];
 };
 
 const contributesTo = (
@@ -271,6 +292,9 @@ const contributesTo = (
     inSocket: keyof TokenizerLengthDefinition["inputs"],
     _deps: AllDeps,
 ): (keyof TokenizerLengthDefinition["outputs"])[] => {
+    if (inSocket === "tokens") {
+        return ["output", "tokenCount", "nonNullishCount"];
+    }
     if (typeof inSocket === "string" && inSocket.startsWith("token_")) {
         return ["output", "nonNullishCount"];
     }
@@ -279,17 +303,12 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, socket: keyof TokenizerLengthDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     if (socket === "tokenCount") {
-        return { kind: "integer", data: `${node.payload.tokens.length}` };
+        return { kind: "integer", data: `${resolveTokens(node, context).length}` };
     }
 
     if (socket === "output" || socket === "nonNullishCount") {
-        const parts: string[] = [];
-        for (const row of node.payload.tokens) {
-            // Wired socket overrides the inline value; a null/empty result is skipped.
-            const linkId = node.in[row.socket];
-            const val = linkId != null ? (context.resolve<DataTypes.Length>(node.id, row.socket)?.data ?? null) : row.value;
-            if (val) parts.push(val);
-        }
+        // Empty/nullish tokens are skipped in both the joined output and the non-nullish tally.
+        const parts = resolveTokens(node, context).filter((val) => val);
 
         if (socket === "nonNullishCount") {
             return { kind: "integer", data: `${parts.length}` };
@@ -298,6 +317,27 @@ const evaluate = (node: NodeDefinitions.NodeFor<TokenizerLengthDefinition>, sock
     }
 
     return null;
+};
+
+// Supersocket override: connecting the whole `array<length>` clears the now-hidden per-token family,
+// then hands off to the engine (a no-op for this var-free def, kept for uniform wiring).
+const onConnect = (node: NodeDefinitions.BuiltNodeOf<"tokenizerLength", TokenizerLengthDefinition>, linkId: string, direction: "in" | "out", graphId: string, ctx: NodeTypes.MethodContext): void => {
+    if (direction === "in") {
+        const link = ctx.getLink(graphId, linkId);
+        if (link && link.toSocket === "tokens") {
+            const currentNode = ctx.getNode(graphId, node.id);
+            if (currentNode) {
+                const linkIdsToRemove: string[] = [];
+                for (const [socketKey, socketLinkId] of Object.entries(currentNode.in)) {
+                    if (socketKey.startsWith("token_") && socketLinkId !== null) {
+                        linkIdsToRemove.push(socketLinkId);
+                    }
+                }
+                if (linkIdsToRemove.length > 0) ctx.removeLinks(graphId, ...linkIdsToRemove);
+            }
+        }
+    }
+    SignatureEngine.onConnect(node, linkId, direction, graphId, ctx);
 };
 
 export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", TokenizerLengthDefinition> = {
@@ -314,4 +354,5 @@ export const TokenizerLengthNodeType: NodeTypes.Type<"tokenizerLength", Tokenize
     Controls,
     signature: def.instance,
     ...SignatureEngine.hooks,
+    onConnect,
 };

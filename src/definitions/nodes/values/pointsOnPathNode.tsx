@@ -133,11 +133,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PointsOnPat
             <SocketOut node={node} socketId={"angles"}>
                 Angles
             </SocketOut>
-            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pointCount">
-                <SocketOut node={node} socketId={"pointCount"}>
-                    Point Count
-                </SocketOut>
-            </NodeAccordion>
+
             <SocketIn node={node} socketId={"count"} label={"Count"}>
                 <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
             </SocketIn>
@@ -219,6 +215,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PointsOnPat
                 <SocketIn node={node} socketId={"padEnd"} label={"Pad End"}>
                     <LengthInput value={node.payload.padEnd} onCommit={(padEnd) => handleUpdate({ padEnd })} disabled={node.in.padEnd !== null} min={"0px"} required />
                 </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label="Additional Options" nodeId={node.id} socketsOut="pointCount">
+                <SocketOut node={node} socketId={"pointCount"}>
+                    Point Count
+                </SocketOut>
             </NodeAccordion>
         </TypicalNode>
     );
