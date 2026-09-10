@@ -4,7 +4,7 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
-            <Build date={"2026-08-20"} version={"3.5.9"}>
+            <Build date={"2026-09-10"} version={"3.5.9"}>
                 <Bugfix>Reroute links broke visually when one side was under a folded node or accordion.</Bugfix>
                 <Improvement>Added several array, array input, and array output nodes.</Improvement>
             </Build>
