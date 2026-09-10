@@ -440,7 +440,9 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
     lengthOutput: SocketTypes.of(DataTypes.LENGTH),
     colorInput: SocketTypes.of(DataTypes.COLOR),
     paintInput: SocketTypes.and(DataTypes.COLOR, DataTypes.GRADIENT),
+    gradientInput: SocketTypes.of(DataTypes.GRADIENT),
     colorOutput: SocketTypes.of(DataTypes.COLOR),
+    gradientOutput: SocketTypes.of(DataTypes.GRADIENT),
     pointInput: SocketTypes.of(DataTypes.POINT),
     pointOutput: SocketTypes.of(DataTypes.POINT),
     booleanInput: SocketTypes.of(DataTypes.BOOLEAN),
@@ -587,6 +589,8 @@ const DynamicSlot = ({
             return <OutputSlotShape host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ShapeOutputDefinition>} />;
         case "shapeInput":
             return <InputSlotShape host={hostNode} source={sourceNode} />;
+        case "gradientInput":
+            return <InputSlotPassthrough host={hostNode} source={sourceNode} />;
         case "colorOutput":
             return <OutputSlotColor host={hostNode} source={sourceNode as NodeDefinitions.NodeFor<ColorOutputDefinition>} />;
         case "colorInput":
@@ -666,6 +670,7 @@ const DynamicSlot = ({
         case "arrayStopAngleOutput":
         case "arrayStopIntegerOutput":
         case "arrayStopLengthOutput":
+        case "gradientOutput":
         case "arrayAngleOutput":
         case "arrayIntegerOutput":
         case "arrayFloatOutput":

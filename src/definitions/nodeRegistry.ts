@@ -74,7 +74,9 @@ import { ShapeInputDefinition, ShapeInputType } from "./nodes/interface/inputs/s
 import { ShapeOutputDefinition, ShapeOutputType } from "./nodes/interface/outputs/shapeOutputNode";
 import { ColorInputDefinition, ColorInputType } from "./nodes/interface/inputs/colorInputNode";
 import { PaintInputDefinition, PaintInputType } from "./nodes/interface/inputs/paintInputNode";
+import { GradientInputDefinition, GradientInputType } from "./nodes/interface/inputs/gradientInputNode";
 import { ColorOutputDefinition, ColorOutputType } from "./nodes/interface/outputs/colorOutputNode";
+import { GradientOutputDefinition, GradientOutputType } from "./nodes/interface/outputs/gradientOutputNode";
 import { PointInputDefinition, PointInputType } from "./nodes/interface/inputs/pointInputNode";
 import { PointOutputDefinition, PointOutputType } from "./nodes/interface/outputs/pointOutputNode";
 import { BooleanInputDefinition, BooleanInputType } from "./nodes/interface/inputs/booleanInputNode";
@@ -207,6 +209,9 @@ import { FloatArrayDefinition, FloatArrayNodeType } from "./nodes/values/floatAr
 import { LengthArrayDefinition, LengthArrayNodeType } from "./nodes/values/lengthArrayNode";
 import { ColorArrayDefinition, ColorArrayNodeType } from "./nodes/values/colorArrayNode";
 import { BooleanArrayDefinition, BooleanArrayNodeType } from "./nodes/values/booleanArrayNode";
+import { StringArrayDefinition, StringArrayNodeType } from "./nodes/values/stringArrayNode";
+import { TokensLengthArrayDefinition, TokensLengthArrayNodeType } from "./nodes/values/tokensLengthArrayNode";
+import { EnumArrayDefinition, EnumArrayNodeType } from "./nodes/values/enumArrayNode";
 import { ArrayDefinition, ArrayNodeType } from "./nodes/values/arrayNode";
 import { FromCrossingsDefinition, FromCrossingsNodeType } from "./nodes/values/fromCrossingsNode";
 import { PointOnPathDefinition, PointOnPathNodeType } from "./nodes/values/pointOnPathNode";
@@ -319,7 +324,9 @@ export namespace Registries {
         shapeOutput: ShapeOutputDefinition;
         colorInput: ColorInputDefinition;
         paintInput: PaintInputDefinition;
+        gradientInput: GradientInputDefinition;
         colorOutput: ColorOutputDefinition;
+        gradientOutput: GradientOutputDefinition;
         pointInput: PointInputDefinition;
         pointOutput: PointOutputDefinition;
         booleanInput: BooleanInputDefinition;
@@ -466,6 +473,9 @@ export namespace Registries {
         lengthArray: LengthArrayDefinition;
         colorArray: ColorArrayDefinition;
         booleanArray: BooleanArrayDefinition;
+        stringArray: StringArrayDefinition;
+        tokensLengthArray: TokensLengthArrayDefinition;
+        enumArray: EnumArrayDefinition;
         array: ArrayDefinition;
         fromCrossings: FromCrossingsDefinition;
         pointOnPath: PointOnPathDefinition;
@@ -593,6 +603,9 @@ export namespace Registries {
         lengthArray: LengthArrayNodeType,
         colorArray: ColorArrayNodeType,
         booleanArray: BooleanArrayNodeType,
+        stringArray: StringArrayNodeType,
+        tokensLengthArray: TokensLengthArrayNodeType,
+        enumArray: EnumArrayNodeType,
         array: ArrayNodeType,
         fromCrossings: FromCrossingsNodeType,
         pointOnPath: PointOnPathNodeType,
@@ -646,7 +659,9 @@ export namespace Registries {
         shapeOutput: ShapeOutputType,
         colorInput: ColorInputType,
         paintInput: PaintInputType,
+        gradientInput: GradientInputType,
         colorOutput: ColorOutputType,
+        gradientOutput: GradientOutputType,
         pointInput: PointInputType,
         pointOutput: PointOutputType,
         booleanInput: BooleanInputType,
