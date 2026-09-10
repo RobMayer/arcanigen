@@ -79,7 +79,7 @@ export type GridLayoutPolarDefinition = SignatureBuilder.DefinitionFrom<
     } & TransformPrefab.Definition["payload"]
 >;
 
-const FIT_OPTIONS = Enum.options(Enum.Common.fitCalcMode);
+const FIT_OPTIONS = Enum.options(Enum.Common.gridSolveMode);
 const JUSTIFY_OPTIONS = Enum.options(Enum.Common.gridJustify);
 const RADIAL_DIR_OPTIONS = Enum.options(Enum.Common.gridDirectionRadial);
 const ANNULAR_DIR_OPTIONS = Enum.options(Enum.Common.gridDirectionAnnular);
@@ -93,7 +93,7 @@ type AxisDirection = "POSITIVE" | "NEGATIVE" | "CENTER";
 const directionOf = (key: string): AxisDirection => (key === "CENTER" ? "CENTER" : key === "OUTWARD" || key === "CLOCKWISE" ? "POSITIVE" : "NEGATIVE");
 
 const solveAxis = (
-    fitKey: keyof typeof Enum.Common.fitCalcMode,
+    fitKey: keyof typeof Enum.Common.gridSolveMode,
     count: number,
     spacing: number,
     total: number,
@@ -181,14 +181,14 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<GridLayoutPolarDefi
         },
         payload: {
             label: "",
-            radialFit: input.radialFit ?? Enum.Common.fitCalcMode.TOTAL.value,
+            radialFit: input.radialFit ?? Enum.Common.gridSolveMode.TOTAL.value,
             radialReference: input.radialReference ?? "50px",
             radialWidth: input.radialWidth ?? "200px",
             radialSpacing: input.radialSpacing ?? "50px",
             radialCount: input.radialCount ?? "5",
             radialDirection: input.radialDirection ?? Enum.Common.gridDirectionRadial.OUTWARD.value,
             radialJustify: input.radialJustify ?? Enum.Common.gridJustify.CENTER.value,
-            annularFit: input.annularFit ?? Enum.Common.fitCalcMode.TOTAL.value,
+            annularFit: input.annularFit ?? Enum.Common.gridSolveMode.TOTAL.value,
             annularReference: input.annularReference ?? "0deg",
             annularSweep: input.annularSweep ?? "360deg",
             annularSpacing: input.annularSpacing ?? "60deg",
@@ -216,8 +216,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutP
     );
 
     // Fit key is only known when the fit socket is unwired; when wired the mode is dynamic so value inputs stay live.
-    const radialFit = node.in.radialFit === null ? Enum.keyOf(Enum.Common.fitCalcMode, node.payload.radialFit) : null;
-    const annularFit = node.in.annularFit === null ? Enum.keyOf(Enum.Common.fitCalcMode, node.payload.annularFit) : null;
+    const radialFit = node.in.radialFit === null ? Enum.keyOf(Enum.Common.gridSolveMode, node.payload.radialFit) : null;
+    const annularFit = node.in.annularFit === null ? Enum.keyOf(Enum.Common.gridSolveMode, node.payload.annularFit) : null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -238,128 +238,140 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutP
                 Annular Sequence
             </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"radialFit"} label={"Radial Auto Mode"}>
-                <RadioButton.Group
-                    options={FIT_OPTIONS}
-                    value={`${node.payload.radialFit}`}
-                    onValue={(v) => handleUpdate({ radialFit: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.radialFit !== null}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radialReference"} label={"Reference Radius"}>
-                <LengthInput value={node.payload.radialReference} onCommit={(radialReference) => handleUpdate({ radialReference })} disabled={node.in.radialReference !== null} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radialWidth"} label={"Radial Width"}>
-                <LengthInput
-                    value={node.payload.radialWidth}
-                    onCommit={(radialWidth) => handleUpdate({ radialWidth })}
-                    disabled={node.in.radialWidth !== null || radialFit === "TOTAL"}
-                    min={"0px"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radialSpacing"} label={"Radial Spacing"}>
-                <LengthInput
-                    value={node.payload.radialSpacing}
-                    onCommit={(radialSpacing) => handleUpdate({ radialSpacing })}
-                    disabled={node.in.radialSpacing !== null || radialFit === "SPACING"}
-                    min={"0px"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radialCount"} label={"Radial Count"}>
-                <IntegerInput.SliderInput
-                    value={node.payload.radialCount}
-                    onCommit={(radialCount) => handleUpdate({ radialCount })}
-                    disabled={node.in.radialCount !== null || radialFit === "COUNT"}
-                    min={"1"}
-                    max={"64"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radialDirection"} label={"Radial Direction"}>
-                <RadioButton.Group
-                    options={RADIAL_DIR_OPTIONS}
-                    value={`${node.payload.radialDirection}`}
-                    onValue={(v) => handleUpdate({ radialDirection: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.radialDirection !== null}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radialJustify"} label={"Radial Justify"}>
-                <RadioButton.Group
-                    options={JUSTIFY_OPTIONS}
-                    value={`${node.payload.radialJustify}`}
-                    onValue={(v) => handleUpdate({ radialJustify: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.radialJustify !== null || (radialFit !== null && radialFit !== "COUNT")}
-                />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"annularFit"} label={"Annular Auto Mode"}>
-                <RadioButton.Group
-                    options={FIT_OPTIONS}
-                    value={`${node.payload.annularFit}`}
-                    onValue={(v) => handleUpdate({ annularFit: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.annularFit !== null}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularReference"} label={"Reference Angle"}>
-                <AngleInput.SliderInput value={node.payload.annularReference} onCommit={(annularReference) => handleUpdate({ annularReference })} disabled={node.in.annularReference !== null} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularSweep"} label={"Sweep"}>
-                <AngleInput.SliderInput
-                    value={node.payload.annularSweep}
-                    onCommit={(annularSweep) => handleUpdate({ annularSweep })}
-                    disabled={node.in.annularSweep !== null || annularFit === "TOTAL"}
-                    unbound
-                    min={0}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularSpacing"} label={"Annular Spacing"}>
-                <AngleInput.SliderInput
-                    value={node.payload.annularSpacing}
-                    onCommit={(annularSpacing) => handleUpdate({ annularSpacing })}
-                    disabled={node.in.annularSpacing !== null || annularFit === "SPACING"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularCount"} label={"Annular Count"}>
-                <IntegerInput.SliderInput
-                    value={node.payload.annularCount}
-                    onCommit={(annularCount) => handleUpdate({ annularCount })}
-                    disabled={node.in.annularCount !== null || annularFit === "COUNT"}
-                    min={"1"}
-                    max={"64"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularDirection"} label={"Annular Direction"}>
-                <RadioButton.Group
-                    options={ANNULAR_DIR_OPTIONS}
-                    value={`${node.payload.annularDirection}`}
-                    onValue={(v) => handleUpdate({ annularDirection: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.annularDirection !== null}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularJustify"} label={"Annular Justify"}>
-                <RadioButton.Group
-                    options={JUSTIFY_OPTIONS}
-                    value={`${node.payload.annularJustify}`}
-                    onValue={(v) => handleUpdate({ annularJustify: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.annularJustify !== null || (annularFit !== null && annularFit !== "COUNT")}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"annularInclusiveEnd"}>
-                <CheckBox checked={node.payload.annularInclusiveEnd} onToggle={(annularInclusiveEnd) => handleUpdate({ annularInclusiveEnd })} disabled={node.in.annularInclusiveEnd !== null}>
-                    Inclusive End
-                </CheckBox>
-            </SocketIn>
+            <NodeAccordion nodeId={node.id} label={"Radial"} socketsIn={"radialFit|radialReference|radialWidth|radialSpacing|radialCount|radialDirection|radialJustify|"}>
+                <SocketIn node={node} socketId={"radialFit"} label={"Radial Solve For"}>
+                    <RadioButton.Group
+                        options={FIT_OPTIONS}
+                        value={`${node.payload.radialFit}`}
+                        onValue={(v) => handleUpdate({ radialFit: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.radialFit !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"radialReference"} label={"Reference Radius"}>
+                    <LengthInput
+                        value={node.payload.radialReference}
+                        onCommit={(radialReference) => handleUpdate({ radialReference })}
+                        disabled={node.in.radialReference !== null}
+                        min={"0px"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"radialWidth"} label={"Radial Width"}>
+                    <LengthInput
+                        value={node.payload.radialWidth}
+                        onCommit={(radialWidth) => handleUpdate({ radialWidth })}
+                        disabled={node.in.radialWidth !== null || radialFit === "TOTAL"}
+                        min={"0px"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"radialSpacing"} label={"Radial Spacing"}>
+                    <LengthInput
+                        value={node.payload.radialSpacing}
+                        onCommit={(radialSpacing) => handleUpdate({ radialSpacing })}
+                        disabled={node.in.radialSpacing !== null || radialFit === "SPACING"}
+                        min={"0px"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"radialCount"} label={"Radial Count"}>
+                    <IntegerInput.SliderInput
+                        value={node.payload.radialCount}
+                        onCommit={(radialCount) => handleUpdate({ radialCount })}
+                        disabled={node.in.radialCount !== null || radialFit === "COUNT"}
+                        min={"1"}
+                        max={"64"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"radialJustify"} label={"Radial Justify"}>
+                    <RadioButton.Group
+                        options={JUSTIFY_OPTIONS}
+                        value={`${node.payload.radialJustify}`}
+                        onValue={(v) => handleUpdate({ radialJustify: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.radialJustify !== null || (radialFit !== null && radialFit !== "COUNT")}
+                    />
+                </SocketIn>
+                <hr />
+                <SocketIn node={node} socketId={"radialDirection"} label={"Radial Direction"}>
+                    <RadioButton.Group
+                        options={RADIAL_DIR_OPTIONS}
+                        value={`${node.payload.radialDirection}`}
+                        onValue={(v) => handleUpdate({ radialDirection: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.radialDirection !== null}
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion nodeId={node.id} label={"Annular"} socketsIn={"annularFit|annularReference|annularSweep|annularSpacing|annularCount|annularDirection|annularJustify|annularInclusiveEnd"}>
+                <SocketIn node={node} socketId={"annularFit"} label={"Annular Solve For"}>
+                    <RadioButton.Group
+                        options={FIT_OPTIONS}
+                        value={`${node.payload.annularFit}`}
+                        onValue={(v) => handleUpdate({ annularFit: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.annularFit !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"annularReference"} label={"Reference Angle"}>
+                    <AngleInput.SliderInput value={node.payload.annularReference} onCommit={(annularReference) => handleUpdate({ annularReference })} disabled={node.in.annularReference !== null} />
+                </SocketIn>
+                <SocketIn node={node} socketId={"annularSweep"} label={"Sweep"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.annularSweep}
+                        onCommit={(annularSweep) => handleUpdate({ annularSweep })}
+                        disabled={node.in.annularSweep !== null || annularFit === "TOTAL"}
+                        unbound
+                        min={0}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"annularSpacing"} label={"Annular Spacing"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.annularSpacing}
+                        onCommit={(annularSpacing) => handleUpdate({ annularSpacing })}
+                        disabled={node.in.annularSpacing !== null || annularFit === "SPACING"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"annularCount"} label={"Annular Count"}>
+                    <IntegerInput.SliderInput
+                        value={node.payload.annularCount}
+                        onCommit={(annularCount) => handleUpdate({ annularCount })}
+                        disabled={node.in.annularCount !== null || annularFit === "COUNT"}
+                        min={"1"}
+                        max={"64"}
+                        required
+                    />
+                </SocketIn>
+
+                <SocketIn node={node} socketId={"annularJustify"} label={"Annular Justify"}>
+                    <RadioButton.Group
+                        options={JUSTIFY_OPTIONS}
+                        value={`${node.payload.annularJustify}`}
+                        onValue={(v) => handleUpdate({ annularJustify: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.annularJustify !== null || (annularFit !== null && annularFit !== "COUNT")}
+                    />
+                </SocketIn>
+                <hr />
+                <SocketIn node={node} socketId={"annularDirection"} label={"Annular Direction"}>
+                    <RadioButton.Group
+                        options={ANNULAR_DIR_OPTIONS}
+                        value={`${node.payload.annularDirection}`}
+                        onValue={(v) => handleUpdate({ annularDirection: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.annularDirection !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"annularInclusiveEnd"}>
+                    <CheckBox checked={node.payload.annularInclusiveEnd} onToggle={(annularInclusiveEnd) => handleUpdate({ annularInclusiveEnd })} disabled={node.in.annularInclusiveEnd !== null}>
+                        Inclusive End
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
             <hr />
             <SocketIn node={node} socketId={"sequenceOrder"} label={"Sequence Order"}>
                 <RadioButton.Group
@@ -443,7 +455,7 @@ const contributesTo = (
 
 const evaluate = (node: NodeDefinitions.NodeFor<GridLayoutPolarDefinition>, socket: keyof GridLayoutPolarDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     // Radial axis (rings never wrap -> always open/inclusive).
-    const radialFit = Enum.keyOf(Enum.Common.fitCalcMode, context.resolve<DataTypes.Enum>(node.id, "radialFit")?.data ?? node.payload.radialFit);
+    const radialFit = Enum.keyOf(Enum.Common.gridSolveMode, context.resolve<DataTypes.Enum>(node.id, "radialFit")?.data ?? node.payload.radialFit);
     const radialCount = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "radialCount")?.data ?? node.payload.radialCount) ?? 1;
     const radialSpacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "radialSpacing")?.data ?? node.payload.radialSpacing) ?? 0;
     const radialWidth = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "radialWidth")?.data ?? node.payload.radialWidth) ?? 0;
@@ -453,7 +465,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GridLayoutPolarDefinition>, sock
     const radial = solveAxis(radialFit, radialCount, radialSpacing, radialWidth, radialJustify, false, radialDirection);
 
     // Annular axis (closed = NOT inclusive end -> N gaps so a full 360 loop doesn't double the seam).
-    const annularFit = Enum.keyOf(Enum.Common.fitCalcMode, context.resolve<DataTypes.Enum>(node.id, "annularFit")?.data ?? node.payload.annularFit);
+    const annularFit = Enum.keyOf(Enum.Common.gridSolveMode, context.resolve<DataTypes.Enum>(node.id, "annularFit")?.data ?? node.payload.annularFit);
     const annularCount = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "annularCount")?.data ?? node.payload.annularCount) ?? 1;
     const annularSpacing = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "annularSpacing")?.data ?? node.payload.annularSpacing) ?? 0;
     const annularSweep = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "annularSweep")?.data ?? node.payload.annularSweep) ?? 0;

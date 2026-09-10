@@ -436,3 +436,11 @@ export const NodeHeading = styled.span`
     font-variant: small-caps;
     line-height: 1em;
 `;
+
+export const NodeSubheading = styled.span`
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    font-variant: small-caps;
+    line-height: 1em;
+`;

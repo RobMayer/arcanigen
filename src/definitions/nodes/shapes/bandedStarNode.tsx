@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, NodeHeading, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, NodeHeading, NodeSubheading, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
@@ -261,12 +261,14 @@ const StarRadiusControls = ({
                     disabled={node.in[modeSocket] !== null || disabled}
                 />
             </SocketIn>
+            <NodeSubheading>Major/Minor</NodeSubheading>
             <SocketIn node={node} socketId={majorSocket} label={"Major Radius"}>
                 <LengthInput value={node.payload[majorSocket]} onCommit={(v) => handleUpdate({ [majorSocket]: v })} disabled={node.in[majorSocket] !== null || isAmplitude} min={"0px"} required />
             </SocketIn>
             <SocketIn node={node} socketId={minorSocket} label={"Minor Radius"}>
                 <LengthInput value={node.payload[minorSocket]} onCommit={(v) => handleUpdate({ [minorSocket]: v })} disabled={node.in[minorSocket] !== null || isAmplitude} min={"0px"} required />
             </SocketIn>
+            <NodeSubheading>Radius/Amplitude</NodeSubheading>
             <SocketIn node={node} socketId={radiusSocket} label={"Radius"}>
                 <LengthInput value={node.payload[radiusSocket]} onCommit={(v) => handleUpdate({ [radiusSocket]: v })} disabled={node.in[radiusSocket] !== null || isMajorMinor} min={"0px"} required />
             </SocketIn>
@@ -324,6 +326,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedStarD
                     required
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"spanMode"} label={"Band Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
@@ -333,7 +336,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedStarD
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <hr />
             <NodeAccordion
                 label={"Inner/Outer"}
                 socketsIn={
@@ -379,6 +381,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedStarD
                     amplitudeSocket={"amplitude"}
                     alignSocket={"amplitudeAlign"}
                 />
+                <hr />
                 <SocketIn node={node} socketId={"spread"} label={"Spread"}>
                     <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || !isSpread} min={"0px"} required />
                 </SocketIn>
@@ -401,7 +404,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedStarD
                     />
                 </SocketIn>
             </NodeAccordion>
-
+            <hr />
             <NodeAccordion label={"More"} socketsIn={"rScribe|majorScribe|minorScribe|majorCornerRadius|majorCornerShape|minorCornerRadius|minorCornerShape|pointDistro"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"majorScribe"} label={"Major Scribe Mode"}>
                     <RadioButton.Group

@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { NodeAccordion, NodeHeading, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
@@ -183,6 +183,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiroringDe
                     disabled={node.in.spiroMode !== null}
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"paramMode"} label={"Gear Mode"}>
                 <RadioButton.Group
                     options={PARAM_MODE_OPTIONS}
@@ -192,7 +193,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiroringDe
                     disabled={node.in.paramMode !== null}
                 />
             </SocketIn>
-            <hr />
+            <NodeHeading>Geared</NodeHeading>
             <SocketIn node={node} socketId={"ringTeeth"} label={"Ring Teeth"}>
                 <IntegerInput.SliderInput
                     value={node.payload.ringTeeth}
@@ -228,7 +229,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiroringDe
                     disabled={node.in.radiusMode !== null || isRadii}
                 />
             </SocketIn>
-            <hr />
+            <NodeHeading>Radii</NodeHeading>
             <SocketIn node={node} socketId={"ringRadius"} label={"Ring Radius"}>
                 <LengthInput value={node.payload.ringRadius} onCommit={(ringRadius) => handleUpdate({ ringRadius })} disabled={node.in.ringRadius !== null || isGeared} min={"0px"} required />
             </SocketIn>
@@ -297,13 +298,7 @@ const RADIUS_INPUTS: (keyof SpiroringDefinition["inputs"])[] = [
     "spreadAlign",
 ];
 const RADIUS_OUTPUTS: (keyof SpiroringDefinition["outputs"])[] = ["eOuterCircumradius", "eOuterApothem", "eInnerCircumradius", "eInnerApothem"];
-const GEOMETRY_INPUTS: (keyof SpiroringDefinition["inputs"])[] = [
-    ...RADIUS_INPUTS,
-    "turns",
-    "removeCrossings",
-    "position",
-    "rotation",
-];
+const GEOMETRY_INPUTS: (keyof SpiroringDefinition["inputs"])[] = [...RADIUS_INPUTS, "turns", "removeCrossings", "position", "rotation"];
 const STYLING_INPUTS: (keyof SpiroringDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpiroringDefinition>, outSocket: keyof SpiroringDefinition["outputs"], _deps: AllDeps): (keyof SpiroringDefinition["inputs"])[] => {

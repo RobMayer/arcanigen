@@ -816,7 +816,7 @@ export namespace Project {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     export namespace Versioning {
-        export const CURRENT = 15;
+        export const CURRENT = 16;
 
         export const normalize = (input: any): Project.SavedProject => {
             if (input.version === 1) {
@@ -1476,6 +1476,46 @@ export namespace Project {
                     }
                 }
                 input.version = 15;
+            }
+            if (input.version === 15) {
+                // pointsOnPath and pathLayout gained flexSolveMode + flexJustify sockets and payload fields.
+                // arc-family nodes gained thetaDirection + thetaSpread; burst/bandedBurst/radialLayout also
+                // gained flexSolveMode + thetaStep + flexJustify. Backfill in-sockets as null and payload defaults.
+                const arcNodes = ["arc", "bandedArc", "spiral", "burst", "bandedBurst", "radialLayout"];
+                const arcSolverNodes = ["burst", "bandedBurst", "radialLayout"];
+                for (const graphId in input.nodes) {
+                    for (const nodeId in input.nodes[graphId]) {
+                        const node = input.nodes[graphId][nodeId];
+                        if (node.type === "pointsOnPath" || node.type === "pathLayout") {
+                            if (!node.in) continue;
+                            node.in.flexSolveMode = node.in.flexSolveMode ?? null;
+                            node.in.flexJustify = node.in.flexJustify ?? null;
+                            if (node.payload) {
+                                node.payload.flexSolveMode = node.payload.flexSolveMode ?? 1;
+                                node.payload.flexJustify = node.payload.flexJustify ?? 2;
+                            }
+                        } else if (arcNodes.includes(node.type)) {
+                            if (!node.in) continue;
+                            node.in.thetaDirection = node.in.thetaDirection ?? null;
+                            node.in.thetaSpread = node.in.thetaSpread ?? null;
+                            if (node.payload) {
+                                node.payload.thetaDirection = node.payload.thetaDirection ?? "0deg";
+                                node.payload.thetaSpread = node.payload.thetaSpread ?? "90deg";
+                            }
+                            if (arcSolverNodes.includes(node.type)) {
+                                node.in.flexSolveMode = node.in.flexSolveMode ?? null;
+                                node.in.thetaStep = node.in.thetaStep ?? null;
+                                node.in.flexJustify = node.in.flexJustify ?? null;
+                                if (node.payload) {
+                                    node.payload.flexSolveMode = node.payload.flexSolveMode ?? 1;
+                                    node.payload.thetaStep = node.payload.thetaStep ?? "30deg";
+                                    node.payload.flexJustify = node.payload.flexJustify ?? 4;
+                                }
+                            }
+                        }
+                    }
+                }
+                input.version = 16;
             }
             // next version alterations go here...
             return input as Project.SavedProject;

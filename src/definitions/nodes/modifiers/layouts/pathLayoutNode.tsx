@@ -23,6 +23,7 @@ import { IntegerInput } from "../../../../components/inputs/IntegerInput";
 import { OffsetPathShape } from "../../../shapeTypes";
 import { distroInterpolator } from "../../../../util/misc";
 import { GroupShape } from "../../../shapeTypes";
+import { PaperHelper } from "../../../../util/paperHelper";
 import { signature, $, SignatureBuilder } from "../../../helpers/signatureBuilder";
 import { SignatureEngine } from "../../../helpers/signatureEngine";
 
@@ -30,9 +31,11 @@ const def = signature({
     in: {
         input: "shape",
         path: "path",
+        flexSolveMode: "enum",
         count: "integer",
         spacingMode: "enum",
         spacing: "length",
+        flexJustify: "enum",
         overflowMode: "enum",
         offsetMode: "enum",
         offsetPercent: $.oneOf("float", "integer"),
@@ -53,9 +56,11 @@ export type PathLayoutDefinition = SignatureBuilder.DefinitionFrom<
     typeof def,
     {
         label: string;
+        flexSolveMode: DataTypes.TypeOf<DataTypes.Enum>;
         count: DataTypes.TypeOf<DataTypes.Integer>;
         spacingMode: DataTypes.TypeOf<DataTypes.Enum>;
         spacing: DataTypes.TypeOf<DataTypes.Length>;
+        flexJustify: DataTypes.TypeOf<DataTypes.Enum>;
         overflowMode: DataTypes.TypeOf<DataTypes.Enum>;
         offsetMode: DataTypes.TypeOf<DataTypes.Enum>;
         offsetPercent: DataTypes.TypeOf<DataTypes.Float>;
@@ -70,10 +75,12 @@ export type PathLayoutDefinition = SignatureBuilder.DefinitionFrom<
     }
 >;
 
+const FLEX_SOLVE_OPTIONS = Enum.options(Enum.Common.flexSolveMode);
 const SPACING_MODE_OPTIONS = Enum.options(Enum.Common.spacingMode);
 const OVERFLOW_MODE_OPTIONS = Enum.options(Enum.Common.overflowMode);
 const OFFSET_MODE_OPTIONS = Enum.options(Enum.Common.offsetMode);
 const OFFSET_ORIGIN_OPTIONS = Enum.options(Enum.Common.linearAlign);
+const FLEX_JUSTIFY_OPTIONS = Enum.options(Enum.Common.flexJustify);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"pathLayout", PathLayoutDefinition> => {
     return {
@@ -81,9 +88,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinitio
         in: {
             input: null,
             path: null,
+            flexSolveMode: null,
             count: null,
             spacingMode: null,
             spacing: null,
+            flexJustify: null,
             overflowMode: null,
             offsetMode: null,
             offsetPercent: null,
@@ -103,9 +112,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<PathLayoutDefinitio
         },
         payload: {
             label: "",
+            flexSolveMode: Enum.Common.flexSolveMode.SPACING.value,
             count: "5",
             spacingMode: Enum.Common.spacingMode.SPACE_BETWEEN.value,
             spacing: "20px",
+            flexJustify: Enum.Common.flexJustify.CENTER.value,
             overflowMode: Enum.Common.overflowMode.CLAMP.value,
             offsetMode: Enum.Common.offsetMode.RELATIVE.value,
             offsetPercent: "0",
@@ -131,6 +142,9 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
         [methods],
     );
 
+    const solveMode = node.in.flexSolveMode === null ? Enum.keyOf(Enum.Common.flexSolveMode, node.payload.flexSolveMode) : null;
+    const isSpacingMode = solveMode === "COUNT";
+
     const isFixedSpacing =
         node.payload.spacingMode !== Enum.Common.spacingMode.SPACE_BETWEEN.value &&
         node.payload.spacingMode !== Enum.Common.spacingMode.SPACE_AROUND.value &&
@@ -151,22 +165,49 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
             <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
+            <hr />
+            <SocketIn node={node} socketId={"flexSolveMode"} label={"Solve For"}>
+                <RadioButton.Group
+                    orientation={"horizontal"}
+                    value={`${node.payload.flexSolveMode}`}
+                    onValue={(v) => handleUpdate({ flexSolveMode: Number(v) })}
+                    disabled={node.in.flexSolveMode !== null}
+                    options={FLEX_SOLVE_OPTIONS}
+                />
+            </SocketIn>
+
             <SocketIn node={node} socketId={"count"} label={"Count"}>
-                <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
+                <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null || isSpacingMode} min={"1"} max={"64"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"spacingMode"} label={"Spacing"}>
                 <RadioButton.Group
                     orientation={"vertical"}
                     value={`${node.payload.spacingMode}`}
                     onValue={(v) => handleUpdate({ spacingMode: Number(v) })}
-                    disabled={node.in.spacingMode !== null}
+                    disabled={node.in.spacingMode !== null || isSpacingMode}
                     options={SPACING_MODE_OPTIONS}
                 />
             </SocketIn>
             <SocketIn node={node} socketId={"spacing"} label={"Spacing"}>
-                <LengthInput value={node.payload.spacing} onCommit={(spacing) => handleUpdate({ spacing })} disabled={node.in.spacing !== null || !isFixedSpacing} min={"0px"} required />
+                <LengthInput
+                    value={node.payload.spacing}
+                    onCommit={(spacing) => handleUpdate({ spacing })}
+                    disabled={node.in.spacing !== null || (!isSpacingMode && !isFixedSpacing)}
+                    min={"0px"}
+                    required
+                />
             </SocketIn>
-            <NodeAccordion label={"More"} nodeId={node.id} socketsIn={"memberAlign|memberRotation|skipFirst|skipList"}>
+            <SocketIn node={node} socketId={"flexJustify"} label={"Justify"}>
+                <RadioButton.Group
+                    orientation={"vertical"}
+                    value={`${node.payload.flexJustify}`}
+                    onValue={(v) => handleUpdate({ flexJustify: Number(v) })}
+                    disabled={node.in.flexJustify !== null || !isSpacingMode}
+                    options={FLEX_JUSTIFY_OPTIONS}
+                />
+            </SocketIn>
+            <hr />
+            <NodeAccordion label={"More"} nodeId={node.id} socketsIn={"memberAlign|memberRotation|skipFirst|skipLast"}>
                 <SocketIn node={node} socketId={"memberAlign"}>
                     <CheckBox checked={node.payload.memberAlign} onToggle={(memberAlign) => handleUpdate({ memberAlign })} disabled={node.in.memberAlign !== null}>
                         Align to Path
@@ -245,12 +286,18 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<PathLayoutD
     );
 };
 
+// Inputs that determine the item count (and therefore the sequence length).
+// In SPACING mode the path geometry also feeds into count, so path/spacing/pads/flexJustify are included.
+const SEQUENCE_INPUTS: (keyof PathLayoutDefinition["inputs"])[] = ["path", "flexSolveMode", "count", "spacing", "flexJustify", "padStart", "padEnd"];
+
 const ALL_INPUTS: (keyof PathLayoutDefinition["inputs"])[] = [
     "input",
     "path",
+    "flexSolveMode",
     "count",
     "spacingMode",
     "spacing",
+    "flexJustify",
     "overflowMode",
     "offsetMode",
     "offsetPercent",
@@ -270,33 +317,91 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<PathLayoutDefinition>, outSock
         return ALL_INPUTS;
     }
     if (outSocket === "sequence") {
-        return ["count"];
+        return SEQUENCE_INPUTS;
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<PathLayoutDefinition>, inSocket: keyof PathLayoutDefinition["inputs"], _deps: AllDeps): (keyof PathLayoutDefinition["outputs"])[] => {
-    if (inSocket === "count") {
+    if (SEQUENCE_INPUTS.includes(inSocket)) {
         return ["output", "sequence"];
     }
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: keyof PathLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+// Derive a count from path length and a fixed step size, then compute a shift to honour the justify mode.
+const solvePathCount = (available: number, step: number, justify: keyof typeof Enum.Common.flexJustify): { count: number; shift: number; step: number } => {
+    if (step <= 0 || available <= 0) return { count: 0, shift: 0, step };
+    const n = Math.floor(available / step);
+    if (n <= 0) return { count: 0, shift: 0, step };
+
+    switch (justify) {
+        case "START":
+            return { count: n, shift: 0, step };
+        case "END": {
+            const remainder = available - (n - 1) * step;
+            return { count: n, shift: remainder - step, step };
+        }
+        case "CENTER": {
+            const used = (n - 1) * step;
+            return { count: n, shift: (available - used) / 2, step };
+        }
+        case "BETWEEN": {
+            const derivedStep = n > 1 ? available / (n - 1) : 0;
+            return { count: n, shift: 0, step: derivedStep };
+        }
+        case "AROUND": {
+            const derivedStep = available / n;
+            return { count: n, shift: derivedStep / 2, step: derivedStep };
+        }
+    }
+};
+
+const resolveCount = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, context: Resolver.Context): { count: number; spacingPx: number; runShiftPx: number } | null => {
+    const flexSolveModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "flexSolveMode")?.data, Enum.Common.flexSolveMode) ?? node.payload.flexSolveMode;
+    const isSpacingMode = flexSolveModeEnum === Enum.Common.flexSolveMode.COUNT.value;
+    const spacingNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
+
+    if (isSpacingMode) {
+        const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
+        if (!pathData) return null;
+        const pathLen = PaperHelper.pathLength(pathData) ?? 0;
+        const padStartNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "padStart")?.data ?? node.payload.padStart) ?? 0;
+        const padEndNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "padEnd")?.data ?? node.payload.padEnd) ?? 0;
+        const available = Math.max(0, pathLen - padStartNum - padEndNum);
+        const justifyKey = Enum.keyOf(Enum.Common.flexJustify, context.resolve<DataTypes.Enum>(node.id, "flexJustify")?.data ?? node.payload.flexJustify);
+        const solved = solvePathCount(available, spacingNum, justifyKey);
+        return { count: solved.count, spacingPx: solved.step, runShiftPx: solved.shift };
+    }
+
     const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
     const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
     if (!isFinite(count)) return null;
+    return { count, spacingPx: spacingNum, runShiftPx: 0 };
+};
+
+const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: keyof PathLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const resolved = resolveCount(node, context);
+    if (!resolved) return null;
+    const { count, spacingPx, runShiftPx } = resolved;
 
     if (socket === "sequence") {
         return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count } };
     }
 
     if (socket !== "output") return null;
+    if (count === 0) return null;
 
     const pathData = context.resolve<DataTypes.Path>(node.id, "path")?.data;
     if (!pathData) return null;
 
-    const spacingModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode;
+    const flexSolveModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "flexSolveMode")?.data, Enum.Common.flexSolveMode) ?? node.payload.flexSolveMode;
+    const isSpacingMode = flexSolveModeEnum === Enum.Common.flexSolveMode.COUNT.value;
+
+    const spacingModeEnum = isSpacingMode
+        ? Enum.Common.spacingMode.FIXED_START.value
+        : (Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spacingMode")?.data, Enum.Common.spacingMode) ?? node.payload.spacingMode);
+
     const overflowModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "overflowMode")?.data, Enum.Common.overflowMode) ?? node.payload.overflowMode;
     const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
     const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
@@ -319,7 +424,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         offset = { percent: originPct, px: lenNum };
     }
 
-    // Distribution (only for Even mode)
     const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? {
         func: Enum.Common.distroFunctions.LINEAR.value,
         easing: Enum.Common.distroEasing.IN.value,
@@ -330,8 +434,6 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         Enum.keyOf(Enum.Common.distroEasing, distro.easing),
         NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
     );
-
-    const spacingNum = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "spacing")?.data ?? node.payload.spacing) ?? 20;
 
     const overflow: "clamp" | "wrap" = overflowModeEnum === Enum.Common.overflowMode.WRAP.value ? "wrap" : "clamp";
     const rotate = { auto: memberAlign, degrees: memberRotation };
@@ -359,14 +461,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<PathLayoutDefinition>, socket: k
         } else if (spacingModeEnum === Enum.Common.spacingMode.SPACE_BEFORE.value) {
             const t = count > 0 ? distroLerper((i + 1) / count) : 1;
             spacing = { percent: t * 100, px: padStartNum * (1 - t) - padEndNum * t };
-        } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_START.value) {
-            spacing = { percent: 0, px: padStartNum + i * spacingNum };
         } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_CENTER.value) {
-            const delta = (i - (count - 1) / 2) * spacingNum;
-            spacing = { percent: 50, px: (padStartNum - padEndNum) / 2 + delta };
+            const delta = (i - (count - 1) / 2) * spacingPx;
+            spacing = { percent: 50, px: (padStartNum - padEndNum) / 2 + delta + runShiftPx };
+        } else if (spacingModeEnum === Enum.Common.spacingMode.FIXED_END.value) {
+            spacing = { percent: 100, px: -(padEndNum + (count - 1 - i) * spacingPx) + runShiftPx };
         } else {
-            // FixedEnd
-            spacing = { percent: 100, px: -(padEndNum + (count - 1 - i) * spacingNum) };
+            // FIXED_START and SPACING mode (treated as fixed-start with solved step + shift)
+            spacing = { percent: 0, px: padStartNum + i * spacingPx + runShiftPx };
         }
 
         const distance = { percent: spacing.percent + offset.percent, px: spacing.px + offset.px };

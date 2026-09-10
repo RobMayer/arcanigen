@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, NodeHeading, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
@@ -185,6 +185,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                 />
             </SocketIn>
 
+            <hr />
             <SocketIn node={node} socketId={"radiusMode"} label={"Radius Mode"}>
                 <RadioButton.Group
                     options={RADIUS_MODE_OPTIONS}
@@ -194,7 +195,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                     disabled={node.in.radiusMode !== null}
                 />
             </SocketIn>
-            <hr />
+            <NodeHeading>Major/Minor</NodeHeading>
             <SocketIn node={node} socketId={"majorRadius"} label={"Major Radius"}>
                 <LengthInput value={node.payload.majorRadius} onCommit={(majorRadius) => handleUpdate({ majorRadius })} disabled={node.in.majorRadius !== null || isAmplitude} min={"0px"} required />
             </SocketIn>
@@ -219,7 +220,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                     options={SCRIBE_MODE_OPTIONS}
                 />
             </SocketIn>
-            <hr />
+            <NodeHeading>Radius/Amplitude</NodeHeading>
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isMajorMinor} min={"0px"} required />
             </SocketIn>
@@ -244,7 +245,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<StarDefinit
                     disabled={node.in.amplitudeAlign !== null || isMajorMinor}
                 />
             </SocketIn>
-
+            <hr />
             <NodeAccordion label={"More"} socketsIn={"majorCornerRadius|majorCornerShape|minorCornerRadius|minorCornerShape|pointDistro|markerShape|markerAlign"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
@@ -353,8 +354,14 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
             const majorRadius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "majorRadius")?.data ?? node.payload.majorRadius, "0px")) ?? 0;
             if (!majorRadius) return null;
 
-            const minorScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "minorScribe")?.data ?? node.payload.minorScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
-            const majorScribeMode = Enum.keyOf(Enum.Common.scribeMode, context.resolve<DataTypes.Enum>(node.id, "majorScribe")?.data ?? node.payload.majorScribe ?? Enum.Common.scribeMode.INSCRIBE.value);
+            const minorScribeMode = Enum.keyOf(
+                Enum.Common.scribeMode,
+                context.resolve<DataTypes.Enum>(node.id, "minorScribe")?.data ?? node.payload.minorScribe ?? Enum.Common.scribeMode.INSCRIBE.value,
+            );
+            const majorScribeMode = Enum.keyOf(
+                Enum.Common.scribeMode,
+                context.resolve<DataTypes.Enum>(node.id, "majorScribe")?.data ?? node.payload.majorScribe ?? Enum.Common.scribeMode.INSCRIBE.value,
+            );
 
             tI = getTrueRadius(minorRadius, minorScribeMode, N);
             tO = getTrueRadius(majorRadius, majorScribeMode, N);
@@ -388,7 +395,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<StarDefinition>, socket: keyof S
         const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? {
+            func: Enum.Common.distroFunctions.LINEAR.value,
+            easing: Enum.Common.distroEasing.IN.value,
+            intensity: "1",
+        };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
             Enum.keyOf(Enum.Common.distroEasing, distro.easing),

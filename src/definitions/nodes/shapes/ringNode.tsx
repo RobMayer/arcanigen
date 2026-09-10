@@ -120,6 +120,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
             <SocketOut node={node} socketId={"path"}>
                 Path
             </SocketOut>
+            <hr />
             <SocketIn node={node} socketId={"spanMode"} label={"Span Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
@@ -129,7 +130,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <hr />
             <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput
                     value={node.payload.innerRadius}
@@ -148,7 +148,6 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     required
                 />
             </SocketIn>
-            <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput
                     value={node.payload.radius}
@@ -176,22 +175,14 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RingDefinit
                     disabled={node.in.spreadAlign !== null || (node.payload.spanMode === 0 && node.in.spanMode === null)}
                 />
             </SocketIn>
+            <hr />
             <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = [
-    "radius",
-    "spread",
-    "spreadAlign",
-    "spanMode",
-    "innerRadius",
-    "outerRadius",
-    "position",
-    "rotation",
-];
+const GEOMETRY_INPUTS: (keyof RingDefinition["inputs"])[] = ["radius", "spread", "spreadAlign", "spanMode", "innerRadius", "outerRadius", "position", "rotation"];
 const STYLING_INPUTS: (keyof RingDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<RingDefinition>, outSocket: keyof RingDefinition["outputs"], _deps: AllDeps): (keyof RingDefinition["inputs"])[] => {

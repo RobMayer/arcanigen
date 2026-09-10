@@ -35,6 +35,8 @@ const def = signature({
         sweep: "angle",
         thetaFrom: "angle",
         thetaTo: "angle",
+        thetaDirection: "angle",
+        thetaSpread: "angle",
         markerStartShape: "shape",
         markerEndShape: "shape",
         markerAlign: "boolean",
@@ -58,6 +60,8 @@ export type SpiralDefinition = SignatureBuilder.DefinitionFrom<
         sweep: DataTypes.TypeOf<DataTypes.Angle>;
         thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
         thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaDirection: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaSpread: DataTypes.TypeOf<DataTypes.Angle>;
         markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
@@ -77,6 +81,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             sweep: null,
             thetaFrom: null,
             thetaTo: null,
+            thetaDirection: null,
+            thetaSpread: null,
             markerStartShape: null,
             markerEndShape: null,
             markerAlign: null,
@@ -108,6 +114,8 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<SpiralDefinition>>
             sweep: "90deg",
             thetaFrom: "0deg",
             thetaTo: "90deg",
+            thetaDirection: "0deg",
+            thetaSpread: "90deg",
             markerAlign: true,
             // stroke
             strokeWidth: "1px",
@@ -141,6 +149,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
     const isSpread = node.payload.spanMode === Enum.Common.spanMode.SPREAD.value && node.in.spanMode === null;
     const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
     const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
+    const isDirectionSpread = node.payload.arcMode === Enum.Common.arcMode.DIRECTION_SPREAD.value && node.in.arcMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -151,6 +160,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                 Path
             </SocketOut>
 
+            <hr />
             <SocketIn node={node} socketId={"spanMode"} label={"Radial Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
@@ -160,14 +170,12 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <hr />
             <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
                 <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
             <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
                 <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
             </SocketIn>
-            <hr />
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
             </SocketIn>
@@ -180,25 +188,61 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpiralDefin
                     options={ARC_MODE_OPTIONS}
                     value={`${node.payload.arcMode}`}
                     onValue={(v) => handleUpdate({ arcMode: Number(v) })}
-                    orientation={"horizontal"}
+                    orientation={"vertical"}
                     disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
+            <NodeAccordion label={"Start/Sweep"} nodeId={node.id} socketsIn="thetaStart|sweep">
+                <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaStart}
+                        onCommit={(thetaStart) => handleUpdate({ thetaStart })}
+                        disabled={node.in.thetaStart !== null || isFromTo || isDirectionSpread}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
+                    <AngleInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo || isDirectionSpread} unbound />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label={"From/To"} nodeId={node.id} socketsIn="thetaFrom|thetaTo">
+                <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaFrom}
+                        onCommit={(thetaFrom) => handleUpdate({ thetaFrom })}
+                        disabled={node.in.thetaFrom !== null || isStartSweep || isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaTo}
+                        onCommit={(thetaTo) => handleUpdate({ thetaTo })}
+                        disabled={node.in.thetaTo !== null || isStartSweep || isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label={"Direction/Spread"} nodeId={node.id} socketsIn="thetaDirection|thetaSpread">
+                <SocketIn node={node} socketId={"thetaDirection"} label={"Direction"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaDirection}
+                        onCommit={(thetaDirection) => handleUpdate({ thetaDirection })}
+                        disabled={node.in.thetaDirection !== null || !isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaSpread"} label={"Spread"}>
+                    <AngleInput
+                        value={node.payload.thetaSpread}
+                        onCommit={(thetaSpread) => handleUpdate({ thetaSpread })}
+                        disabled={node.in.thetaSpread !== null || !isDirectionSpread}
+                        unbound
+                        min={-360}
+                        max={360}
+                    />
+                </SocketIn>
+            </NodeAccordion>
             <hr />
-            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
-                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} />
-            </SocketIn>
-            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
-                <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
-                <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
-                <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
-            </SocketIn>
-
             <NodeAccordion label={"More"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"markerStartShape"}>
                     Start Marker
@@ -230,6 +274,8 @@ const GEOMETRY_INPUTS: (keyof SpiralDefinition["inputs"])[] = [
     "sweep",
     "thetaFrom",
     "thetaTo",
+    "thetaDirection",
+    "thetaSpread",
     "markerStartShape",
     "markerEndShape",
     "markerAlign",
@@ -303,7 +349,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<SpiralDefinition>, socket: keyof
     let effectiveStart: number;
     let effectiveSweep: number;
 
-    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
+    if (arcMode === Enum.Common.arcMode.DIRECTION_SPREAD.value) {
+        const dir = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaDirection")?.data ?? node.payload.thetaDirection) ?? 0;
+        const spr = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaSpread")?.data ?? node.payload.thetaSpread) ?? 0;
+        effectiveStart = dir - spr / 2;
+        effectiveSweep = spr;
+    } else if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
         const from = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
         const to = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;

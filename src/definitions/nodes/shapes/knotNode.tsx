@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback, useEffect } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { NodeAccordion, NodeHeading, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
@@ -237,7 +237,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     required
                 />
             </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"spanMode"} label={"Span Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
@@ -247,67 +247,69 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<KnotDefinit
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
-                <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"oScribe"} label={"Outer Scribe Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.oScribe}`}
-                    onValue={(v) => handleUpdate({ oScribe: Number(v) })}
-                    disabled={node.in.oScribe !== null || isSpread}
-                    options={SCRIBE_MODE_OPTIONS}
-                />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.iScribe}`}
-                    onValue={(v) => handleUpdate({ iScribe: Number(v) })}
-                    disabled={node.in.iScribe !== null || isSpread}
-                    options={SCRIBE_MODE_OPTIONS}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
-                <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"rScribe"} label={"Scribe Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.rScribe}`}
-                    onValue={(v) => handleUpdate({ rScribe: Number(v) })}
-                    disabled={node.in.rScribe !== null || isInOut}
-                    options={SCRIBE_MODE_OPTIONS}
-                />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
-                <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
-                <RadioButton.Group
-                    options={SPREAD_ALIGN_OPTIONS}
-                    value={`${node.payload.spreadAlign}`}
-                    onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.spreadAlign !== null || isInOut}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"expandMode"} label={"Expand Mode"}>
-                <RadioButton.Group
-                    orientation={"horizontal"}
-                    value={`${node.payload.expandMode}`}
-                    onValue={(v) => handleUpdate({ expandMode: Number(v) })}
-                    disabled={node.in.expandMode !== null || isInOut}
-                    options={EXPAND_MODE_OPTIONS}
-                />
-            </SocketIn>
+            <NodeAccordion nodeId={node.id} socketsIn={"innerRadius|iScribe|outerRadius|oScribe"} label={"Inner/Outer"}>
+                <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
+                    <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"iScribe"} label={"Inner Scribe Mode"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.iScribe}`}
+                        onValue={(v) => handleUpdate({ iScribe: Number(v) })}
+                        disabled={node.in.iScribe !== null || isSpread}
+                        options={SCRIBE_MODE_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
+                    <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"oScribe"} label={"Outer Scribe Mode"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.oScribe}`}
+                        onValue={(v) => handleUpdate({ oScribe: Number(v) })}
+                        disabled={node.in.oScribe !== null || isSpread}
+                        options={SCRIBE_MODE_OPTIONS}
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion nodeId={node.id} socketsIn={"radius|rScribe|spread|spreadAlign|expandMode"} label={"Radius/Spread"}>
+                <SocketIn node={node} socketId={"radius"} label={"Radius"}>
+                    <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"rScribe"} label={"Scribe Mode"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.rScribe}`}
+                        onValue={(v) => handleUpdate({ rScribe: Number(v) })}
+                        disabled={node.in.rScribe !== null || isInOut}
+                        options={SCRIBE_MODE_OPTIONS}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"spread"} label={"Spread"}>
+                    <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
+                    <RadioButton.Group
+                        options={SPREAD_ALIGN_OPTIONS}
+                        value={`${node.payload.spreadAlign}`}
+                        onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.spreadAlign !== null || isInOut}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"expandMode"} label={"Expand Mode"}>
+                    <RadioButton.Group
+                        orientation={"horizontal"}
+                        value={`${node.payload.expandMode}`}
+                        onValue={(v) => handleUpdate({ expandMode: Number(v) })}
+                        disabled={node.in.expandMode !== null || isInOut}
+                        options={EXPAND_MODE_OPTIONS}
+                    />
+                </SocketIn>
+            </NodeAccordion>
 
+            <hr />
             <NodeAccordion label={"More"} socketsIn={"outerCornerRadius|outerCornerShape|innerCornerRadius|innerCornerShape|pointDistro|markerShape|markerAlign|removeCrossings"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"pointDistro"}>
                     Angular Distribution
@@ -622,7 +624,11 @@ const evaluate = (node: NodeDefinitions.NodeFor<KnotDefinition>, socket: keyof K
         const markerShape = context.resolve<DataTypes.Shape>(node.id, "markerShape")?.data;
         const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
 
-        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? { func: Enum.Common.distroFunctions.LINEAR.value, easing: Enum.Common.distroEasing.IN.value, intensity: "1" };
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "pointDistro")?.data ?? {
+            func: Enum.Common.distroFunctions.LINEAR.value,
+            easing: Enum.Common.distroEasing.IN.value,
+            intensity: "1",
+        };
         const distroLerper = distroInterpolator(
             Enum.keyOf(Enum.Common.distroFunctions, distro.func),
             Enum.keyOf(Enum.Common.distroEasing, distro.easing),

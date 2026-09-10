@@ -35,6 +35,11 @@ const def = signature({
         sweep: "angle",
         thetaFrom: "angle",
         thetaTo: "angle",
+        thetaDirection: "angle",
+        thetaSpread: "angle",
+        flexSolveMode: "enum",
+        thetaStep: "angle",
+        flexJustify: "enum",
         thetaInclusive: "boolean",
         thetaCurve: "distribution",
         memberAlign: "boolean",
@@ -55,6 +60,11 @@ export type RadialLayoutDefinition = SignatureBuilder.DefinitionFrom<
         sweep: DataTypes.TypeOf<DataTypes.Angle>;
         thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
         thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaDirection: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaSpread: DataTypes.TypeOf<DataTypes.Angle>;
+        flexSolveMode: DataTypes.TypeOf<DataTypes.Enum>;
+        thetaStep: DataTypes.TypeOf<DataTypes.Angle>;
+        flexJustify: DataTypes.TypeOf<DataTypes.Enum>;
         thetaInclusive: boolean;
         memberAlign: boolean;
         memberRotation: DataTypes.TypeOf<DataTypes.Angle>;
@@ -62,6 +72,8 @@ export type RadialLayoutDefinition = SignatureBuilder.DefinitionFrom<
 >;
 
 const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
+const FLEX_SOLVE_OPTIONS = Enum.options(Enum.Common.flexSolveMode);
+const FLEX_JUSTIFY_OPTIONS = Enum.options(Enum.Common.flexJustify);
 
 const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinition>>, id: string = nanoid()): NodeDefinitions.BuiltNodeOf<"radialLayout", RadialLayoutDefinition> => {
     return {
@@ -75,6 +87,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinit
             sweep: null,
             thetaFrom: null,
             thetaTo: null,
+            thetaDirection: null,
+            thetaSpread: null,
+            flexSolveMode: null,
+            thetaStep: null,
+            flexJustify: null,
             thetaInclusive: null,
             thetaCurve: null,
             memberAlign: null,
@@ -96,6 +113,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<RadialLayoutDefinit
             sweep: input.sweep ?? "360deg",
             thetaFrom: input.thetaFrom ?? "0deg",
             thetaTo: input.thetaTo ?? "360deg",
+            thetaDirection: input.thetaDirection ?? "0deg",
+            thetaSpread: input.thetaSpread ?? "90deg",
+            flexSolveMode: input.flexSolveMode ?? Enum.Common.flexSolveMode.SPACING.value,
+            thetaStep: input.thetaStep ?? "30deg",
+            flexJustify: input.flexJustify ?? Enum.Common.flexJustify.AROUND.value,
             thetaInclusive: input.thetaInclusive ?? false,
             memberAlign: input.memberAlign ?? false,
             memberRotation: input.memberRotation ?? "0deg",
@@ -117,6 +139,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialLayou
 
     const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
     const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
+    const isDirectionSpread = node.payload.arcMode === Enum.Common.arcMode.DIRECTION_SPREAD.value && node.in.arcMode === null;
+    const isSpacingMode = node.payload.flexSolveMode === Enum.Common.flexSolveMode.COUNT.value && node.in.flexSolveMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -129,42 +153,67 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialLayou
             <SocketOut node={node} socketId={"sequence"}>
                 Sequence
             </SocketOut>
-            <SocketIn node={node} socketId={"count"} label={"Count"}>
-                <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null} min={"1"} max={"64"} required />
-            </SocketIn>
             <SocketIn node={node} socketId={"radius"} label={"Radius"}>
                 <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null} min={"0px"} required />
             </SocketIn>
+            <hr />
+            <SocketIn node={node} socketId={"flexSolveMode"} label={"Solve For"}>
+                <RadioButton.Group options={FLEX_SOLVE_OPTIONS} value={`${node.payload.flexSolveMode}`} onValue={(v) => handleUpdate({ flexSolveMode: Number(v) })} orientation={"horizontal"} disabled={node.in.flexSolveMode !== null} />
+            </SocketIn>
+            <NodeAccordion nodeId={node.id} socketsIn="count|thetaInclusive" label="By Count">
+                <SocketIn node={node} socketId={"count"} label={"Count"}>
+                    <IntegerInput.SliderInput value={node.payload.count} onCommit={(count) => handleUpdate({ count })} disabled={node.in.count !== null || isSpacingMode} min={"1"} max={"64"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaInclusive"}>
+                    <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isSpacingMode}>
+                        Inclusive End
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion nodeId={node.id} socketsIn={"thetaStep|flexJustify"} label={"By Step"}>
+                <SocketIn node={node} socketId={"thetaStep"} label={"Step"}>
+                    <AngleInput value={node.payload.thetaStep} onCommit={(thetaStep) => handleUpdate({ thetaStep })} disabled={node.in.thetaStep !== null || !isSpacingMode} unbound min={0} max={360} />
+                </SocketIn>
+                <SocketIn node={node} socketId={"flexJustify"} label={"Justify"}>
+                    <RadioButton.Group options={FLEX_JUSTIFY_OPTIONS} value={`${node.payload.flexJustify}`} onValue={(v) => handleUpdate({ flexJustify: Number(v) })} orientation={"vertical"} disabled={node.in.flexJustify !== null || !isSpacingMode} />
+                </SocketIn>
+            </NodeAccordion>
             <hr />
             <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
                     value={`${node.payload.arcMode}`}
                     onValue={(v) => handleUpdate({ arcMode: Number(v) })}
-                    orientation={"horizontal"}
+                    orientation={"vertical"}
                     disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
-
-            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
-                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
-                <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound min={-360} max={360} />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
-                <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
-                <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
-            </SocketIn>
-            <NodeAccordion nodeId={node.id} label={"More"} socketsIn={"thetaInclusive|thetaCurve|memberAlign|memberRotation"}>
-                <SocketIn node={node} socketId={"thetaInclusive"}>
-                    <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null}>
-                        Inclusive End
-                    </CheckBox>
+            <NodeAccordion label={"Start/Sweep"} nodeId={node.id} socketsIn="thetaStart|sweep">
+                <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
+                    <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo || isDirectionSpread} unbound />
                 </SocketIn>
+                <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
+                    <AngleInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo || isDirectionSpread} unbound min={-360} max={360} />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label={"From/To"} nodeId={node.id} socketsIn="thetaFrom|thetaTo">
+                <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
+                    <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep || isDirectionSpread} unbound />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
+                    <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep || isDirectionSpread} unbound />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label={"Direction/Spread"} nodeId={node.id} socketsIn="thetaDirection|thetaSpread">
+                <SocketIn node={node} socketId={"thetaDirection"} label={"Direction"}>
+                    <AngleInput.SliderInput value={node.payload.thetaDirection} onCommit={(thetaDirection) => handleUpdate({ thetaDirection })} disabled={node.in.thetaDirection !== null || !isDirectionSpread} unbound />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaSpread"} label={"Spread"}>
+                    <AngleInput value={node.payload.thetaSpread} onCommit={(thetaSpread) => handleUpdate({ thetaSpread })} disabled={node.in.thetaSpread !== null || !isDirectionSpread} unbound min={-360} max={360} />
+                </SocketIn>
+            </NodeAccordion>
+            <hr />
+            <NodeAccordion nodeId={node.id} label={"More"} socketsIn={"thetaCurve|memberAlign|memberRotation"}>
                 <SocketIn node={node} socketId={"thetaCurve"}>
                     Angular Distribution
                 </SocketIn>
@@ -183,15 +232,23 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<RadialLayou
     );
 };
 
-const GEOMETRY_INPUTS: (keyof RadialLayoutDefinition["inputs"])[] = [
-    "input",
+const SEQUENCE_INPUTS: (keyof RadialLayoutDefinition["inputs"])[] = [
     "count",
-    "radius",
     "arcMode",
     "thetaStart",
     "sweep",
     "thetaFrom",
     "thetaTo",
+    "thetaDirection",
+    "thetaSpread",
+    "flexSolveMode",
+    "thetaStep",
+    "flexJustify",
+];
+const GEOMETRY_INPUTS: (keyof RadialLayoutDefinition["inputs"])[] = [
+    "input",
+    ...SEQUENCE_INPUTS,
+    "radius",
     "thetaInclusive",
     "thetaCurve",
     "memberAlign",
@@ -205,37 +262,56 @@ const dependsOn = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, outSo
         return GEOMETRY_INPUTS;
     }
     if (outSocket === "sequence") {
-        return ["count"];
+        return SEQUENCE_INPUTS;
     }
     return [];
 };
 
 const contributesTo = (_node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, inSocket: keyof RadialLayoutDefinition["inputs"], _deps: AllDeps): (keyof RadialLayoutDefinition["outputs"])[] => {
-    if (inSocket === "count") {
+    if (SEQUENCE_INPUTS.includes(inSocket)) {
         return ["output", "sequence"];
     }
     return ["output"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket: keyof RadialLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
-    const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
-    if (!isFinite(count)) return null;
-
-    if (socket === "sequence") {
-        return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count } };
+const solveArcCount = (available: number, step: number, justify: keyof typeof Enum.Common.flexJustify): { count: number; shift: number; step: number } => {
+    if (step <= 0 || available <= 0) return { count: 0, shift: 0, step };
+    const n = Math.floor(available / step);
+    if (n <= 0) return { count: 0, shift: 0, step };
+    switch (justify) {
+        case "START":
+            return { count: n, shift: 0, step };
+        case "END": {
+            const remainder = available - (n - 1) * step;
+            return { count: n, shift: remainder - step, step };
+        }
+        case "CENTER": {
+            const used = (n - 1) * step;
+            return { count: n, shift: (available - used) / 2, step };
+        }
+        case "BETWEEN": {
+            const derivedStep = n > 1 ? available / (n - 1) : 0;
+            return { count: n, shift: 0, step: derivedStep };
+        }
+        case "AROUND": {
+            const derivedStep = available / n;
+            return { count: n, shift: derivedStep / 2, step: derivedStep };
+        }
     }
+};
 
-    if (socket !== "output") return null;
-
-    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
-
+const resolveLayout = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, context: Resolver.Context): { count: number; angleAt: (i: number) => number } | null => {
     const arcMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "arcMode")?.data, Enum.Common.arcMode) ?? node.payload.arcMode ?? 0;
 
     let effectiveStart: number;
     let effectiveSweep: number;
 
-    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
+    if (arcMode === Enum.Common.arcMode.DIRECTION_SPREAD.value) {
+        const dir = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaDirection")?.data ?? node.payload.thetaDirection) ?? 0;
+        const spr = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaSpread")?.data ?? node.payload.thetaSpread) ?? 0;
+        effectiveStart = dir - spr / 2;
+        effectiveSweep = spr;
+    } else if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
         const from = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
         const to = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
@@ -245,33 +321,66 @@ const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket:
         effectiveSweep = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
-    const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+    const flexSolveModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "flexSolveMode")?.data, Enum.Common.flexSolveMode) ?? node.payload.flexSolveMode ?? 0;
+    const isSpacingMode = flexSolveModeEnum === Enum.Common.flexSolveMode.COUNT.value;
 
-    const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? {
-        func: Enum.Common.distroFunctions.LINEAR.value,
-        easing: Enum.Common.distroEasing.IN.value,
-        intensity: "1",
-    };
-    const distroLerper = distroInterpolator(
-        Enum.keyOf(Enum.Common.distroFunctions, distro.func),
-        Enum.keyOf(Enum.Common.distroEasing, distro.easing),
-        NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
-    );
+    if (isSpacingMode) {
+        const thetaStepRaw = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStep")?.data ?? node.payload.thetaStep) ?? 30;
+        const available = Math.abs(effectiveSweep);
+        const justifyKey = Enum.keyOf(Enum.Common.flexJustify, context.resolve<DataTypes.Enum>(node.id, "flexJustify")?.data ?? node.payload.flexJustify);
+        const solved = solveArcCount(available, Math.abs(thetaStepRaw), justifyKey);
+        if (solved.count <= 0) return null;
+        const sign = effectiveSweep >= 0 ? 1 : -1;
+        const shiftDeg = sign * solved.shift;
+        const stepDeg = sign * solved.step;
+        return { count: solved.count, angleAt: (i: number) => effectiveStart + shiftDeg + i * stepDeg };
+    } else {
+        const countStr = context.resolve<DataTypes.Integer>(node.id, "count")?.data ?? node.payload.count;
+        const count = Math.round(Math.max(1, Math.min(64, NumericString.Emptyable.asNumber(countStr) ?? NaN)));
+        if (!isFinite(count)) return null;
+        const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? {
+            func: Enum.Common.distroFunctions.LINEAR.value,
+            easing: Enum.Common.distroEasing.IN.value,
+            intensity: "1",
+        };
+        const distroLerper = distroInterpolator(
+            Enum.keyOf(Enum.Common.distroFunctions, distro.func),
+            Enum.keyOf(Enum.Common.distroEasing, distro.easing),
+            NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
+        );
+        const denominator = thetaInclusive ? Math.max(1, count - 1) : count;
+        return {
+            count,
+            angleAt: (i: number) => {
+                const coeff = delerp(i, 0, denominator);
+                return lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
+            },
+        };
+    }
+};
 
+const evaluate = (node: NodeDefinitions.NodeFor<RadialLayoutDefinition>, socket: keyof RadialLayoutDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
+    const layout = resolveLayout(node, context);
+    if (!layout) return null;
+
+    if (socket === "sequence") {
+        return { kind: "sequence", data: { senderId: node.id, outputSocket: "sequence", count: layout.count } };
+    }
+
+    if (socket !== "output") return null;
+
+    const radius = Length.Emptyable.asNumber(Length.Emptyable.max(context.resolve<DataTypes.Length>(node.id, "radius")?.data ?? node.payload.radius, "0px")) ?? 0;
     const memberAlign = context.resolve<DataTypes.Boolean>(node.id, "memberAlign")?.data ?? node.payload.memberAlign;
     const memberRotation = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "memberRotation")?.data ?? node.payload.memberRotation) ?? 0;
-
     const [groupTransforms] = TransformPrefab.evaluate(node, context);
 
-    const denominator = thetaInclusive ? Math.max(1, count - 1) : count;
-
     const children = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < layout.count; i++) {
         const shape = context.resolve<DataTypes.Shape>(node.id, "input", { ...context.cursorData, [Resolver.cursorKey({ senderId: node.id, outputSocket: "sequence" })]: i })?.data ?? null;
         if (shape === null) continue;
 
-        const coeff = delerp(i, 0, denominator);
-        const angle = lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
+        const angle = layout.angleAt(i);
         const angleDeg = angle - 90;
         const angleRad = deg2rad(angleDeg);
         const vx = radius * Math.cos(angleRad);

@@ -6,7 +6,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { NodeAccordion, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
+import { NodeAccordion, NodeHeading, SocketIn, SocketOut, ValuePreview } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { IntegerInput } from "../../../components/inputs/IntegerInput";
 import { DecimalInput } from "../../../components/inputs/DecimalInput";
@@ -173,6 +173,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpirographD
                     disabled={node.in.spiroMode !== null}
                 />
             </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"paramMode"} label={"Gear Mode"}>
                 <RadioButton.Group
                     options={PARAM_MODE_OPTIONS}
@@ -182,7 +183,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpirographD
                     disabled={node.in.paramMode !== null}
                 />
             </SocketIn>
-            <hr />
+            <NodeHeading>Geared</NodeHeading>
             <SocketIn node={node} socketId={"ringTeeth"} label={"Ring Teeth"}>
                 <IntegerInput.SliderInput
                     value={node.payload.ringTeeth}
@@ -218,7 +219,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpirographD
                     disabled={node.in.radiusMode !== null || isRadii}
                 />
             </SocketIn>
-            <hr />
+            <NodeHeading>Radii</NodeHeading>
             <SocketIn node={node} socketId={"ringRadius"} label={"Ring Radius"}>
                 <LengthInput value={node.payload.ringRadius} onCommit={(ringRadius) => handleUpdate({ ringRadius })} disabled={node.in.ringRadius !== null || isGeared} min={"0px"} required />
             </SocketIn>
@@ -231,7 +232,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpirographD
             <SocketIn node={node} socketId={"turns"} label={"Turns"}>
                 <DecimalInput.SliderInput value={node.payload.turns} onCommit={(turns) => handleUpdate({ turns })} disabled={node.in.turns !== null || isGeared} min={1} max={200} />
             </SocketIn>
-
+            <hr />
             <NodeAccordion label={"More"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
                 <SocketIn node={node} socketId={"markerStartShape"}>
                     Start Marker
@@ -263,15 +264,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<SpirographD
 
 // Inputs that set the figure's size/shape (and therefore its circumradius/apothem).
 const RADIUS_INPUTS: (keyof SpirographDefinition["inputs"])[] = ["spiroMode", "paramMode", "ringTeeth", "wheelTeeth", "penOffset", "radius", "radiusMode", "ringRadius", "wheelRadius", "penRadius"];
-const GEOMETRY_INPUTS: (keyof SpirographDefinition["inputs"])[] = [
-    ...RADIUS_INPUTS,
-    "turns",
-    "markerStartShape",
-    "markerEndShape",
-    "markerAlign",
-    "position",
-    "rotation",
-];
+const GEOMETRY_INPUTS: (keyof SpirographDefinition["inputs"])[] = [...RADIUS_INPUTS, "turns", "markerStartShape", "markerEndShape", "markerAlign", "position", "rotation"];
 const STYLING_INPUTS: (keyof SpirographDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<SpirographDefinition>, outSocket: keyof SpirographDefinition["outputs"], _deps: AllDeps): (keyof SpirographDefinition["inputs"])[] => {

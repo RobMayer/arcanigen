@@ -148,14 +148,22 @@ export namespace Enum {
         export const arcMode = {
             START_SWEEP: { value: 0, label: "Start / Sweep" },
             FROM_TO: { value: 1, label: "From / To" },
+            DIRECTION_SPREAD: { value: 2, label: "Direction / Spread" },
         } as const;
 
         // Grid Layout: per-axis solve mode -- the NAMED quantity is the one derived from the other two.
         // Total = give Count+Spacing; Spacing = give Count+Total; Count = give Spacing+Total.
-        export const fitCalcMode = {
+        export const gridSolveMode = {
             TOTAL: { value: 0, label: "Total" },
             SPACING: { value: 1, label: "Spacing" },
             COUNT: { value: 2, label: "Count" },
+        } as const;
+
+        // Path Layout / Points on Path: whether the item count is explicit or derived from path length / spacing.
+        // COUNT = user specifies count, system spaces items; SPACING = user specifies step distance, system counts.
+        export const flexSolveMode = {
+            COUNT: { value: 0, label: "Count" },
+            SPACING: { value: 1, label: "Spacing" },
         } as const;
 
         // Grid Layout: where the leftover slack lands when Count is derived (Spacing+Total). Start/Center/End
@@ -165,6 +173,17 @@ export namespace Enum {
             CENTER: { value: 1, label: "Center" },
             END: { value: 2, label: "End" },
             FILL: { value: 3, label: "Fill" },
+        } as const;
+
+        // Path Layout / Points on Path: what happens to the remainder when count is derived from spacing.
+        // Start/End/Center keep the spacing exact and shift where the run sits within the available length.
+        // Between/Around re-derive the spacing so items distribute cleanly (space-between / space-around semantics).
+        export const flexJustify = {
+            START: { value: 0, label: "Start" },
+            END: { value: 1, label: "End" },
+            CENTER: { value: 2, label: "Center" },
+            BETWEEN: { value: 3, label: "Between" },
+            AROUND: { value: 4, label: "Around" },
         } as const;
 
         // Grid Layout: how the 2D grid linearizes into the single Cell Sequence.
@@ -444,6 +463,16 @@ export namespace Enum {
         { label: "Subelement Mode", options: Common.subelementMode },
         { label: "Inject Side", options: Common.injectSide },
         { label: "Mask Mode", options: Common.maskMode },
+        { label: "Grid Solve Mode", options: Common.gridSolveMode },
+        { label: "Grid Justify", options: Common.gridJustify },
+        { label: "Grid Sequence Order", options: Common.gridSequenceOrder },
+        { label: "Grid Direction Radial", options: Common.gridDirectionRadial },
+        { label: "Grid Direction Annular", options: Common.gridDirectionAnnular },
+        { label: "Polar Sequence Order", options: Common.polarSequenceOrder },
+        { label: "Path Solve Mode", options: Common.flexSolveMode },
+        { label: "Flex Justify", options: Common.flexJustify },
+        { label: "Gradient Spread", options: Common.gradientSpread },
+        { label: "Framing", options: Common.framing },
         { label: "Spacing Mode", options: Common.spacingMode },
         { label: "Overflow Mode", options: Common.overflowMode },
         { label: "Sequencer Mode", options: Common.sequencerMode },

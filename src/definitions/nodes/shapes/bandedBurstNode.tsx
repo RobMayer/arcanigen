@@ -7,7 +7,7 @@ import { Enum } from "../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../features/nodeview/slots";
 import { LengthInput } from "../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../nodeTypes";
@@ -46,6 +46,11 @@ const def = signature({
         sweep: "angle",
         thetaFrom: "angle",
         thetaTo: "angle",
+        thetaDirection: "angle",
+        thetaSpread: "angle",
+        flexSolveMode: "enum",
+        thetaStep: "angle",
+        flexJustify: "enum",
         thetaInclusive: "boolean",
         thetaCurve: "distribution",
         ...TransformPrefab.SIG_IN,
@@ -77,6 +82,11 @@ export type BandedBurstDefinition = SignatureBuilder.DefinitionFrom<
         sweep: DataTypes.TypeOf<DataTypes.Angle>;
         thetaFrom: DataTypes.TypeOf<DataTypes.Angle>;
         thetaTo: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaDirection: DataTypes.TypeOf<DataTypes.Angle>;
+        thetaSpread: DataTypes.TypeOf<DataTypes.Angle>;
+        flexSolveMode: DataTypes.TypeOf<DataTypes.Enum>;
+        thetaStep: DataTypes.TypeOf<DataTypes.Angle>;
+        flexJustify: DataTypes.TypeOf<DataTypes.Enum>;
         thetaInclusive: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
@@ -103,6 +113,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BandedBurstDefiniti
             sweep: null,
             thetaFrom: null,
             thetaTo: null,
+            thetaDirection: null,
+            thetaSpread: null,
+            flexSolveMode: null,
+            thetaStep: null,
+            flexJustify: null,
             thetaInclusive: null,
             thetaCurve: null,
 
@@ -143,6 +158,11 @@ const create = (input: Partial<NodeDefinitions.PayloadTypeOf<BandedBurstDefiniti
             sweep: "90deg",
             thetaFrom: "0deg",
             thetaTo: "90deg",
+            thetaDirection: "0deg",
+            thetaSpread: "90deg",
+            flexSolveMode: Enum.Common.flexSolveMode.SPACING.value,
+            thetaStep: "30deg",
+            flexJustify: Enum.Common.flexJustify.AROUND.value,
             thetaInclusive: false,
             // stroke
             strokeWidth: "1px",
@@ -168,6 +188,8 @@ const ARC_MODE_OPTIONS = Enum.options(Enum.Common.arcMode);
 const SPREAD_ALIGN_OPTIONS = Enum.options(Enum.Common.spreadAlign);
 const BAND_MODE_OPTIONS = Enum.options(Enum.Common.bandMode);
 const BAND_CAP_OPTIONS = Enum.options(Enum.Common.bandCap);
+const FLEX_SOLVE_OPTIONS = Enum.options(Enum.Common.flexSolveMode);
+const FLEX_JUSTIFY_OPTIONS = Enum.options(Enum.Common.flexJustify);
 
 const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBurstDefinition>; methods: ReturnType<typeof Project.useNode>[1] }): ReactNode => {
     const handleUpdate = useCallback(
@@ -181,6 +203,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBurst
     const isSpread = node.payload.spanMode === 1 && node.in.spanMode === null;
     const isStartSweep = node.payload.arcMode === Enum.Common.arcMode.START_SWEEP.value && node.in.arcMode === null;
     const isFromTo = node.payload.arcMode === Enum.Common.arcMode.FROM_TO.value && node.in.arcMode === null;
+    const isDirectionSpread = node.payload.arcMode === Enum.Common.arcMode.DIRECTION_SPREAD.value && node.in.arcMode === null;
+    const isSpacingMode = node.payload.flexSolveMode === Enum.Common.flexSolveMode.COUNT.value && node.in.flexSolveMode === null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -193,10 +217,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBurst
             <SocketOut node={node} socketId={"centerline"}>
                 Centerline
             </SocketOut>
-            <SocketIn node={node} socketId={"spurCount"} label={"Spurs"}>
-                <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null} min={"0"} required />
-            </SocketIn>
-
+            <hr />
             <SocketIn node={node} socketId={"spanMode"} label={"Radial Mode"}>
                 <RadioButton.Group
                     options={SPAN_MODE_OPTIONS}
@@ -206,29 +227,31 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBurst
                     disabled={node.in.spanMode !== null}
                 />
             </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
-                <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
-                <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"radius"} label={"Radius"}>
-                <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"spread"} label={"Spread"}>
-                <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
-                <RadioButton.Group
-                    options={SPREAD_ALIGN_OPTIONS}
-                    value={`${node.payload.spreadAlign}`}
-                    onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.spreadAlign !== null || isInOut}
-                />
-            </SocketIn>
+            <NodeAccordion nodeId={node.id} socketsIn={"innerRadius|outerRadius"} label={"Inner/Outer"}>
+                <SocketIn node={node} socketId={"innerRadius"} label={"Inner Radius"}>
+                    <LengthInput value={node.payload.innerRadius} onCommit={(innerRadius) => handleUpdate({ innerRadius })} disabled={node.in.innerRadius !== null || isSpread} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"outerRadius"} label={"Outer Radius"}>
+                    <LengthInput value={node.payload.outerRadius} onCommit={(outerRadius) => handleUpdate({ outerRadius })} disabled={node.in.outerRadius !== null || isSpread} min={"0px"} required />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion nodeId={node.id} socketsIn={"radius|spread|spreadAlign"} label={"Radius/Spread"}>
+                <SocketIn node={node} socketId={"radius"} label={"Radius"}>
+                    <LengthInput value={node.payload.radius} onCommit={(radius) => handleUpdate({ radius })} disabled={node.in.radius !== null || isInOut} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"spread"} label={"Spread"}>
+                    <LengthInput value={node.payload.spread} onCommit={(spread) => handleUpdate({ spread })} disabled={node.in.spread !== null || isInOut} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"spreadAlign"} label={"Spread Align"}>
+                    <RadioButton.Group
+                        options={SPREAD_ALIGN_OPTIONS}
+                        value={`${node.payload.spreadAlign}`}
+                        onValue={(v) => handleUpdate({ spreadAlign: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.spreadAlign !== null || isInOut}
+                    />
+                </SocketIn>
+            </NodeAccordion>
             <hr />
             <SocketIn node={node} socketId={"innerWidth"} label={"Inner Width"}>
                 <LengthInput value={node.payload.innerWidth} onCommit={(innerWidth) => handleUpdate({ innerWidth })} disabled={node.in.innerWidth !== null} min={"0px"} required />
@@ -264,39 +287,118 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBurst
                 />
             </SocketIn>
             <hr />
+            <SocketIn node={node} socketId={"flexSolveMode"} label={"Solve For"}>
+                <RadioButton.Group
+                    options={FLEX_SOLVE_OPTIONS}
+                    value={`${node.payload.flexSolveMode}`}
+                    onValue={(v) => handleUpdate({ flexSolveMode: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.flexSolveMode !== null}
+                />
+            </SocketIn>
+            <NodeAccordion nodeId={node.id} socketsIn="spurCount|thetaInclusive" label="By Count">
+                <SocketIn node={node} socketId={"spurCount"} label={"Spurs"}>
+                    <IntegerInput value={node.payload.spurCount} onCommit={(spurCount) => handleUpdate({ spurCount })} disabled={node.in.spurCount !== null || isSpacingMode} min={"0"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaInclusive"}>
+                    <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null || isSpacingMode}>
+                        Inclusive End
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion nodeId={node.id} socketsIn={"thetaStep|flexJustify"} label={"By Step"}>
+                <SocketIn node={node} socketId={"thetaStep"} label={"Step"}>
+                    <AngleInput
+                        value={node.payload.thetaStep}
+                        onCommit={(thetaStep) => handleUpdate({ thetaStep })}
+                        disabled={node.in.thetaStep !== null || !isSpacingMode}
+                        unbound
+                        min={0}
+                        max={360}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"flexJustify"} label={"Justify"}>
+                    <RadioButton.Group
+                        options={FLEX_JUSTIFY_OPTIONS}
+                        value={`${node.payload.flexJustify}`}
+                        onValue={(v) => handleUpdate({ flexJustify: Number(v) })}
+                        orientation={"vertical"}
+                        disabled={node.in.flexJustify !== null || !isSpacingMode}
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <SocketIn node={node} socketId={"thetaCurve"}>
+                Angular Distribution
+            </SocketIn>
+            <hr />
             <SocketIn node={node} socketId={"arcMode"} label={"Arc Mode"}>
                 <RadioButton.Group
                     options={ARC_MODE_OPTIONS}
                     value={`${node.payload.arcMode}`}
                     onValue={(v) => handleUpdate({ arcMode: Number(v) })}
-                    orientation={"horizontal"}
+                    orientation={"vertical"}
                     disabled={node.in.arcMode !== null}
                 />
             </SocketIn>
-
-            <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
-                <AngleInput.SliderInput value={node.payload.thetaStart} onCommit={(thetaStart) => handleUpdate({ thetaStart })} disabled={node.in.thetaStart !== null || isFromTo} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
-                <AngleInput.SliderInput value={node.payload.sweep} onCommit={(sweep) => handleUpdate({ sweep })} disabled={node.in.sweep !== null || isFromTo} unbound min={-360} max={360} />
-            </SocketIn>
+            <NodeAccordion label={"Start/Sweep"} nodeId={node.id} socketsIn="thetaStart|sweep">
+                <SocketIn node={node} socketId={"thetaStart"} label={"Start"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaStart}
+                        onCommit={(thetaStart) => handleUpdate({ thetaStart })}
+                        disabled={node.in.thetaStart !== null || isFromTo || isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"sweep"} label={"Sweep"}>
+                    <AngleInput
+                        value={node.payload.sweep}
+                        onCommit={(sweep) => handleUpdate({ sweep })}
+                        disabled={node.in.sweep !== null || isFromTo || isDirectionSpread}
+                        unbound
+                        min={-360}
+                        max={360}
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label={"From/To"} nodeId={node.id} socketsIn="thetaFrom|thetaTo">
+                <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaFrom}
+                        onCommit={(thetaFrom) => handleUpdate({ thetaFrom })}
+                        disabled={node.in.thetaFrom !== null || isStartSweep || isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaTo}
+                        onCommit={(thetaTo) => handleUpdate({ thetaTo })}
+                        disabled={node.in.thetaTo !== null || isStartSweep || isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion label={"Direction/Spread"} nodeId={node.id} socketsIn="thetaDirection|thetaSpread">
+                <SocketIn node={node} socketId={"thetaDirection"} label={"Direction"}>
+                    <AngleInput.SliderInput
+                        value={node.payload.thetaDirection}
+                        onCommit={(thetaDirection) => handleUpdate({ thetaDirection })}
+                        disabled={node.in.thetaDirection !== null || !isDirectionSpread}
+                        unbound
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"thetaSpread"} label={"Spread"}>
+                    <AngleInput
+                        value={node.payload.thetaSpread}
+                        onCommit={(thetaSpread) => handleUpdate({ thetaSpread })}
+                        disabled={node.in.thetaSpread !== null || !isDirectionSpread}
+                        unbound
+                        min={-360}
+                        max={360}
+                    />
+                </SocketIn>
+            </NodeAccordion>
             <hr />
-            <SocketIn node={node} socketId={"thetaFrom"} label={"From"}>
-                <AngleInput.SliderInput value={node.payload.thetaFrom} onCommit={(thetaFrom) => handleUpdate({ thetaFrom })} disabled={node.in.thetaFrom !== null || isStartSweep} unbound />
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaTo"} label={"To"}>
-                <AngleInput.SliderInput value={node.payload.thetaTo} onCommit={(thetaTo) => handleUpdate({ thetaTo })} disabled={node.in.thetaTo !== null || isStartSweep} unbound />
-            </SocketIn>
-
-            <SocketIn node={node} socketId={"thetaInclusive"}>
-                <CheckBox checked={node.payload.thetaInclusive} onToggle={(thetaInclusive) => handleUpdate({ thetaInclusive })} disabled={node.in.thetaInclusive !== null}>
-                    Inclusive End
-                </CheckBox>
-            </SocketIn>
-            <SocketIn node={node} socketId={"thetaCurve"}>
-                Angular Distribution
-            </SocketIn>
-
             <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
         </TypicalNode>
@@ -318,6 +420,11 @@ const CENTERLINE_INPUTS: (keyof BandedBurstDefinition["inputs"])[] = [
     "sweep",
     "thetaFrom",
     "thetaTo",
+    "thetaDirection",
+    "thetaSpread",
+    "flexSolveMode",
+    "thetaStep",
+    "flexJustify",
     "thetaInclusive",
     "thetaCurve",
     "position",
@@ -347,11 +454,33 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BandedBurstDefinition>, in
     return ["output", "path", "centerline"];
 };
 
-const evaluate = (node: NodeDefinitions.NodeFor<BandedBurstDefinition>, socket: keyof BandedBurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
-    if (!isFinite(spurCount) || spurCount <= 0) return null;
+const solveArcCount = (available: number, step: number, justify: keyof typeof Enum.Common.flexJustify): { count: number; shift: number; step: number } => {
+    if (step <= 0 || available <= 0) return { count: 0, shift: 0, step };
+    const n = Math.floor(available / step);
+    if (n <= 0) return { count: 0, shift: 0, step };
+    switch (justify) {
+        case "START":
+            return { count: n, shift: 0, step };
+        case "END": {
+            const remainder = available - (n - 1) * step;
+            return { count: n, shift: remainder - step, step };
+        }
+        case "CENTER": {
+            const used = (n - 1) * step;
+            return { count: n, shift: (available - used) / 2, step };
+        }
+        case "BETWEEN": {
+            const derivedStep = n > 1 ? available / (n - 1) : 0;
+            return { count: n, shift: 0, step: derivedStep };
+        }
+        case "AROUND": {
+            const derivedStep = available / n;
+            return { count: n, shift: derivedStep / 2, step: derivedStep };
+        }
+    }
+};
 
-    const N = spurCount;
+const evaluate = (node: NodeDefinitions.NodeFor<BandedBurstDefinition>, socket: keyof BandedBurstDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
     const spanMode = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "spanMode")?.data, Enum.Common.spanMode) ?? node.payload.spanMode ?? 0;
 
     let rI: number;
@@ -382,7 +511,12 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedBurstDefinition>, socket: 
     let effectiveStart: number;
     let effectiveSweep: number;
 
-    if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
+    if (arcMode === Enum.Common.arcMode.DIRECTION_SPREAD.value) {
+        const dir = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaDirection")?.data ?? node.payload.thetaDirection) ?? 0;
+        const spr = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaSpread")?.data ?? node.payload.thetaSpread) ?? 0;
+        effectiveStart = dir - spr / 2;
+        effectiveSweep = spr;
+    } else if (arcMode === Enum.Common.arcMode.FROM_TO.value) {
         const from = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaFrom")?.data ?? node.payload.thetaFrom) ?? 0;
         const to = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaTo")?.data ?? node.payload.thetaTo) ?? 0;
         effectiveStart = from;
@@ -392,26 +526,49 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedBurstDefinition>, socket: 
         effectiveSweep = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "sweep")?.data ?? node.payload.sweep) ?? 0;
     }
 
-    const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+    const flexSolveModeEnum = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "flexSolveMode")?.data, Enum.Common.flexSolveMode) ?? node.payload.flexSolveMode ?? 0;
+    const isSpacingMode = flexSolveModeEnum === Enum.Common.flexSolveMode.COUNT.value;
 
-    const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? {
-        func: Enum.Common.distroFunctions.LINEAR.value,
-        easing: Enum.Common.distroEasing.IN.value,
-        intensity: "1",
-    };
-    const distroLerper = distroInterpolator(
-        Enum.keyOf(Enum.Common.distroFunctions, distro.func),
-        Enum.keyOf(Enum.Common.distroEasing, distro.easing),
-        NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
-    );
+    let N: number;
+    let angleAt: (i: number) => number;
 
-    const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
+    if (isSpacingMode) {
+        const thetaStepRaw = Angle.Emptyable.asNumber(context.resolve<DataTypes.Angle>(node.id, "thetaStep")?.data ?? node.payload.thetaStep) ?? 30;
+        const available = Math.abs(effectiveSweep);
+        const justifyKey = Enum.keyOf(Enum.Common.flexJustify, context.resolve<DataTypes.Enum>(node.id, "flexJustify")?.data ?? node.payload.flexJustify);
+        const solved = solveArcCount(available, Math.abs(thetaStepRaw), justifyKey);
+        N = solved.count;
+        if (N <= 0) return null;
+        const sign = effectiveSweep >= 0 ? 1 : -1;
+        const shiftDeg = sign * solved.shift;
+        const stepDeg = sign * solved.step;
+        angleAt = (i: number) => effectiveStart + shiftDeg + i * stepDeg;
+    } else {
+        const spurCount = Math.round(Math.max(0, NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "spurCount")?.data ?? node.payload.spurCount) ?? NaN));
+        if (!isFinite(spurCount) || spurCount <= 0) return null;
+        N = spurCount;
+        const thetaInclusive = context.resolve<DataTypes.Boolean>(node.id, "thetaInclusive")?.data ?? node.payload.thetaInclusive ?? false;
+        const distro = context.resolve<DataTypes.Distribution>(node.id, "thetaCurve")?.data ?? {
+            func: Enum.Common.distroFunctions.LINEAR.value,
+            easing: Enum.Common.distroEasing.IN.value,
+            intensity: "1",
+        };
+        const distroLerper = distroInterpolator(
+            Enum.keyOf(Enum.Common.distroFunctions, distro.func),
+            Enum.keyOf(Enum.Common.distroEasing, distro.easing),
+            NumericString.Emptyable.asNumber(distro.intensity) ?? 1,
+        );
+        const denominator = thetaInclusive ? Math.max(1, N - 1) : N;
+        angleAt = (i: number) => {
+            const coeff = delerp(i, 0, denominator);
+            return lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
+        };
+    }
 
     // Spur endpoints (inner -> outer) shared by both the filled bands and the centerline.
     const spurs: { inner: BandHelper.Vec; outer: BandHelper.Vec }[] = [];
     for (let i = 0; i < N; i++) {
-        const coeff = delerp(i, 0, denominator);
-        const angle = lerp(coeff, effectiveStart, effectiveStart + effectiveSweep, distroLerper);
+        const angle = angleAt(i);
         const c = Math.cos(deg2rad(angle - 90));
         const s = Math.sin(deg2rad(angle - 90));
         spurs.push({ inner: { x: rI * c, y: rI * s }, outer: { x: rO * c, y: rO * s } });

@@ -7,7 +7,7 @@ import { Enum } from "../../../datatypes/enum";
 import { ReactNode, useCallback } from "react";
 
 import { TypicalNode } from "../../../../features/nodeview/node";
-import { SocketIn, SocketOut } from "../../../../features/nodeview/slots";
+import { NodeAccordion, SocketIn, SocketOut } from "../../../../features/nodeview/slots";
 import { LengthInput } from "../../../../components/inputs/LengthInput";
 import { RadioButton } from "../../../../components/buttons/RadioButton";
 import { AllDeps, NodeDefinitions, NodeTypes } from "../../../nodeTypes";
@@ -62,7 +62,7 @@ export type GridLayoutCartesianDefinition = SignatureBuilder.DefinitionFrom<
     } & TransformPrefab.Definition["payload"]
 >;
 
-const FIT_OPTIONS = Enum.options(Enum.Common.fitCalcMode);
+const FIT_OPTIONS = Enum.options(Enum.Common.gridSolveMode);
 const JUSTIFY_OPTIONS = Enum.options(Enum.Common.gridJustify);
 const ANCHOR_OPTIONS = Enum.options(Enum.Common.linearAlign);
 const ORDER_OPTIONS = Enum.options(Enum.Common.gridSequenceOrder);
@@ -71,7 +71,7 @@ const MAX_AXIS = 64;
 const clampCount = (n: number): number => Math.max(1, Math.min(MAX_AXIS, Math.round(n)));
 
 const solveAxis = (
-    fitKey: keyof typeof Enum.Common.fitCalcMode,
+    fitKey: keyof typeof Enum.Common.gridSolveMode,
     count: number,
     spacing: number,
     total: number,
@@ -162,13 +162,13 @@ const create = (
         },
         payload: {
             label: "",
-            columnFit: input.columnFit ?? Enum.Common.fitCalcMode.TOTAL.value,
+            columnFit: input.columnFit ?? Enum.Common.gridSolveMode.TOTAL.value,
             columnCount: input.columnCount ?? "5",
             columnSpacing: input.columnSpacing ?? "100px",
             columnTotal: input.columnTotal ?? "500px",
             columnJustify: input.columnJustify ?? Enum.Common.gridJustify.CENTER.value,
             columnAnchor: input.columnAnchor ?? Enum.Common.linearAlign.CENTER.value,
-            rowFit: input.rowFit ?? Enum.Common.fitCalcMode.TOTAL.value,
+            rowFit: input.rowFit ?? Enum.Common.gridSolveMode.TOTAL.value,
             rowCount: input.rowCount ?? "5",
             rowSpacing: input.rowSpacing ?? "100px",
             rowTotal: input.rowTotal ?? "500px",
@@ -192,8 +192,8 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutC
     );
 
     // Only known when the fit socket is unwired; when wired the mode is dynamic so we leave value inputs live.
-    const colFit = node.in.columnFit === null ? Enum.keyOf(Enum.Common.fitCalcMode, node.payload.columnFit) : null;
-    const rowFit = node.in.rowFit === null ? Enum.keyOf(Enum.Common.fitCalcMode, node.payload.rowFit) : null;
+    const colFit = node.in.columnFit === null ? Enum.keyOf(Enum.Common.gridSolveMode, node.payload.columnFit) : null;
+    const rowFit = node.in.rowFit === null ? Enum.keyOf(Enum.Common.gridSolveMode, node.payload.rowFit) : null;
 
     return (
         <TypicalNode node={node} methods={methods}>
@@ -214,111 +214,116 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<GridLayoutC
                 Column Sequence
             </SocketOut>
             <hr />
-            <SocketIn node={node} socketId={"columnFit"} label={"Column Auto Mode"}>
-                <RadioButton.Group
-                    options={FIT_OPTIONS}
-                    value={`${node.payload.columnFit}`}
-                    onValue={(v) => handleUpdate({ columnFit: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.columnFit !== null}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"columnCount"} label={"Column Count"}>
-                <IntegerInput.SliderInput
-                    value={node.payload.columnCount}
-                    onCommit={(columnCount) => handleUpdate({ columnCount })}
-                    disabled={node.in.columnCount !== null || colFit === "COUNT"}
-                    min={"1"}
-                    max={"64"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"columnSpacing"} label={"Column Spacing"}>
-                <LengthInput
-                    value={node.payload.columnSpacing}
-                    onCommit={(columnSpacing) => handleUpdate({ columnSpacing })}
-                    disabled={node.in.columnSpacing !== null || colFit === "SPACING"}
-                    min={"0px"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"columnTotal"} label={"Column Total"}>
-                <LengthInput
-                    value={node.payload.columnTotal}
-                    onCommit={(columnTotal) => handleUpdate({ columnTotal })}
-                    disabled={node.in.columnTotal !== null || colFit === "TOTAL"}
-                    min={"0px"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"columnJustify"} label={"Column Justify"}>
-                <RadioButton.Group
-                    options={JUSTIFY_OPTIONS}
-                    value={`${node.payload.columnJustify}`}
-                    onValue={(v) => handleUpdate({ columnJustify: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.columnJustify !== null || (colFit !== null && colFit !== "COUNT")}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"columnAnchor"} label={"Column Anchor"}>
-                <RadioButton.Group
-                    options={ANCHOR_OPTIONS}
-                    value={`${node.payload.columnAnchor}`}
-                    onValue={(v) => handleUpdate({ columnAnchor: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.columnAnchor !== null}
-                />
-            </SocketIn>
-            <hr />
-            <SocketIn node={node} socketId={"rowFit"} label={"Row Auto Mode"}>
-                <RadioButton.Group
-                    options={FIT_OPTIONS}
-                    value={`${node.payload.rowFit}`}
-                    onValue={(v) => handleUpdate({ rowFit: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.rowFit !== null}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"rowCount"} label={"Row Count"}>
-                <IntegerInput.SliderInput
-                    value={node.payload.rowCount}
-                    onCommit={(rowCount) => handleUpdate({ rowCount })}
-                    disabled={node.in.rowCount !== null || rowFit === "COUNT"}
-                    min={"1"}
-                    max={"64"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"rowSpacing"} label={"Row Spacing"}>
-                <LengthInput
-                    value={node.payload.rowSpacing}
-                    onCommit={(rowSpacing) => handleUpdate({ rowSpacing })}
-                    disabled={node.in.rowSpacing !== null || rowFit === "SPACING"}
-                    min={"0px"}
-                    required
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"rowTotal"} label={"Row Total"}>
-                <LengthInput value={node.payload.rowTotal} onCommit={(rowTotal) => handleUpdate({ rowTotal })} disabled={node.in.rowTotal !== null || rowFit === "TOTAL"} min={"0px"} required />
-            </SocketIn>
-            <SocketIn node={node} socketId={"rowJustify"} label={"Row Justify"}>
-                <RadioButton.Group
-                    options={JUSTIFY_OPTIONS}
-                    value={`${node.payload.rowJustify}`}
-                    onValue={(v) => handleUpdate({ rowJustify: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.rowJustify !== null || (rowFit !== null && rowFit !== "COUNT")}
-                />
-            </SocketIn>
-            <SocketIn node={node} socketId={"rowAnchor"} label={"Row Anchor"}>
-                <RadioButton.Group
-                    options={ANCHOR_OPTIONS}
-                    value={`${node.payload.rowAnchor}`}
-                    onValue={(v) => handleUpdate({ rowAnchor: Number(v) })}
-                    orientation={"horizontal"}
-                    disabled={node.in.rowAnchor !== null}
-                />
-            </SocketIn>
+            <NodeAccordion nodeId={node.id} label={"Column"} socketsIn={"columnFit|columnCount|columnSpacing|columnTotal|columnJustify|columnAnchor"}>
+                <SocketIn node={node} socketId={"columnFit"} label={"Column Solve For"}>
+                    <RadioButton.Group
+                        options={FIT_OPTIONS}
+                        value={`${node.payload.columnFit}`}
+                        onValue={(v) => handleUpdate({ columnFit: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.columnFit !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"columnCount"} label={"Column Count"}>
+                    <IntegerInput.SliderInput
+                        value={node.payload.columnCount}
+                        onCommit={(columnCount) => handleUpdate({ columnCount })}
+                        disabled={node.in.columnCount !== null || colFit === "COUNT"}
+                        min={"1"}
+                        max={"64"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"columnSpacing"} label={"Column Spacing"}>
+                    <LengthInput
+                        value={node.payload.columnSpacing}
+                        onCommit={(columnSpacing) => handleUpdate({ columnSpacing })}
+                        disabled={node.in.columnSpacing !== null || colFit === "SPACING"}
+                        min={"0px"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"columnTotal"} label={"Column Total"}>
+                    <LengthInput
+                        value={node.payload.columnTotal}
+                        onCommit={(columnTotal) => handleUpdate({ columnTotal })}
+                        disabled={node.in.columnTotal !== null || colFit === "TOTAL"}
+                        min={"0px"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"columnJustify"} label={"Column Justify"}>
+                    <RadioButton.Group
+                        options={JUSTIFY_OPTIONS}
+                        value={`${node.payload.columnJustify}`}
+                        onValue={(v) => handleUpdate({ columnJustify: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.columnJustify !== null || (colFit !== null && colFit !== "COUNT")}
+                    />
+                </SocketIn>
+                <hr />
+                <SocketIn node={node} socketId={"columnAnchor"} label={"Column Anchor"}>
+                    <RadioButton.Group
+                        options={ANCHOR_OPTIONS}
+                        value={`${node.payload.columnAnchor}`}
+                        onValue={(v) => handleUpdate({ columnAnchor: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.columnAnchor !== null}
+                    />
+                </SocketIn>
+            </NodeAccordion>
+            <NodeAccordion nodeId={node.id} label={"Row"} socketsIn={"rowFit|rowCount|rowSpacing|rowTotal|rowJustify|rowAnchor"}>
+                <SocketIn node={node} socketId={"rowFit"} label={"Row Solve For"}>
+                    <RadioButton.Group
+                        options={FIT_OPTIONS}
+                        value={`${node.payload.rowFit}`}
+                        onValue={(v) => handleUpdate({ rowFit: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.rowFit !== null}
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"rowCount"} label={"Row Count"}>
+                    <IntegerInput.SliderInput
+                        value={node.payload.rowCount}
+                        onCommit={(rowCount) => handleUpdate({ rowCount })}
+                        disabled={node.in.rowCount !== null || rowFit === "COUNT"}
+                        min={"1"}
+                        max={"64"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"rowSpacing"} label={"Row Spacing"}>
+                    <LengthInput
+                        value={node.payload.rowSpacing}
+                        onCommit={(rowSpacing) => handleUpdate({ rowSpacing })}
+                        disabled={node.in.rowSpacing !== null || rowFit === "SPACING"}
+                        min={"0px"}
+                        required
+                    />
+                </SocketIn>
+                <SocketIn node={node} socketId={"rowTotal"} label={"Row Total"}>
+                    <LengthInput value={node.payload.rowTotal} onCommit={(rowTotal) => handleUpdate({ rowTotal })} disabled={node.in.rowTotal !== null || rowFit === "TOTAL"} min={"0px"} required />
+                </SocketIn>
+                <SocketIn node={node} socketId={"rowJustify"} label={"Row Justify"}>
+                    <RadioButton.Group
+                        options={JUSTIFY_OPTIONS}
+                        value={`${node.payload.rowJustify}`}
+                        onValue={(v) => handleUpdate({ rowJustify: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.rowJustify !== null || (rowFit !== null && rowFit !== "COUNT")}
+                    />
+                </SocketIn>
+                <hr />
+                <SocketIn node={node} socketId={"rowAnchor"} label={"Row Anchor"}>
+                    <RadioButton.Group
+                        options={ANCHOR_OPTIONS}
+                        value={`${node.payload.rowAnchor}`}
+                        onValue={(v) => handleUpdate({ rowAnchor: Number(v) })}
+                        orientation={"horizontal"}
+                        disabled={node.in.rowAnchor !== null}
+                    />
+                </SocketIn>
+            </NodeAccordion>
             <hr />
             <SocketIn node={node} socketId={"sequenceOrder"} label={"Sequence Order"}>
                 <RadioButton.Group
@@ -390,7 +395,7 @@ const contributesTo = (
 };
 
 const evaluate = (node: NodeDefinitions.NodeFor<GridLayoutCartesianDefinition>, socket: keyof GridLayoutCartesianDefinition["outputs"], context: Resolver.Context): DataTypes.AnyEval | null => {
-    const colFit = Enum.keyOf(Enum.Common.fitCalcMode, context.resolve<DataTypes.Enum>(node.id, "columnFit")?.data ?? node.payload.columnFit);
+    const colFit = Enum.keyOf(Enum.Common.gridSolveMode, context.resolve<DataTypes.Enum>(node.id, "columnFit")?.data ?? node.payload.columnFit);
     const colCount = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "columnCount")?.data ?? node.payload.columnCount) ?? 1;
     const colSpacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "columnSpacing")?.data ?? node.payload.columnSpacing) ?? 0;
     const colTotal = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "columnTotal")?.data ?? node.payload.columnTotal) ?? 0;
@@ -398,7 +403,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<GridLayoutCartesianDefinition>, 
     const colAnchor = Enum.keyOf(Enum.Common.linearAlign, context.resolve<DataTypes.Enum>(node.id, "columnAnchor")?.data ?? node.payload.columnAnchor);
     const colAxis = solveAxis(colFit, colCount, colSpacing, colTotal, colJustify, colAnchor);
 
-    const rowFit = Enum.keyOf(Enum.Common.fitCalcMode, context.resolve<DataTypes.Enum>(node.id, "rowFit")?.data ?? node.payload.rowFit);
+    const rowFit = Enum.keyOf(Enum.Common.gridSolveMode, context.resolve<DataTypes.Enum>(node.id, "rowFit")?.data ?? node.payload.rowFit);
     const rowCount = NumericString.Emptyable.asNumber(context.resolve<DataTypes.Integer>(node.id, "rowCount")?.data ?? node.payload.rowCount) ?? 1;
     const rowSpacing = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "rowSpacing")?.data ?? node.payload.rowSpacing) ?? 0;
     const rowTotal = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "rowTotal")?.data ?? node.payload.rowTotal) ?? 0;
