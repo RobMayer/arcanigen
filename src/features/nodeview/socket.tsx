@@ -296,7 +296,7 @@ const PendingConnection = styled(({ nodeId, socketId, side, className, type }: {
     const style = useMemo(
         () =>
             ({
-                "--source": `--socket_${nodeId}_${socketId}_${side}`,
+                "--anchorFrom": `anchor(--socket_${nodeId}_${socketId}_${side} center, anchor(--socketFB_${nodeId}_${socketId}_${side} center, anchor(--nodeFB_${nodeId}_${side} center, 0px)))`,
             }) as CSSProperties,
         [nodeId, socketId, side],
     );
@@ -354,8 +354,6 @@ const PendingConnection = styled(({ nodeId, socketId, side, className, type }: {
     height: auto;
     z-index: 0;
     pointer-events: none;
-
-    --anchorFrom: anchor(var(--source) center);
 
     inset: 0;
 
