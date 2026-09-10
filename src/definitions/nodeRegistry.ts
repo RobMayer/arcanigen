@@ -133,6 +133,22 @@ import { SequenceInputDefinition, SequenceInputType } from "./nodes/interface/in
 import { SequenceOutputDefinition, SequenceOutputType } from "./nodes/interface/outputs/sequenceOutputNode";
 import { PathInputDefinition, PathInputType } from "./nodes/interface/inputs/pathInputNode";
 import { PathOutputDefinition, PathOutputType } from "./nodes/interface/outputs/pathOutputNode";
+import { ArrayStringInputDefinition, ArrayStringInputType } from "./nodes/interface/inputs/arrayStringInputNode";
+import { ArrayStringOutputDefinition, ArrayStringOutputType } from "./nodes/interface/outputs/arrayStringOutputNode";
+import { ArrayTokensLengthInputDefinition, ArrayTokensLengthInputType } from "./nodes/interface/inputs/arrayTokensLengthInputNode";
+import { ArrayTokensLengthOutputDefinition, ArrayTokensLengthOutputType } from "./nodes/interface/outputs/arrayTokensLengthOutputNode";
+import { ArrayEnumInputDefinition, ArrayEnumInputType } from "./nodes/interface/inputs/arrayEnumInputNode";
+import { ArrayEnumOutputDefinition, ArrayEnumOutputType } from "./nodes/interface/outputs/arrayEnumOutputNode";
+import { ArrayShapeInputDefinition, ArrayShapeInputType } from "./nodes/interface/inputs/arrayShapeInputNode";
+import { ArrayShapeOutputDefinition, ArrayShapeOutputType } from "./nodes/interface/outputs/arrayShapeOutputNode";
+import { ArrayPathInputDefinition, ArrayPathInputType } from "./nodes/interface/inputs/arrayPathInputNode";
+import { ArrayPathOutputDefinition, ArrayPathOutputType } from "./nodes/interface/outputs/arrayPathOutputNode";
+import { ArrayGradientInputDefinition, ArrayGradientInputType } from "./nodes/interface/inputs/arrayGradientInputNode";
+import { ArrayGradientOutputDefinition, ArrayGradientOutputType } from "./nodes/interface/outputs/arrayGradientOutputNode";
+import { ArrayDistributionInputDefinition, ArrayDistributionInputType } from "./nodes/interface/inputs/arrayDistributionInputNode";
+import { ArrayDistributionOutputDefinition, ArrayDistributionOutputType } from "./nodes/interface/outputs/arrayDistributionOutputNode";
+import { ArraySequenceInputDefinition, ArraySequenceInputType } from "./nodes/interface/inputs/arraySequenceInputNode";
+import { ArraySequenceOutputDefinition, ArraySequenceOutputType } from "./nodes/interface/outputs/arraySequenceOutputNode";
 import { SwitchCaseDefinition, SwitchCaseNodeType } from "./nodes/logic/switchCaseNode";
 import { ConditionDefinition, ConditionNodeType } from "./nodes/logic/conditionNode";
 import { LogicalNotDefinition, LogicalNotNodeType } from "./nodes/logic/logicalNotNode";
@@ -385,6 +401,22 @@ export namespace Registries {
         sequenceOutput: SequenceOutputDefinition;
         pathInput: PathInputDefinition;
         pathOutput: PathOutputDefinition;
+        arrayStringInput: ArrayStringInputDefinition;
+        arrayStringOutput: ArrayStringOutputDefinition;
+        arrayTokensLengthInput: ArrayTokensLengthInputDefinition;
+        arrayTokensLengthOutput: ArrayTokensLengthOutputDefinition;
+        arrayEnumInput: ArrayEnumInputDefinition;
+        arrayEnumOutput: ArrayEnumOutputDefinition;
+        arrayShapeInput: ArrayShapeInputDefinition;
+        arrayShapeOutput: ArrayShapeOutputDefinition;
+        arrayPathInput: ArrayPathInputDefinition;
+        arrayPathOutput: ArrayPathOutputDefinition;
+        arrayGradientInput: ArrayGradientInputDefinition;
+        arrayGradientOutput: ArrayGradientOutputDefinition;
+        arrayDistributionInput: ArrayDistributionInputDefinition;
+        arrayDistributionOutput: ArrayDistributionOutputDefinition;
+        arraySequenceInput: ArraySequenceInputDefinition;
+        arraySequenceOutput: ArraySequenceOutputDefinition;
         custom: CustomDefinition;
 
         // math
@@ -720,6 +752,22 @@ export namespace Registries {
         sequenceOutput: SequenceOutputType,
         pathInput: PathInputType,
         pathOutput: PathOutputType,
+        arrayStringInput: ArrayStringInputType,
+        arrayStringOutput: ArrayStringOutputType,
+        arrayTokensLengthInput: ArrayTokensLengthInputType,
+        arrayTokensLengthOutput: ArrayTokensLengthOutputType,
+        arrayEnumInput: ArrayEnumInputType,
+        arrayEnumOutput: ArrayEnumOutputType,
+        arrayShapeInput: ArrayShapeInputType,
+        arrayShapeOutput: ArrayShapeOutputType,
+        arrayPathInput: ArrayPathInputType,
+        arrayPathOutput: ArrayPathOutputType,
+        arrayGradientInput: ArrayGradientInputType,
+        arrayGradientOutput: ArrayGradientOutputType,
+        arrayDistributionInput: ArrayDistributionInputType,
+        arrayDistributionOutput: ArrayDistributionOutputType,
+        arraySequenceInput: ArraySequenceInputType,
+        arraySequenceOutput: ArraySequenceOutputType,
         custom: CustomNodeType,
 
         add: AddType,

@@ -503,6 +503,22 @@ const INTERFACE_SOCKET_TYPES: Record<string, SocketTypes.Term> = {
     sequenceOutput: SocketTypes.of(DataTypes.SEQUENCE),
     pathInput: SocketTypes.of(DataTypes.PATH),
     pathOutput: SocketTypes.of(DataTypes.PATH),
+    arrayStringInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STRING)),
+    arrayStringOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.STRING)),
+    arrayTokensLengthInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.TOKENS_LENGTH)),
+    arrayTokensLengthOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.TOKENS_LENGTH)),
+    arrayEnumInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.ENUM)),
+    arrayEnumOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.ENUM)),
+    arrayShapeInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.SHAPE)),
+    arrayShapeOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.SHAPE)),
+    arrayPathInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.PATH)),
+    arrayPathOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.PATH)),
+    arrayGradientInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.GRADIENT)),
+    arrayGradientOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.GRADIENT)),
+    arrayDistributionInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.DISTRIBUTION)),
+    arrayDistributionOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.DISTRIBUTION)),
+    arraySequenceInput: SocketTypes.of(DataTypes.arrayOf(DataTypes.SEQUENCE)),
+    arraySequenceOutput: SocketTypes.of(DataTypes.arrayOf(DataTypes.SEQUENCE)),
 };
 
 const getSocketType = (node: NodeDefinitions.NodeFor<CustomDefinition>, socketId: string, _side: "in" | "out", _graphId: string, ctx: NodeTypes.MethodContext): SocketTypes.Term => {
@@ -637,6 +653,12 @@ const DynamicSlot = ({
             return <InputSlotPath host={hostNode} source={sourceNode} />;
         case "pathOutput":
             return <OutputSlotPath host={hostNode} source={sourceNode} />;
+        case "arrayShapeInput":
+        case "arrayPathInput":
+        case "arrayGradientInput":
+        case "arrayDistributionInput":
+        case "arraySequenceInput":
+            return <InputSlotPassthrough host={hostNode} source={sourceNode} />;
         case "arrayFloatInput":
         case "arrayIntegerInput":
         case "arrayAngleInput":
@@ -649,6 +671,9 @@ const DynamicSlot = ({
         case "arrayStopAngleInput":
         case "arrayStopIntegerInput":
         case "arrayStopLengthInput":
+        case "arrayStringInput":
+        case "arrayTokensLengthInput":
+        case "arrayEnumInput":
             return <InputSlotArrayGroup host={hostNode} source={sourceNode} />;
         case "layerInput":
         case "pathOpInput":
@@ -678,6 +703,14 @@ const DynamicSlot = ({
         case "arrayLengthOutput":
         case "arrayColorOutput":
         case "arrayBooleanOutput":
+        case "arrayStringOutput":
+        case "arrayTokensLengthOutput":
+        case "arrayEnumOutput":
+        case "arrayShapeOutput":
+        case "arrayPathOutput":
+        case "arrayGradientOutput":
+        case "arrayDistributionOutput":
+        case "arraySequenceOutput":
             return <OutputSlotPassthrough host={hostNode} source={sourceNode} />;
     }
     return null;
@@ -1884,7 +1917,7 @@ const ArrayRowWrap = styled.div`
     }
 `;
 
-type ArrayRowProps = { entry: ArrayGroupEntryData; connected: boolean; onUpdate: (u: Record<string, unknown>) => void };
+type ArrayRowProps = { entry: ArrayGroupEntryData; connected: boolean; onUpdate: (u: Record<string, unknown>) => void; source?: NodeDefinitions.NodeFor<NodeDefinitions.Any> };
 
 const scalarFold = (entry: ArrayGroupEntryData, connected: DataTypes.AnyEval | null): unknown => (connected ? connected.data : entry.value);
 
@@ -2051,6 +2084,41 @@ const ARRAY_ELEMENT_VIEWS: Record<string, ArrayElementView> = {
             </StopRow>
         ),
     },
+    arrayStringInput: {
+        defaultLabel: "Strings",
+        addLabel: "Add String",
+        elementSocketType: SocketTypes.of(DataTypes.STRING),
+        outputKind: "array<string>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <TextInput className={"valueField"} value={entry.value as string} onCommit={(value) => onUpdate({ value })} disabled={connected} />,
+    },
+    arrayTokensLengthInput: {
+        defaultLabel: "Lengths",
+        addLabel: "Add Tokens",
+        elementSocketType: SocketTypes.of(DataTypes.TOKENS_LENGTH),
+        outputKind: "array<tokens:length>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate }) => <TextInput className={"valueField"} value={entry.value as string} onCommit={(value) => onUpdate({ value })} pattern={Length.TOKENS_REGEX} disabled={connected} />,
+    },
+    arrayEnumInput: {
+        defaultLabel: "Enums",
+        addLabel: "Add Enum",
+        elementSocketType: SocketTypes.of(DataTypes.ENUM),
+        outputKind: "array<enum>",
+        fold: scalarFold,
+        Row: ({ entry, connected, onUpdate, source }) => {
+            const options = ((source?.payload as { options?: string[] }).options ?? []);
+            return (
+                <Dropdown className={"valueField"} value={String(entry.value as number)} onValue={(v) => onUpdate({ value: Number(v) })} disabled={connected}>
+                    {options.map((opt, i) => (
+                        <option key={i} value={String(i)}>
+                            {opt}
+                        </option>
+                    ))}
+                </Dropdown>
+            );
+        },
+    },
 };
 
 const ArrayGroupEntry = ({
@@ -2190,7 +2258,7 @@ const InputSlotArrayGroup = ({ host, source }: { host: NodeDefinitions.NodeFor<C
                     </ActionButton>
                     {entries.map((entry, idx) => (
                         <ArrayGroupEntry key={entry.socket} host={host} entry={entry} index={idx} onRemove={handleRemove} onReorder={handleReorder}>
-                            <Row entry={entry} connected={host.in[entry.socket] != null} onUpdate={(u) => handleUpdate(entry.socket, u)} />
+                            <Row entry={entry} connected={host.in[entry.socket] != null} onUpdate={(u) => handleUpdate(entry.socket, u)} source={source} />
                         </ArrayGroupEntry>
                     ))}
                 </>

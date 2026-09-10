@@ -32,6 +32,9 @@ const ARRAY_GROUP_DATA: Record<string, { groupKey: (nodeId: string) => string; m
     arrayStopAngleInput: { groupKey: (id) => `elements_${id}`, makeEntry: () => ({ socket: el(), value: "0deg", position: "0", enabled: true }) },
     arrayStopIntegerInput: { groupKey: (id) => `elements_${id}`, makeEntry: () => ({ socket: el(), value: "0", position: "0", enabled: true }) },
     arrayStopLengthInput: { groupKey: (id) => `elements_${id}`, makeEntry: () => ({ socket: el(), value: "0px", position: "0", enabled: true }) },
+    arrayStringInput: { groupKey: (id) => `elements_${id}`, makeEntry: () => ({ socket: el(), value: "" }) },
+    arrayTokensLengthInput: { groupKey: (id) => `elements_${id}`, makeEntry: () => ({ socket: el(), value: "" }) },
+    arrayEnumInput: { groupKey: (id) => `elements_${id}`, makeEntry: () => ({ socket: el(), value: 0 }) },
 };
 
 /** Payload key prefixes under which array-input Dynamic List rows are stored on a host (for prefix-based cleanup). */
