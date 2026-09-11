@@ -53,7 +53,7 @@ export const SvgCanvas = styled(({ className, paneControls }: SvgCanvasProps) =>
                         viewBox={`${-canvas.originX} ${-canvas.originY} ${canvas.width} ${canvas.height}`}
                         width={canvas.width}
                         height={canvas.height}
-                        style={{ background: canvas.background, pointerEvents: "none" }}
+                        style={{ background: canvas.background }}
                     >
                         {contents && <ShapeElement shape={contents} />}
                     </svg>
@@ -125,5 +125,6 @@ const SvgCanvasContent = styled.div`
         anchor-name: --svg-canvas;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         display: block;
+        pointer-events: none;
     }
 `;
