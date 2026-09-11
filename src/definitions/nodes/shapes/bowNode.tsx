@@ -29,6 +29,9 @@ const def = signature({
         rise: "length",
         invert: "boolean",
         chord: "boolean",
+        markerStartShape: "shape",
+        markerEndShape: "shape",
+        markerAlign: "boolean",
         ...TransformPrefab.SIG_IN,
         ...StylingPrefab.SIG_IN,
         ...StylingPrefab.SIG_FILL,
@@ -45,6 +48,7 @@ export type BowDefinition = SignatureBuilder.DefinitionFrom<
         rise: DataTypes.TypeOf<DataTypes.Length>;
         invert: DataTypes.TypeOf<DataTypes.Boolean>;
         chord: DataTypes.TypeOf<DataTypes.Boolean>;
+        markerAlign: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -58,6 +62,9 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BowDefinition>>, i
             rise: null,
             invert: null,
             chord: null,
+            markerStartShape: null,
+            markerEndShape: null,
+            markerAlign: null,
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
@@ -82,6 +89,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BowDefinition>>, i
             rise: "20px",
             invert: false,
             chord: false,
+            markerAlign: true,
             strokeWidth: "1px",
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
@@ -141,6 +149,20 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BowDefiniti
                 </CheckBox>
             </SocketIn>
 
+            <NodeAccordion label={"Markers"} socketsIn={"markerStartShape|markerEndShape|markerAlign"} nodeId={node.id}>
+                <SocketIn node={node} socketId={"markerStartShape"}>
+                    Start Marker
+                </SocketIn>
+                <SocketIn node={node} socketId={"markerEndShape"}>
+                    End Marker
+                </SocketIn>
+                <SocketIn node={node} socketId={"markerAlign"}>
+                    <CheckBox checked={node.payload.markerAlign} onToggle={(markerAlign) => handleUpdate({ markerAlign })} disabled={node.in.markerAlign !== null}>
+                        Align Markers
+                    </CheckBox>
+                </SocketIn>
+            </NodeAccordion>
+
             <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
             <NodeAccordion nodeId={node.id} label={"Additional Options"} socketsOut={"centerpoint|radius"}>
@@ -156,7 +178,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BowDefiniti
 };
 
 const CENTER_INPUTS: (keyof BowDefinition["inputs"])[] = ["startPoint", "endPoint", "rise", "invert"];
-const GEOMETRY_INPUTS: (keyof BowDefinition["inputs"])[] = [...CENTER_INPUTS, "chord", "position", "rotation"];
+const GEOMETRY_INPUTS: (keyof BowDefinition["inputs"])[] = [...CENTER_INPUTS, "chord", "markerStartShape", "markerEndShape", "markerAlign", "position", "rotation"];
 const STYLING_INPUTS: (keyof BowDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<BowDefinition>, outSocket: keyof BowDefinition["outputs"], _deps: AllDeps): (keyof BowDefinition["inputs"])[] => {
@@ -206,7 +228,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<BowDefinition>, socket: keyof Bo
         if (socket === "output") {
             const paint = StylingPrefab.evaluate(node, context);
             paint.fill = null;
-            return { kind: "shape", data: { type: "path", d, paint, transform: transforms.join(" ") } };
+            const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStartShape")?.data;
+            const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEndShape")?.data;
+            const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+            const markers =
+                markerStartShape || markerEndShape
+                    ? {
+                          start: markerStartShape ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                          end: markerEndShape ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                      }
+                    : undefined;
+            return { kind: "shape", data: { type: "path", d, paint, markers, transform: transforms.join(" ") } };
         }
         return null;
     }
@@ -244,7 +276,19 @@ const evaluate = (node: NodeDefinitions.NodeFor<BowDefinition>, socket: keyof Bo
 
     if (socket === "output") {
         const paint = StylingPrefab.evaluate(node, context);
-        return { kind: "shape", data: { type: "path", d, paint, transform: transforms.join(" ") } };
+        const markerStartShape = context.resolve<DataTypes.Shape>(node.id, "markerStartShape")?.data;
+        const markerEndShape = context.resolve<DataTypes.Shape>(node.id, "markerEndShape")?.data;
+        const markerAlign = context.resolve<DataTypes.Boolean>(node.id, "markerAlign")?.data ?? node.payload.markerAlign ?? false;
+        const useStartMarker = !chord && !!markerStartShape;
+        const useEndMarker = !chord && !!markerEndShape;
+        const markers =
+            useStartMarker || useEndMarker
+                ? {
+                      start: useStartMarker ? { shape: markerStartShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                      end: useEndMarker ? { shape: markerEndShape, orient: markerAlign ? "auto-start-reverse" : undefined } : undefined,
+                  }
+                : undefined;
+        return { kind: "shape", data: { type: "path", d, paint, markers, transform: transforms.join(" ") } };
     }
 
     return null;
