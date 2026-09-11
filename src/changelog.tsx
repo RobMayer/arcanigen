@@ -4,6 +4,9 @@ import styled from "styled-components";
 export const ChangeLog = ({ className }: { className?: string }) => {
     return (
         <Body className={className}>
+            <Build date={"2026-09-10"} version={"3.5.11"}>
+                <Improvement>Length / Length or Angle / Angle are now valid math operations and render a float.</Improvement>
+            </Build>
             <Build date={"2026-09-10"} version={"3.5.10"}>
                 <Improvement>Added spacing vs count modes on nodes with multiplicity: some layouts, burst, etc.</Improvement>
                 <Improvement>Adjusted layout of several nodes for more compactness.</Improvement>
