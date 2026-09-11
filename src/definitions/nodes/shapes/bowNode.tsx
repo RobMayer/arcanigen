@@ -28,6 +28,7 @@ const def = signature({
         endPoint: "point",
         rise: "length",
         invert: "boolean",
+        chord: "boolean",
         ...TransformPrefab.SIG_IN,
         ...StylingPrefab.SIG_IN,
         ...StylingPrefab.SIG_FILL,
@@ -43,6 +44,7 @@ export type BowDefinition = SignatureBuilder.DefinitionFrom<
         end: PointInput.Value;
         rise: DataTypes.TypeOf<DataTypes.Length>;
         invert: DataTypes.TypeOf<DataTypes.Boolean>;
+        chord: DataTypes.TypeOf<DataTypes.Boolean>;
     } & StylingPrefab.Definition["payload"] &
         TransformPrefab.Definition["payload"]
 >;
@@ -55,6 +57,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BowDefinition>>, i
             endPoint: null,
             rise: null,
             invert: null,
+            chord: null,
             strokeWidth: null,
             strokeColor: null,
             strokeDash: null,
@@ -78,6 +81,7 @@ const create = (_input: Partial<NodeDefinitions.PayloadTypeOf<BowDefinition>>, i
             end: { mode: Enum.Common.positionMode.CARTESIAN.value, x: "100px", y: "0px", radius: "100px", theta: "90deg" },
             rise: "20px",
             invert: false,
+            chord: false,
             strokeWidth: "1px",
             strokeDash: "",
             strokeColor: { r: 0, g: 0, b: 0, a: 1 },
@@ -131,6 +135,11 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BowDefiniti
                     Invert
                 </CheckBox>
             </SocketIn>
+            <SocketIn node={node} socketId={"chord"}>
+                <CheckBox checked={node.payload.chord ?? false} onToggle={(chord) => handleUpdate({ chord })} disabled={node.in.chord !== null}>
+                    Chord
+                </CheckBox>
+            </SocketIn>
 
             <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
@@ -147,7 +156,7 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BowDefiniti
 };
 
 const CENTER_INPUTS: (keyof BowDefinition["inputs"])[] = ["startPoint", "endPoint", "rise", "invert"];
-const GEOMETRY_INPUTS: (keyof BowDefinition["inputs"])[] = [...CENTER_INPUTS, "position", "rotation"];
+const GEOMETRY_INPUTS: (keyof BowDefinition["inputs"])[] = [...CENTER_INPUTS, "chord", "position", "rotation"];
 const STYLING_INPUTS: (keyof BowDefinition["inputs"])[] = ["strokeWidth", "strokeColor", "strokeCap", "strokeDash", "strokeDashOffset", "fillColor", "paintOrder", "opacity"];
 
 const dependsOn = (_node: NodeDefinitions.NodeFor<BowDefinition>, outSocket: keyof BowDefinition["outputs"], _deps: AllDeps): (keyof BowDefinition["inputs"])[] => {
@@ -164,7 +173,7 @@ const contributesTo = (_node: NodeDefinitions.NodeFor<BowDefinition>, inSocket: 
     if (STYLING_INPUTS.includes(inSocket)) {
         return ["output"];
     }
-    if (inSocket === "position" || inSocket === "rotation") {
+    if (inSocket === "position" || inSocket === "rotation" || inSocket === "chord") {
         return ["output", "path"];
     }
     return ["output", "path", "centerpoint", "radius"];
@@ -185,6 +194,7 @@ const evaluate = (node: NodeDefinitions.NodeFor<BowDefinition>, socket: keyof Bo
 
     const rise = Length.Emptyable.asNumber(context.resolve<DataTypes.Length>(node.id, "rise")?.data ?? node.payload.rise) ?? 0;
     const invert = context.resolve<DataTypes.Boolean>(node.id, "invert")?.data ?? node.payload.invert ?? false;
+    const chord = context.resolve<DataTypes.Boolean>(node.id, "chord")?.data ?? node.payload.chord ?? false;
     const [transforms] = TransformPrefab.evaluate(node, context);
 
     if (Math.abs(rise) < EPS) {
@@ -222,19 +232,17 @@ const evaluate = (node: NodeDefinitions.NodeFor<BowDefinition>, socket: keyof Bo
     }
 
     const largeArc = rise > halfChord ? 1 : 0;
-    // not-inverted, minor arc (rise <= halfChord): sweep=1 (CW in SVG); inverted: flip.
-    const sweepFlag = (rise <= halfChord) !== invert ? 1 : 0;
+    const sweepFlag = invert ? 0 : 1;
 
     const arcCmd = `A ${f(R)} ${f(R)} 0 ${largeArc} ${sweepFlag} ${f(ex)},${f(ey)}`;
 
+    const d = chord ? `M ${f(sx)},${f(sy)} ${arcCmd} Z` : `M ${f(sx)},${f(sy)} ${arcCmd}`;
+
     if (socket === "path") {
-        const d = `M ${f(sx)},${f(sy)} ${arcCmd}`;
         return { kind: "path", data: { d, transform: transforms.join(" ") } };
     }
 
     if (socket === "output") {
-        // Close the path: arc + chord back to start = circular segment.
-        const d = `M ${f(sx)},${f(sy)} ${arcCmd} Z`;
         const paint = StylingPrefab.evaluate(node, context);
         return { kind: "shape", data: { type: "path", d, paint, transform: transforms.join(" ") } };
     }

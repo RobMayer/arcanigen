@@ -175,26 +175,24 @@ const Controls = ({ node, methods }: { node: NodeDefinitions.NodeFor<BandedBowDe
             </SocketIn>
 
             <hr />
-            <NodeAccordion label={"Caps"} nodeId={node.id} socketsIn="startCap|endCap">
-                <SocketIn node={node} socketId={"startCap"} label={"Start Cap"}>
-                    <RadioButton.Group
-                        options={BAND_CAP_OPTIONS}
-                        value={`${node.payload.startCap}`}
-                        onValue={(v) => handleUpdate({ startCap: Number(v) })}
-                        orientation={"horizontal"}
-                        disabled={node.in.startCap !== null}
-                    />
-                </SocketIn>
-                <SocketIn node={node} socketId={"endCap"} label={"End Cap"}>
-                    <RadioButton.Group
-                        options={BAND_CAP_OPTIONS}
-                        value={`${node.payload.endCap}`}
-                        onValue={(v) => handleUpdate({ endCap: Number(v) })}
-                        orientation={"horizontal"}
-                        disabled={node.in.endCap !== null}
-                    />
-                </SocketIn>
-            </NodeAccordion>
+            <SocketIn node={node} socketId={"startCap"} label={"Start Cap"}>
+                <RadioButton.Group
+                    options={BAND_CAP_OPTIONS}
+                    value={`${node.payload.startCap}`}
+                    onValue={(v) => handleUpdate({ startCap: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.startCap !== null}
+                />
+            </SocketIn>
+            <SocketIn node={node} socketId={"endCap"} label={"End Cap"}>
+                <RadioButton.Group
+                    options={BAND_CAP_OPTIONS}
+                    value={`${node.payload.endCap}`}
+                    onValue={(v) => handleUpdate({ endCap: Number(v) })}
+                    orientation={"horizontal"}
+                    disabled={node.in.endCap !== null}
+                />
+            </SocketIn>
 
             <StylingPrefab.Controls node={node} handleUpdate={handleUpdate} fill join accordion />
             <TransformPrefab.Controls node={node} handleUpdate={handleUpdate} accordion />
@@ -247,17 +245,27 @@ const resolveGeometry = (
     node: NodeDefinitions.NodeFor<BandedBowDefinition>,
     context: Resolver.Context,
 ): {
-    sx: number; sy: number; ex: number; ey: number;
-    R: number; Cx: number; Cy: number;
-    rise: number; halfChord: number;
-    largeArc: number; sweepFlag: number;
+    sx: number;
+    sy: number;
+    ex: number;
+    ey: number;
+    R: number;
+    Cx: number;
+    Cy: number;
+    rise: number;
+    halfChord: number;
+    largeArc: number;
+    sweepFlag: number;
 } | null => {
     const startPt = context.resolve<DataTypes.Point>(node.id, "startPoint")?.data ?? PointHelper.fromAuthoring(node.payload.start);
     const endPt = context.resolve<DataTypes.Point>(node.id, "endPoint")?.data ?? PointHelper.fromAuthoring(node.payload.end);
 
-    const sx = startPt.x, sy = startPt.y;
-    const ex = endPt.x, ey = endPt.y;
-    const dx = ex - sx, dy = ey - sy;
+    const sx = startPt.x,
+        sy = startPt.y;
+    const ex = endPt.x,
+        ey = endPt.y;
+    const dx = ex - sx,
+        dy = ey - sy;
     const L = Math.hypot(dx, dy);
 
     if (L < EPS) return null;
@@ -270,15 +278,17 @@ const resolveGeometry = (
     const halfChord = L / 2;
     const R = (halfChord * halfChord + rise * rise) / (2 * rise);
 
-    const mx = (sx + ex) / 2, my = (sy + ey) / 2;
-    const nx = -dy / L, ny = dx / L;
+    const mx = (sx + ex) / 2,
+        my = (sy + ey) / 2;
+    const nx = -dy / L,
+        ny = dx / L;
 
-    const offset = invert ? (R - rise) : (rise - R);
+    const offset = invert ? rise - R : R - rise;
     const Cx = mx + offset * nx;
     const Cy = my + offset * ny;
 
     const largeArc = rise > halfChord ? 1 : 0;
-    const sweepFlag = (rise <= halfChord) !== invert ? 1 : 0;
+    const sweepFlag = invert ? 0 : 1;
 
     return { sx, sy, ex, ey, R, Cx, Cy, rise, halfChord, largeArc, sweepFlag };
 };
@@ -331,7 +341,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedBowDefinition>, socket: ke
     const startCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "startCap")?.data, Enum.Common.bandCap) ?? node.payload.startCap ?? 0;
     const endCap = Enum.resolve(context.resolve<DataTypes.Enum>(node.id, "endCap")?.data, Enum.Common.bandCap) ?? node.payload.endCap ?? 0;
 
-    const scaleO = rO / R, scaleI = rI / R;
+    const scaleO = rO / R,
+        scaleI = rI / R;
     const oStart: BandHelper.Vec = { x: Cx + scaleO * (sx - Cx), y: Cy + scaleO * (sy - Cy) };
     const iStart: BandHelper.Vec = { x: Cx + scaleI * (sx - Cx), y: Cy + scaleI * (sy - Cy) };
     const oEnd: BandHelper.Vec = { x: Cx + scaleO * (ex - Cx), y: Cy + scaleO * (ey - Cy) };
@@ -345,8 +356,8 @@ const evaluate = (node: NodeDefinitions.NodeFor<BandedBowDefinition>, socket: ke
     // Unit tangent at P along the arc: perpendicular to the radius (P-C), in the sweep direction.
     // sign=1 for CW sweep (sweepFlag=1), sign=-1 for CCW.
     const sign = sweepFlag === 1 ? 1 : -1;
-    const uEnd: BandHelper.Vec = { x: -(ey - Cy) / R * sign, y: (ex - Cx) / R * sign };
-    const uStart: BandHelper.Vec = { x: (sy - Cy) / R * sign, y: -(sx - Cx) / R * sign };
+    const uEnd: BandHelper.Vec = { x: (-(ey - Cy) / R) * sign, y: ((ex - Cx) / R) * sign };
+    const uStart: BandHelper.Vec = { x: ((sy - Cy) / R) * sign, y: (-(sx - Cx) / R) * sign };
 
     const endCapCmds = BandHelper.capCommands(endCap, mid1, capR, uEnd, oEnd, iEnd, uEnd, uEnd);
     const startCapCmds = BandHelper.capCommands(startCap, mid0, capR, uStart, iStart, oStart, uStart, uStart);
